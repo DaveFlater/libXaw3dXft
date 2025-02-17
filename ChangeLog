@@ -1,10 +1,14 @@
-About libXaw3dxft-1.6.2
------------------------
+-*- text -*-
 
-This is a newer version which should be entirely source compatible with the
-current development versions of libXaw3d-1.6.2 and provides additionally
-support for freetype and UTF8 encoding (as did earlier versions
-of libxaw3dxft <= 1.3.3). See README in source tree for further details.
+2025-XX-XX v1.6.3
+
+  Jean-Pierre Demailly passed away in 2022.  Dave Flater has taken over
+  maintenance of libXaw3dXft.  https://github.com/DaveFlater/libXaw3dXft
+  replaces the abandoned
+  https://sourceforge.net/projects/sf-xpaint/files/libxaw3dxft/.
+
+  Fixed GCC 14 FTB (incompatible pointer type) in XawIm.c.
+  Fixed vertical spacing in List when FreeType is used.
 
 2020 Jul 2, libXaw3dxft-1.6.2h
 
@@ -37,7 +41,7 @@ of libxaw3dxft <= 1.3.3). See README in source tree for further details.
 	* 3 line addition in Command.c that circumvents what seems to be
 	  a bug of certain X11/Xorg drivers, e.g. the intel driver,
 	  version 2.99.917. No other significant change.
-	  
+
 2015 Jan 02, libXaw3dxft-1.6.2d
 
 	* Minor API change, functionality identical. The main goal of the
@@ -49,3 +53,75 @@ of libxaw3dxft <= 1.3.3). See README in source tree for further details.
 	* A fix has been included, that allows to correctly highlight text
           strings in AsciiText widgets, and also allows making Lists
 	  with special colors for directories.
+
+2012 Mar 04, libXaw3dxft-1.6.2
+
+This is a newer version which should be entirely source compatible with the
+current development versions of libXaw3d-1.6.2 and provides additionally
+support for freetype and UTF8 encoding (as did earlier versions
+of libxaw3dxft <= 1.3.3).
+
+1.3.3 (so 7.0.2)   2012-01-31   Jean-Pierre Demailly
+
+	Changed the font resource mechanism in AsciiSink.c, Label.c, List.c,
+	SmeBSB.c, and Tip.c. The new resource is stored as a String in the
+	'fontname' field, and converted as an XftFont * is the new private
+	'font' field. New definition strings XtNxftFont and XtCXftFont are
+	provided so that no odd interaction can occur with the old font
+	mechanism.
+
+1.3.2 (so 7.0.1)   2012-01-27   David Flater
+
+	Fixed strangely broken rendering when Xaw3dXftEncoding == 8.  In
+	Text.c, _XawDrawString, the invocation of XftTextExtents8 before
+	XClearArea was using len/2 when it should have been just len
+	(copy-paste from the 16-bit code).
+
+	Unbroke the font resources in AsciiSink.c, Label.c, List.c,
+	SmeBSB.c, and Tip.c.  Updated comments in header files to indicate
+	that the default is Xaw3dXftDefaultFont not XtDefaultFont.
+
+	Added extern "C" language to Xaw3dXft.h, where long identifiers
+	run afoul of C++ mangling.
+
+	Moved the version defines from the "private" Xaw3dP.h header to
+	Xaw3dXft.h.
+
+	Added the phony X11 directory to what is removed by 'make clean'.
+
+	For consistency with Xaw and Xaw3d, added Template.c, Template.h,
+	and TemplateP.h to include_HEADERS.
+
+	Added a configure check to locate the freetype2 headers and modify
+	AM_CPPFLAGS only if necessary.
+
+	Misfeature noted but not fixed:  Post-fork Xaw has a much better
+	solution to the problem that was addressed by the "SimpleMenu
+	widget now supports scrolling through entries too numerous to fit
+	on the screen" change that traces to Xaw3d 1.5A:  Xaw now does
+	multi-column menus automatically.
+
+1.3.1 (so 7.0.0)   2012-01-02   David Flater
+
+	Repackaged:
+	  Extracted source from xpaint-2.9.8.3.tar.bz2.
+	  Automake'd the build process.  It passes make distcheck.
+	  Assigned version number 1.3.1.
+	  Bumped c:r:a to 7:0:0 (RPMs were doing libXaw3dxft.so.6.1).
+          Renamed README.XAW3DXFT to README, created ChangeLog and other
+	  files for GNU compliance.
+	  Added version #defines to Xaw3dP.h.
+
+	The substitutions on Xaw3dP.h are now done by configure;
+	consequently, the input file is Xaw3dP.h.in instead of
+	Xaw3dP.h.sed.
+
+	The following configure options replace Imakefile edits:
+
+	--enable-multiplane-pixmaps
+                          enable color pixmaps and add dependency on libXpm
+                          (default disabled)
+	--enable-gray-blkwht-stipples
+                          enable grayed stipple shadows (default enabled)
+        --enable-arrow-scrollbars
+                          enable scrollbars with arrows (default enabled)
