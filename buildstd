@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if test "$1" = "plain"
+then
+./configure --prefix=/usr --enable-internationalization --enable-arrow-scrollbars
+make
+exit 0
+fi
+
+if test "$1" = "debian"
+then
+tar xvf builddata/debian.tar.bz2
+dpkg-buildpackage
+exit 0
+fi
+
+echo "Usage: ./buildstd [plain] [debian]"

@@ -1,0 +1,34 @@
+!this is an example of a .Xdefaults file to be used with the Xaw3d
+!widget set.
+
+!  To obtain an appearance similar to another well known widget set, use the 
+!  following resources:
+*background:        LightSkyBlue
+*shapeStyle:        Rectangle
+*beNiceToColormap:  False
+
+!  By default, Label widgets do not have shadows drawn for them.  You can
+!  force shadows to be drawn for specifying:
+*Label*shadowWidth: 2
+
+!If you'd like the default behavior (i.e. not 3-D) on pulldown menus, use:
+! (uncomment next line:)
+!*SmeBSB*shadowWidth: 0
+
+!this is an example of a .Xdefaults file to be used with the Xaw3d
+!widget set.
+
+!  To obtain an appearance similar to another well known widget set, use the 
+!  following resources:
+*background:        LightSkyBlue
+*shapeStyle:        Rectangle
+*beNiceToColormap:  False
+
+!  By default, Label widgets do not have shadows drawn for them.  You can
+!  force shadows to be drawn for specifying:
+*Label*shadowWidth: 2
+
+!If you'd like the default behavior (i.e. not 3-D) on pulldown menus, use:
+! (uncomment next line:)
+!*SmeBSB*shadowWidth: 0
+

@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Xaw3dxft
+Description: X 3D Athena Widgets Library
+Version: @PACKAGE_VERSION@
+Requires: xproto xmu xt xft
+Requires.private: x11 xext
+Cflags: -I${includedir} @XAW3D_CPPFLAGS@
+Libs: -L${libdir} -lXaw3dxft -lXft -lfontconfig
