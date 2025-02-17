@@ -397,6 +397,10 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
 
     /* Set row height. based on font or fontset */
 
+    if (_Xaw3dXft->encoding)
+        lw->list.row_height = lw->list.xftfont->height
+	                + lw->list.row_space;
+    else
 #ifdef XAW_INTERNATIONALIZATION
     if (lw->simple.international == True )
         lw->list.row_height =
@@ -617,6 +621,9 @@ PaintItemName(Widget w, int item)
 	  + lw->list.internal_height;
     }
 
+    if (_Xaw3dXft->encoding)
+        str_y = y + lw->list.xftfont->ascent;
+    else
 #ifdef XAW_INTERNATIONALIZATION
     if ( lw->simple.international == True )
         str_y = y + abs(ext->max_ink_extent.y);
