@@ -1522,7 +1522,7 @@ _XawImWcLookupString(
     if ((vw = SearchVendorShell(inwidg)) && (ve = GetExtPart(vw)) &&
 	ve->im.xim && (p = GetIcTableShared(inwidg, ve)) && p->xic) {
           if (_Xaw3dXft->encoding == -1)
-	      ret = Xutf8LookupString (p->xic, event, buffer_return, bytes_buffer, keysym_return, status_return);
+	      ret = Xutf8LookupString (p->xic, event, (char*)buffer_return, bytes_buffer, keysym_return, status_return);
           else
 	      ret = XwcLookupString(p->xic, event, buffer_return, bytes_buffer,
 				 keysym_return, status_return);
