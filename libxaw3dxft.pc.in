@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: Xaw3dxft
-Description: X 3D Athena Widgets Library
+Description: X Athena Widgets + 3D + FreeType font support
 Version: @PACKAGE_VERSION@
 Requires: xproto xmu xt xft
 Requires.private: x11 xext

@@ -5,11 +5,28 @@
 For now, please refer to
 [READMEs-old/libXaw3dXft-1.6.2h.txt](READMEs-old/libXaw3dXft-1.6.2h.txt).
 
+## Building a release
+
+    ./configure --enable-internationalization --enable-multiplane-bitmaps --enable-gray-stipples --enable-arrow-scrollbars
+    make -j 4
+    make install
+
+See the INSTALL file for general help on using configure.
+
+## Building git sources
+
+First,
+
+    autoreconf --install
+
+Then proceed as for building a release.
+
 ## History
 
 Kaleb Keithley originated libXaw3d in 1992 as a general replacement for the
-Athena (Xaw) Widget set of X11.  libXaw3d 1.5, released 1998-05-14, was
-"based on the R6.1/R6.3/R6.4 Athena Widget set."
+[Athena Widgets (Xaw)](https://gitlab.freedesktop.org/xorg/lib/libxaw) of
+X11.  libXaw3d 1.5, released 1998-05-14, was "based on the R6.1/R6.3/R6.4
+Athena Widget set."
 
 D. J. Hawkey Jr. took over as maintainer for libXaw3d 1.5E, released
 2003-03-08.  "This release of Xaw3d is based on X.Org's X11R6.3 Athena
@@ -39,3 +56,27 @@ has libXaw3dXft as a subdirectory of the XPaint project, appears to be
 unrecoverable](https://sourceforge.net/p/forge/documentation/Abandoned%20Projects/).
 The new repo is at
 [https://github.com/DaveFlater/libXaw3dXft](https://github.com/DaveFlater/libXaw3dXft).
+
+## To do
+
+The following changes have been deferred so that the 1.6.3 release will
+maintain backward compatibility.
+
+Build in support for HiDPI / 4k displays so that heavy-handed upscaling by
+the desktop environment is unnecessary.
+
+Make the naming consistent.  The name of the lib has been spelled Xaw3dXft,
+Xaw3dxft, and xaw3dxft in different places:
+
+- Name in configure.ac is libXaw3dXft
+- Name in pkgconfig file is Xaw3dxft
+- Identifier in source code is Xaw3dXft
+- Include dir is Xaw3dxft
+- Header file is Xaw3dXft.h
+- Shared library is libXaw3dxft.so
+- pkgconfig file is libxaw3dxft.pc (but it correctly links -lXaw3dxft)
+
+Make --enable-internationalization --enable-multiplane-bitmaps
+--enable-gray-stipples --enable-arrow-scrollbars the default configuration.
+(--enable-internationalization is already already on by default: see
+libXaw3d 2012-02-01 a17b2984.)
