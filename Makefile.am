@@ -143,7 +143,15 @@ EXTRA_DIST = \
   include/X11/Xaw3dxft/TemplateP.h
 
 BUILT_SOURCES = src/laygram.h
-dist_doc_DATA = README.md
+dist_doc_DATA = README.md Xdefault
+oldreadmesdir = $(docdir)/READMEs-old
+dist_oldreadmes_DATA = \
+  READMEs-old/libXaw3d-1.6.2_brief.txt \
+  READMEs-old/libXaw3dXft-1.3.x.txt \
+  READMEs-old/libXaw3dXft-1.6.2h.txt \
+  READMEs-old/libXaw3d-1.5.txt \
+  READMEs-old/libXaw3d-1.5E.txt \
+  READMEs-old/libXaw3d-1.6.2.txt
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libxaw3dxft.pc

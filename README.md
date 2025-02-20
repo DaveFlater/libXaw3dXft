@@ -80,3 +80,5 @@ Make --enable-internationalization --enable-multiplane-bitmaps
 --enable-gray-stipples --enable-arrow-scrollbars the default configuration.
 (--enable-internationalization is already already on by default: see
 libXaw3d 2012-02-01 a17b2984.)
+
+Set the beNiceToColormap resource to False on everything by default.
