@@ -133,6 +133,7 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dxft/ViewportP.h \
   include/X11/Xaw3dxft/Xaw3dP.h \
   include/X11/Xaw3dxft/Xaw3dXft.h \
+  include/X11/Xaw3dxft/Xaw3dXftP.h \
   include/X11/Xaw3dxft/XawInit.h \
   $(I18N_HDRS)
 
