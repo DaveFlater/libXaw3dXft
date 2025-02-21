@@ -283,6 +283,10 @@ CalculatedValues(Widget w)
         lw->list.longest = 0; /* so it will accumulate real longest below */
 
         for ( i = 0 ; i < lw->list.nitems; i++)  {
+	    if (_Xaw3dXft->encoding)
+	        len = Xaw3dXftTextWidth((Widget)lw, lw->list.xftfont,
+                          lw->list.list[i], strlen(lw->list.list[i]));
+	    else
 #ifdef XAW_INTERNATIONALIZATION
             if ( lw->simple.international == True )
 	        len = XmbTextEscapement(lw->list.fontset, lw->list.list[i],
