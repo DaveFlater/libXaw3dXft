@@ -4,7 +4,7 @@ AC_INIT([libXaw3dXft], [1.6.3], [dave@flaterco.com])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([dist-xz subdir-objects -Wall -Werror])
+AM_INIT_AUTOMAKE([dist-xz no-dist-gzip subdir-objects -Wall -Werror])
 
 AC_LANG([C])
 AC_PROG_CC
