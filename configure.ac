@@ -14,13 +14,17 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_REQUIRE_CPP
 LT_INIT
 
-# ?
-# m4_ifndef([XORG_MACROS_VERSION],
-#           [m4_fatal([must install xorg-macros 1.8 or later before running autoconf/autogen])])
-# XORG_MACROS_VERSION(1.8)
-# XORG_DEFAULT_OPTIONS
+# [Unhelpful X.Org boilerplate deleted]
+# https://www.x.org/wiki/NewModuleGuidelines/ recommends some boilerplate
+# involving XORG_MACROS_VERSION followed by XORG_DEFAULT_OPTIONS.  It messes
+# with the compiler flags and defines a lot of macros that are never used.
+# Slackware package x/util-macros
+# /usr/share/pkgconfig/xorg-macros.pc
+# /usr/share/aclocal/xorg-macros.m4
 
-PKG_CHECK_MODULES(X11, [x11 xt xmu xext xft])
+# PKG_CHECK_MODULES is a pkg-config thing.  Testable modules are just
+# whatever has a .pc file in PKG_CONFIG_PATH.  See man pkg-config.
+PKG_CHECK_MODULES(X11, [xproto x11 xt xmu xext xft])
 AC_CHECK_HEADERS([wctype.h wchar.h widec.h])
 AC_CHECK_FUNCS([iswspace])
 AC_TYPE_INTPTR_T
