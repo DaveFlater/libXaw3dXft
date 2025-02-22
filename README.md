@@ -59,9 +59,10 @@ At that point, libXaw3d was effectively forked from libXaw R6.3 (ish).
 Meanwhile, [Jean-Pierre Demailly originated
 libXaw3dXft](https://sourceforge.net/projects/sf-xpaint/files/libxaw3dxft/)
 in 2009-09 as a general replacement for libXaw3d.  libXaw3dXft 1.6.2,
-released 2012-03-04, was based on some libXaw3d development snapshot between
-2012-02-15 and 2012-03-04.  At that point, libXaw3dXft was effectively forked
-from libXaw3d.  The libXaw3d 1.6.2 release was not until 2012-03-29.
+released 2012-03-04, was based on a 2012-02-29 libXaw3d development snapshot.
+The remaining changes from the final libXaw3d 1.6.2 release were merged in
+libXaw3dXft 1.6.2b, released 2013-01-26.  At that point, libXaw3dXft was
+effectively forked from libXaw3d.
 
 Jean-Pierre Demailly released libXaw3dXft-1.6.2h on 2020-07-02.  [He passed
 away on 2022-03-17](https://en.wikipedia.org/wiki/Jean-Pierre_Demailly).
