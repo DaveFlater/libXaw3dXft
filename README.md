@@ -5,6 +5,25 @@
 For now, please refer to
 [READMEs-old/libXaw3dXft-1.6.2h.txt](READMEs-old/libXaw3dXft-1.6.2h.txt).
 
+Example configure.ac:
+
+    AC_INIT([hello], [1.0])
+    AC_CONFIG_SRCDIR([Makefile.am])
+    AM_INIT_AUTOMAKE([foreign dist-xz no-dist-gzip])
+    AC_LANG([C])
+    AC_PROG_CC
+    AC_REQUIRE_CPP
+    PKG_CHECK_MODULES(XAW3DXFT, [libxaw3dxft])
+    AC_CONFIG_FILES([Makefile])
+    AC_OUTPUT
+
+Example Makefile.am:
+
+    AM_CFLAGS     = $(XAW3DXFT_CFLAGS)
+    AM_LDFLAGS    = $(XAW3DXFT_LIBS)
+    bin_PROGRAMS  = hello
+    hello_SOURCES = hello.c
+
 ## Building a release
 
     ./configure --enable-internationalization --enable-multiplane-bitmaps --enable-gray-stipples --enable-arrow-scrollbars
