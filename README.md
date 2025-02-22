@@ -94,7 +94,7 @@ Xaw3dxft, and xaw3dxft in different places:
 - Include dir is Xaw3dxft
 - Header file is Xaw3dXft.h
 - Shared library is libXaw3dxft.so
-- pkgconfig file is libxaw3dxft.pc (but it correctly links -lXaw3dxft)
+- pkg-config file is libxaw3dxft.pc (but it correctly links -lXaw3dxft)
 
 Make --enable-internationalization --enable-multiplane-bitmaps
 --enable-gray-stipples --enable-arrow-scrollbars the default configuration.
@@ -102,3 +102,8 @@ Make --enable-internationalization --enable-multiplane-bitmaps
 libXaw3d 2012-02-01 a17b2984.)
 
 Set the beNiceToColormap resource to False on everything by default.
+
+Rename the pkg-config file from libxaw3dxft.pc to xaw3dxft.pc.  There is no
+general standard on whether the lib prefix is included, but the shorter name
+would be more consistent with x11.pc, xaw7.pc, and xaw3d.pc.  Most pkg-config
+files do stick with lowercase; SDL and Qt do not.
