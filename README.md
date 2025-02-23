@@ -79,31 +79,4 @@ The new repo is at
 
 ## To do
 
-The following changes have been deferred so that the 1.6.3 release will
-maintain backward compatibility.
-
-Build in support for HiDPI / 4k displays so that heavy-handed upscaling by
-the desktop environment is unnecessary.
-
-Make the naming consistent.  The name of the lib has been spelled Xaw3dXft,
-Xaw3dxft, and xaw3dxft in different places:
-
-- Name in configure.ac is libXaw3dXft
-- Name in pkgconfig file is Xaw3dxft
-- Identifier in source code is Xaw3dXft
-- Include dir is Xaw3dxft
-- Header file is Xaw3dXft.h
-- Shared library is libXaw3dxft.so
-- pkg-config file is libxaw3dxft.pc (but it correctly links -lXaw3dxft)
-
-Make --enable-internationalization --enable-multiplane-bitmaps
---enable-gray-stipples --enable-arrow-scrollbars the default configuration.
-(--enable-internationalization is already already on by default: see
-libXaw3d 2012-02-01 a17b2984.)
-
-Set the beNiceToColormap resource to False on everything by default.
-
-Rename the pkg-config file from libxaw3dxft.pc to xaw3dxft.pc.  There is no
-general standard on whether the lib prefix is included, but the shorter name
-would be more consistent with x11.pc, xaw7.pc, and xaw3d.pc.  Most pkg-config
-files do stick with lowercase; SDL and Qt do not.
+For planned changes see the [Issues tab](https://github.com/DaveFlater/libXaw3dXft/issues) of the GitHub repo.
