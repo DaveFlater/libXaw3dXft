@@ -143,7 +143,7 @@ EXTRA_DIST = \
   include/X11/Xaw3dxft/TemplateP.h
 
 BUILT_SOURCES = src/laygram.h
-dist_doc_DATA = README.md Xdefault
+dist_doc_DATA = README.md Xresources
 oldreadmesdir = $(docdir)/READMEs-old
 dist_oldreadmes_DATA = \
   READMEs-old/libXaw3d-1.6.2_brief.txt \
