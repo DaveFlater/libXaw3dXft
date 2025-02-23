@@ -1,8 +1,13 @@
-lib_LTLIBRARIES = libXaw3dxft.la
+# X11_CFLAGS, XPM_CFLAGS, X11_LIBS, and XPM_LIBS come from the two
+# invocations of PKG_CHECK_MODULES in configure.ac.  All of the flags for all
+# of the modules listed in an invocation are piled into the _CFLAGS and _LIBS
+# of the prefix specified as the first argument.
 AM_YFLAGS = -d -p LayYY
 AM_CFLAGS = $(X11_CFLAGS) $(XPM_CFLAGS)
 AM_CPPFLAGS = -I${top_srcdir}/include $(XAW3D_CPPFLAGS)
 ACLOCAL_AMFLAGS = -I m4
+lib_LTLIBRARIES = libXaw3dxft.la
+libXaw3dxft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
 
 if XAW_INTERNATIONALIZATION
 I18N_SRCS = src/MultiSrc.c src/MultiSink.c src/XawIm.c src/XawI18n.c \
@@ -155,8 +160,6 @@ dist_oldreadmes_DATA = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libxaw3dxft.pc
-
-libXaw3dxft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
 
 # -version-info current:revision:age
 
