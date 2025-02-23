@@ -25,12 +25,7 @@
   Cleaned up Makefile.am and configure.ac.
   Made ChangeLog, AUTHORS, NEWS, and README as needed for compliance.
 
-  libXaw3d changes merged:
-  2013-06-06 2c16f322 Fix --disable-feature options in configure
-  2014-06-05 15ffa3af configure: Drop AM_MAINTAINER_MODE
-  2022-05-07 8a8fbec8 Build xz tarballs instead of bzip2
-  2023-03-04 dbf8869b configure: Use LT_INIT from libtool 2 instead of deprecated AC_PROG_LIBTOOL
-  2024-02-17 79134895 Remove unused sharedlib.c
+  Merged select changes from libXaw3d 2013-06-06 to 2024-11-10.
 
 2020-07-02, v1.6.2h (so 8.0.5)  Jean-Pierre Demailly
 

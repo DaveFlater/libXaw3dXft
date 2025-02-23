@@ -40,10 +40,6 @@ in this Software without prior written authorization from the X Consortium.
 #include <ctype.h>			/* for isascii() etc. */
 #include <stdlib.h>			/* for atof() */
 
-#if defined(ISC) && __STDC__ && !defined(ISC30)
-extern double atof(char *);
-#endif
-
 
 #if XtVersion >= 11006
 static char defaultTranslations[] =

@@ -36,7 +36,7 @@ in this Software without prior written authorization from the X Consortium.
  * used by all more than one of these dialogs.
  *
  * The following functions are the only non-static ones defined
- * in this module.  They are located at the begining of the
+ * in this module.  They are located at the beginning of the
  * section that contains this dialog box that uses them.
  *
  * void _XawTextInsertFileAction(w, event, params, num_params);
@@ -69,8 +69,10 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xos.h>		/* for O_RDONLY */
 #include <errno.h>
 
-#ifdef X_NOT_STDC_ENV
-extern int errno;
+#ifdef O_CLOEXEC
+#define FOPEN_CLOEXEC "e"
+#else
+#define FOPEN_CLOEXEC ""
 #endif
 
 #define INSERT_FILE ("Enter Filename:")
@@ -105,9 +107,9 @@ static Boolean SetResourceByName(Widget, char *, char *, XtArgVal);
 static Boolean Replace(struct SearchAndReplace *, Boolean, Boolean);
 static String GetString(Widget);
 static String GetStringRaw(Widget);
-static void AddInsertFileChildren(Widget, char *, Widget);
+static void AddInsertFileChildren(Widget, String, Widget);
 static Boolean InsertFileNamed(Widget, char *);
-static void AddSearchChildren(Widget, char *, Widget);
+static void AddSearchChildren(Widget, String, Widget);
 
 void _XawTextDoReplaceAction(Widget, XEvent *, String *, Cardinal *);
 void _XawTextDoSearchAction(Widget, XEvent *, String *, Cardinal *);
@@ -266,7 +268,7 @@ DoInsert(Widget w, XtPointer closure, XtPointer call_data)
  *	Description: Inserts a file into the text widget.
  *	Arguments: tw - The text widget to insert this file into.
  *                 str - name of the file to insert.
- *	Returns: TRUE if the insert was sucessful, FALSE otherwise.
+ *	Returns: TRUE if the insert was successful, FALSE otherwise.
  */
 
 
@@ -278,12 +280,12 @@ InsertFileNamed(Widget tw, char *str)
   XawTextPosition pos;
 
   if ( (str == NULL) || (strlen(str) == 0) ||
-       ((file = fopen(str, "r")) == NULL))
+       ((file = fopen(str, "r" FOPEN_CLOEXEC)) == NULL))
     return(FALSE);
 
   pos = XawTextGetInsertionPoint(tw);
 
-  fseek(file, 0L, 2);
+  fseek(file, 0L, SEEK_END);
 
 
   text.firstPos = 0;
@@ -291,7 +293,7 @@ InsertFileNamed(Widget tw, char *str)
   text.ptr = XtMalloc((text.length + 1) * sizeof(unsigned char));
   text.format = XawFmt8Bit;
 
-  fseek(file, 0L, 0);
+  fseek(file, 0L, SEEK_SET);
   if (fread(text.ptr, sizeof(unsigned char), text.length, file) != text.length)
       XtErrorMsg("readError", "insertFileNamed", "XawError",
                  "fread returned error.", NULL, NULL);
@@ -329,7 +331,7 @@ InsertFileNamed(Widget tw, char *str)
  */
 
 static void
-AddInsertFileChildren(Widget form, char *ptr, Widget tw)
+AddInsertFileChildren(Widget form, String ptr, Widget tw)
 {
   Arg args[10];
   Cardinal num_args;
@@ -403,7 +405,7 @@ AddInsertFileChildren(Widget form, char *ptr, Widget tw)
  *
  * Note:
  *
- * If the search was sucessful and the argument popdown is passed to
+ * If the search was successful and the argument popdown is passed to
  * this action routine then the widget will automatically popdown the
  * search widget.
  */
@@ -485,7 +487,7 @@ SearchButton(Widget w, XtPointer closure, XtPointer call_data)
  * The parameter list contains one or two entries that may be the following.
  *
  * First Entry:   The first entry is the direction to search by default.
- *                This arguement must be specified and may have a value of
+ *                This argument must be specified and may have a value of
  *                "left" or "right".
  *
  * Second Entry:  This entry is optional and contains the value of the default
@@ -523,7 +525,7 @@ _XawTextSearch(Widget w, XEvent *event, String *params, Cardinal *num_params)
   else
 #ifdef XAW_INTERNATIONALIZATION
       if (_XawTextFormat(ctx) == XawFmtWide) {
-          /*This just does the equivalent of ptr = ""L, a waste because params[1] isnt W aligned.*/
+          /*This just does the equivalent of ptr = ""L, a waste because params[1] isn't W aligned.*/
           ptr = (char *)XtMalloc(sizeof(wchar_t));
           *((wchar_t*)ptr) = (wchar_t)0;
       } else
@@ -569,7 +571,7 @@ _XawTextSearch(Widget w, XEvent *event, String *params, Cardinal *num_params)
 
 /*	Function Name: InitializeSearchWidget
  *	Description: This function initializes the search widget and
- *                   is called each time the search widget is poped up.
+ *                   is called each time the search widget is popped up.
  *	Arguments: search - the search widget structure.
  *                 dir - direction to search.
  *                 replace_active - state of the sensitivity for the
@@ -607,7 +609,7 @@ InitializeSearchWidget(struct SearchAndReplace *search, XawTextScanDirection dir
  */
 
 static void
-AddSearchChildren(Widget form, char *ptr, Widget tw)
+AddSearchChildren(Widget form, String ptr, Widget tw)
 {
   Arg args[12];
   Cardinal num_args;
@@ -642,7 +644,7 @@ AddSearchChildren(Widget form, char *ptr, Widget tw)
   XtSetArg(args[num_args], XtNfromVert, search->label2); num_args++;
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNradioData, (XPointer) XawsdLeft + R_OFFSET);
+  XtSetArg(args[num_args], XtNradioData, (XPointer) (XawsdLeft + R_OFFSET));
   num_args++;
   search->left_toggle = XtCreateManagedWidget("backwards", toggleWidgetClass,
 					      form, args, num_args);
@@ -654,7 +656,7 @@ AddSearchChildren(Widget form, char *ptr, Widget tw)
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNradioGroup, search->left_toggle); num_args++;
-  XtSetArg(args[num_args], XtNradioData, (XPointer) XawsdRight + R_OFFSET);
+  XtSetArg(args[num_args], XtNradioData, (XPointer) (XawsdRight + R_OFFSET));
   num_args++;
   search->right_toggle = XtCreateManagedWidget("forwards", toggleWidgetClass,
 					       form, args, num_args);
@@ -787,8 +789,8 @@ AddSearchChildren(Widget form, char *ptr, Widget tw)
 
 /*	Function Name: DoSearch
  *	Description: Performs a search.
- *	Arguments: search - the serach structure.
- *	Returns: TRUE if sucessful.
+ *	Arguments: search - the search structure.
+ *	Returns: TRUE if successful.
  */
 
 /* ARGSUSED */
@@ -1121,7 +1123,7 @@ _SetField(Widget new, Widget old)
  *                 name - name of the child.
  *                 res_name - name of the resource.
  *                 value - the value of the resource.
- *	Returns: TRUE if sucessful.
+ *	Returns: TRUE if successful.
  */
 
 static Boolean
@@ -1255,7 +1257,7 @@ CenterWidgetOnPoint(Widget w, XEvent *event)
  *
  * NOTE:
  *
- * The function argument is passed the following arguements.
+ * The function argument is passed the following arguments.
  *
  * form - the from widget that is the dialog.
  * ptr - the initial string for the dialog's text widget.

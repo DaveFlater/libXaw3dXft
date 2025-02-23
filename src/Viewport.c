@@ -770,7 +770,7 @@ ComputeLayout(Widget widget, Boolean query, Boolean destroy_scrollbars)
  *      Description: Computes the layout give forcebars is set.
  *      Arguments: widget - the viewport widget.
  *                 query - whether or not to query the child.
- *                 intended - the cache of the childs height is
+ *                 intended - the cache of the child's height is
  *                            stored here ( USED AND RETURNED ).
  *                 clip_width, clip_height - size of clip window.
  *                                           (USED AND RETURNED ).
@@ -900,20 +900,12 @@ ThumbProc(Widget widget, XtPointer closure, XtPointer call_data)
     if (child == NULL) return;	/* no child to scroll. */
 
     if (widget == w->viewport.horiz_bar)
-#ifdef macII				/* bug in the macII A/UX 1.0 cc */
-	x = (int)(-*percent * child->core.width);
-#else /* else not macII */
 	x = -(int)(*percent * child->core.width);
-#endif /* macII */
     else
 	x = child->core.x;
 
     if (widget == w->viewport.vert_bar)
-#ifdef macII				/* bug in the macII A/UX 1.0 cc */
-	y = (int)(-*percent * child->core.height);
-#else /* else not macII */
 	y = -(int)(*percent * child->core.height);
-#endif /* macII */
     else
 	y = child->core.y;
 

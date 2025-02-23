@@ -1,6 +1,6 @@
 ! Example Xresources content for the Xaw3d widget set
 
-! To obtain an appearance similar to another well-known widget set, use the 
+! To obtain an appearance similar to another well-known widget set, use the
 ! following resources:
 *background:        LightSkyBlue
 *shapeStyle:        Rectangle

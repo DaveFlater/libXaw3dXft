@@ -73,14 +73,3 @@ wchar_t _Xaw_atowc(
     mbtowc(&wc, str, 1);
     return wc;
 }
-
-#ifdef NCR
-int _Xaw_iswspace(wchar_t w)
-{
-    int ret = 0;
-    wchar_t s = _Xaw_atowc(' ');
-    if (s == w)
-	ret = 1;
-    return ret;
-}
-#endif

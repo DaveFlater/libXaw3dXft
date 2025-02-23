@@ -122,7 +122,7 @@ WidgetClass smeObjectClass = (WidgetClass) &smeClassRec;
 
 /*	Function Name: ClassPartInitialize
  *	Description: handles inheritance of class functions.
- *	Arguments: class - the widget classs of this widget.
+ *	Arguments: class - the widget class of this widget.
  *	Returns: none.
  */
 
@@ -169,7 +169,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 }
 
 /*	Function Name: Highlight
- *	Description: The default highlight proceedure for menu entries.
+ *	Description: The default highlight procedure for menu entries.
  *	Arguments: w - the menu entry.
  *	Returns: none.
  */
@@ -182,7 +182,7 @@ Highlight(Widget w)
 }
 
 /*	Function Name: Unhighlight
- *	Description: The default unhighlight proceedure for menu entries.
+ *	Description: The default unhighlight procedure for menu entries.
  *	Arguments: w - the menu entry.
  *	Returns: none.
  */
@@ -195,7 +195,7 @@ Unhighlight(Widget w)
 }
 
 /*	Function Name: Notify
- *	Description: calls the callback proceedures for this entry.
+ *	Description: calls the callback procedures for this entry.
  *	Arguments: w - the menu entry.
  *	Returns: none.
  */

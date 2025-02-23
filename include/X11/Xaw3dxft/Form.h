@@ -127,7 +127,7 @@ typedef enum {
 #endif /* _XawEdgeType_e */
 
 /*
- * Unfortunatly I missed this definition for R4, so I cannot
+ * Unfortunately I missed this definition for R4, so I cannot
  * protect it with XAW_BC, it looks like this particular problem is
  * one that we will have to live with for a while.
  *

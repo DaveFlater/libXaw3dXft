@@ -75,7 +75,7 @@ static char defaultTranslations[] =
 
 /* Private Data */
 
-#define offset(field) XtOffset(ListWidget, field)
+#define offset(field) XtOffsetOf(ListRec, field)
 
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
@@ -250,7 +250,7 @@ GetGCs(Widget w)
 /* CalculatedValues()
  *
  * does routine checks/computations that must be done after data changes
- * but won't hurt if accidently called
+ * but won't hurt if accidentally called
  *
  * These calculations were needed in SetValues.  They were in ResetList.
  * ResetList called ChangeSize, which made an XtGeometryRequest.  You
@@ -372,7 +372,7 @@ ChangeSize(Widget w, Dimension width, Dimension height)
 }
 
 /*	Function Name: Initialize
- *	Description: Function that initilizes the widget instance.
+ *	Description: Function that initializes the widget instance.
  *	Arguments: junk - NOT USED.
  *                 new  - the new widget.
  *	Returns: none
@@ -531,7 +531,7 @@ HighlightBackground(Widget w, int x, int y, GC gc)
 {
     ListWidget lw = (ListWidget) w;
 
-    /* easy to clip the rectangle by hand and probably alot faster than Xlib */
+    /* easy to clip the rectangle by hand and probably a lot faster than Xlib */
 
     Dimension width               = lw->list.col_width;
     Dimension height              = lw->list.row_height;
@@ -1132,7 +1132,7 @@ XawListChange(Widget w, char ** list, int nitems, int longest,
     Dimension new_width = w->core.width;
     Dimension new_height = w->core.height;
 
-    lw->list.list = list;
+    lw->list.list = (String *) list;
 
     if ( nitems <= 0 ) nitems = 0;
     lw->list.nitems = nitems;
@@ -1180,7 +1180,7 @@ XawListUnhighlight(Widget w)
 /*	Function Name: XawListHighlight
  *	Description: Highlights the given item.
  *	Arguments: w - the list widget.
- *                 item - the item to hightlight.
+ *                 item - the item to highlight.
  *	Returns: none.
  */
 

@@ -89,7 +89,7 @@ _XFUNCPROTOBEGIN
  *                 x, y - location to start drawing text.
  *                 pos1, pos2 - location of starting and ending points
  *                              in the text buffer.
- *                 highlight - hightlight this text?
+ *                 highlight - highlight this text?
  *	Returns: none.
  *
  * This function doesn't actually display anything, it is only a place
@@ -199,7 +199,7 @@ extern void XawTextSinkFindPosition(
  *                 fromX   - x location of starting Position.
  *                 toPos   - end Position.
  *                 resWidth - Distance between fromPos and toPos.
- *                 resPos   - Acutal toPos used.
+ *                 resPos   - Actual toPos used.
  *                 resHeight - Height required by this text.
  *	Returns: none.
  */
@@ -215,7 +215,7 @@ extern void XawTextSinkFindDistance (
 );
 
 /*	Function Name: XawTextSinkResolve
- *	Description: Resloves a location to a position.
+ *	Description: Resolves a location to a position.
  *	Arguments: w - the TextSink Object.
  *                 pos - a reference Position.
  *                 fromx - a reference Location.
@@ -250,7 +250,7 @@ extern int XawTextSinkMaxLines(
 );
 
 /*	Function Name: XawTextSinkMaxHeight
- *	Description: Finds the Minium height that will contain a given number
+ *	Description: Finds the Minimum height that will contain a given number
  *                   lines.
  *	Arguments: w - the TextSink Object.
  *                 lines - the number of lines.

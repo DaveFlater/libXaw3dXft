@@ -179,7 +179,7 @@ ClassPartInitialize(WidgetClass wc)
 /*	Function Name: Read
  *	Description: This function reads the source.
  *	Arguments: w - the TextSrc Object.
- *                 pos - position of the text to retreive.
+ *                 pos - position of the text to retrieve.
  * RETURNED        text - text block that will contain returned text.
  *                 length - maximum number of characters to read.
  *	Returns: The number of characters read into the buffer.
@@ -217,7 +217,7 @@ Replace (Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextBloc
  *                 position - the position to start scanning.
  *                 type - type of thing to scan for.
  *                 dir - direction to scan.
- *                 count - which occurance if this thing to search for.
+ *                 count - which occurrence if this thing to search for.
  *                 include - whether or not to include the character found in
  *                           the position that is returned.
  *	Returns: EXITS WITH AN ERROR MESSAGE.
@@ -237,7 +237,7 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
 }
 
 /*	Function Name: Search
- *	Description: Searchs the text source for the text block passed
+ *	Description: Searches the text source for the text block passed
  *	Arguments: w - the TextSource Object.
  *                 position - the position to start scanning.
  *                 dir - direction to scan.
@@ -257,7 +257,7 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
  *	Arguments: w - the TextSrc object.
  *                 selection - the current selection atom.
  *                 target    - the current target atom.
- *                 type      - the type to conver the selection to.
+ *                 type      - the type to convert the selection to.
  * RETURNED        value, length - the return value that has been converted.
  * RETURNED        format    - the format of the returned value.
  *	Returns: TRUE if the selection has been converted.
@@ -336,7 +336,7 @@ CvtStringToEditMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal, X
 /*	Function Name: XawTextSourceRead
  *	Description: This function reads the source.
  *	Arguments: w - the TextSrc Object.
- *                 pos - position of the text to retreive.
+ *                 pos - position of the text to retrieve.
  * RETURNED        text - text block that will contain returned text.
  *                 length - maximum number of characters to read.
  *	Returns: The number of characters read into the buffer.
@@ -386,7 +386,7 @@ XawTextSourceReplace (Widget w, XawTextPosition startPos,
  *                 position - the position to start scanning.
  *                 type - type of thing to scan for.
  *                 dir - direction to scan.
- *                 count - which occurance if this thing to search for.
+ *                 count - which occurrence if this thing to search for.
  *                 include - whether or not to include the character found in
  *                           the position that is returned.
  *	Returns: The position of the text.
@@ -418,7 +418,7 @@ XawTextSourceScan(Widget w, XawTextPosition position,
 }
 
 /*	Function Name: XawTextSourceSearch
- *	Description: Searchs the text source for the text block passed
+ *	Description: Searches the text source for the text block passed
  *	Arguments: w - the TextSource Object.
  *                 position - the position to start scanning.
  *                 dir - direction to scan.
@@ -451,7 +451,7 @@ XawTextSourceSearch(Widget w, XawTextPosition position,
  *	Arguments: w - the TextSrc object.
  *                 selection - the current selection atom.
  *                 target    - the current target atom.
- *                 type      - the type to conver the selection to.
+ *                 type      - the type to convert the selection to.
  * RETURNED        value, length - the return value that has been converted.
  * RETURNED        format    - the format of the returned value.
  *	Returns: TRUE if the selection has been converted.
@@ -519,7 +519,7 @@ _XawTextFormat(TextWidget tw)
  *   The caller is responsible for freeing both the source and ret string.
  *
  * wstr       - source wchar string.
- * len_in_out - lengh of string.
+ * len_in_out - length of string.
  *              As In, length of source wchar string, measured in wchar.
  *              As Out, length of returned string.
  */
@@ -545,7 +545,7 @@ _XawTextWCToMB(Display *d, wchar_t *wstr, int *len_in_out)
  *   The caller is responsible for freeing both the source and ret string.
  *
  * str        - source string.
- * len_in_out - lengh of string.
+ * len_in_out - length of string.
  *              As In, it is length of source string.
  *              As Out, it is length of returned string, measured in wchar.
  */

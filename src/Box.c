@@ -401,7 +401,7 @@ Resize(Widget w)
 /*
  *
  * Try to do a new layout within the current width and height;
- * if that fails try to resize and do it within the box returne
+ * if that fails try to resize and do it within the box returned
  * by PreferredSize.
  *
  * TryNewLayout just says if it's possible, and doesn't actually move the kids
@@ -509,7 +509,7 @@ GeometryManager(Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 	(request->request_mode & CWY && request->y != w->core.y))
         return (XtGeometryNo);
 
-    /* Size changes must see if the new size can be accomodated */
+    /* Size changes must see if the new size can be accommodated */
     if (request->request_mode & (CWWidth | CWHeight | CWBorderWidth)) {
 
 	/* Make all three fields in the request valid */

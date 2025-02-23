@@ -579,7 +579,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     if ( w->multi_sink.fontset != old_w->multi_sink.fontset ) {
 	((TextWidget)XtParent(new))->text.redisplay_needed = True;
 #ifndef NO_TAB_FIX
-	SetTabs((Widget) w, w->text_sink.tab_count, w->text_sink.char_tabs );
+	SetTabs((Widget)w, w->text_sink.tab_count, w->text_sink.char_tabs);
 #endif
     }
 
@@ -622,7 +622,7 @@ MaxLines(Widget w, Dimension height)
 }
 
 /*	Function Name: MaxHeight
- *	Description: Finds the Minium height that will contain a given number
+ *	Description: Finds the Minimum height that will contain a given number
  *                   lines.
  *	Arguments: w - the MultiSink Object.
  *                 lines - the number of lines.

@@ -55,11 +55,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <stdio.h>
 
 /* needed for abs() */
-#ifndef X_NOT_STDC_ENV
 #include <stdlib.h>
-#else
-extern int abs();
-#endif
 
 #define offset(field) XtOffsetOf(SmeBSBRec, sme_bsb.field)
 

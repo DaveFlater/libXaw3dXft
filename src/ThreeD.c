@@ -203,7 +203,7 @@ AllocTopShadowPixmap (Widget new)
     /*
      * I know, we're going to create two pixmaps for each and every
      * shadow'd widget.  Yeuck.  I'm semi-relying on server side
-     * pixmap cacheing.
+     * pixmap caching.
      */
 
     if (DefaultDepthOfScreen (scn) == 1) {
@@ -486,7 +486,7 @@ Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 		Eeek.  We're probably going to XQueryColor() twice
 		for each widget.  Necessary because you can set the
 		top and bottom shadows independent of each other in
-		SetValues.  Some cacheing would certainly help...
+		SetValues.  Some caching would certainly help...
 	    */
 	    AllocTopShadowPixel (new);
 	    AllocBotShadowPixel (new);

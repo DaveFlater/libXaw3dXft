@@ -39,22 +39,6 @@ in this Software without prior written authorization from the X Consortium.
 #include <wchar.h>
 #endif
 
-#ifdef AIXV3
-#include <ctype.h>
-#endif
-
-#ifdef NCR
-#define iswspace(c) _Xaw_iswspace(c)
-extern int _Xaw_iswspace(wchar_t);
-#endif
-
-#ifdef sony
-#ifndef SVR4
-#include <jctype.h>
-#define iswspace(c) jisspace(c)
-#endif
-#endif
-
 #ifdef USE_XWCHAR_STRING
 #define wcslen(c) _Xwcslen(c)
 #define wcscpy(d,s) _Xwcscpy(d,s)

@@ -216,7 +216,7 @@ AllocTopShadowPixmap (Widget new)
     /*
      * I know, we're going to create two pixmaps for each and every
      * shadow'd widget.  Yeuck.  I'm semi-relying on server side
-     * pixmap cacheing.
+     * pixmap caching.
      */
 
     if (DefaultDepthOfScreen (scn) == 1) {

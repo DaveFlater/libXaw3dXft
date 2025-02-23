@@ -130,7 +130,7 @@ typedef struct _AsciiSrcPart {
   int     ascii_length;		/* length field for ascii string emulation. */
 
 #ifdef ASCII_DISK
-  String filename;		/* name of file for Compatability. */
+  String filename;		/* name of file for Compatibility. */
 #endif /* ASCII_DISK */
 
 /* Private data. */

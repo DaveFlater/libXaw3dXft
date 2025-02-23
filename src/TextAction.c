@@ -153,8 +153,8 @@ NotePosition(TextWidget ctx, XEvent* event)
     {
       XRectangle cursor;
       XawTextSinkGetCursorBounds(ctx->text.sink, &cursor);
-      ctx->text.ev_x = cursor.x + cursor.width / 2;;
-      ctx->text.ev_y = cursor.y + cursor.height / 2;;
+      ctx->text.ev_x = cursor.x + cursor.width / 2;
+      ctx->text.ev_y = cursor.y + cursor.height / 2;
     }
     break;
   case MotionNotify:
@@ -1302,7 +1302,7 @@ ExtendEnd(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 SelectSave(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-    int	    num_atoms;
+    int	    num_atoms, n;
     Atom*   sel;
     Display* dpy = XtDisplay(w);
     Atom    selections[256];
@@ -1311,9 +1311,8 @@ SelectSave(Widget w, XEvent *event, String *params, Cardinal *num_params)
     num_atoms = *num_params;
     if (num_atoms > 256)
 	num_atoms = 256;
-    for (sel=selections; --num_atoms >= 0; sel++, params++)
+    for (sel = selections, n = 0; n < num_atoms; n++, sel++, params++)
 	*sel = XInternAtom(dpy, *params, False);
-    num_atoms = *num_params;
     _XawTextSaltAwaySelection( (TextWidget) w, selections, num_atoms );
     EndAction(  (TextWidget) w );
 }
@@ -1391,7 +1390,7 @@ TextLeaveWindow(Widget w, XEvent *event, String *params, Cardinal *num_params)
 }
 
 /*	Function Name: AutoFill
- *	Description: Breaks the line at the previous word boundry when
+ *	Description: Breaks the line at the previous word boundary when
  *                   called inside InsertChar.
  *	Arguments: ctx - The text widget.
  *	Returns: none
@@ -1507,7 +1506,7 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
  *
  * i18n requires the ability to specify multiple characters in a hexa-
  * decimal string at once.  Since Insert was already too long, I made
- * this a seperate routine.
+ * this a separate routine.
  *
  * A legal hex string in MBNF: '0' 'x' ( HEX-DIGIT HEX-DIGIT )+ '\0'
  *
@@ -1569,7 +1568,7 @@ IfHexConvertHexElseReturnParam(char *param, int *len_return)
       }
   }
 
-  /* We quit the above loop becasue we hit a non hex.  If that char is \0... */
+  /* We quit the above loop because we hit a non hex.  If that char is \0... */
 
   if ( ( c == '\0' ) && first_digit ) {
       *len_return = strlen( hexval );

@@ -252,7 +252,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
  *                 x, y - location to start drawing text.
  *                 pos1, pos2 - location of starting and ending points
  *                              in the text buffer.
- *                 highlight - hightlight this text?
+ *                 highlight - highlight this text?
  *	Returns: none.
  *
  * This function doesn't actually display anything, it is only a place
@@ -337,7 +337,7 @@ FindPosition(Widget w, XawTextPosition fromPos, int fromx, int width, Boolean st
  *                 fromX   - x location of starting Position.
  *                 toPos   - end Position.
  *                 resWidth - Distance between fromPos and toPos.
- *                 resPos   - Acutal toPos used.
+ *                 resPos   - Actual toPos used.
  *                 resHeight - Height required by this text.
  *	Returns: none.
  */
@@ -352,7 +352,7 @@ FindDistance(Widget w, XawTextPosition fromPos, int fromx, XawTextPosition toPos
 }
 
 /*	Function Name: Resolve
- *	Description: Resloves a location to a position.
+ *	Description: Resolves a location to a position.
  *	Arguments: w - the TextSink Object.
  *                 pos - a reference Position.
  *                 fromx - a reference Location.
@@ -390,7 +390,7 @@ MaxLines(Widget w, Dimension height)
 }
 
 /*	Function Name: MaxHeight
- *	Description: Finds the Minium height that will contain a given number
+ *	Description: Finds the Minimum height that will contain a given number
  *                   lines.
  *	Arguments: w - the TextSink Object.
  *                 lines - the number of lines.
@@ -445,7 +445,7 @@ GetCursorBounds(Widget w, XRectangle * rect)
  *                 x, y - location to start drawing text.
  *                 pos1, pos2 - location of starting and ending points
  *                              in the text buffer.
- *                 highlight - hightlight this text?
+ *                 highlight - highlight this text?
  *	Returns: none.
  *
  * This function doesn't actually display anything, it is only a place
@@ -562,7 +562,7 @@ XawTextSinkFindPosition(Widget w, XawTextPosition fromPos, int fromx,
  *                 fromX   - x location of starting Position.
  *                 toPos   - end Position.
  *                 resWidth - Distance between fromPos and toPos.
- *                 resPos   - Acutal toPos used.
+ *                 resPos   - Actual toPos used.
  *                 resHeight - Height required by this text.
  *	Returns: none.
  */
@@ -580,7 +580,7 @@ XawTextSinkFindDistance (Widget w, XawTextPosition fromPos, int fromx,
 }
 
 /*	Function Name: XawTextSinkResolve
- *	Description: Resloves a location to a position.
+ *	Description: Resolves a location to a position.
  *	Arguments: w - the TextSink Object.
  *                 pos - a reference Position.
  *                 fromx - a reference Location.

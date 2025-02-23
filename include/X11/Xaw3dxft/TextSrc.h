@@ -97,7 +97,7 @@ _XFUNCPROTOBEGIN
 /*	Function Name: XawTextSourceRead
  *	Description: This function reads the source.
  *	Arguments: w - the TextSrc Object.
- *                 pos - position of the text to retreive.
+ *                 pos - position of the text to retrieve.
  * RETURNED        text - text block that will contain returned text.
  *                 length - maximum number of characters to read.
  *	Returns: The number of characters read into the buffer.
@@ -132,7 +132,7 @@ extern int XawTextSourceReplace (
  *                 position - the position to start scanning.
  *                 type - type of thing to scan for.
  *                 dir - direction to scan.
- *                 count - which occurance if this thing to search for.
+ *                 count - which occurrence of this thing to search for.
  *                 include - whether or not to include the character found in
  *                           the position that is returned.
  *	Returns: The position of the text.
@@ -158,7 +158,7 @@ extern XawTextPosition XawTextSourceScan(
 );
 
 /*	Function Name: XawTextSourceSearch
- *	Description: Searchs the text source for the text block passed
+ *	Description: Searches the text source for the text block passed
  *	Arguments: w - the TextSource Object.
  *                 position - the position to start scanning.
  *                 dir - direction to scan.
@@ -183,7 +183,7 @@ extern XawTextPosition XawTextSourceSearch(
  *	Arguments: w - the TextSrc object.
  *                 selection - the current selection atom.
  *                 target    - the current target atom.
- *                 type      - the type to conver the selection to.
+ *                 type      - the type to convert the selection to.
  * RETURNED        value, length - the return value that has been converted.
  * RETURNED        format    - the format of the returned value.
  *	Returns: TRUE if the selection has been converted.

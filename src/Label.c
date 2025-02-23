@@ -68,19 +68,12 @@ SOFTWARE.
 #include <ctype.h>
 
 /* needed for abs() */
-#ifndef X_NOT_STDC_ENV
 #include <stdlib.h>
-#else
-int abs();
-#endif
 
 #define streq(a,b) (strcmp( (a), (b) ) == 0)
 
 #define MULTI_LINE_LABEL 32767
 
-#ifdef CRAY
-#define WORD64
-#endif
 
 /****************************************************************
  *
@@ -200,56 +193,6 @@ ClassInitialize(void)
 		    (XtConvertArgList)NULL, 0 );
 }
 
-#ifndef WORD64
-
-#define TXT16 XChar2b
-
-#else
-
-#define TXT16 char
-
-static XChar2b *buf2b;
-static int buf2blen = 0;
-
-static int
-_XawLabelWidth16(XFontStruct *fs, char *str, int n)
-{
-    int i;
-    XChar2b *ptr;
-
-    if (n > buf2blen) {
-	buf2b = (XChar2b *)XtRealloc((char *)buf2b, n * sizeof(XChar2b));
-	buf2blen = n;
-    }
-    for (ptr = buf2b, i = n; --i >= 0; ptr++) {
-	ptr->byte1 = *str++;
-	ptr->byte2 = *str++;
-    }
-    return XTextWidth16(fs, buf2b, n);
-}
-
-static int
-_XawLabelDraw16(Display *dpy, Drawable d, GC gc, int x, int y, char *str, int n)
-{
-    int i;
-    XChar2b *ptr;
-
-    if (n > buf2blen) {
-	buf2b = (XChar2b *)XtRealloc((char *)buf2b, n * sizeof(XChar2b));
-	buf2blen = n;
-    }
-    for (ptr = buf2b, i = n; --i >= 0; ptr++) {
-	ptr->byte1 = *str++;
-	ptr->byte2 = *str++;
-    }
-    XDrawString16(dpy, d, gc, x, y, buf2b, n);
-}
-
-#define XTextWidth16 _XawLabelWidth16
-#define XDrawString16 _XawLabelDraw16
-
-#endif /* WORD64 */
-
 /*
  * Calculate width and height of displayed text in pixels
  */
@@ -360,7 +303,7 @@ SetTextWidthAndHeight(LabelWidget lw)
 	        int width;
 
 	        if (lw->label.encoding)
-		    width = XTextWidth16(font, (TXT16*)label, (int)(nl - label)/2);
+		    width = XTextWidth16(font, (XChar2b *)label, (int)(nl - label)/2);
 	        else
 		    width = XTextWidth(font, label, (int)(nl - label));
 	        if (width > (int)lw->label.label_width)
@@ -374,7 +317,7 @@ SetTextWidthAndHeight(LabelWidget lw)
 	        int width = XTextWidth(font, label, strlen(label));
 
 	        if (lw->label.encoding)
-		    width = XTextWidth16(font, (TXT16*)label, (int)strlen(label)/2);
+		    width = XTextWidth16(font, (XChar2b *)label, (int)strlen(label)/2);
 	        else
 		    width = XTextWidth(font, label, strlen(label));
 	        if (width > (int) lw->label.label_width)
@@ -384,7 +327,7 @@ SetTextWidthAndHeight(LabelWidget lw)
 	    lw->label.label_len = strlen(lw->label.label);
 	    if (lw->label.encoding)
 	        lw->label.label_width =
-		    XTextWidth16(font, (TXT16*)lw->label.label,
+		    XTextWidth16(font, (XChar2b *)lw->label.label,
 			         (int) lw->label.label_len/2);
 	    else
 	        lw->label.label_width =
@@ -655,7 +598,7 @@ Redisplay(Widget gw, XEvent *event, Region region)
 		    if (w->label.encoding)
 		        XDrawString16(XtDisplay(gw), XtWindow(gw), gc,
 				 		w->label.label_x, y,
-				 		(TXT16*)label, (int)(nl - label)/2);
+                                      (XChar2b *)label, (int)(nl - label)/2);
 		    else
 		        XDrawString(XtDisplay(gw), XtWindow(gw), gc,
 			       		w->label.label_x, y, label, (int)(nl - label));
@@ -668,7 +611,7 @@ Redisplay(Widget gw, XEvent *event, Region region)
 	    if (len) {
 	        if (w->label.encoding)
 		    XDrawString16(XtDisplay(gw), XtWindow(gw), gc,
-			     w->label.label_x, y, (TXT16*)label, len/2);
+			     w->label.label_x, y, (XChar2b *)label, len/2);
 	        else
 		    XDrawString(XtDisplay(gw), XtWindow(gw), gc,
 			   w->label.label_x, y, label, len);

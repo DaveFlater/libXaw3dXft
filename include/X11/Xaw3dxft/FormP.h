@@ -116,7 +116,7 @@ typedef struct _FormConstraintsPart {
     Boolean	allow_resize;	/* TRUE if child may request resize	*/
 
 /*
- * Private contstraint resources.
+ * Private constraint resources.
  */
 
 /*
@@ -126,7 +126,7 @@ typedef struct _FormConstraintsPart {
     short	virtual_width, virtual_height;
 
 /*
- * Temporary Storage for children's new possible possition.
+ * Temporary Storage for children's new possible position.
  */
 
     Position new_x, new_y;

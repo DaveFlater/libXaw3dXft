@@ -80,7 +80,7 @@ in this Software without prior written authorization from the X Consortium.
  y		     Position		Position	0
 
  **1 - If the Width or Height of the list widget is zero (0) then the value
-       is set to the minimum size necessay to fit the entire list.
+       is set to the minimum size necessary to fit the entire list.
 
        If both Width and Height are zero then they are adjusted to fit the
        entire list that is created width the number of default columns
@@ -179,13 +179,13 @@ _XFUNCPROTOBEGIN
  *                 resize - if TRUE the the list widget will
  *                          try to resize itself.
  *	Returns: none.
- *      NOTE:      If nitems of longest are <= 0 then they will be caluculated.
+ *      NOTE:      If nitems of longest are <= 0 then they will be calculated.
  *                 If nitems is <= 0 then the list needs to be NULL terminated.
  */
 
 extern void XawListChange(
     Widget		/* w */,
-    String*		/* list */,
+    char**		/* list */,
     int			/* nitems */,
     int			/* longest */,
 #if NeedWidePrototypes

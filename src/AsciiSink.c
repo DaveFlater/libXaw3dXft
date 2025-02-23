@@ -689,7 +689,7 @@ MaxLines(Widget w, Dimension height)
 }
 
 /*	Function Name: MaxHeight
- *	Description: Finds the Minium height that will contain a given number
+ *	Description: Finds the Minimum height that will contain a given number
  *                   lines.
  *	Arguments: w - the AsciiSink Object.
  *                 lines - the number of lines.

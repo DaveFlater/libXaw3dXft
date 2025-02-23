@@ -232,10 +232,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  * have to handle the case where it needs to be set.
  *
  * If this widget is in a radio group then it may cause another
- * widget to be unset, thus calling the notify proceedure.
+ * widget to be unset, thus calling the notify procedure.
  *
  * I want to set the toggle if the user set the state to "On" in
- * the resource group, reguardless of what my ancestors did.
+ * the resource group, regardless of what my ancestors did.
  */
 
     if (tw_req->command.set)
@@ -310,7 +310,7 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
 /*	Function Name: ToggleDestroy
  *	Description: Destroy Callback for toggle widget.
  *	Arguments: w - the toggle widget that is being destroyed.
- *                 junk, grabage - not used.
+ *                 junk, garbage - not used.
  *	Returns: none.
  */
 

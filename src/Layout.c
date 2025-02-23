@@ -741,7 +741,7 @@ ComputeNaturalSizes (LayoutWidget l, BoxPtr box, LayoutDirection dir)
     DBUG_VOID_RETURN;
 }
 
-/* given the boxs geometry, set the geometry of the pieces */
+/* given the box's geometry, set the geometry of the pieces */
 
 #define GluePart(a,b,dist)	((a) ? ((int) (((a) * (dist)) / (b) + \
 					((dist >= 0) ? 0.5 : -0.5))) : 0)

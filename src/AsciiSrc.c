@@ -40,9 +40,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <errno.h>
 #include <X11/StringDefs.h>
 #include <X11/Xos.h>
-#ifndef X_NOT_STDC_ENV
 #include <stdlib.h>
-#endif
 #include <X11/Xfuncs.h>
 #include <X11/Xaw3dxft/XawInit.h>
 #include <X11/Xaw3dxft/AsciiSrcP.h>
@@ -55,6 +53,13 @@ in this Software without prior written authorization from the X Consortium.
 
 #if (defined(ASCII_STRING) || defined(ASCII_DISK))
 #  include <X11/Xaw3dxft/AsciiText.h> /* for Widget Classes. */
+#endif
+
+#ifdef O_CLOEXEC
+#define FOPEN_CLOEXEC "e"
+#else
+#define FOPEN_CLOEXEC ""
+#define O_CLOEXEC 0
 #endif
 
 /****************************************************************
@@ -112,20 +117,10 @@ static void Initialize(Widget, Widget, ArgList, Cardinal *);
 static void Destroy(Widget);
 static void GetValuesHook(Widget, ArgList, Cardinal *);
 static String MyStrncpy(char *, char *, int);
-static String StorePiecesInString(AsciiSrcObject);
+static char * StorePiecesInString(AsciiSrcObject);
 static Boolean SetValues(Widget, Widget, Widget, ArgList, Cardinal *);
 static Boolean WriteToFile(_Xconst _XtString, _Xconst _XtString);
-#ifdef X_NOT_STDC_ENV
-extern int errno;
-#endif
 
-#ifdef X_NOT_POSIX
-#define Off_t long
-#define Size_t unsigned int
-#else
-#define Off_t off_t
-#define Size_t size_t
-#endif
 
 #define superclass		(&textSrcClassRec)
 AsciiSrcClassRec asciiSrcClassRec = {
@@ -248,7 +243,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 /*	Function Name: ReadText
  *	Description: This function reads the source.
  *	Arguments: w - the AsciiSource widget.
- *                 pos - position of the text to retreive.
+ *                 pos - position of the text to retrieve.
  * RETURNED        text - text block that will contain returned text.
  *                 length - maximum number of characters to read.
  *	Returns: The number of characters read into the buffer.
@@ -404,7 +399,7 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
  *                 position - the position to start scanning.
  *                 type - type of thing to scan for.
  *                 dir - direction to scan.
- *                 count - which occurance if this thing to search for.
+ *                 count - which occurrence of this thing to search for.
  *                 include - whether or not to include the character found in
  *                           the position that is returned.
  *	Returns: the position of the item found.
@@ -500,7 +495,7 @@ Scan (Widget w, XawTextPosition position, XawTextScanType type,
 
 	if ( ptr < piece->text ) {
 	  piece = piece->prev;
-	  if (piece == NULL)	/* Begining of text. */
+	  if (piece == NULL)	/* Beginning of text. */
 	    return(0);
 	  ptr = piece->text + piece->used - 1;
 	}
@@ -538,7 +533,7 @@ Scan (Widget w, XawTextPosition position, XawTextScanType type,
 }
 
 /*	Function Name: Search
- *	Description: Searchs the text source for the text block passed
+ *	Description: Searches the text source for the text block passed
  *	Arguments: w - the AsciiSource Widget.
  *                 position - the position to start scanning.
  *                 dir - direction to scan.
@@ -593,7 +588,7 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir,
 
     while ( ptr < piece->text ) {
       piece = piece->prev;
-      if (piece == NULL) {	/* Begining of text. */
+      if (piece == NULL) {	/* Beginning of text. */
 	XtFree(buf);
 	return(XawTextSearchError);
       }
@@ -695,7 +690,7 @@ GetValuesHook(Widget w, ArgList args, Cardinal * num_args)
 	      *((char **) args[i].value) = src->ascii_src.first_piece->text;
 	  }
 	  else {
-	      if (XawAsciiSave(w))	/* If save sucessful. */
+	      if (XawAsciiSave(w))	/* If save successful. */
 		  *((char **) args[i].value) = src->ascii_src.string;
 	  }
 	break;
@@ -825,7 +820,7 @@ XawAsciiSave(Widget w)
  *	Description: Save the current buffer as a file.
  *	Arguments: w - the AsciiSrc widget.
  *                 name - name of the file to save this file into.
- *	Returns: True if the save was sucessful.
+ *	Returns: True if the save was successful.
  */
 
 Boolean
@@ -906,11 +901,11 @@ RemoveOldStringOrFile(AsciiSrcObject src, Boolean checkString)
 }
 
 /*	Function Name: WriteToFile
- *	Description: Write the string specified to the begining of the file
+ *	Description: Write the string specified to the beginning of the file
  *                   specified.
  *	Arguments: string - string to write.
  *                 name - the name of the file
- *	Returns: returns TRUE if sucessful, FALSE otherwise.
+ *	Returns: returns TRUE if successful, FALSE otherwise.
  */
 
 static Boolean
@@ -918,9 +913,13 @@ WriteToFile(_Xconst _XtString string, _Xconst _XtString name)
 {
   int fd;
 
-  if ( ((fd = creat(name, 0666)) == -1 ) ||
-       (write(fd, string, sizeof(unsigned char) * strlen(string)) == -1) )
+  if ((fd = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1)
     return(FALSE);
+
+  if (write(fd, string, sizeof(unsigned char) * strlen(string)) == -1) {
+    close(fd);
+    return(FALSE);
+  }
 
   if ( close(fd) == -1 )
     return(FALSE);
@@ -934,10 +933,10 @@ WriteToFile(_Xconst _XtString string, _Xconst _XtString name)
  *	Returns: none.
  */
 
-static String
+static char *
 StorePiecesInString(AsciiSrcObject src)
 {
-  String string;
+  char * string;
   XawTextPosition first;
   Piece * piece;
 
@@ -1013,7 +1012,7 @@ InitStringOrFile(AsciiSrcObject src, Boolean newString)
 	    XtErrorMsg("NoFile", "asciiSourceCreate", "XawError",
 		     "Creating a read only disk widget and no file specified.",
 		       NULL, 0);
-	open_mode = "r";
+	open_mode = "r" FOPEN_CLOEXEC;
 	break;
     case XawtextAppend:
     case XawtextEdit:
@@ -1021,9 +1020,9 @@ InitStringOrFile(AsciiSrcObject src, Boolean newString)
 	    src->ascii_src.string = fileName;
 	    (void) tmpnam(src->ascii_src.string);
 	    src->ascii_src.is_tempfile = TRUE;
-	    open_mode = "w";
+	    open_mode = "w" FOPEN_CLOEXEC;
 	} else
-	    open_mode = "r+";
+	    open_mode = "r+" FOPEN_CLOEXEC;
 	break;
     default:
 	XtErrorMsg("badMode", "asciiSourceCreate", "XawError",
@@ -1043,7 +1042,7 @@ InitStringOrFile(AsciiSrcObject src, Boolean newString)
 
     if (!src->ascii_src.is_tempfile) {
 	if ((file = fopen(src->ascii_src.string, open_mode)) != 0) {
-	    (void) fseek(file, (Off_t)0, 2);
+	    (void) fseek(file, 0, SEEK_END);
 	    src->ascii_src.length = (XawTextPosition) ftell(file);
 	    return file;
 	} else {
@@ -1073,9 +1072,9 @@ LoadPieces(AsciiSrcObject src, FILE * file, char * string)
       local_str = XtMalloc((unsigned) (src->ascii_src.length + 1)
 			   * sizeof(unsigned char));
       if (src->ascii_src.length != 0) {
-	fseek(file, (Off_t)0, 0);
-	src->ascii_src.length = fread(local_str, (Size_t)sizeof(unsigned char),
-				      (Size_t)src->ascii_src.length, file);
+	fseek(file, 0, SEEK_SET);
+	src->ascii_src.length = fread(local_str, sizeof(unsigned char),
+				      (size_t)src->ascii_src.length, file);
 	if (src->ascii_src.length <= 0)
 	  XtErrorMsg("readError", "asciiSourceCreate", "XawError",
 		     "fread returned error.", NULL, NULL);
@@ -1300,7 +1299,7 @@ CvtStringToAsciiType(XrmValuePtr args, Cardinal * num_args, XrmValuePtr fromVal,
 #ifdef ASCII_STRING
 /************************************************************
  *
- * Compatability functions.
+ * Compatibility functions.
  *
  ************************************************************/
 

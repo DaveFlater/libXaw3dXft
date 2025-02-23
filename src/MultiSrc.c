@@ -76,6 +76,13 @@ in this Software without prior written authorization from the X Consortium.
 #include <ctype.h>
 #include <errno.h>
 
+#ifdef O_CLOEXEC
+#define FOPEN_CLOEXEC "e"
+#else
+#define FOPEN_CLOEXEC ""
+#define O_CLOEXEC 0
+#endif
+
 /****************************************************************
  *
  * Full class record constant
@@ -135,19 +142,6 @@ static Boolean WriteToFile(String, String);
 
 #ifndef MyWStrncpy
 static void (MyWStrncpy)();
-#endif
-
-extern char *tmpnam(String);
-#ifdef X_NOT_STDC_ENV
-extern int errno;
-#endif
-
-#ifdef X_NOT_POSIX
-#define Off_t long
-#define Size_t unsigned int
-#else
-#define Off_t off_t
-#define Size_t size_t
 #endif
 
 extern wchar_t* _XawTextMBToWC(Display *, char *, int *);
@@ -257,7 +251,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 /*	Function Name: ReadText
  *	Description: This function reads the source.
  *	Arguments: w - the MultiSource widget.
- *                 pos - position of the text to retreive.
+ *                 pos - position of the text to retrieve.
  * RETURNED        text - text block that will contain returned text.
  *                length - maximum number of characters to read.
  *	Returns: The number of characters read into the buffer.
@@ -454,7 +448,7 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
  *                 position - the position to start scanning.
  *                 type - type of thing to scan for.
  *                 dir - direction to scan.
- *                 count - which occurance if this thing to search for.
+ *                 count - which occurrence of this thing to search for.
  *                 include - whether or not to include the character found in
  *                           the position that is returned.
  *	Returns: the position of the item found.
@@ -547,7 +541,7 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
 
 	if ( ptr < piece->text ) {
 	  piece = piece->prev;
-	  if (piece == NULL)	/* Begining of text. */
+	  if (piece == NULL)	/* Beginning of text. */
 	    return(0);
 	  ptr = piece->text + piece->used - 1;
 	}
@@ -585,7 +579,7 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
 }
 
 /*	Function Name: Search
- *	Description: Searchs the text source for the text block passed
+ *	Description: Searches the text source for the text block passed
  *	Arguments: w - the MultiSource Widget.
  *                 position - the position to start scanning.
  *                 dir - direction to scan.
@@ -669,7 +663,7 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
 
     while ( ptr < piece->text ) {
       piece = piece->prev;
-      if (piece == NULL) {	/* Begining of text. */
+      if (piece == NULL) {	/* Beginning of text. */
 	XtFree((char *)buf);
 	return(XawTextSearchError);
       }
@@ -789,7 +783,7 @@ GetValuesHook(Widget w, ArgList args, Cardinal *num_args)
 					src->multi_src.first_piece->text;
 	  }
 	  else {
-	      if (_XawMultiSave(w))	/* If save sucessful. */
+	      if (_XawMultiSave(w))	/* If save successful. */
 		  *((char **) args[i].value) = src->multi_src.string;
 	  }
 	break;
@@ -917,7 +911,7 @@ _XawMultiSave(
  *	Description: Save the current buffer as a file.
  *	Arguments: w - the MultiSrc widget.
  *                 name - name of the file to save this file into.
- *	Returns: True if the save was sucessful.
+ *	Returns: True if the save was successful.
  *
  * The public interface is XawAsciiSaveAsFile!
  */
@@ -965,26 +959,29 @@ RemoveOldStringOrFile(MultiSrcObject src, Boolean checkString)
 }
 
 /*	Function Name: WriteToFile
- *	Description: Write the string specified to the begining of the file
+ *	Description: Write the string specified to the beginning of the file
  *                   specified.
  *	Arguments: string - string to write.
  *                 name - the name of the file
- *	Returns: returns TRUE if sucessful, FALSE otherwise.
+ *	Returns: returns TRUE if successful, FALSE otherwise.
  */
 
 static Boolean
 WriteToFile(String string, String name)
 {
   int fd;
+  Bool result = True;
 
-  if ( ((fd = creat(name, 0666)) == -1 ) ||
-       (write(fd, string, sizeof(unsigned char) * strlen(string)) == -1) )
+  if ((fd = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1)
     return(FALSE);
+
+  if (write(fd, string, sizeof(unsigned char) * strlen(string)) == -1)
+    result = False;
 
   if ( close(fd) == -1 )
     return(FALSE);
 
-  return(TRUE);
+  return(result);
 }
 
 
@@ -1093,7 +1090,7 @@ InitStringOrFile(MultiSrcObject src, Boolean newString)
 	    XtErrorMsg("NoFile", "multiSourceCreate", "XawError",
 		     "Creating a read only disk widget and no file specified.",
 		       NULL, 0);
-	open_mode = "r";
+	open_mode = "r" FOPEN_CLOEXEC;
 	break;
     case XawtextAppend:
     case XawtextEdit:
@@ -1106,9 +1103,9 @@ InitStringOrFile(MultiSrcObject src, Boolean newString)
 
 	    (void) tmpnam(src->multi_src.string);
 	    src->multi_src.is_tempfile = TRUE;
-	    open_mode = "w";
+	    open_mode = "w" FOPEN_CLOEXEC;
 	} else
-	    open_mode = "r+";
+	    open_mode = "r+" FOPEN_CLOEXEC;
 	break;
     default:
 	XtErrorMsg("badMode", "multiSourceCreate", "XawError",
@@ -1128,7 +1125,7 @@ InitStringOrFile(MultiSrcObject src, Boolean newString)
 
     if (!src->multi_src.is_tempfile) {
 	if ((file = fopen(src->multi_src.string, open_mode)) != 0) {
-	    (void) fseek(file, (Off_t)0, 2);
+	    (void) fseek(file, 0, SEEK_END);
             src->multi_src.length = ftell (file);
 	    return file;
 	} else {
@@ -1192,10 +1189,10 @@ LoadPieces(MultiSrcObject src, FILE *file, char *string)
     if (src->multi_src.length != 0) {
       temp_mb_holder =
 	XtMalloc((unsigned)(src->multi_src.length + 1) * sizeof(unsigned char));
-      fseek(file, (Off_t)0, 0);
+      fseek(file, 0, SEEK_SET);
       src->multi_src.length = fread (temp_mb_holder,
-				     (Size_t)sizeof(unsigned char),
-				     (Size_t)src->multi_src.length, file);
+				     sizeof(unsigned char),
+				     (size_t)src->multi_src.length, file);
       if (src->multi_src.length <= 0)
 	XtAppErrorMsg( XtWidgetToApplicationContext ((Widget) src),
 		       "readError", "multiSource", "XawError",

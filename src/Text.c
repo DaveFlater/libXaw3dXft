@@ -802,7 +802,7 @@ _XawTextGetText(TextWidget ctx, XawTextPosition left, XawTextPosition right)
   else if (_XawTextFormat(ctx) == XawFmtWide)
       bytes = sizeof(wchar_t);
 #endif
-  else /* if there is another fomat, add here */
+  else /* if there is another format, add here */
       bytes = 1;
 
   /* leave space for ZERO */
@@ -1084,7 +1084,7 @@ _BuildLineTable(TextWidget ctx, XawTextPosition position,
 
 /*	Function Name: GetWidestLine
  *	Description: Returns the width (in pixels) of the widest line that
- *                   is currently visable.
+ *                   is currently visible.
  *	Arguments: ctx - the text widget.
  *	Returns: the width of the widest line.
  *
@@ -1399,7 +1399,7 @@ HJump(Widget w, XtPointer closure, XtPointer callData)
   new_left -= (Position) (*percent * GetWidestLine(ctx));
   move = old_left - new_left;
 
-  if (abs(move) < (int)ctx->core.width) {
+  if (labs(move) < (int)ctx->core.width) {
     HScroll(w, (XtPointer) ctx, (XtPointer) move);
     return;
   }
@@ -2193,8 +2193,8 @@ DisplayText(Widget w, XawTextPosition pos1, XawTextPosition pos2)
 /*
  * This routine implements multi-click selection in a hardwired manner.
  * It supports multi-click entity cycling (char, word, line, file) and mouse
- * motion adjustment of the selected entitie (i.e. select a word then, with
- * button still down, adjust wich word you really meant by moving the mouse).
+ * motion adjustment of the selected entity (i.e. select a word then, with
+ * button still down, adjust which word you really meant by moving the mouse).
  * [NOTE: This routine is to be replaced by a set of procedures that
  * will allows clients to implements a wide class of draw through and
  * multi-click selection user interfaces.]
@@ -2210,7 +2210,7 @@ DoSelection (TextWidget ctx, XawTextPosition pos, Time time, Boolean motion)
   if (motion)
     newType = ctx->text.s.type;
   else {
-    if ( (abs((long) time - (long) ctx->text.lasttime) < MULTI_CLICK_TIME) &&
+    if ( (labs((long) time - (long) ctx->text.lasttime) < MULTI_CLICK_TIME) &&
 	 ((pos >= ctx->text.s.left) && (pos <= ctx->text.s.right))) {
       sarray = ctx->text.sarray;
       for (;*sarray != XawselectNull && *sarray != ctx->text.s.type; sarray++);
@@ -2547,7 +2547,7 @@ _XawTextSetSelection(TextWidget ctx, XawTextPosition l, XawTextPosition r,
   if (nelems == 1 && !strcmp (list[0], "none"))
     return;
   if (nelems == 0) {
-    String defaultSel = "PRIMARY";
+    static String defaultSel = "PRIMARY";
     list = &defaultSel;
     nelems = 1;
   }
@@ -2696,7 +2696,7 @@ ProcessExposeRegion(Widget w, XEvent *event, Region region)
 }
 
 /*
- * This routine does all setup required to syncronize batched screen updates
+ * This routine does all setup required to synchronize batched screen updates
  */
 
 void
@@ -2769,11 +2769,11 @@ _XawTextShowPosition(TextWidget ctx)
     return;
 
 /*
- * Find out the bottom the visable window, and make sure that the
+ * Find out the bottom the visible window, and make sure that the
  * cursor does not go past the end of this space.
  *
  * This makes sure that the cursor does not go past the end of the
- * visable window.
+ * visible window.
  */
 
   x = ctx->core.width;
@@ -2782,7 +2782,7 @@ _XawTextShowPosition(TextWidget ctx)
     y -= ctx->text.hbar->core.height + 2 * ctx->text.hbar->core.border_width;
 
   max_pos = PositionForXY (ctx, x, y);
-  lines = LineForPosition(ctx, max_pos) + 1; /* number of visable lines. */
+  lines = LineForPosition(ctx, max_pos) + 1; /* number of visible lines. */
 
   if ( (ctx->text.insertPos >= ctx->text.lt.top) &&
        (ctx->text.insertPos < max_pos))
@@ -2816,7 +2816,7 @@ _XawTextShowPosition(TextWidget ctx)
 	  first = SrcScan(ctx->text.source, first,
 			  XawstPositions, XawsdRight, 1, TRUE);
 
-	  /* Check to make sure the cursor is visable. */
+	  /* Check to make sure the cursor is visible. */
 
 	  if (first <= top)
 	      number++;
@@ -3015,7 +3015,7 @@ GetValuesHook(Widget w, ArgList args, Cardinal * num_args)
 }
 
 /*	Function Name: FindGoodPosition
- *	Description: Returns a valid position given any postition
+ *	Description: Returns a valid position given any position
  *	Arguments: pos - any position.
  *	Returns: a position between (0 and lastPos);
  */
@@ -3080,7 +3080,7 @@ PopCopyQueue(TextWidget ctx)
 
 /*	Function Name:  TranslateExposeRegion
  *	Description: Translates the expose that came into
- *                   the cordinates that now exist in the Text widget.
+ *                   the coordinates that now exist in the Text widget.
  *	Arguments: ctx - the text widget.
  *                 expose - a Rectangle, who's region currently
  *                          contains the expose event location.

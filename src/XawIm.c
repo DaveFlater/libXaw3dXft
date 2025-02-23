@@ -91,7 +91,12 @@ in this Software without prior written authorization from the X Consortium.
  *
  *****************************************************/
 
-extern void XawVendorShellExtResize(Widget);
+/*
+ * From Vendor.c
+ */
+void XawVendorShellExtResize(Widget);
+void XawVendorStructureNotifyHandler(Widget, XtPointer, XEvent*, Boolean*);
+
 
 static XawIcTableList CurrentSharedIcTable(
     XawVendorShellExtPart* /* ve */
@@ -301,7 +306,7 @@ DestroyAllIM(XawVendorShellExtPart *ve)
     contextErrDataRec *contextErrData;
 
     /*
-     * Destory all ICs
+     * Destroy all ICs
      */
     if (IsSharedIC(ve)) {
         if ((p = ve->ic.shared_ic_table) && p->xic) {
@@ -1374,7 +1379,7 @@ _XawImRealize(
     if ( !XtIsRealized( w ) || !XtIsVendorShell( w ) ) return;
     if ((ve = GetExtPart( (VendorShellWidget) w ))) {
 	XtAddEventHandler( w, (EventMask)StructureNotifyMask, FALSE,
-			    (XtEventHandler)XawVendorShellExtResize,
+			    (XtEventHandler)XawVendorStructureNotifyHandler,
 			    (XtPointer)NULL );
 	AllCreateIC(ve);
     }

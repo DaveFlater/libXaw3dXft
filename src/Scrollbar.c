@@ -1119,7 +1119,7 @@ NotifyThumb (Widget w, XEvent *event, String *params, Cardinal *num_params)
        there is no problem since in this case there is always a constant
        integer number of pixels the thumb must be moved in order to scroll
        to the next line/column. */
-    /* Removed the dependancy on scrollbar arrows. Xterm as distributed in
+    /* Removed the dependency on scrollbar arrows. Xterm as distributed in
        X11R6.6 by The XFree86 Project wants this correction, with or without
        the arrows. */
     xtpf.xtf += 0.0001;
