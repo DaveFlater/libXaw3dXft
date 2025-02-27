@@ -352,7 +352,8 @@ Redisplay(Widget w, XEvent * event, Region region)
 	    y_loc += ((int)entry->rectangle.height - 
 			(font_ascent + font_descent)) / 2 + font_ascent;
 	    
-	    XClearArea(XtDisplayOfObject(w), XtWindowOfObject(w), 1,
+	    XClearArea(XtDisplayOfObject(w), XtWindowOfObject(w),
+		       (int)entry->rectangle.x + 1,
 		       (int)entry->rectangle.y,
 		       (int)entry->rectangle.width - 2,
 		       (int)entry->rectangle.height, False);

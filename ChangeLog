@@ -7,9 +7,19 @@
   replaces the abandoned
   https://sourceforge.net/projects/sf-xpaint/files/libxaw3dxft/.
 
+  Spring cleaning:
+  Removed generated files and the empty .deps directory.
+  Removed files pertaining to Imake and Debian.
+  Merged three Makefile.am files (recursive make considered harmful).
+  Cleaned up Makefile.am and configure.ac.
+  Made ChangeLog, AUTHORS, NEWS, and README as needed.
+
+  Merged select changes from libXaw3d 2013-06-06 to 2024-11-10.
+
   Fixed GCC 14 FTB (incompatible pointer type) in XawIm.c.
   Fixed vertical spacing in List when FreeType is used.
   Fixed wrong highlighting width in List when FreeType is used.
+  Fixed blank first column in multicolumn SimpleMenu.
   Fixed description in libxaw3dxft.pc.in (was from libXaw3d).
   Fixed omission of Xaw3dXftP.h from xaw3dinclude_HEADERS in Makefile.am.
   Added example Xresources (was Xdefault) and old READMEs to installed docs.
@@ -17,15 +27,6 @@
   Began using normal Semantic Versioning.  libXaw3dXft version numbers no
   longer have anything to do with libXaw3d releases and no longer have a
   letter suffix.
-
-  Spring cleaning:
-  Removed generated files and the empty .deps directory.
-  Removed files pertaining to Imake and Debian.
-  Merged three Makefile.am files (recursive make considered harmful).
-  Cleaned up Makefile.am and configure.ac.
-  Made ChangeLog, AUTHORS, NEWS, and README as needed for compliance.
-
-  Merged select changes from libXaw3d 2013-06-06 to 2024-11-10.
 
 2020-07-02, v1.6.2h (so 8.0.5)  Jean-Pierre Demailly
 
