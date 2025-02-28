@@ -95,8 +95,6 @@ static void GetSelection(Widget, Time, String *, Cardinal);
 static void KillSelection(TextWidget, XEvent *);
 void _XawTextZapSelection(TextWidget, XEvent *, Boolean);
 
-static XComposeStatus compose_status = {NULL, 0};
-
 #ifdef XAW_INTERNATIONALIZATION
 static void
 ParameterError(Widget w, String param)
@@ -942,7 +940,7 @@ KillSelection(TextWidget ctx, XEvent *event)
   KeySym keysym;
   /* Option to delete selection, if any */
   if ( (_Xaw3dXft->edit_delete_alternative >= 2) &&
-    XLookupString((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, &compose_status))
+    XLookupString((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, NULL))
   {
     if (keysym != XK_BackSpace && keysym != XK_Delete &&
 	(ctx->text.s.left != ctx->text.s.right))
@@ -1457,7 +1455,7 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
 		(wchar_t*) strbuf, BUFSIZ, &keysym);
   else
 #endif
-    text.length = XLookupString ((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, &compose_status);
+    text.length = XLookupString ((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, NULL);
 
   if (text.length == 0)
       return;
