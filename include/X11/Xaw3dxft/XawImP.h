@@ -181,14 +181,14 @@ void _XawImUnsetFocus(
     Widget  /* w */
 );
 
-int  _XawImWcLookupString(
-    Widget,   /* w */
-    XKeyPressedEvent*, /* event */
-    wchar_t*, /* buffer_return */
-    int,      /* bytes_buffer */
-    KeySym*,  /* keysym_return */
-    Status*   /* status return */
-);
+int _XawImWcLookupString
+(
+ Widget			w,
+ XKeyPressedEvent	*event,
+ wchar_t		*buffer_return,
+ int			bytes_buffer,
+ KeySym			*keysym_return
+ );
 
 int  _XawImGetImAreaHeight(
     Widget  /* w */

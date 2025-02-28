@@ -1525,13 +1525,9 @@ _XawImUnsetFocus(
 }
 
 int
-_XawImWcLookupString(
-    Widget inwidg,
-    XKeyPressedEvent *event,
-    wchar_t* buffer_return,
-    int bytes_buffer,
-    KeySym *keysym_return,
-    Status *status_return)
+_XawImWcLookupString(Widget inwidg, XKeyPressedEvent *event,
+		     wchar_t* buffer_return, int bytes_buffer,
+		     KeySym *keysym_return)
 {
     XawVendorShellExtPart*	ve;
     VendorShellWidget		vw;
@@ -1542,20 +1538,14 @@ _XawImWcLookupString(
 
     if ((vw = SearchVendorShell(inwidg)) && (ve = GetExtPart(vw)) &&
 	ve->im.xim && (p = GetIcTableShared(inwidg, ve)) && p->xic) {
-          if (_Xaw3dXft->encoding == -1)
-	      ret = Xutf8LookupString (p->xic, event, (char*)buffer_return, bytes_buffer, keysym_return, status_return);
-          else
-	      ret = XwcLookupString(p->xic, event, buffer_return, bytes_buffer,
-				 keysym_return, status_return);
-          return( ret );
+	  return(XwcLookupString(p->xic, event, buffer_return,
+				 (int)((size_t)bytes_buffer/sizeof(wchar_t)),
+				 keysym_return, NULL));
     }
-    if (_Xaw3dXft->encoding == -1)
-        ret = Xutf8LookupString (p->xic, event, tmp_buf, 64, keysym_return, status_return);
-    else
-        ret = XLookupString( event, tmp_buf, 64, keysym_return,
-		         (XComposeStatus*) status_return );
+    ret = XLookupString( event, tmp_buf, sizeof(tmp_buf), keysym_return,
+		         NULL );
     for ( i = 0, tmp_p = tmp_buf, buf_p = buffer_return; i < ret; i++ ) {
-	*buf_p++ = _Xaw_atowc(*tmp_p++);
+	*buf_p++ = _Xaw_atowc((unsigned char)*tmp_p++);
     }
     return( ret );
 }

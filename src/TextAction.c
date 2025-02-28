@@ -1454,7 +1454,7 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
 #ifdef XAW_INTERNATIONALIZATION
   if (XtIsSubclass (ctx->text.source, (WidgetClass) multiSrcObjectClass))
     text.length = _XawImWcLookupString (w, &event->xkey,
-		(wchar_t*) strbuf, BUFSIZ, &keysym, (Status*) &compose_status);
+		(wchar_t*) strbuf, BUFSIZ, &keysym);
   else
 #endif
     text.length = XLookupString ((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, &compose_status);
