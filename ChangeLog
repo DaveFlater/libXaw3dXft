@@ -21,6 +21,7 @@
   Fixed wrong highlighting width in List when FreeType is used.
   Fixed blank first column in multicolumn SimpleMenu.
   Fixed description in libxaw3dxft.pc.in (was from libXaw3d).
+  Fixed uninitialized variables in XawIm.c.
   Fixed omission of Xaw3dXftP.h from xaw3dinclude_HEADERS in Makefile.am.
   Added example Xresources (was Xdefault) and old READMEs to installed docs.
 

@@ -641,7 +641,7 @@ SizeNegotiation(XawIcTableList p, Dimension width, Dimension height)
     XVaNestedList	pe_attr = NULL, st_attr = NULL;
     int			ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
     XRectangle		*pe_area_needed = NULL, *st_area_needed = NULL;
-    XPointer		ic_a[5];
+    XPointer		ic_a[5] = {NULL, NULL, NULL, NULL, NULL};
 
     if (p->input_style & XIMPreeditArea) {
 	pe_attr = XVaCreateNestedList(0, XNAreaNeeded, &pe_area_needed, NULL);
@@ -713,7 +713,15 @@ CreateIC(Widget w, XawVendorShellExtPart *ve)
     XPoint		position;
     XRectangle		pe_area, st_area;
     XVaNestedList	pe_attr = NULL, st_attr = NULL;
-    XPointer		ic_a[20], pe_a[20], st_a[20];
+    XPointer		ic_a[20] = {
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      pe_a[20] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      st_a[20] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     Dimension		height = 0;
     int			ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
     XawTextMargin	*margin;
@@ -860,7 +868,15 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Boolean focus)
     XPoint		position;
     XRectangle		pe_area;
     XVaNestedList	pe_attr = NULL, st_attr = NULL;
-    XPointer		ic_a[20], pe_a[20], st_a[20];
+    XPointer		ic_a[20] = {
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      pe_a[20] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+      st_a[20] = {
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     int			ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
     XawTextMargin	*margin;
     int			height;
