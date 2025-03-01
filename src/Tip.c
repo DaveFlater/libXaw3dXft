@@ -671,6 +671,7 @@ TipTimeoutCallback(XtPointer closure, XtIntervalId *id)
 
     info->tip->tip.label = winfo->label;
     info->tip->tip.encoding = 0;
+    info->tip->tip.timer = 0;
     XtSetArg(args[0], XtNencoding, &info->tip->tip.encoding);
 #ifdef XAW_INTERNATIONALIZATION
     info->tip->tip.international = False;
