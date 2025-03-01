@@ -73,7 +73,7 @@ stipplePixmap(Widget w, Pixmap pm, Colormap cm, Pixel bg, unsigned int d)
     Display *dpy;
     XpmImage image;
     XpmAttributes attr;
-    XpmColor *src_table, *dst_table;
+    XpmColor *src_table=NULL, *dst_table=NULL;
     int i, j, index = -1;
 
     if (pm == None)
