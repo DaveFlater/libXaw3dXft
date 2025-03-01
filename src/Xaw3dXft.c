@@ -504,7 +504,7 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
     _Xaw3dXft->text_sb_right = 0;
-    memset(_Xaw3dXft->insensitive_twist, 0, 4);
+    memset(_Xaw3dXft->insensitive_twist, 0, 4*sizeof(unsigned short));
     _Xaw3dXft->text_bg_hilight_color  = -1;
     _Xaw3dXft->tip_background_color  = -1;
     _Xaw3dXft->text_fg_alternate_color  = -1;
