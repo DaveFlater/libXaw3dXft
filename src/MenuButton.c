@@ -216,4 +216,3 @@ PopupMenu(Widget w, XEvent *event, String *params, Cardinal *num_params)
 
   XtPopupSpringLoaded(menu);
 }
-

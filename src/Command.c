@@ -465,16 +465,16 @@ PaintCommandWidget(Widget w, XEvent *event, Region region, Boolean change)
    	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s + offset+i, s + offset);
         for (i=0; i<cbw->core.width-cbw->command.highlight_thickness-2*s; ++i)
    	if (i%3!=0)
-   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s+offset+i, 
+   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s+offset+i,
                 offset+cbw->core.height - cbw->command.highlight_thickness-s-1);
-   
+
         for (i=0; i<cbw->core.height-cbw->command.highlight_thickness-2*s; ++i)
    	if (i%3!=0)
    	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s+offset, s+offset+i);
-   
+
         for (i=0; i<cbw->core.height-cbw->command.highlight_thickness-2*s; ++i)
    	if (i%3!=0)
-   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, 
+   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc,
    	     offset+cbw->core.width - cbw->command.highlight_thickness-s-1,
    	     s+offset+i);
       } else

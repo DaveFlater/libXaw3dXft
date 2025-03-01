@@ -587,4 +587,3 @@ _XawSme3dDrawShadows(Widget gw)
 	XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
     }
 }
-

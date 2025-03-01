@@ -450,7 +450,7 @@ CreateVScrollBar(TextWidget ctx)
 
   if (_Xaw3dXft->text_sb_right) {
       ctx->text.r_margin.right += vbar->core.width + vbar->core.border_width;
-      ctx->text.margin.right = ctx->text.r_margin.right;    
+      ctx->text.margin.right = ctx->text.r_margin.right;
   } else {
       ctx->text.r_margin.left += vbar->core.width + vbar->core.border_width;
       ctx->text.margin.left = ctx->text.r_margin.left;
@@ -907,9 +907,9 @@ PositionForXY (TextWidget ctx, Position x, Position y)
   if (_Xaw3dXft->encoding == -1) {
       XawTextPosition from = position;
       rep : XawTextSourceRead(ctx->text.source, from, &text, 1);
-      if (from>0 && position-from<3 && (*(text.ptr)&0xc0) == 0x80) { 
-          --from; 
-          goto rep; 
+      if (from>0 && position-from<3 && (*(text.ptr)&0xc0) == 0x80) {
+          --from;
+          goto rep;
       }
       position = from;
   }

@@ -976,4 +976,3 @@ XawTreeForceLayout (Widget tree)
 {
     layout_tree ((TreeWidget) tree, FALSE);
 }
-

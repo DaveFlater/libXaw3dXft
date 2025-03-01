@@ -379,17 +379,17 @@ Move(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
       if (dir == XawsdLeft) {
           to = from = ctx->text.insertPos;
           rep1 : XawTextSourceRead(ctx->text.source, from, &text, 1);
-          if (from>0 && to-from <3 && (*(text.ptr)&0xc0) == 0x80) { 
-              --from; 
-              goto rep1; 
+          if (from>0 && to-from <3 && (*(text.ptr)&0xc0) == 0x80) {
+              --from;
+              goto rep1;
 	  }
           ctx->text.insertPos = from;
       } else {
           to = from = ctx->text.insertPos;
           rep2 : XawTextSourceRead(ctx->text.source, to, &text, 1);
-          if (to-from <3 && (*(text.ptr)&0xc0) == 0x80) { 
-              ++to; 
-              goto rep2; 
+          if (to-from <3 && (*(text.ptr)&0xc0) == 0x80) {
+              ++to;
+              goto rep2;
 	  }
           ctx->text.insertPos = to;
       }
@@ -909,9 +909,9 @@ DeleteOrKill(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
     /* hack for UTF8 encoded strings */
     if (_Xaw3dXft->encoding == -1) {
 	rep1 : XawTextSourceRead(ctx->text.source, from, &text, 1);
-	if (from > 0 && (*(text.ptr)&0xc0) == 0x80) { 
-            --from; 
-            goto rep1; 
+	if (from > 0 && (*(text.ptr)&0xc0) == 0x80) {
+            --from;
+            goto rep1;
 	}
     }
     to = ctx->text.insertPos;
@@ -921,9 +921,9 @@ DeleteOrKill(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
       /* hack for UTF8 encoded strings */
       if (_Xaw3dXft->encoding == -1) {
           rep2 : XawTextSourceRead(ctx->text.source, to, &text, 1);
-          if (to-from <4 && (*(text.ptr)&0xc0) == 0x80) { 
-              ++to; 
-              goto rep2; 
+          if (to-from <4 && (*(text.ptr)&0xc0) == 0x80) {
+              ++to;
+              goto rep2;
 	  }
       }
   }
@@ -2099,7 +2099,7 @@ XtActionsRec _XawTextActionsTable[] = {
 
   {"delete-next-character", 	DeleteForwardChar},
   {"delete-previous-character", DeleteBackwardChar},
-  {"delete-previous-char-only", DeleteBackwardCharOnly},  
+  {"delete-previous-char-only", DeleteBackwardCharOnly},
   {"delete-next-word", 		DeleteForwardWord},
   {"delete-previous-word", 	DeleteBackwardWord},
   {"delete-selection", 		DeleteCurrentSelection},
@@ -2109,7 +2109,7 @@ XtActionsRec _XawTextActionsTable[] = {
   {"kill-word", 		KillForwardWord},
   {"backward-kill-word", 	KillBackwardWord},
   {"kill-selection", 		KillCurrentSelection},
-  {"kill-selection-or-char", 	KillCurrentSelectionOrBackwardChar},  
+  {"kill-selection-or-char", 	KillCurrentSelectionOrBackwardChar},
   {"kill-to-end-of-line", 	KillToEndOfLine},
   {"kill-to-end-of-paragraph", 	KillToEndOfParagraph},
 

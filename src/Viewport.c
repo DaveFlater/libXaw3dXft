@@ -717,7 +717,7 @@ ComputeLayout(Widget widget, Boolean query, Boolean destroy_scrollbars)
 	else {
 	    int bw = bar->core.border_width;
 	    XtResizeWidget( bar,
-			    (Dimension)(clip_width + 2 * sw - 
+			    (Dimension)(clip_width + 2 * sw -
                             (w->viewport.sbShiftX1+w->viewport.sbShiftX2)),
                             bar->core.height,
 			    (Dimension)bw );
@@ -741,13 +741,13 @@ ComputeLayout(Widget widget, Boolean query, Boolean destroy_scrollbars)
 	}
 	else {
 	    int bw = bar->core.border_width;
-	    XtResizeWidget( bar, bar->core.width, 
-                            (Dimension)(clip_height + 2 * sw - 
+	    XtResizeWidget( bar, bar->core.width,
+                            (Dimension)(clip_height + 2 * sw -
                             (w->viewport.sbShiftY1+w->viewport.sbShiftY2)),
 			    (Dimension)bw );
 	    XtMoveWidget( bar,
-			  (Position)(w->viewport.useright ? 
-                          w->core.width - bar->core.width - bw : -bw), 
+			  (Position)(w->viewport.useright ?
+                          w->core.width - bar->core.width - bw : -bw),
                           w->viewport.sbShiftY1 +
 			  (Position)((needshoriz && !w->viewport.usebottom) ?
 			  w->viewport.horiz_bar->core.height + pad : -bw) );
@@ -1169,4 +1169,3 @@ XawViewportSetCoordinates (Widget gw,
 
     MoveChild (w, -x, -y);
 }
-

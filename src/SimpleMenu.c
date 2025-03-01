@@ -372,12 +372,12 @@ Redisplay(Widget w, XEvent * event, Region region)
 	    if (bw == -1)
 	        bw = XtBorderWidth(w);
             if (bw)
-                XSetWindowBorderWidth(XtDisplayOfObject(w), 
+                XSetWindowBorderWidth(XtDisplayOfObject(w),
                                       XtWindowOfObject(w), 0);
             for (y=0; y<bw; y++) {
 	        dy = 2*y+1;
-                XDrawRectangle(XtDisplayOfObject(w), XtWindowOfObject(w), 
-                               XtGetGC(w, 0, 0), y, y, 
+                XDrawRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
+                               XtGetGC(w, 0, 0), y, y,
                                XtWidth(w)-dy, XtHeight(w)-dy);
 	    }
         }
@@ -1073,12 +1073,12 @@ Layout(Widget w, Dimension *width_ret, Dimension *height_ret)
         /* width still unset, using it as place holder */
 	width = smw->simple_menu.top_margin + tdw->threeD.shadow_width;
 	height = width;
-        scr_height_max =  HeightOfScreen(XtScreen(smw)) 
+        scr_height_max =  HeightOfScreen(XtScreen(smw))
 	  - (smw->simple_menu.top_margin + smw->simple_menu.bottom_margin +
 	     2 * tdw->threeD.shadow_width);
         /* MultiColumnMenu works only when NoHilitReverse is also set */
-	allow_multi_column = allow_change_size && 
-			     _Xaw3dXft->multi_column_menu && 
+	allow_multi_column = allow_change_size &&
+			     _Xaw3dXft->multi_column_menu &&
                              _Xaw3dXft->no_hilit_reverse;
 
 	ForAllChildren(smw, entry)
@@ -1088,7 +1088,7 @@ Layout(Widget w, Dimension *width_ret, Dimension *height_ret)
 	    if (smw->simple_menu.row_height != 0 &&
 			*entry != smw->simple_menu.label)
 		(*entry)->rectangle.height = smw->simple_menu.row_height;
-            if (allow_multi_column && 
+            if (allow_multi_column &&
 		height > scr_height_max - (*entry)->rectangle.height) {
                 column += 1;
                 height = width;
@@ -1530,8 +1530,8 @@ GetEventEntry(Widget w, XEvent * event)
 	    if (*entry == smw->simple_menu.label)
 		return NULL;	/* cannot select the label */
 	    else
-	    if (!smw->simple_menu.multicolumn || 
-		(x_loc >= (*entry)->rectangle.x && 
+	    if (!smw->simple_menu.multicolumn ||
+		(x_loc >= (*entry)->rectangle.x &&
 		 x_loc <= (*entry)->rectangle.x + (*entry)->rectangle.width))
 		return *entry;
 	}
@@ -1654,4 +1654,3 @@ PopdownSubMenu(SimpleMenuWidget smw)
 
     smw->simple_menu.sub_menu = NULL;
 }
-

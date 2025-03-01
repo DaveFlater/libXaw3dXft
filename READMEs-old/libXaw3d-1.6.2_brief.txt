@@ -23,4 +23,3 @@ For patch submission instructions, see:
 For more information on the git code manager, see:
 
         http://wiki.x.org/wiki/GitPage
-

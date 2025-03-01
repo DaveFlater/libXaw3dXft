@@ -1004,4 +1004,3 @@ LayoutLayout (LayoutWidget l, Bool attemptResize)
     SetSizes (box, 0, 0);
     DBUG_VOID_RETURN;
 }
-

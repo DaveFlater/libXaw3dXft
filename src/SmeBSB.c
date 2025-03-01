@@ -349,9 +349,9 @@ Redisplay(Widget w, XEvent * event, Region region)
 	/* this will center the text in the gadget top-to-bottom */
 
         if (_Xaw3dXft->encoding) {
-	    y_loc += ((int)entry->rectangle.height - 
+	    y_loc += ((int)entry->rectangle.height -
 			(font_ascent + font_descent)) / 2 + font_ascent;
-	    
+
 	    XClearArea(XtDisplayOfObject(w), XtWindowOfObject(w),
 		       (int)entry->rectangle.x + 1,
 		       (int)entry->rectangle.y,
@@ -700,7 +700,7 @@ DrawBitmaps(Widget w, GC gc)
  */
 
   if (entry->sme_bsb.right_bitmap != None) {
-    x_loc = entry->rectangle.x + entry->rectangle.width - 
+    x_loc = entry->rectangle.x + entry->rectangle.width -
 		entry->sme_threeD.shadow_width -
 		(int)(entry->sme_bsb.right_margin +
 		entry->sme_bsb.right_bitmap_width) / 2;
@@ -867,7 +867,7 @@ CreateGCs(Widget w)
     if (_Xaw3dXft->encoding) {
 	if (!_Xaw3dXft->hilit_color) Xaw3dXftSetDefaultHilitColor();
 	XAllocNamedColor(XtDisplayOfObject(w), XtParent(w)->core.colormap,
-			 _Xaw3dXft->hilit_color, &color, &color); 
+			 _Xaw3dXft->hilit_color, &color, &color);
 	values.foreground = color.pixel;
 	values.function = GXxor;
 	mask = GCForeground | GCGraphicsExposures | GCFunction;
@@ -919,7 +919,7 @@ FlipColors(Widget w)
             return;
 	}
     }
-   
+
     if (entry->sme_bsb.set_values_area_cleared) {
 	entry->sme_threeD.shadowed = False;
 	return;
@@ -935,4 +935,3 @@ FlipColors(Widget w)
 		   (unsigned int) entry->rectangle.width - 2 * s,
 		   (unsigned int) entry->rectangle.height);
 }
-

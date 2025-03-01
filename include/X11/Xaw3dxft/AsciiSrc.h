@@ -149,4 +149,3 @@ extern Boolean XawAsciiSourceChanged(
 _XFUNCPROTOEND
 
 #endif /* _XawAsciiSrc_h */
-

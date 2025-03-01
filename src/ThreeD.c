@@ -818,4 +818,3 @@ _ShadowSurroundedBox(Widget gw, ThreeDWidget tdw, Position x0, Position y0,
 	}
     }
 }
-

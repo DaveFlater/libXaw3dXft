@@ -578,4 +578,3 @@ XawToggleUnsetCurrent(Widget radio_group)
   if ( GetRadioGroup(radio_group) == NULL) return;
   TurnOffRadioSiblings(radio_group);
 }
-

@@ -113,4 +113,3 @@ typedef struct _AsciiSinkRec {
 } AsciiSinkRec;
 
 #endif /* _XawAsciiSinkP_h */
-

@@ -150,4 +150,3 @@ extern void _XawMultiSinkPosToXY(
 );
 
 #endif /* _XawMultiSinkP_h */
-

@@ -134,5 +134,3 @@ typedef struct _CommandRec {
 } CommandRec;
 
 #endif /* _XawCommandP_h */
-
-

@@ -97,4 +97,3 @@ typedef struct _GripRec {
 } GripRec;
 
 #endif /* _XawGripP_h */
-

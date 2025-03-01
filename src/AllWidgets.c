@@ -116,4 +116,3 @@ XmuWidgetNode XawWidgetArray[] = {
 };
 
 int XawWidgetCount = XtNumber(XawWidgetArray);
-

@@ -140,4 +140,3 @@ extern Boolean _XawMultiSaveAsFile(
 _XFUNCPROTOEND
 
 #endif /* _XawMultiSrc_h  - Don't add anything after this line. */
-

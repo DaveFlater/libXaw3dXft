@@ -592,4 +592,3 @@ _XawTextMBToWC(Display *d, char *str, int *len_in_out)
   }
 }
 #endif
-

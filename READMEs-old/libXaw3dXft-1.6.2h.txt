@@ -4,11 +4,11 @@ about libXaw3dxft-1.6.2
 This is a newer version which should be entirely source compatible with the
 current development versions of libXaw3d-1.6.2 and provides additionally
 support for freetype and UTF8 encoding (as did earlier versions
-of libxaw3dxft <= 1.3.3). 
+of libxaw3dxft <= 1.3.3).
 
 To get the best features, it is recommended to use
-  ./configure --enable-internationalization --enable-arrow-scrollbars 
-              [--prefix=/usr] 
+  ./configure --enable-internationalization --enable-arrow-scrollbars
+              [--prefix=/usr]
 
 The main parameter to be set is xaw3dxft_data->encoding. By default
    xaw3dxft_data->encoding = 0
@@ -32,7 +32,7 @@ typedef struct _Xaw3dXftData {
     char button_inverse;
     char button_dashed;
     char multi_column_menu;
-    char edit_delete_alternative;    
+    char edit_delete_alternative;
     unsigned short insensitive_twist[4];
     Xaw3dXftProc * proc;
     Pixel tip_background_color;
@@ -62,7 +62,7 @@ After this, one can for instance set
         xaw3dxft_data->string_hilight = 0;   /* don't highlight ! */
         xaw3dxft_data->string_use_pixmap = 0;/* 1 might avoid flickering */
         xaw3dxft_data->no_hilit_reverse = 1; /* use instead different color */
-        xaw3dxft_data->button_inverse = 0;   /* 1 is retro style */ 
+        xaw3dxft_data->button_inverse = 0;   /* 1 is retro style */
         xaw3dxft_data->button_dashed = 1;    /* 1 is prettier in my opinion */
         xaw3dxft_data->show_tips = 1;        /* 1 enables tooltips */
 	xaw3dxft_data->tip_background_color = pixel;  /* yellow color ? */
@@ -79,7 +79,7 @@ After this, one can for instance set
 
 Default values are :
 
-    xaw3dxft_data->encoding  = 0; 
+    xaw3dxft_data->encoding  = 0;
     xaw3dxft_data->string_hilight  = 0;
     xaw3dxft_data->text_bg_hilight  = 0;
     xaw3dxft_data->string_use_pixmap  = 0;
@@ -91,7 +91,7 @@ Default values are :
     xaw3dxft_data->button_inverse  = 1;
     xaw3dxft_data->button_dashed  = 0;
     xaw3dxft_data->multi_column_menu  = 0;
-    xaw3dxft_data->edit_delete_alternative  = 0;    
+    xaw3dxft_data->edit_delete_alternative  = 0;
     memset(xaw3dxft_data->insensitive_twist, 0, 4);
     xaw3dxft_data->text_bg_hilight_color  = -1;
     xaw3dxft_data->tip_background_color  = -1;
@@ -99,7 +99,7 @@ Default values are :
     xaw3dxft_data->hilit_color  = NULL;
     xaw3dxft_data->default_fontname  = NULL;
     xaw3dxft_data->default_font  = NULL;
-    
+
     xaw3dxft_proc = xaw3dxft_data->proc;
     xaw3dxft_proc->set_default_hilit_color = Xaw3dXftSetDefaultHilitColor;
     xaw3dxft_proc->set_hilit_color = Xaw3dXftSetHilitColor;
@@ -123,7 +123,7 @@ about libxaw3dxft-1.3.3
 This is an updated version of the libxaw3dxft library, compatible with
 xpaint-2.9.9 (which no longer includes libxaw3dxft).
 
-It includes autoconf scripts rather than the older Imakefile build script - 
+It includes autoconf scripts rather than the older Imakefile build script -
 thanks to David Flater for providing these.
 
 The latest version libxaw3dxft-1.3.3 corrects some minor issues with
@@ -133,7 +133,7 @@ fonts can be set :
 
 - via the char *Xaw3dXftDefaultFontName parameter (global setting)
 - via the Xaw3dXftSetDefaultFontName(char *name) routine (global setting)
-- via a -xrm "*<widget,class>*XftFont: fontname" command line specification 
+- via a -xrm "*<widget,class>*XftFont: fontname" command line specification
   (any widget type or class type name can be specified)
 - via a XtVaSetValues(widget, XtNxftFont, fontname, NULL) call in a program.
 
@@ -143,5 +143,5 @@ are available via Xaw3dXftEncoding = 8 or 16.
 CAUTION: the libxaw3dxft-1.3.3.tar.bz2 package uploaded on January 31, 2012
 had a slight issue (one letter misspelled in the definition
     #define XtNxftFont "xftFont"
-in SmeBSB.h). Please correct or re-download the new version uploaded on 
+in SmeBSB.h). Please correct or re-download the new version uploaded on
 February 1.

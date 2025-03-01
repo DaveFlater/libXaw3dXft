@@ -541,4 +541,3 @@
    Jamie Zawinski <jwz@netscape.com>
 
    And, of course, all the people at X.Org and XFree86.
-

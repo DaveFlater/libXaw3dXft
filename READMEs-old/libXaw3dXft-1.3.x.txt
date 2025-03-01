@@ -20,9 +20,9 @@
 XAW3DXFT ENHANCEMENTS WITH RESPECT TO XAW3D
 
    Xaw3dxft is an extended version of xaw3d with support for UTF8 input
-   and UTF8 encoding of text, and rendering text with the Freetype 
+   and UTF8 encoding of text, and rendering text with the Freetype
    library and Truetype fonts. It should be mostly compatible with the
-   original xaw3d library, except for font management : everything 
+   original xaw3d library, except for font management : everything
    using the old X11 core font routines should be replaced by their
    freetype equivalents.
 
@@ -31,10 +31,10 @@ XAW3DXFT ENHANCEMENTS WITH RESPECT TO XAW3D
    in the menu widgets. Also, the use of UTF8 makes it easier to
    internationalize applications in arbitrary languages.
 
-   The following new parameters have been introduced. They can be accessed   
-   by using an 
-   #include <X11/Xaw3dxft/Xaw3dXft.h> 
-   or by specifying equivalent "extern ..." declarations; check also 
+   The following new parameters have been introduced. They can be accessed
+   by using an
+   #include <X11/Xaw3dxft/Xaw3dXft.h>
+   or by specifying equivalent "extern ..." declarations; check also
    Xaw3dXft.c in the library source code for more details.
 
    int Xaw3dXftEncoding;
@@ -42,9 +42,9 @@ XAW3DXFT ENHANCEMENTS WITH RESPECT TO XAW3D
 
    int Xaw3dXftStringHilight;
    /* default = 0 ; color twist for hilighting menu items */
- 
+
    int Xaw3dXftStringUsePixmap;
-   /* 0 or 1 : write directly (resp. use a pixmap) for writing strings 
+   /* 0 or 1 : write directly (resp. use a pixmap) for writing strings
       with the Xft library */
 
    int Xaw3dXftMenuSpacing;
@@ -80,7 +80,7 @@ XAW3DXFT ENHANCEMENTS WITH RESPECT TO XAW3D
    /* as its name indicates; default is "Liberation-9" */
 
    Those parameters can also be set via the following routines :
-   
+
    void Xaw3dXftSetDefaultHilitColor();
 
    void Xaw3dXftSetHilitColor(char * value);

@@ -351,13 +351,13 @@ XawTipExpose(Widget w, XEvent *event, Region region)
         for (y=0; y<bw; y++) {
 	    len = 2*y + 1;
             XDrawRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
-                           XtGetGC(w, 0, 0), y, y, 
+                           XtGetGC(w, 0, 0), y, y,
                            XtWidth(w)-len, XtHeight(w)-len);
 	}
     }
 
     y = tip->tip.internal_height + ((_Xaw3dXft->encoding)?
-	tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing : 
+	tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing :
 	tip->tip.font->max_bounds.ascent );
 
 #ifdef XAW_INTERNATIONALIZATION
@@ -384,7 +384,7 @@ XawTipExpose(Widget w, XEvent *event, Region region)
     if (_Xaw3dXft->encoding) {
 	bw = XtBorderWidth(w);
 	while ((nl = index(label, '\n')) != NULL) {
-	    Xaw3dXftDrawString(w, tip->tip.xftfont, 
+	    Xaw3dXftDrawString(w, tip->tip.xftfont,
 		tip->tip.internal_width+3, y+_Xaw3dXft->border_hack,
 		label, (int)(nl - label));
 	    y += tip->tip.xftfont->height + 3*_Xaw3dXft->menu_spacing;
@@ -392,7 +392,7 @@ XawTipExpose(Widget w, XEvent *event, Region region)
 	}
 	len = strlen(label);
 	if (len)
-	    Xaw3dXftDrawString(w, tip->tip.xftfont, 
+	    Xaw3dXftDrawString(w, tip->tip.xftfont,
 		tip->tip.internal_width+3, y+_Xaw3dXft->border_hack,
 		label, len);
     } else {
@@ -462,7 +462,7 @@ TipLayout(XawTipInfo *info)
 	    /*CONSTCOND*/
 	    while (True) {
 	        int w;
-		w = Xaw3dXftTextWidth((Widget)info->tip, 
+		w = Xaw3dXftTextWidth((Widget)info->tip,
                                   xftfont, label, (int)(nl - label));
 		if (w > width)
 		    width = w;

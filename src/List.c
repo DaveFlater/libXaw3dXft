@@ -195,7 +195,7 @@ GetGCs(Widget w)
     XGCValues values;
     XtGCMask mask;
     XColor color;
-  
+
 
     values.foreground	= lw->list.foreground;
     values.font		= lw->list.font->fid;
@@ -238,7 +238,7 @@ GetGCs(Widget w)
     if (_Xaw3dXft->no_hilit_reverse) {
 	if (!_Xaw3dXft->hilit_color) Xaw3dXftSetDefaultHilitColor();
 	XAllocNamedColor(XtDisplayOfObject(w), w->core.colormap,
-			 _Xaw3dXft->hilit_color, &color, &color); 
+			 _Xaw3dXft->hilit_color, &color, &color);
 	values.foreground = color.pixel;
 	values.function = GXxor;
 	mask = GCForeground | GCFunction;
@@ -688,7 +688,7 @@ PaintItemName(Widget w, int item)
 	   (w, item, x, str_y, &_Xaw3dXft->text_fg_alternate_color);
 
     if (_Xaw3dXft->encoding) {
-	Xaw3dXftDrawString(w, lw->list.xftfont, 
+	Xaw3dXftDrawString(w, lw->list.xftfont,
 			   x, str_y, str, strlen( str ) );
         _Xaw3dXft->string_hilight = 0;
     } else
@@ -1220,4 +1220,3 @@ XawListShowCurrent(Widget w)
 
     return(ret_val);
 }
-

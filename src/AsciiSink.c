@@ -198,7 +198,7 @@ CharWidth (Widget w, int x, unsigned char *c, int *l)
     }
 
     if (l) *l = 1;
-  
+
     if (_Xaw3dXft->encoding) {
         xftfont = sink->ascii_sink.xftfont;
         if (_Xaw3dXft->encoding == -1) {
@@ -215,12 +215,12 @@ CharWidth (Widget w, int x, unsigned char *c, int *l)
                 int len;
                 first = *c;
                 len = 1;
-                while (len<4 && ((c[len]&0xc0)==0x80) && 
-                           (first=(first<<1))&0x80) 
+                while (len<4 && ((c[len]&0xc0)==0x80) &&
+                           (first=(first<<1))&0x80)
                     ++len;
                 XftTextExtentsUtf8(XtDisplayOfObject(w), xftfont,
                                    (FcChar8*)c, len, (XGlyphInfo*)&extents);
-                width = extents.xOff;       
+                width = extents.xOff;
                 if (l) *l = len;
             } else
                 width = 0;
@@ -274,7 +274,7 @@ PaintText(Widget w, GC gc, Position x, Position y, unsigned char * buf, int len)
     max_x = (Position) ctx->core.width;
 
     if (_Xaw3dXft->encoding) {
-	width = Xaw3dXftTextWidth(w, sink->ascii_sink.xftfont, 
+	width = Xaw3dXftTextWidth(w, sink->ascii_sink.xftfont,
 		(char *) buf, len);
 	/* Don't draw if we can't see it. */
 	if (((int) width) <= -x)
@@ -282,7 +282,7 @@ PaintText(Widget w, GC gc, Position x, Position y, unsigned char * buf, int len)
         if (gc == sink->ascii_sink.invgc) {
             _Xaw3dXft->text_bg_hilight = -_Xaw3dXft->text_bg_hilight;
 	}
-	Xaw3dXftDrawString((Widget)ctx, sink->ascii_sink.xftfont, 
+	Xaw3dXftDrawString((Widget)ctx, sink->ascii_sink.xftfont,
                            (int) x, (int) y, (char *) buf, len);
         if (gc == sink->ascii_sink.invgc) {
 	    _Xaw3dXft->text_bg_hilight = -_Xaw3dXft->text_bg_hilight;
@@ -531,7 +531,7 @@ FindPosition(Widget w,
 	    index++;
 	    break;
 	}
-	if (len>1) index += len-1; 
+	if (len>1) index += len-1;
     }
     if (*resWidth > width && index > fromPos) {
 	*resWidth = lastWidth;
@@ -630,7 +630,7 @@ Destroy(Widget w)
    XtReleaseGC(w, sink->ascii_sink.invgc);
    XtReleaseGC(w, sink->ascii_sink.xorgc);
    XFreePixmap(XtDisplayOfObject(w), sink->ascii_sink.insertCursorOn);
-   if (_Xaw3dXft->encoding && sink->ascii_sink.xftfont && 
+   if (_Xaw3dXft->encoding && sink->ascii_sink.xftfont &&
        sink->ascii_sink.xftfont != _Xaw3dXft->default_font)
        XftFontClose(XtDisplayOfObject(w), sink->ascii_sink.xftfont);
 }

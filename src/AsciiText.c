@@ -332,15 +332,3 @@ AsciiDiskClassRec asciiDiskClassRec = {
 WidgetClass asciiDiskWidgetClass = (WidgetClass)&asciiDiskClassRec;
 
 #endif /* ASCII_DISK */
-
-
-
-
-
-
-
-
-
-
-
-

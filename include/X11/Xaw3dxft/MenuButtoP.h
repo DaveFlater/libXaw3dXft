@@ -97,5 +97,3 @@ typedef struct _MenuButtonRec {
 } MenuButtonRec;
 
 #endif /* _XawMenuButtonP_h */
-
-

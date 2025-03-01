@@ -107,5 +107,3 @@ typedef struct _ToggleRec {
 } ToggleRec;
 
 #endif /* _XawToggleP_h */
-
-

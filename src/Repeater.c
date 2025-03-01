@@ -266,4 +266,3 @@ ActionStop (Widget gw, XEvent *event, String *params, Cardinal *num_params)
     if (rw->repeater.stop_callbacks)
       XtCallCallbackList (gw, rw->repeater.stop_callbacks, (XtPointer)NULL);
 }
-

@@ -883,7 +883,7 @@ NotifyScroll (Widget w, XEvent *event, String *params, Cardinal *num_params)
     intptr_t call_data;
     Position x, y;
 
-   
+
     if (sbw->scrollbar.scroll_mode == 2  /* if scroll continuous */
 	|| LookAhead (w, event))
 	return;
@@ -927,14 +927,14 @@ void
 XawHandleMouseWheel (Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
     ScrollbarWidget sbw = (ScrollbarWidget) w;
-    intptr_t call_data; 
-    
+    intptr_t call_data;
+
     if (!sbw->scrollbar.scroll_steps)
 	return;
 
-    if (sbw->scrollbar.orientation != XtorientVertical) 
+    if (sbw->scrollbar.orientation != XtorientVertical)
 	return;
- 
+
     if (event->xbutton.button != 4 && event->xbutton.button != 5)
         return;
 
@@ -943,7 +943,7 @@ XawHandleMouseWheel (Widget w, XEvent *event, String *params, Cardinal *num_para
 	return;
 
     if (sbw->scrollbar.shown >= 1.0)
-	return; 
+	return;
 
     call_data = sbw->scrollbar.length / sbw->scrollbar.scroll_steps;
     if (call_data < 5) call_data = 5;
@@ -1103,7 +1103,7 @@ NotifyThumb (Widget w, XEvent *event, String *params, Cardinal *num_params)
        compatibility on those architectures for which it work{s,ed};
        the intent is to pass a (truncated) float by value. */
      xtpf.xtf = sbw->scrollbar.top;
- 
+
 /* #ifdef XAW_ARROW_SCROLLBARS */
     /* This corrects for rounding errors: If the thumb is moved to the end of
        the scrollable area sometimes the last line/column is not displayed.
@@ -1165,4 +1165,3 @@ void XawScrollbarSetThumb (Widget w,
 
     PaintThumb (sbw, NULL);
 }
-

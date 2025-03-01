@@ -21,13 +21,13 @@ X CONSORTIUM BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
 AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Permission to use, copy, modify, and distribute this software and its 
-documentation for any purpose and without fee is hereby granted, 
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in 
+both that copyright notice and this permission notice appear in
 supporting documentation, and that the name of Digital not be
 used in advertising or publicity pertaining to distribution of the
-software without specific, written prior permission.  
+software without specific, written prior permission.
 
 DIGITAL DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
 ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
@@ -72,7 +72,7 @@ void Xaw3dXftSetDefaultFontName(char *name)
     _Xaw3dXft->default_fontname = strdup(name);
 }
 
-static int hexa(char c) 
+static int hexa(char c)
 {
     if (c>='0' && c<='9') return c-'0'; else
     if (c>='a' && c<='f') return c-'a'+10; else
@@ -84,13 +84,13 @@ void Xaw3dXftSetInsensitiveTwist(char *value)
 {
     int i;
     if (!value) return;
-    if (*value == '|') 
+    if (*value == '|')
         _Xaw3dXft->insensitive_twist[0] = 1;
     else
-    if (*value == '&') 
+    if (*value == '&')
         _Xaw3dXft->insensitive_twist[0] = 2;
     else
-    if (*value == '^') 
+    if (*value == '^')
         _Xaw3dXft->insensitive_twist[0] = 3;
     else
     if (*value == '~') {
@@ -117,18 +117,18 @@ XftFont * Xaw3dXftGetFont(Display *dpy, char *name)
         if (!_Xaw3dXft->default_fontname)
 	    _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;
         if (strncasecmp(_Xaw3dXft->default_fontname, "core:",5))
-            _Xaw3dXft->default_font = 
+            _Xaw3dXft->default_font =
                 XftFontOpenName(dpy, DefaultScreen(dpy), _Xaw3dXft->default_fontname);
         else
-            _Xaw3dXft->default_font = 
+            _Xaw3dXft->default_font =
                 XftFontOpenXlfd(dpy, DefaultScreen(dpy), _Xaw3dXft->default_fontname+5);
         if (!_Xaw3dXft->default_font)
-            _Xaw3dXft->default_font = 
+            _Xaw3dXft->default_font =
                 XftFontOpenName(dpy, DefaultScreen(dpy), XAW3DXFT_DEFAULTFONT);
     }
     return _Xaw3dXft->default_font;
 }
- 
+
 int
 Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len)
 {
@@ -141,7 +141,7 @@ Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len)
         XftTextExtents8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
     else
     if (_Xaw3dXft->encoding == 16)
-        XftTextExtents16(dpy, font, (FcChar16*)str, len/2, 
+        XftTextExtents16(dpy, font, (FcChar16*)str, len/2,
                          (XGlyphInfo*)&extents);
 #ifdef DEBUG
     str[len] = '\0';
@@ -223,7 +223,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
 
     draw = XftDrawCreate(dpy, win,
                          DefaultVisual(dpy, DefaultScreen(dpy)), cmap);
-    
+
     xcol.pixel = fg;
     xcol.flags = DoRed | DoGreen | DoBlue;
     XQueryColor(dpy, cmap, &xcol);
@@ -243,7 +243,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
                 xre_color.green = xcol.green | _Xaw3dXft->insensitive_twist[2];
                 xre_color.blue = xcol.blue | _Xaw3dXft->insensitive_twist[3];
 	    }
-	} else 
+	} else
 	if (_Xaw3dXft->insensitive_twist[0] < 4) {
 	    if (_Xaw3dXft->insensitive_twist[0] == 2) {
                 xre_color.red = xcol.red & _Xaw3dXft->insensitive_twist[1];
@@ -264,14 +264,14 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
         XftTextExtentsUtf8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
         AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawStringUtf8(draw, &color, font, x, y, (FcChar8*)str, len);
-    } else 
+    } else
     if (_Xaw3dXft->encoding == 8) {
         XftTextExtents8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
         AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawString8(draw, &color, font, x, y, (FcChar8*)str, len);
-    } else 
+    } else
     if (_Xaw3dXft->encoding == 16) {
-        XftTextExtents16(dpy, font, (FcChar16*)str, len/2, 
+        XftTextExtents16(dpy, font, (FcChar16*)str, len/2,
                          (XGlyphInfo*)&extents);
         AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawString16(draw, &color, font, x, y, (FcChar16*)str, len/2);
@@ -304,7 +304,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
             xcol.pixel = bg;
             xcol.flags = DoRed | DoGreen | DoBlue;
             XQueryColor(dpy, cmap, &xcol);
-            XAllocNamedColor(dpy, cmap, _Xaw3dXft->hilit_color, &xhilit, &xhilit); 
+            XAllocNamedColor(dpy, cmap, _Xaw3dXft->hilit_color, &xhilit, &xhilit);
             xcol.red = xcol.red ^ xhilit.red;
             xcol.green = xcol.green ^ xhilit.green;
             xcol.blue = xcol.blue ^ xhilit.blue;
@@ -343,7 +343,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
                 xre_color.green = xcol.green | _Xaw3dXft->insensitive_twist[2];
                 xre_color.blue = xcol.blue | _Xaw3dXft->insensitive_twist[3];
 	    }
-	} else 
+	} else
 	if (_Xaw3dXft->insensitive_twist[0] < 4) {
 	    if (_Xaw3dXft->insensitive_twist[0] == 2) {
                 xre_color.red = xcol.red & _Xaw3dXft->insensitive_twist[1];
@@ -379,7 +379,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
             x += extents.xOff;
             i = j;
 	}
-    } else 
+    } else
     if (_Xaw3dXft->encoding == 8) {
         i = 0;
         while (i < len) {
@@ -394,7 +394,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
             x += extents.xOff;
             ++i;
 	}
-    } else 
+    } else
     if (_Xaw3dXft->encoding == 16) {
         i = 0;
         while (i < len) {
@@ -427,7 +427,7 @@ Xaw3dXftGetScrollbar(Widget w, XtPointer ptr)
     if (!w) return None;
 
     /* Vertical scrollbar of AsciiText/Text widget */
-    if (str[0] == 'T') 
+    if (str[0] == 'T')
         sb = (((AsciiWidget)w)->text.vbar);
     else
     /* Some Parent has vertical scrollbar */
@@ -471,9 +471,9 @@ Xaw3dXftSetMouseWheelHandler(Widget w, XtPointer ptr)
 void
 Xaw3dXftSetMouseWheelSteps(Widget w, XtPointer ptr, int n)
 {
-    ScrollbarWidget sbw = (ScrollbarWidget) Xaw3dXftGetScrollbar(w, ptr); 
+    ScrollbarWidget sbw = (ScrollbarWidget) Xaw3dXftGetScrollbar(w, ptr);
     if (!sbw) return;
-    if (n>0 && n<32768) 
+    if (n>0 && n<32768)
 	sbw->scrollbar.scroll_steps = n;
 }
 
@@ -503,7 +503,7 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->button_dashed  = 0;
     _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
-    _Xaw3dXft->text_sb_right = 0;    
+    _Xaw3dXft->text_sb_right = 0;
     memset(_Xaw3dXft->insensitive_twist, 0, 4);
     _Xaw3dXft->text_bg_hilight_color  = -1;
     _Xaw3dXft->tip_background_color  = -1;
@@ -511,7 +511,7 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->hilit_color  = NULL;
     _Xaw3dXft->default_fontname  = NULL;
     _Xaw3dXft->default_font  = NULL;
-    
+
     proc = (Xaw3dXftProc *) XtMalloc(sizeof(Xaw3dXftProc));
     _Xaw3dXft->proc = proc;
     proc->set_default_hilit_color = Xaw3dXftSetDefaultHilitColor;

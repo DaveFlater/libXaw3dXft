@@ -554,7 +554,7 @@ Redisplay(Widget gw, XEvent *event, Region region)
 	        char *nl;
 	        while ((nl = index(label, '\n')) != NULL) {
 		    Xaw3dXftDrawString(gw, w->label.xftfont,
-				       w->label.label_x, y, 
+				       w->label.label_x, y,
 				       label, (int)(nl - label));
 		    y += w->label.xftfont->height;
 		    label = nl + 1;

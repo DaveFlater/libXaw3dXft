@@ -273,5 +273,3 @@ extern void _XawTextPosToXY(
 );
 
 #endif /* _XawTextP_h */
-
-
