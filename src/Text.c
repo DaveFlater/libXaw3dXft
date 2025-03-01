@@ -1792,47 +1792,47 @@ LoseSelection(Widget w, Atom *selection)
   if (ctx->text.old_insert >= 0) /* Update in progress. */
     _XawTextExecuteUpdate(ctx);
 
-    prevSalt = 0;
-    for (salt = ctx->text.salt; salt; salt = nextSalt)
-    {
-    	atomP = salt->s.selections;
-	nextSalt = salt->next;
-    	for (i = 0 ; i < salt->s.atom_count; i++, atomP++)
-	    if (*selection == *atomP)
-		*atomP = (Atom)0;
+  prevSalt = 0;
+  for (salt = ctx->text.salt; salt; salt = nextSalt)
+  {
+      atomP = salt->s.selections;
+      nextSalt = salt->next;
+      for (i = 0 ; i < salt->s.atom_count; i++, atomP++)
+	  if (*selection == *atomP)
+	      *atomP = (Atom)0;
 
-    	while (salt->s.atom_count &&
-	       salt->s.selections[salt->s.atom_count-1] == 0)
-	{
-	    salt->s.atom_count--;
-	}
+      while (salt->s.atom_count &&
+	     salt->s.selections[salt->s.atom_count-1] == 0)
+      {
+	  salt->s.atom_count--;
+      }
 
-    	/*
-    	 * Must walk the selection list in opposite order from UnsetSelection.
-    	 */
+      /*
+       * Must walk the selection list in opposite order from UnsetSelection.
+       */
 
-    	atomP = salt->s.selections;
-    	for (i = 0 ; i < salt->s.atom_count; i++, atomP++)
-    	    if (*atomP == (Atom)0)
- 	    {
-      	      *atomP = salt->s.selections[--salt->s.atom_count];
-      	      while (salt->s.atom_count &&
-	     	     salt->s.selections[salt->s.atom_count-1] == 0)
-    	    	salt->s.atom_count--;
-    	    }
-	if (salt->s.atom_count == 0)
-	{
-	    XtFree ((char *) salt->s.selections);
-	    XtFree (salt->contents);
-	    if (prevSalt)
-		prevSalt->next = nextSalt;
-	    else
-		ctx->text.salt = nextSalt;
-	    XtFree ((char *) salt);
-	}
-	else
-	    prevSalt = salt;
-    }
+      atomP = salt->s.selections;
+      for (i = 0 ; i < salt->s.atom_count; i++, atomP++)
+	  if (*atomP == (Atom)0)
+	  {
+	    *atomP = salt->s.selections[--salt->s.atom_count];
+	    while (salt->s.atom_count &&
+		   salt->s.selections[salt->s.atom_count-1] == 0)
+	      salt->s.atom_count--;
+	  }
+      if (salt->s.atom_count == 0)
+      {
+	  XtFree ((char *) salt->s.selections);
+	  XtFree (salt->contents);
+	  if (prevSalt)
+	      prevSalt->next = nextSalt;
+	  else
+	      ctx->text.salt = nextSalt;
+	  XtFree ((char *) salt);
+      }
+      else
+	  prevSalt = salt;
+  }
 }
 
 void
