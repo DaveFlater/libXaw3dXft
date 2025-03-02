@@ -224,7 +224,8 @@ GetInputStyleOfIC(XawVendorShellExtPart *ve)
 }
 
 static void
-ConfigureCB(Widget w, XtPointer closure, XEvent *event)
+ConfigureCB(Widget w, XtPointer closure, XEvent *event,
+	    Boolean *continue_to_dispatch)
 {
     XawIcTableList		p;
     XawVendorShellExtPart	*ve;
