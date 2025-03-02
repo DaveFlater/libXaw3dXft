@@ -2514,15 +2514,13 @@ _XawTextSelectionList(TextWidget ctx, String *list, Cardinal nelems)
 {
   Atom * sel = ctx->text.s.selections;
   Display *dpy = XtDisplay((Widget) ctx);
-  int n;
 
   if (nelems > ctx->text.s.array_size) {
     sel = (Atom *) XtRealloc((char *) sel, sizeof(Atom) * nelems);
     ctx->text.s.array_size = nelems;
     ctx->text.s.selections = sel;
   }
-  for (n=nelems; --n >= 0; sel++, list++)
-    *sel = XInternAtom(dpy, *list, False);
+  XInternAtoms(dpy, (char **)list, nelems, False, sel);
 
   ctx->text.s.atom_count = nelems;
   return ctx->text.s.selections;
