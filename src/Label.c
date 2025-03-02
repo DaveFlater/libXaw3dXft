@@ -427,8 +427,12 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     if (_Xaw3dXft->encoding)
 	lw->label.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), lw->label.xftfontname);
-    else
+    else {
 	lw->label.xftfont = NULL;
+	if (!lw->label.font) XtError("Aborting: no font found\n");
+	if (lw->simple.international && !lw->label.fontset)
+	  XtError("Aborting: no fontset found\n");
+    }
 
     /* disable shadows if we're not a subclass of Command */
     if (!XtIsSubclass(new, commandWidgetClass))

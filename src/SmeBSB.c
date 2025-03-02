@@ -203,8 +203,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     if (_Xaw3dXft->encoding)
 	entry->sme_bsb.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), entry->sme_bsb.xftfontname);
-    else
+    else {
 	entry->sme_bsb.xftfont = NULL;
+	if (!entry->sme_bsb.font) XtError("Aborting: no font found\n");
+    }
 
     if (entry->sme_bsb.label == NULL)
 	entry->sme_bsb.label = XtName(new);

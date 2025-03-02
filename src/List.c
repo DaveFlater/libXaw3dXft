@@ -395,8 +395,12 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
 
     if (_Xaw3dXft->encoding)
 	lw->list.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), lw->list.xftfontname);
-    else
+    else {
 	lw->list.xftfont = NULL;
+	if (!lw->list.font) XtError("Aborting: no font found\n");
+	if (lw->simple.international && !lw->list.fontset)
+	  XtError("Aborting: no fontset found\n");
+    }
     GetGCs(new);
 
     /* Set row height. based on font or fontset */

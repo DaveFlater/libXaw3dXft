@@ -80,6 +80,7 @@ SOFTWARE.
 #include <X11/Xaw3dxft/MultiSinkP.h>
 #include <X11/Xaw3dxft/MultiSrcP.h>
 #include <X11/Xaw3dxft/TextP.h>
+#include <X11/Xaw3dxft/Xaw3dXftP.h>
 #include "XawI18n.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -534,6 +535,9 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     MultiSinkObject sink = (MultiSinkObject) new;
 
     GetGC(sink);
+
+    if (!(_Xaw3dXft->encoding || sink->multi_sink.fontset))
+	XtError("Aborting: no fontset found\n");
 
     sink->multi_sink.insertCursorOn= CreateInsertCursor(XtScreenOfObject(new));
     sink->multi_sink.laststate = XawisOff;

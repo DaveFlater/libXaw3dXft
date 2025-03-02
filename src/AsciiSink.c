@@ -566,7 +566,10 @@ GetGC(AsciiSinkObject sink)
 			  GCGraphicsExposures | GCForeground | GCBackground );
     XGCValues values;
 
-    values.font = sink->ascii_sink.font->fid;
+    if (sink->ascii_sink.font)
+        values.font = sink->ascii_sink.font->fid;
+    else
+        values.font = 0;
     values.graphics_exposures = (Bool) FALSE;
 
     values.foreground = sink->text_sink.foreground;
@@ -603,15 +606,16 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     AsciiSinkObject sink = (AsciiSinkObject) new;
 
-    GetGC(sink);
-
     sink->ascii_sink.insertCursorOn= CreateInsertCursor(XtScreenOfObject(new));
     sink->ascii_sink.laststate = XawisOff;
     sink->ascii_sink.cursor_x = sink->ascii_sink.cursor_y = 0;
     if (_Xaw3dXft->encoding)
 	sink->ascii_sink.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), sink->ascii_sink.xftfontname);
-    else
+    else {
 	sink->ascii_sink.xftfont = NULL;
+	if (!sink->ascii_sink.font) XtError("Aborting: no font found\n");
+    }
+    GetGC(sink);
 }
 
 /*	Function Name: Destroy
