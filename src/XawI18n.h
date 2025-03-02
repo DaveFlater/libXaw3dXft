@@ -54,6 +54,12 @@ extern wchar_t _Xaw_atowc (
 
 #ifndef HAVE_ISWSPACE
 #include <ctype.h>
+#ifndef isascii
+#define isascii(c)  ((unsigned char)(c) < 127)
+#endif
+#ifndef toascii
+#define toascii(c)  ((c) & 0x7f)
+#endif
 #ifndef iswspace
 #define iswspace(c) (isascii(c) && isspace(toascii(c)))
 #endif
