@@ -14,7 +14,8 @@
   Cleaned up Makefile.am and configure.ac.
   Made ChangeLog, AUTHORS, NEWS, and README as needed.
 
-  Merged select changes from libXaw3d 2013-06-06 to 2024-11-10.
+  Merged select changes from libXaw3d 2013-06-06 to 2024-11-10 and libXaw
+  2004-09-21 to 2024-06-17.
 
   Fixed GCC 14 FTB (incompatible pointer type) in XawIm.c.
   Fixed vertical spacing in List when FreeType is used.
