@@ -1,4 +1,4 @@
-AC_PREREQ([2.60])
+AC_PREREQ([2.64])
 # FIXME: Update version info on each release
 AC_INIT([libXaw3dXft], [1.6.3], [dave@flaterco.com])
 AC_CONFIG_SRCDIR([Makefile.am])
@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE([dist-xz no-dist-gzip subdir-objects -Wall -Werror])
 
 AC_LANG([C])
 AC_PROG_CC
-AM_PROG_LEX
+m4_version_prereq([2.70], [AC_PROG_LEX(noyywrap)], [AC_PROG_LEX])
 AC_PROG_YACC
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_REQUIRE_CPP
