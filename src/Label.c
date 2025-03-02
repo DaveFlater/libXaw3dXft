@@ -314,7 +314,7 @@ SetTextWidthAndHeight(LabelWidget lw)
 		        font->max_bounds.ascent + font->max_bounds.descent;
 	    }
 	    if (*label) {
-	        int width = XTextWidth(font, label, strlen(label));
+	        int width;
 
 	        if (lw->label.encoding)
 		    width = XTextWidth16(font, (XChar2b *)label, (int)strlen(label)/2);
