@@ -1,28 +1,25 @@
 # libXaw3dXft: Athena Widgets + 3D + FreeType font support
 
-## Overview and usage
+## Overview
 
-For now, please refer to
-[READMEs-old/libXaw3dXft-1.6.2h.txt](READMEs-old/libXaw3dXft-1.6.2h.txt).
+libXaw3dXft is an extension of
+[libXaw3d](https://gitlab.freedesktop.org/xorg/lib/libxaw3d) that adds
+[FreeType](https://gitlab.freedesktop.org/xorg/lib/libxft) font support.
+libXaw3d, in turn, is an extension of
+[libXaw](https://gitlab.freedesktop.org/xorg/lib/libxaw) that adds 3D relief
+visual effects.  libXaw is X.Org's Athena toolkit, a.k.a. Athena Widgets, the
+venerable X11 GUI framework that has provided the most stability over the
+years.
 
-Example configure.ac:
+To link with libXaw3dXft, an application using the GNU autotools build system
+would include this in configure.ac:
 
-    AC_INIT([hello], [1.0])
-    AC_CONFIG_SRCDIR([Makefile.am])
-    AM_INIT_AUTOMAKE([foreign dist-xz no-dist-gzip])
-    AC_LANG([C])
-    AC_PROG_CC
-    AC_REQUIRE_CPP
     PKG_CHECK_MODULES(XAW3DXFT, [libxaw3dxft])
-    AC_CONFIG_FILES([Makefile])
-    AC_OUTPUT
 
-Example Makefile.am:
+And this in Makefile.am:
 
-    AM_CFLAGS     = $(XAW3DXFT_CFLAGS)
-    AM_LDFLAGS    = $(XAW3DXFT_LIBS)
-    bin_PROGRAMS  = hello
-    hello_SOURCES = hello.c
+    AM_CFLAGS  = $(XAW3DXFT_CFLAGS)
+    AM_LDFLAGS = $(XAW3DXFT_LIBS)
 
 ## Building a release
 
