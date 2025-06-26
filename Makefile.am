@@ -187,4 +187,4 @@ pkgconfig_DATA = libxaw3dxft.pc
 # then set age to 0.
 
 # FIXME: Update libtool version info on each release
-libXaw3dxft_la_LDFLAGS = -version-info 8:6:0 -no-undefined
+libXaw3dxft_la_LDFLAGS = -version-info 8:7:0 -no-undefined

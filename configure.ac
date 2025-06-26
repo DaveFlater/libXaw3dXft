@@ -1,6 +1,6 @@
 AC_PREREQ([2.64])
 # FIXME: Update version info on each release
-AC_INIT([libXaw3dXft], [1.6.3], [dave@flaterco.com])
+AC_INIT([libXaw3dXft], [1.6.4], [dave@flaterco.com])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
