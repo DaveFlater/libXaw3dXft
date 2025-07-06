@@ -1060,7 +1060,7 @@ InitStringOrFile(MultiSrcObject src, Boolean newString)
 	    length = strlen(src->multi_src.string);
 
 	    /* Wasteful, throwing away the WC string, but need side effect! */
-            (void) _XawTextMBToWC(d, src->multi_src.string, &length);
+	    XtFree((XtPointer)_XawTextMBToWC(d, src->multi_src.string, &length));
 	    src->multi_src.length = (XawTextPosition) length;
 	} else {
 	    src->multi_src.length = strlen(src->multi_src.string);
@@ -1249,8 +1249,10 @@ LoadPieces(MultiSrcObject src, FILE *file, char *string)
       ptr += piece->used;
   } while (left > 0);
 
-  if ( temp_mb_holder )
-      XtFree( (char*) temp_mb_holder );
+  if ((char *)local_str != temp_mb_holder)
+      XtFree((XtPointer)local_str);
+  if (temp_mb_holder)
+      XtFree(temp_mb_holder);
 }
 
 
