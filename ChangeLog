@@ -1,5 +1,9 @@
 -*- text -*-
 
+Next release
+
+  Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
+
 2025-06-26, v1.6.4 (so 8.0.7)  Dave Flater
 
   Replaced include X11/Xaw3d/LayoutP.h with X11/Xaw3dxft/LayoutP.h in
