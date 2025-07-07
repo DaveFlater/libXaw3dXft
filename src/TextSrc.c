@@ -580,6 +580,7 @@ _XawTextMBToWC(Display *d, char *str, int *len_in_out)
     XtFree(buf);
     if (XwcTextPropertyToTextList(d, &textprop,
 			(wchar_t***)&wlist, &count) != Success) {
+	XtFree((XtPointer)textprop.value);
 	XtWarningMsg("convertError", "multiSourceCreate", "XawError",
 		 "Non-character code(s) in source.", NULL, NULL);
 	*len_in_out = 0;
@@ -588,6 +589,7 @@ _XawTextMBToWC(Display *d, char *str, int *len_in_out)
     wstr = wlist[0];
     *len_in_out = wcslen(wstr);
     XFree((char**)wlist); /* this is evil */
+    XtFree((XtPointer)textprop.value);
     return(wstr);
   }
 }
