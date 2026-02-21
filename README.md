@@ -19,7 +19,7 @@ would include this in configure.ac:
 And this in Makefile.am:
 
     AM_CFLAGS  = $(XAW3DXFT_CFLAGS)
-    AM_LDFLAGS = $(XAW3DXFT_LIBS)
+    LDADD      = $(XAW3DXFT_LIBS)
 
 ## Building a release
 
