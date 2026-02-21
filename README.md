@@ -18,8 +18,8 @@ would include this in configure.ac:
 
 And this in Makefile.am:
 
-    AM_CFLAGS  = $(XAW3DXFT_CFLAGS)
-    LDADD      = $(XAW3DXFT_LIBS)
+    AM_CFLAGS = $(XAW3DXFT_CFLAGS)
+    LDADD     = $(XAW3DXFT_LIBS)
 
 ## Building a release
 
