@@ -1,5 +1,3 @@
-/* Xaw3dXft.h,v 1.0 10/11/07 08:07:27 demailly Exp $ */
-
 /***********************************************************
 
 Copyright (c) 2010  J.-P. Demailly
@@ -39,12 +37,25 @@ SOFTWARE.
 
 ******************************************************************/
 
-#ifndef _Xaw3dXft_h
-#define _Xaw3dXft_h
+#ifndef LIBXAW3DXFT_VERSION
+
+#define LIBXAW3DXFT_VERSION_MAJOR @LIBXAW3DXFT_VERSION_MAJOR@
+#define LIBXAW3DXFT_VERSION_MINOR @LIBXAW3DXFT_VERSION_MINOR@
+#define LIBXAW3DXFT_VERSION_PATCH @LIBXAW3DXFT_VERSION_PATCH@
+#define LIBXAW3DXFT_VERSION       @LIBXAW3DXFT_VERSION@
+#define LIBXAW3DXFT_VERSION_STR   @LIBXAW3DXFT_VERSION_STR@
 
 #ifdef __cplusplus
+#include <cstdint>
 extern "C" {
+#else
+#include <stdint.h>  
 #endif
+
+extern const uint16_t libXaw3dXft_version_major,
+                      libXaw3dXft_version_minor,
+                      libXaw3dXft_version_patch;
+extern const char     libXaw3dXft_version[];
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>

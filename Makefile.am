@@ -4,7 +4,7 @@
 # of the prefix specified as the first argument.
 AM_YFLAGS = -d -p LayYY
 AM_CFLAGS = $(X11_CFLAGS) $(XPM_CFLAGS)
-AM_CPPFLAGS = -I${top_srcdir}/include $(XAW3D_CPPFLAGS)
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include $(XAW3D_CPPFLAGS)
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libXaw3dxft.la
 libXaw3dxft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
@@ -61,11 +61,11 @@ libXaw3dxft_la_SOURCES = \
   src/Vendor.c \
   src/Viewport.c \
   src/Xaw3dP.c \
-  src/Xaw3dXft.c \
   src/XawInit.c \
   src/laygram.y \
   src/laylex.l \
   $(I18N_SRCS)
+nodist_libXaw3dxft_la_SOURCES = src/Xaw3dXft.c config.h
 
 xaw3dincludedir=${includedir}/X11/Xaw3dxft
 xaw3dinclude_HEADERS = \
@@ -137,10 +137,10 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dxft/Viewport.h \
   include/X11/Xaw3dxft/ViewportP.h \
   include/X11/Xaw3dxft/Xaw3dP.h \
-  include/X11/Xaw3dxft/Xaw3dXft.h \
   include/X11/Xaw3dxft/Xaw3dXftP.h \
   include/X11/Xaw3dxft/XawInit.h \
   $(I18N_HDRS)
+nodist_xaw3dinclude_HEADERS = include/X11/Xaw3dxft/Xaw3dXft.h
 
 EXTRA_DIST = \
   src/Template.c \

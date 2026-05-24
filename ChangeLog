@@ -5,6 +5,7 @@ Next release
   Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
 
   Renamed pkg-config file to xaw3dxft.pc (Issue #4).
+  Applied libversiontemplate.  Resolves Issue #6.
 
 2025-06-26, v1.6.4 (so 8.0.7)  Dave Flater
 

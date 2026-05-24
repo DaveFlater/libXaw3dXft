@@ -1,5 +1,3 @@
-/* Xaw3dXft.h,v 1.0 10/11/07 08:07:27 demailly Exp $ */
-
 /***********************************************************
 
 Copyright (c) 2010  J.-P. Demailly
@@ -39,11 +37,35 @@ SOFTWARE.
 
 ******************************************************************/
 
-#include <X11/Xlib.h>
-#include <X11/Xft/Xft.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include <X11/Xaw3dxft/Xaw3dXft.h>
 #include <X11/Xaw3dxft/AsciiTextP.h>
 #include <X11/Xaw3dxft/ScrollbarP.h>
 #include <X11/Xaw3dxft/Xaw3dXftP.h>
+
+// Make sure we got the right header file.
+static_assert(LIBXAW3DXFT_VERSION_MAJOR == @LIBXAW3DXFT_VERSION_MAJOR@);
+static_assert(LIBXAW3DXFT_VERSION_MINOR == @LIBXAW3DXFT_VERSION_MINOR@);
+static_assert(LIBXAW3DXFT_VERSION_PATCH == @LIBXAW3DXFT_VERSION_PATCH@);
+
+// Link time version check
+// Autoconf's test program declares the return type to be char, but it
+// apparently does not matter.
+void @LIBXAW3DXFT_VERSION_MAJOR_FUNNAME@ () {}
+void @LIBXAW3DXFT_VERSION_MINOR_FUNNAME@ () {}
+void @LIBXAW3DXFT_VERSION_PATCH_FUNNAME@ () {}
+
+// Run time version check
+const uint16_t libXaw3dXft_version_major = @LIBXAW3DXFT_VERSION_MAJOR@U,
+               libXaw3dXft_version_minor = @LIBXAW3DXFT_VERSION_MINOR@U,
+               libXaw3dXft_version_patch = @LIBXAW3DXFT_VERSION_PATCH@U;
+const char libXaw3dXft_version[] = @LIBXAW3DXFT_VERSION_STR@;
+
+// For strings | grep -F 'libXaw3dXft version'
+const char libXaw3dXft_version_long[] =
+  "libXaw3dXft version " @LIBXAW3DXFT_VERSION_STR@;
 
 #define XAW3DXFT_DEFAULTFONT "Liberation-9"
 

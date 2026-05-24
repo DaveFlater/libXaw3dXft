@@ -1,6 +1,15 @@
 AC_PREREQ([2.64])
-# FIXME: Update version info on each release
-AC_INIT([libXaw3dXft], [1.6.4], [dave@flaterco.com])
+
+# Update these numbers on every release
+m4_define([LVT_VERSION_MAJOR], [1])
+m4_define([LVT_VERSION_MINOR], [6])
+m4_define([LVT_VERSION_PATCH], [4])
+
+# -------
+m4_define([LVT_VERSION], LVT_VERSION_MAJOR.LVT_VERSION_MINOR.LVT_VERSION_PATCH)
+m4_define([LVT_VERSION_STR], \"LVT_VERSION\")
+
+AC_INIT([libXaw3dXft], m4_defn([LVT_VERSION]), [dave@flaterco.com])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h])
@@ -66,5 +75,24 @@ AS_IF([test "x$enable_arrow_scrollbars" != xno],
     [XAW3D_CPPFLAGS="${XAW3D_CPPFLAGS} -DXAW_ARROW_SCROLLBARS"])
 
 AC_SUBST(XAW3D_CPPFLAGS)
-AC_CONFIG_FILES([Makefile xaw3dxft.pc])
+
+AC_SUBST([LIBXAW3DXFT_VERSION_MAJOR], LVT_VERSION_MAJOR)
+AC_SUBST([LIBXAW3DXFT_VERSION_MINOR], LVT_VERSION_MINOR)
+AC_SUBST([LIBXAW3DXFT_VERSION_PATCH], LVT_VERSION_PATCH)
+AC_SUBST([LIBXAW3DXFT_VERSION],       LVT_VERSION)
+AC_SUBST([LIBXAW3DXFT_VERSION_STR],   LVT_VERSION_STR)
+
+AC_SUBST([LIBXAW3DXFT_VERSION_MAJOR_FUNNAME],
+  m4_format('libXaw3dXft_version_major_%s', LVT_VERSION_MAJOR))
+AC_SUBST([LIBXAW3DXFT_VERSION_MINOR_FUNNAME],
+  m4_format('libXaw3dXft_version_minor_%s', LVT_VERSION_MINOR))
+AC_SUBST([LIBXAW3DXFT_VERSION_PATCH_FUNNAME],
+  m4_format('libXaw3dXft_version_patch_%s', LVT_VERSION_PATCH))
+
+AC_CONFIG_FILES([
+  Makefile
+  xaw3dxft.pc
+  include/X11/Xaw3dxft/Xaw3dXft.h
+  src/Xaw3dXft.c
+])
 AC_OUTPUT

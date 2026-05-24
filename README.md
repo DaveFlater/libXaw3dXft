@@ -85,6 +85,16 @@ Enabled:  ![Scrollbar stippled with black, white, and gray pixels](README_pics/g
 Disabled:  ![Scrollbar stippled with only black and white pixels](README_pics/gray_disabled.png)
 
 
+## Version identification
+
+Starting with version 1.7, libXaw3dXft implements
+[libversiontemplate](https://github.com/DaveFlater/libversiontemplate) to
+expose its semantic version number at configuration, preprocessing, compile,
+link, and run times.  Versions 1.3.3 through 1.6.4 exposed the version number
+only in the pkg-config file, which was then called libxaw3dxft.pc rather than
+xaw3dxft.pc.
+
+
 ## The widgets
 
 Please refer to [Xaw
