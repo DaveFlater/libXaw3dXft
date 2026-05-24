@@ -66,5 +66,5 @@ AS_IF([test "x$enable_arrow_scrollbars" != xno],
     [XAW3D_CPPFLAGS="${XAW3D_CPPFLAGS} -DXAW_ARROW_SCROLLBARS"])
 
 AC_SUBST(XAW3D_CPPFLAGS)
-AC_CONFIG_FILES([Makefile libxaw3dxft.pc])
+AC_CONFIG_FILES([Makefile xaw3dxft.pc])
 AC_OUTPUT

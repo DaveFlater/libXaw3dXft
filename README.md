@@ -14,7 +14,7 @@ years.
 To link with libXaw3dXft, an application using the GNU autotools build system
 would include this in configure.ac:
 
-    PKG_CHECK_MODULES(XAW3DXFT, [libxaw3dxft])
+    PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft])
 
 And this in Makefile.am:
 

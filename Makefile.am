@@ -165,7 +165,7 @@ dist_oldreadmes_DATA = \
   READMEs-old/libXaw3d-1.6.2.txt
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libxaw3dxft.pc
+pkgconfig_DATA = xaw3dxft.pc
 
 # -version-info current:revision:age
 
