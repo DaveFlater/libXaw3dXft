@@ -80,6 +80,7 @@ typedef struct _LabelClassRec {
 extern LabelClassRec labelClassRec;
 
 /* New fields for the Label widget record */
+static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     Pixel	foreground;

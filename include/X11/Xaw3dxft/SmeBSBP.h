@@ -65,6 +65,7 @@ typedef struct _SmeBSBClassRec {
 extern SmeBSBClassRec smeBSBClassRec;
 
 /* New fields for the Sme Object record */
+static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     String label;		/* The entry label. */

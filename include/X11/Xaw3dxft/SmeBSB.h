@@ -41,8 +41,6 @@ in this Software without prior written authorization from the X Consortium.
 #define _SmeBSB_h
 
 #include <X11/Xmu/Converters.h>
-
-#include "Xaw3dP.h"
 #include <X11/Xaw3dxft/Sme.h>
 
 /****************************************************************
@@ -91,6 +89,7 @@ extern WidgetClass smeBSBObjectClass;
 #define XtNunderline "underline"
 #define XtNxftFont "xftFont"
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #ifndef XtNfontSet
 #define XtNfontSet		"fontSet"

@@ -31,6 +31,8 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 #include <X11/Xaw3dxft/Xaw3dP.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_MULTIPLANE_PIXMAPS
 #include <stdio.h>
 #include <X11/xpm.h>

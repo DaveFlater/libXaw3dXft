@@ -65,6 +65,7 @@ typedef struct _SimpleClassRec {
 
 extern SimpleClassRec simpleClassRec;
 
+static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     Cursor	cursor;

@@ -61,6 +61,8 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dxft/Toggle.h>
 #include <X11/Xaw3dxft/Xaw3dXftP.h>
 #include <X11/Xmu/CharSet.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include "XawI18n.h"
 #endif

@@ -38,43 +38,39 @@ AC_CHECK_HEADERS([wctype.h wchar.h widec.h])
 AC_CHECK_FUNCS([iswspace])
 AC_TYPE_INTPTR_T
 
-XAW3D_CPPFLAGS=
-
 AC_ARG_ENABLE([internationalization],
-    AS_HELP_STRING([--enable-internationalization], dnl
-    [enable utf8 strings (default: yes)]),
-    [XAW_I18N=$enableval], [XAW_I18N=yes])
-if test "x$XAW_I18N" = xyes; then
-    XAW3D_CPPFLAGS="${XAW3D_CPPFLAGS} -DXAW_INTERNATIONALIZATION"
-fi
-AM_CONDITIONAL(XAW_INTERNATIONALIZATION, [test "x$XAW_I18N" = xyes])
+  AS_HELP_STRING([--enable-internationalization], [enable utf8 strings (default: yes)]),
+  [],
+  [enable_internationalization=yes])
+AS_IF([test "x$enable_internationalization" != xno],
+  [AS_VAR_SET([CONFIG_INTERNATIONALIZATION], ["#define XAW_INTERNATIONALIZATION 1"])],
+  [AS_VAR_SET([CONFIG_INTERNATIONALIZATION], ["#undef XAW_INTERNATIONALIZATION"])])
+AM_CONDITIONAL(XAW_INTERNATIONALIZATION, [test "x$enable_internationalization" != xno])
 
 AC_ARG_ENABLE([multiplane-bitmaps],
-    [AS_HELP_STRING([--enable-multiplane-bitmaps], [enable XPM support])],
-    [],
-    [enable_multiplane_bitmaps=no])
-
+  [AS_HELP_STRING([--enable-multiplane-bitmaps], [enable XPM support])],
+  [],
+  [enable_multiplane_bitmaps=no])
 AS_IF([test "x$enable_multiplane_bitmaps" != xno],
-     [XAW3D_CPPFLAGS="${XAW3D_CPPFLAGS} -DXAW_MULTIPLANE_PIXMAPS" dnl
-      PKG_CHECK_MODULES(XPM, xpm)])
-
-AC_ARG_ENABLE([gray-stipples],
-    [AS_HELP_STRING([--enable-gray-stipples], [enable gray stipples])],
-    [],
-    [enable_gray_stipples=no])
-
-AS_IF([test "x$enable_gray_stipples" != xno],
-    [XAW3D_CPPFLAGS="${XAW3D_CPPFLAGS} -DXAW_GRAY_BLKWHT_STIPPLES"])
+  [AS_VAR_SET([CONFIG_MULTIPLANE_PIXMAPS], ["#define XAW_MULTIPLANE_PIXMAPS 1"])
+   PKG_CHECK_MODULES(XPM, xpm)],
+  [AS_VAR_SET([CONFIG_MULTIPLANE_PIXMAPS], ["#undef XAW_MULTIPLANE_PIXMAPS"])])
 
 AC_ARG_ENABLE([arrow-scrollbars],
-    [AS_HELP_STRING([--enable-arrow-scrollbars], [enable arrow scrollbars])],
-    [],
-    [enable_arrow_scrollbars=no])
-
+  [AS_HELP_STRING([--enable-arrow-scrollbars], [enable arrow scrollbars])],
+  [],
+  [enable_arrow_scrollbars=no])
 AS_IF([test "x$enable_arrow_scrollbars" != xno],
-    [XAW3D_CPPFLAGS="${XAW3D_CPPFLAGS} -DXAW_ARROW_SCROLLBARS"])
+  [AS_VAR_SET([CONFIG_ARROW_SCROLLBARS], ["#define XAW_ARROW_SCROLLBARS 1"])],
+  [AS_VAR_SET([CONFIG_ARROW_SCROLLBARS], ["#undef XAW_ARROW_SCROLLBARS"])])
 
-AC_SUBST(XAW3D_CPPFLAGS)
+AC_ARG_ENABLE([gray-stipples],
+  [AS_HELP_STRING([--enable-gray-stipples], [enable gray stipples])],
+  [],
+  [enable_gray_stipples=no])
+AS_IF([test "x$enable_gray_stipples" != xno],
+  [AS_VAR_SET([CONFIG_GRAY_BLKWHT_STIPPLES], ["#define XAW_GRAY_BLKWHT_STIPPLES 1"])],
+  [AS_VAR_SET([CONFIG_GRAY_BLKWHT_STIPPLES], ["#undef XAW_GRAY_BLKWHT_STIPPLES"])])
 
 AC_SUBST([LIBXAW3DXFT_VERSION_MAJOR], LVT_VERSION_MAJOR)
 AC_SUBST([LIBXAW3DXFT_VERSION_MINOR], LVT_VERSION_MINOR)
@@ -89,10 +85,16 @@ AC_SUBST([LIBXAW3DXFT_VERSION_MINOR_FUNNAME],
 AC_SUBST([LIBXAW3DXFT_VERSION_PATCH_FUNNAME],
   m4_format('libXaw3dXft_version_patch_%s', LVT_VERSION_PATCH))
 
+AC_SUBST([MACRO_INTERNATIONALIZATION], $CONFIG_INTERNATIONALIZATION)
+AC_SUBST([MACRO_MULTIPLANE_PIXMAPS],   $CONFIG_MULTIPLANE_PIXMAPS)
+AC_SUBST([MACRO_ARROW_SCROLLBARS],     $CONFIG_ARROW_SCROLLBARS)
+AC_SUBST([MACRO_GRAY_BLKWHT_STIPPLES], $CONFIG_GRAY_BLKWHT_STIPPLES)
+
 AC_CONFIG_FILES([
   Makefile
   xaw3dxft.pc
   include/X11/Xaw3dxft/Xaw3dXft.h
+  include/X11/Xaw3dxft/Xaw3d.h
   src/Xaw3dXft.c
 ])
 AC_OUTPUT

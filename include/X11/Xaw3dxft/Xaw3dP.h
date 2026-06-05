@@ -30,13 +30,8 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef _Xaw3dP_h
 #define _Xaw3dP_h
 
+#include <X11/Xaw3dxft/Xaw3d.h>
 #include <X11/IntrinsicP.h>
-
-/* These are set during the build to reflect capability and options. */
-/* I18n support */
-/* XPM support */
-/* gray stipples */
-/* arrow scrollbars */
 
 #ifndef XtX
 #define XtX(w)			(((RectObj)w)->rectangle.x)
@@ -54,6 +49,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define XtBorderWidth(w)	(((RectObj)w)->rectangle.border_width)
 #endif
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_GRAY_BLKWHT_STIPPLES
 extern unsigned long
 grayPixel(

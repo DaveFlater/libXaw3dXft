@@ -72,6 +72,8 @@ SOFTWARE.
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/Editres.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xmu/ExtAgent.h>
 #endif

@@ -45,6 +45,7 @@ typedef struct _TipClassRec {
 
 extern TipClassRec tipClassRec;
 
+static_assert(Got_XAW_defines);
 typedef struct _TipPart {
     /* resources */
     Pixel foreground;

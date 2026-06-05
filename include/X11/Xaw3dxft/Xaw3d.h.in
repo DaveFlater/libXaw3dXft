@@ -1,0 +1,48 @@
+/*
+ * Xaw3d.h
+ *
+ * Configure options chosen at library installation time.
+ */
+
+/*********************************************************************
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+*********************************************************************/
+
+#ifndef _Xaw3d_h
+#define _Xaw3d_h
+
+/*
+  --enable-internationalization
+  Enables/disables internationalization features as used with Athena widgets
+  (locales, wide characters, UTF-8 strings, font sets, input/output methods).
+*/
+@MACRO_INTERNATIONALIZATION@
+
+/*
+  --enable-multiplane-bitmaps
+  Enables/disables XPM support and the library dependency on libXpm.
+*/
+@MACRO_MULTIPLANE_PIXMAPS@
+
+/*
+  --enable-arrow-scrollbars
+  Does just what it says.
+*/
+@MACRO_ARROW_SCROLLBARS@
+
+/*
+  --enable-gray-stipples
+  Allocate a gray colorcell and use it in stippled shadows when 1) widgets
+  have black or white backgrounds and 2) the beNiceToColormap resource is
+  true and 3) the display allows it.
+*/
+@MACRO_GRAY_BLKWHT_STIPPLES@
+
+/*
+  Since all four macros being undefined represents a valid configuration, use
+  static_assert(Got_XAW_defines) to verify that the configuration was loaded.  
+*/
+#define Got_XAW_defines 1
+
+#endif	/* _Xaw3d_h */

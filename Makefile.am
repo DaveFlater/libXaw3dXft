@@ -4,7 +4,7 @@
 # of the prefix specified as the first argument.
 AM_YFLAGS = -d -p LayYY
 AM_CFLAGS = $(X11_CFLAGS) $(XPM_CFLAGS)
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include $(XAW3D_CPPFLAGS)
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libXaw3dxft.la
 libXaw3dxft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
@@ -140,7 +140,9 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dxft/Xaw3dXftP.h \
   include/X11/Xaw3dxft/XawInit.h \
   $(I18N_HDRS)
-nodist_xaw3dinclude_HEADERS = include/X11/Xaw3dxft/Xaw3dXft.h
+nodist_xaw3dinclude_HEADERS = \
+  include/X11/Xaw3dxft/Xaw3dXft.h \
+  include/X11/Xaw3dxft/Xaw3d.h
 
 EXTRA_DIST = \
   src/Template.c \

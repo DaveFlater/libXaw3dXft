@@ -38,6 +38,8 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xmu/Atoms.h>		/* for XA_COMPOUND_TEXT */
 #include <X11/Xaw3dxft/TextP.h>
 #include <X11/Xaw3dxft/Xaw3dXftP.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dxft/MultiSrcP.h>
 #include <X11/Xaw3dxft/XawImP.h>

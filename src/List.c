@@ -77,6 +77,7 @@ static char defaultTranslations[] =
 
 #define offset(field) XtOffsetOf(ListRec, field)
 
+static_assert(Got_XAW_defines);
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	offset(list.foreground), XtRString, XtDefaultForeground},

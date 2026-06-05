@@ -62,6 +62,7 @@ extern const char     libXaw3dXft_version[];
 #include <X11/StringDefs.h>
 #include <X11/Xft/Xft.h>
 #include <X11/Xaw3dxft/XawInit.h>
+#include <X11/Xaw3dxft/Xaw3d.h>
 
 #define XtN3dxftData "3dxftData"
 #define XtN3dxftProc "3dxftProc"
@@ -70,6 +71,7 @@ extern const char     libXaw3dXft_version[];
     x = (Xaw3dXftData *)XrmQuarkToString(XrmStringToQuark("Xaw3dXftData")+1); \
     if (x) x = (Xaw3dXftData *) strtoul((char *)((char *)x+4), NULL, 10);
 
+static_assert(Got_XAW_defines);
 typedef struct _Xaw3dXftProc {
     void (* set_default_hilit_color)(void);
     void (* set_hilit_color)(char * value);

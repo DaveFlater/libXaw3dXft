@@ -201,6 +201,7 @@ Get_GC(CommandWidget cbw, Pixel fg, Pixel bg)
   else
     values.line_width   = 0;
 
+  static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
   if ( cbw->simple.international == True )
       return XtAllocateGC((Widget)cbw, 0,

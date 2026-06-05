@@ -57,6 +57,7 @@ SOFTWARE.
 
 #include <X11/Xmu/Converters.h>
 #include <X11/Xfuncproto.h>
+#include <X11/Xaw3dxft/Xaw3d.h>
 
 /* Scrollbar resources:
 
@@ -137,6 +138,7 @@ extern void XawScrollbarSetThumb(
 #endif
 );
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS
 extern void XawHandleMouseWheel(
     Widget		/* scrollbar */,

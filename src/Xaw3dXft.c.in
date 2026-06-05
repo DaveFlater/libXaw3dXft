@@ -438,6 +438,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
     XFlush(dpy);
 }
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS
 Widget
 Xaw3dXftGetScrollbar(Widget w, XtPointer ptr)

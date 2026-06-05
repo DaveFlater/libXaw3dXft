@@ -59,6 +59,7 @@ SOFTWARE.
 
 #define offset(field) XtOffsetOf(SimpleRec, simple.field)
 
+static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
      offset(cursor), XtRImmediate, (XtPointer) None},

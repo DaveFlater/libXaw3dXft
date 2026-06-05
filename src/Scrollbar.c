@@ -73,6 +73,7 @@ SOFTWARE.
 
 /* Private definitions. */
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS
 static char defaultTranslations[] =
     "<Btn1Down>:   NotifyScroll()\n\

@@ -72,6 +72,8 @@ SOFTWARE.
 #include <X11/Xaw3dxft/TextP.h>
 #include <X11/Xaw3dxft/AsciiText.h>
 #include <X11/Xaw3dxft/AsciiSrc.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dxft/MultiSrc.h>
 #endif

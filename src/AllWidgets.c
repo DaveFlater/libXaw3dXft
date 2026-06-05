@@ -65,6 +65,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dxft/Tree.h>
 #include <X11/Xaw3dxft/Viewport.h>
 
+static_assert(Got_XAW_defines);
 XmuWidgetNode XawWidgetArray[] = {
 { "applicationShell", &applicationShellWidgetClass },
 { "asciiSink", &asciiSinkObjectClass },

@@ -34,7 +34,6 @@
  * Tip Widget
  */
 
-#include "Xaw3dP.h"
 #include <X11/Xaw3dxft/Simple.h>
 
 /* Resources:
@@ -72,6 +71,7 @@ extern WidgetClass tipWidgetClass;
 #define XtNtip "tip"
 #define XtNxftFont "xftFont"
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #ifndef XtNfontSet
 #define XtNfontSet "fontSet"

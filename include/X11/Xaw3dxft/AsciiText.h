@@ -74,9 +74,10 @@ SOFTWARE.
  *
  ****************************************************************/
 
-#include "Xaw3dP.h"
 #include <X11/Xaw3dxft/Text.h>		/* AsciiText is a subclass of Text */
 #include <X11/Xaw3dxft/AsciiSrc.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dxft/MultiSrc.h>
 #endif

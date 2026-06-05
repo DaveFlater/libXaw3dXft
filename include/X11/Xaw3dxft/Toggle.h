@@ -24,7 +24,7 @@ in this Software without prior written authorization from the X Consortium.
  */
 
 /*
- * ToggleP.h - Private definitions for Toggle widget
+ * Toggle.h - Public header file for Toggle widget
  *
  * Author: Chris D. Peterson
  *         MIT X Consortium

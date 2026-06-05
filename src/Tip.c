@@ -105,6 +105,7 @@ static void TipPosition(XawTipInfo *);
  * Initialization
  */
 #define offset(field) XtOffsetOf(TipRec, tip.field)
+static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
     offset(foreground), XtRString, XtDefaultForeground},

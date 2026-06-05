@@ -67,6 +67,7 @@ typedef struct _ListClassRec {
 extern ListClassRec listClassRec;
 
 /* New fields for the List widget record */
+static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     Pixel	foreground;

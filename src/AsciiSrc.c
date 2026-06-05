@@ -46,6 +46,8 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dxft/AsciiSrcP.h>
 #include <X11/Xmu/Misc.h>
 #include <X11/Xmu/CharSet.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dxft/MultiSrcP.h>
 #endif

@@ -223,6 +223,7 @@ AllocTopShadowPixmap (Widget new)
 	    top_fg_pixel = tdw->core.background_pixel;
 	    top_bg_pixel = WhitePixelOfScreen (scn);
 	}
+	static_assert(Got_XAW_defines);
 #ifndef XAW_GRAY_BLKWHT_STIPPLES
 	if (tdw->core.background_pixel == WhitePixelOfScreen (scn) ||
 	    tdw->core.background_pixel == BlackPixelOfScreen (scn)) {

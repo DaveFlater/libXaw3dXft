@@ -58,6 +58,7 @@ SOFTWARE.
 #include <X11/Xaw3dxft/Scrollbar.h>
 #include <X11/Xaw3dxft/ThreeDP.h>
 
+static_assert(Got_XAW_defines);
 typedef struct {
      /* public */
     Pixel	  foreground;	/* thumb foreground color */

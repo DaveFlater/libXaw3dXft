@@ -55,6 +55,8 @@ SOFTWARE.
 #include <X11/Shell.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include "XawI18n.h"
 #endif

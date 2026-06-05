@@ -73,6 +73,7 @@ SOFTWARE.
 #include <ctype.h>
 
 /* I don't know why Paned.c calls _XawImCallVendorShellExtResize, but... */
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dxft/XawImP.h>
 #endif

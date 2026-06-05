@@ -78,6 +78,8 @@ SOFTWARE.
 #include <X11/Xaw3dxft/AsciiSrc.h>
 #include <X11/Xaw3dxft/AsciiSink.h>
 #include <X11/Xaw3dxft/Xaw3dXftP.h>
+
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dxft/MultiSrc.h>
 #include <X11/Xaw3dxft/MultiSinkP.h>

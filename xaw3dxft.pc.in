@@ -8,5 +8,5 @@ Description: X Athena Widgets + 3D + FreeType font support
 Version: @PACKAGE_VERSION@
 Requires: xproto xmu xt xft
 Requires.private: x11 xext
-Cflags: -I${includedir} @XAW3D_CPPFLAGS@
+Cflags: -I${includedir}
 Libs: -L${libdir} -lXaw3dxft -lXft -lfontconfig

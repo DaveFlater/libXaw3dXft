@@ -59,6 +59,7 @@ in this Software without prior written authorization from the X Consortium.
 
 #define offset(field) XtOffsetOf(SmeBSBRec, sme_bsb.field)
 
+static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNlabel,  XtCLabel, XtRString, sizeof(String),
      offset(label), XtRString, NULL},

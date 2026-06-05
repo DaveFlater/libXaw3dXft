@@ -59,6 +59,7 @@ extern XftFont * Xaw3dXftGetFont(Display *dpy, char *name);
 extern int Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len);
 extern void Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len);
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS
 extern Widget Xaw3dXftGetScrollbar(Widget w, XtPointer ptr);
 extern void Xaw3dXftHandleMouseWheel (Widget w, XtPointer ptr, XEvent *event, Boolean * flg);

@@ -84,6 +84,7 @@ SOFTWARE.
 /* Private Data */
 
 #define offset(field) XtOffsetOf(LabelRec, field)
+static_assert(Got_XAW_defines);
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	offset(label.foreground), XtRString, XtDefaultForeground},

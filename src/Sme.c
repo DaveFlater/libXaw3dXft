@@ -45,6 +45,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dxft/Cardinals.h>
 
 #define offset(field) XtOffsetOf(SmeRec, sme.field)
+static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNcallback, XtCCallback, XtRCallback, sizeof(XtPointer),
      offset(callbacks), XtRCallback, (XtPointer)NULL},

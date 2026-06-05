@@ -49,8 +49,8 @@ SOFTWARE.
 #ifndef _Simple_h
 #define _Simple_h
 
-#include "Xaw3dP.h"
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dxft/Xaw3d.h>
 
 /****************************************************************
  *
@@ -86,6 +86,7 @@ SOFTWARE.
 
 #define XtCInsensitive "Insensitive"
 
+static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #ifndef XtCInternational
 #define XtCInternational "International"
