@@ -431,8 +431,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     else {
 	lw->label.xftfont = NULL;
 	if (!lw->label.font) XtError("Aborting: no font found\n");
+#ifdef XAW_INTERNATIONALIZATION
 	if (lw->simple.international && !lw->label.fontset)
 	  XtError("Aborting: no fontset found\n");
+#endif
     }
 
     /* disable shadows if we're not a subclass of Command */

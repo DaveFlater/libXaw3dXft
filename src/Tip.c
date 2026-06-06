@@ -267,8 +267,10 @@ XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
     else {
 	tip->tip.xftfont = NULL;
 	if (!tip->tip.font) XtError("Aborting: no font found\n");
+#ifdef XAW_INTERNATIONALIZATION
 	if (tip->tip.international && !tip->tip.fontset)
 	    XtError("Aborting: no fontset found\n");
+#endif
     }
 }
 

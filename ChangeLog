@@ -7,6 +7,7 @@ Next release
   Renamed pkg-config file to xaw3dxft.pc (Issue #4).
   Applied libversiontemplate.  Resolves Issue #6.
   Put macros for configure options in Xaw3d.h  Resolves Issue #7.
+  Fixed FTB on --disable-internationalization.
 
 2025-06-26, v1.6.4 (so 8.0.7)  Dave Flater
 

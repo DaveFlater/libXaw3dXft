@@ -399,8 +399,10 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
     else {
 	lw->list.xftfont = NULL;
 	if (!lw->list.font) XtError("Aborting: no font found\n");
+#ifdef XAW_INTERNATIONALIZATION
 	if (lw->simple.international && !lw->list.fontset)
 	  XtError("Aborting: no fontset found\n");
+#endif
     }
     GetGCs(new);
 
