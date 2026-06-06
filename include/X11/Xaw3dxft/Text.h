@@ -103,9 +103,6 @@ typedef struct {
     unsigned long format;
     } XawTextBlock, *XawTextBlockPtr;
 
-#include <X11/Xaw3dxft/TextSink.h>
-#include <X11/Xaw3dxft/TextSrc.h>
-
 #define XtEtextScrollNever "never"
 #define XtEtextScrollWhenNeeded "whenneeded"
 #define XtEtextScrollAlways "always"
@@ -266,13 +263,6 @@ extern void XawTextDisplayCaret(
 );
 
 _XFUNCPROTOEND
-
-/*
- * For R3 compatibility only.
- */
-
-#include <X11/Xaw3dxft/AsciiSrc.h>
-#include <X11/Xaw3dxft/AsciiSink.h>
 
 #endif /* _XawText_h */
 /* DON'T ADD STUFF AFTER THIS #endif */

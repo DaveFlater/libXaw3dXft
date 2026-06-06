@@ -100,6 +100,7 @@ SOFTWARE.
 #define _XawMultiSrcP_h
 
 #include <X11/Xaw3dxft/TextSrcP.h>
+#include <X11/Xaw3dxft/AsciiSrc.h>
 #include <X11/Xaw3dxft/MultiSrc.h>
 
 /************************************************************
