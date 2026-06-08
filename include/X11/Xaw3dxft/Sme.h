@@ -57,7 +57,7 @@ in this Software without prior written authorization from the X Consortium.
  height		     Height		Dimension	0
  sensitive	     Sensitive		Boolean		True
  width		     Width		Dimension	0
- x		     Position		Position	0n
+ x		     Position		Position	0
  y		     Position		Position	0
 
 */

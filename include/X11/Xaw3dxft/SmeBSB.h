@@ -68,7 +68,7 @@ in this Software without prior written authorization from the X Consortium.
  underline           Underline          int             -1
  vertSpace           VertSpace          int             25
  width		     Width		Dimension	0
- x		     Position		Position	0n
+ x		     Position		Position	0
  y		     Position		Position	0
 
 */

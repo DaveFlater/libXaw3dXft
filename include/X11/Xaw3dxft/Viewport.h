@@ -62,7 +62,7 @@ SOFTWARE.
  border		     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  destroyCallback     Callback		Pointer		NULL
- foreceBars	     Boolean		Boolean		False
+ forceBars	     Boolean		Boolean		False
  height		     Height		Dimension	0
  mappedWhenManaged   MappedWhenManaged	Boolean		True
  reportCallback	     ReportCallback	Pointer		NULL
