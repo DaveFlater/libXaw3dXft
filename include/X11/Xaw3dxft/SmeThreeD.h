@@ -45,7 +45,7 @@ SOFTWARE.
  topShadowContrast    TopShadowContrast    Int           20
  bottomShadowContrast BottomShadowContrast Int           40
  userData             UserData             XtPointer     NULL
- beNiceToColormap     BeNiceToColormap     Boolean       False
+ beNiceToColormap     BeNiceToColormap     Boolean       True
 
 */
 
