@@ -59,7 +59,7 @@ SOFTWARE.
  allowHoriz	     Boolean		Boolean		False
  allowVert	     Boolean		Boolean		False
  background	     Background		Pixel		XtDefaultBackground
- border		     BorderColor	Pixel		XtDefaultForeground
+ borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  destroyCallback     Callback		Pointer		NULL
  forceBars	     Boolean		Boolean		False

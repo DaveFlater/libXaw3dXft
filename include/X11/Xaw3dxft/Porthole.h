@@ -43,7 +43,7 @@ in this Software without prior written authorization from the X Consortium.
  *  ----		-----		----		-------
  *
  *  background		Background	Pixel		XtDefaultBackground
- *  border	        BorderColor	Pixel		XtDefaultForeground
+ *  borderColor	        BorderColor	Pixel		XtDefaultForeground
  *  borderWidth		BorderWidth	Dimension	1
  *  height		Height		Dimension	0
  *  reportCallback	ReportCallback	Pointer		NULL

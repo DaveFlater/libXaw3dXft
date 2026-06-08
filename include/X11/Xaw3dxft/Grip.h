@@ -67,7 +67,7 @@ SOFTWARE.
  Name		     Class		RepType		Default Value
  ----		     -----		-------		-------------
  foreground	     Foreground		Pixel		XtDefaultForeground
- border		     BorderColor	Pixel		XtDefaultForeground
+ borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	0
  callback	     Callback		Pointer		GripAction
  cursor		     Cursor		Cursor		None

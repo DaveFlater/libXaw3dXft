@@ -49,7 +49,7 @@ in this Software without prior written authorization from the X Consortium.
  Name		     Class		RepType		Default Value
  ----		     -----		-------		-------------
  background	     Background		Pixel		XtDefaultBackground
- border		     BorderColor	Pixel		XtDefaultForeground
+ borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  callback            Callback           XtCallbackList  NULL       **6
  columnSpacing       Spacing            Dimension       6

@@ -53,7 +53,7 @@ in this Software without prior written authorization from the X Consortium.
  ----		     -----		-------		-------------
  background	     Background		Pixel		XtDefaultBackground
  bitmap		     Pixmap		Pixmap		None
- border		     BorderColor	Pixel		XtDefaultForeground
+ borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  callback	     Callback		Pointer		NULL
  cursor		     Cursor		Cursor		None

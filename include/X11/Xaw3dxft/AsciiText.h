@@ -88,7 +88,7 @@ static_assert(Got_XAW_defines);
  ----		     -----		-------		  -------------
  autoFill	     AutoFill		Boolean		  False
  background	     Background		Pixel		  XtDefaultBackground
- border		     BorderColor	Pixel		  XtDefaultForeground
+ borderColor	     BorderColor	Pixel		  XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	  1
  bottomMargin	     Margin		Position	  2
  cursor		     Cursor		Cursor		  xterm

@@ -42,7 +42,7 @@
   ----		    -----		-------		-------------
   background	    Background		Pixel		XtDefaultBackground
   backgroundPixmap  BackgroundPixmap	Pixmap		XtUnspecifiedPixmap
-  border	    BorderColor		Pixel		XtDefaultForeground
+  borderColor	    BorderColor		Pixel		XtDefaultForeground
   borderWidth	    BorderWidth		Dimension	1
   destroyCallback   Callback		XtCallbackList	NULL
   font		    Font		XFontStruct*	XtDefaultFont

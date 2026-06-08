@@ -63,7 +63,7 @@ SOFTWARE.
  ----		     -----		-------		-------------
  background	     Background		Pixel		XtDefaultBackground
  bitmap		     Pixmap		Pixmap		None
- border		     BorderColor	Pixel		XtDefaultForeground
+ borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  cursor		     Cursor		Cursor		None
  cursorName	     Cursor		String		NULL
