@@ -87,23 +87,23 @@ Disabled:  ![Scrollbar stippled with only black and white pixels](README_pics/gr
 
 ## Version identification
 
-Starting with version 1.7, libXaw3dXft implements
+Starting with version 2.0, libXaw3dXft implements
 [libversiontemplate](https://github.com/DaveFlater/libversiontemplate) to
 expose its semantic version number at configuration, preprocessing, compile,
 link, and run times.
 
 The pkg-config file xaw3dxft.pc supplies a version number that can be used by
 the PKG_CHECK_MODULES macro in configure.ac; e.g.,
-`PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft = 1])`.
+`PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft = 2])`.
 
 The header file Xaw3dXft.h defines preprocessor macros and declares
 constants:
 
-    #define LIBXAW3DXFT_VERSION_MAJOR 1
-    #define LIBXAW3DXFT_VERSION_MINOR 7
+    #define LIBXAW3DXFT_VERSION_MAJOR 2
+    #define LIBXAW3DXFT_VERSION_MINOR 0
     #define LIBXAW3DXFT_VERSION_PATCH 0
-    #define LIBXAW3DXFT_VERSION       1.7.0
-    #define LIBXAW3DXFT_VERSION_STR   "1.7.0"
+    #define LIBXAW3DXFT_VERSION       2.0.0
+    #define LIBXAW3DXFT_VERSION_STR   "2.0.0"
 
     extern const uint16_t libXaw3dXft_version_major,
                           libXaw3dXft_version_minor,
@@ -113,15 +113,15 @@ constants:
 The built library libXaw3dxft.a or libXaw3dxft.so provides some linkable
 functions that can be used by the AC_CHECK_LIB macro in configure.ac:
 
-    void libXaw3dXft_version_major_1 () {}
-    void libXaw3dXft_version_minor_7 () {}
+    void libXaw3dXft_version_major_2 () {}
+    void libXaw3dXft_version_minor_0 () {}
     void libXaw3dXft_version_patch_0 () {}
 
 Finally, the built library provides a grep-friendly version string that can
 be retrieved from the command line:
 
     bash$ strings libXaw3dxft.so | grep -F 'libXaw3dXft version'
-    libXaw3dXft version 1.7.0
+    libXaw3dXft version 2.0.0
 
 Versions 1.3.3 through 1.6.4 exposed the version number only in the
 pkg-config file, which was then called libxaw3dxft.pc rather than

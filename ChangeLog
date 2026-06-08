@@ -1,14 +1,28 @@
 -*- text -*-
 
-Next release
+Next release, v2.0  Dave Flater
 
-  Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
+  As major versions go, this one is pretty minor.  The incompatible changes
+  are shallow.  They are:
 
-  Renamed pkg-config file to xaw3dxft.pc (Issue #4).
-  Applied libversiontemplate.  Resolves Issue #6.
-  Put macros for configure options in Xaw3d.h  Resolves Issue #7.
-  Fixed FTB on --disable-internationalization.
-  Eliminated header include cycles.  Resolves Issue #19.
+  - Renamed pkg-config file to xaw3dxft.pc.
+  Dependents of libXaw3dXft that use pkg-config to find the library must look
+  for xaw3dxft where previously they looked for libxaw3dxft.  For example,
+  in configure.ac:
+    PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft])
+  This renaming was for consistency with Xaw and Xaw3d, which use xaw7.pc and
+  xaw3d.pc respectively.
+
+  - Eliminated header include cycles.
+  Dependents that include Text.h might now need to add includes for
+  TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
+  included by Text.h.
+
+  Other noteworthy changes:
+  - Added version identification mechanisms (see README for details).
+  - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
+  - Put macros for the enable/disable configure options in Xaw3d.h.
+  - Fixed FTB on --disable-internationalization.
 
 2025-06-26, v1.6.4 (so 8.0.7)  Dave Flater
 
