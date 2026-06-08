@@ -18,10 +18,16 @@ Next release, v2.0  Dave Flater
   TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
   included by Text.h.
 
+  - Enabled all four configure options by default.
+  This is more likely to lead to unexpected improvement than accidental
+  degradation.  Dependents needing the old behaviors must configure with the
+  relevant --disable... switch or --enable...=no.
+
   Other noteworthy changes:
   - Added version identification mechanisms (see README for details).
   - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
-  - Put macros for the enable/disable configure options in Xaw3d.h.
+  - Put the macros for the enable/disable configure options in Xaw3d.h.
+    (Previously, they were preserved only in the pkg-config cflags.)
   - Fixed FTB on --disable-internationalization.
 
 2025-06-26, v1.6.4 (so 8.0.7)  Dave Flater

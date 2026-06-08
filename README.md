@@ -23,7 +23,7 @@ And this in Makefile.am:
 
 ## Building a release
 
-    ./configure --enable-internationalization --enable-multiplane-bitmaps --enable-gray-stipples --enable-arrow-scrollbars
+    ./configure
     make -j 4
     make install
 
@@ -40,23 +40,25 @@ Then proceed as for building a release.
 
 ## Configure options
 
-### --enable-internationalization (default enabled)
+Effective in version 2.0, all four of these options are enabled by default.
+For version 1.6.4 and prior versions, only internationalization was enabled
+by default.
+
+### --enable-internationalization
 
 Enables/disables internationalization features as used with Athena widgets
 (locales, wide characters, UTF-8 strings, font sets, input/output methods).
 Much of the affected code is bypassed when FreeType fonts are used, but there
 is no reason to disable this.
 
-### --enable-multiplane-bitmaps (default disabled)
+### --enable-multiplane-bitmaps
 
 Enables/disables XPM support and the library dependency on libXpm.  When
 enabled, you may specify either XPM or XBM files for any bitmap resource,
 whether by resource files, with editres, programmatically, etc.  When
 disabled, the Xaw historical limitation to use only XBM remains.
 
-In a future release, this will be enabled by default.
-
-### --enable-arrow-scrollbars (default disabled)
+### --enable-arrow-scrollbars
 
 Does just what it says.  See pics.  The Scrollbar widget's translations and
 actions change accordingly.
@@ -65,9 +67,7 @@ Enabled:  ![Scrollbar with arrows at the top and bottom in addition to a slider 
 
 Disabled:  ![Scrollbar with only a slider](README_pics/arrow_disabled.png)
 
-In a future release, this will be enabled by default.
-
-### --enable-gray-stipples (default disabled)
+### --enable-gray-stipples
 
 This affects the behavior only when the beNiceToColormap resource is true,
 which means that libXaw3dXft allocates fewer colors to conserve slots in a

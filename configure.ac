@@ -48,26 +48,26 @@ AS_IF([test "x$enable_internationalization" != xno],
 AM_CONDITIONAL(XAW_INTERNATIONALIZATION, [test "x$enable_internationalization" != xno])
 
 AC_ARG_ENABLE([multiplane-bitmaps],
-  [AS_HELP_STRING([--enable-multiplane-bitmaps], [enable XPM support])],
+  [AS_HELP_STRING([--enable-multiplane-bitmaps], [enable XPM support (default: yes)])],
   [],
-  [enable_multiplane_bitmaps=no])
+  [enable_multiplane_bitmaps=yes])
 AS_IF([test "x$enable_multiplane_bitmaps" != xno],
   [AS_VAR_SET([MACRO_MULTIPLANE_PIXMAPS], ["#define XAW_MULTIPLANE_PIXMAPS 1"])
    PKG_CHECK_MODULES(XPM, xpm)],
   [AS_VAR_SET([MACRO_MULTIPLANE_PIXMAPS], ["#undef XAW_MULTIPLANE_PIXMAPS"])])
 
 AC_ARG_ENABLE([arrow-scrollbars],
-  [AS_HELP_STRING([--enable-arrow-scrollbars], [enable arrow scrollbars])],
+  [AS_HELP_STRING([--enable-arrow-scrollbars], [enable arrow scrollbars (default: yes)])],
   [],
-  [enable_arrow_scrollbars=no])
+  [enable_arrow_scrollbars=yes])
 AS_IF([test "x$enable_arrow_scrollbars" != xno],
   [AS_VAR_SET([MACRO_ARROW_SCROLLBARS], ["#define XAW_ARROW_SCROLLBARS 1"])],
   [AS_VAR_SET([MACRO_ARROW_SCROLLBARS], ["#undef XAW_ARROW_SCROLLBARS"])])
 
 AC_ARG_ENABLE([gray-stipples],
-  [AS_HELP_STRING([--enable-gray-stipples], [enable gray stipples])],
+  [AS_HELP_STRING([--enable-gray-stipples], [enable gray stipples (default: yes)])],
   [],
-  [enable_gray_stipples=no])
+  [enable_gray_stipples=yes])
 AS_IF([test "x$enable_gray_stipples" != xno],
   [AS_VAR_SET([MACRO_GRAY_BLKWHT_STIPPLES], ["#define XAW_GRAY_BLKWHT_STIPPLES 1"])],
   [AS_VAR_SET([MACRO_GRAY_BLKWHT_STIPPLES], ["#undef XAW_GRAY_BLKWHT_STIPPLES"])])
