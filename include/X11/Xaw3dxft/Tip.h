@@ -51,7 +51,7 @@
   internalHeight    Height		Dimension	2
   internalWidth     Width		Dimension	2
   label		    Label		String		NULL
-  timeout	    Timeout		Int		500
+  timeout	    Timeout		Int		1200
   width		    Width		Dimension	text width
   x		    Position		Position	0
   y		    Position		Position	0
