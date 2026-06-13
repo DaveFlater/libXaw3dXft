@@ -1,6 +1,22 @@
 # libXaw3dXft: Athena Widgets + 3D + FreeType font support
 
-## Overview
+
+- [Overview](#overview)
+- [Building a release](#building)
+- [Building git sources](#gitsrc)
+- [Configure options](#configopt)
+- [Linking with libXaw3dXft](#linking)
+- [Version identification](#version)
+- [Old documentation](#olddocs)
+- [Classes not present in Athena Widgets](#newclasses)
+- [Alterations to Athena Widgets classes](#alterations)
+- [Run-time options](#runtimeopts)
+- [Non-options](#nonoptions)
+- [History](#history)
+- [To do](#todo)
+
+
+## <a name="overview"> Overview
 
 libXaw3dXft is an extension of
 [libXaw3d](https://gitlab.freedesktop.org/xorg/lib/libxaw3d) that adds
@@ -13,7 +29,7 @@ years.  The contents of libXaw3dXft, libXaw3d, and libXaw may be referred to
 as Xaw3dXft, Xaw3d, and Xaw, respectively.
 
 
-## Building a release
+## <a name="building"> Building a release
 
     ./configure
     make -j 4
@@ -22,7 +38,7 @@ as Xaw3dXft, Xaw3d, and Xaw, respectively.
 See the INSTALL file for general help on using configure.
 
 
-## Building git sources
+## <a name="gitsrc"> Building git sources
 
 First,
 
@@ -31,7 +47,7 @@ First,
 Then proceed as for building a release.
 
 
-## Configure options
+## <a name="configopt"> Configure options
 
 Effective in version 2.0, all four of these options are enabled by default.
 For version 1.6.4 and prior versions, only internationalization was enabled
@@ -78,7 +94,7 @@ Enabled:  ![Scrollbar stippled with black, white, and gray pixels](README_pics/g
 Disabled:  ![Scrollbar stippled with only black and white pixels](README_pics/gray_disabled.png)
 
 
-## Linking with libXaw3dXft
+## <a name="linking"> Linking with libXaw3dXft
 
 To link with libXaw3dXft, an application using the GNU autotools build system
 would include this in configure.ac:
@@ -91,7 +107,7 @@ And this in Makefile.am:
     LDADD     = $(XAW3DXFT_LIBS)
 
 
-## Version identification
+## <a name="version"> Version identification
 
 Starting with version 2.0, libXaw3dXft implements
 [libversiontemplate](https://github.com/DaveFlater/libversiontemplate) to
@@ -134,7 +150,7 @@ pkg-config file, which was then called libxaw3dxft.pc rather than
 xaw3dxft.pc.
 
 
-## Old documentation
+## <a name="olddocs"> Old documentation
 
 The following old documentation is provided under the [Docs_old
 subdirectory](Docs_old) to fill in the gaps left by this README:
@@ -161,7 +177,7 @@ The following sections assume familiarity with Xaw R6.3 and Xt and
 incorporate material from the Xaw3d and Xaw3dXft READMEs.
 
 
-## Classes not present in Athena Widgets
+## <a name="newclasses"> Classes not present in Athena Widgets
 
 ### ThreeD
 
@@ -302,10 +318,10 @@ debug  | Boolean | Boolean | False
 layout | Layout  | Layout  | NULL
 
 
-## Alterations to Athena Widgets classes
+## <a name="alterations"> Alterations to Athena Widgets classes
 
 Notable differences between the classes that exist in Xaw R6.3 and their
-analogs in Xaw3dxft are detailed in the following subsections.
+analogs in Xaw3dXft are detailed in the following subsections.
 
 ### Added FreeType font resources
 
@@ -734,7 +750,7 @@ set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | scroll_steps = value
 #endif | |
 
 
-## Non-options
+## <a name="nonoptions"> Non-options
 
 Messing with the following fields of xaw3dxft_data will cause glitchy
 misbehavior.
@@ -757,7 +773,7 @@ applications.  See the colorSwitch resource of the [List widget](#listwidget)
 for its use.
 
 
-## History
+## <a name="history"> History
 
 Kaleb Keithley originated libXaw3d in 1992 as a general replacement for the
 [Athena Widgets (Xaw)](https://gitlab.freedesktop.org/xorg/lib/libxaw) of
@@ -795,7 +811,7 @@ The new repo is at
 [https://github.com/DaveFlater/libXaw3dXft](https://github.com/DaveFlater/libXaw3dXft).
 
 
-## To do
+## <a name="todo"> To do
 
 For planned changes, see the [Issues tab](https://github.com/DaveFlater/libXaw3dXft/issues) of the GitHub repo.
 
