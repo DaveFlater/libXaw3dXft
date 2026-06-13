@@ -62,7 +62,9 @@ SOFTWARE.
  Name		     Class		RepType		Default Value
  ----		     -----		-------		-------------
  echo                Output             Boolean         True
+ font		     Font		XFontStruct*	XtDefaultFont
  displayNonprinting  Output             Boolean         True
+ xftFont             XftFont            String          NULL
 
 */
 

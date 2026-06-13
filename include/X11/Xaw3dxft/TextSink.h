@@ -59,8 +59,8 @@ SOFTWARE.
 
 /* Resources:
 
- Name		     Class		RepType		Default Value
- ----		     -----		-------		-------------
+ Name		     Class           RepType		Default Value
+ ----		     -----	     -------		-------------
  foreground          Foreground      Pixel              XtDefaultForeground
  background          Background      Pixel              XtDefaultBackground
 

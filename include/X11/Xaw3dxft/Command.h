@@ -72,6 +72,7 @@ SOFTWARE.
  destroyCallback     Callback		XtCallbackList	NULL
  encoding	     Encoding		UnsignedChar	XawTextEncoding8bit
  font		     Font		XFontStruct*	XtDefaultFont
+ fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground	     Foreground		Pixel		XtDefaultForeground
  height		     Height		Dimension	text height
  highlightThickness  Thickness		Dimension	0 if shaped, else 2
@@ -91,7 +92,17 @@ SOFTWARE.
  translations	     Translations	TranslationTable see doc or source
  width		     Width		Dimension	text width
  x		     Position		Position	0
+ xftFont             XftFont            String          NULL
  y		     Position		Position	0
+
+ shadowWidth	      ShadowWidth          Dimension    2
+ topShadowPixel       TopShadowPixel       Pixel        dynamic
+ bottomShadowPixel    BottomShadowPixel    Pixel        dynamic
+ topShadowContrast    TopShadowContrast    Int          20
+ bottomShadowContrast BottomShadowContrast Int          40
+ userData             UserData             XtPointer    NULL
+ beNiceToColormap     BeNiceToColormap     Boolean      True
+ relief               Relief               XtRelief     XtReliefRaised
 
 */
 

@@ -82,6 +82,15 @@ SOFTWARE.
  x		     Position		Position	0
  y		     Position		Position	0
 
+ shadowWidth	      ShadowWidth          Dimension    2
+ topShadowPixel       TopShadowPixel       Pixel        dynamic
+ bottomShadowPixel    BottomShadowPixel    Pixel        dynamic
+ topShadowContrast    TopShadowContrast    Int          20
+ bottomShadowContrast BottomShadowContrast Int          40
+ userData             UserData             XtPointer    NULL
+ beNiceToColormap     BeNiceToColormap     Boolean      True
+ relief               Relief               XtRelief     XtReliefRaised
+
 */
 
 #define XtNgripTranslations "gripTranslations"

@@ -67,6 +67,7 @@ in this Software without prior written authorization from the X Consortium.
  ----		     -----		-------		-------------
  callback	     Callback		Callback	(none)
  dataCompression     DataCompression	Boolean		True
+ editType	     EditType	      XawTextEditType	XawtextRead
  length		     Length		int		(internal)
  pieceSize	     PieceSize		int		BUFSIZ
  string		     String		String		NULL

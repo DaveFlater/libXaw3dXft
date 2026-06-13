@@ -42,10 +42,14 @@
   ----		    -----		-------		-------------
   background	    Background		Pixel		XtDefaultBackground
   backgroundPixmap  BackgroundPixmap	Pixmap		XtUnspecifiedPixmap
+  backingStore      BackingStore        BackingStore 	Always + WhenMapped +
+                                                          NotUseful
   borderColor	    BorderColor		Pixel		XtDefaultForeground
   borderWidth	    BorderWidth		Dimension	1
   destroyCallback   Callback		XtCallbackList	NULL
+  encoding          Encoding 	        UnsignedChar 	XawTextEncoding8bit
   font		    Font		XFontStruct*	XtDefaultFont
+  fontSet           FontSet             XFontSet        XtDefaultFontSet
   foreground	    Foreground		Pixel		XtDefaultForeground
   height	    Height		Dimension	text height
   internalHeight    Height		Dimension	2
@@ -55,6 +59,7 @@
   width		    Width		Dimension	text width
   x		    Position		Position	0
   y		    Position		Position	0
+  xftFont           XftFont             String          NULL
 
 */
 

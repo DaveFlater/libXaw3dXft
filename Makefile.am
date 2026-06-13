@@ -151,20 +151,31 @@ EXTRA_DIST = \
 
 BUILT_SOURCES = src/laygram.h
 dist_doc_DATA = README.md Xresources
+# Bunch of extra directory definitions because Automake doesn't want to
+# preserve relative directory structure
 readmepicsdir = $(docdir)/README_pics
 dist_readmepics_DATA = \
   README_pics/arrow_disabled.png \
   README_pics/arrow_enabled.png  \
   README_pics/gray_disabled.png  \
   README_pics/gray_enabled.png
-oldreadmesdir = $(docdir)/READMEs-old
-dist_oldreadmes_DATA = \
-  READMEs-old/libXaw3d-1.6.2_brief.txt \
-  READMEs-old/libXaw3dXft-1.3.x.txt    \
-  READMEs-old/libXaw3dXft-1.6.2h.txt   \
-  READMEs-old/libXaw3d-1.5.txt         \
-  READMEs-old/libXaw3d-1.5E.txt        \
-  READMEs-old/libXaw3d-1.6.2.txt
+olddocslayoutdir = $(docdir)/Docs_old/Layout
+dist_olddocslayout_DATA = \
+  Docs_old/Layout/R5contrib_Layout_examples.tar.xz \
+  Docs_old/Layout/README.txt                       \
+  Docs_old/Layout/XConf93_Layout.tar.xz
+olddocsreadmesdir = $(docdir)/Docs_old/READMEs
+dist_olddocsreadmes_DATA = \
+  Docs_old/READMEs/libXaw3d-1.5.txt                \
+  Docs_old/READMEs/libXaw3d-1.5E.txt               \
+  Docs_old/READMEs/libXaw3d-1.6.2_brief.txt        \
+  Docs_old/READMEs/libXaw3d-1.6.2.txt              \
+  Docs_old/READMEs/libXaw3dXft-1.3.x.txt           \
+  Docs_old/READMEs/libXaw3dXft-1.6.2h.txt
+olddocsxawdir = $(docdir)/Docs_old/Xaw_R6.3
+dist_olddocsxaw_DATA = \
+  Docs_old/Xaw_R6.3/widg.idx.ps                    \
+  Docs_old/Xaw_R6.3/widgets.ps
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xaw3dxft.pc

@@ -68,9 +68,12 @@ in this Software without prior written authorization from the X Consortium.
  cursor              Cursor             Cursor          None
  destroyCallback     Callback		Pointer		NULL
  height		     Height		Dimension	0
+ jumpScroll 	     JumpScroll 	Int 	        1
  label               Label              String          NULL (No label)
  labelClass          LabelClass         Pointer         smeBSBObjectClass
+ leftWhitespace      LeftWhitespace 	Dimension 	0
  mappedWhenManaged   MappedWhenManaged	Boolean		True
+ rightWhitespace     RightWhitespace 	Dimension 	0
  rowHeight           RowHeight          Dimension       Height of Font
  sensitive	     Sensitive		Boolean		True
  topMargin           VerticalMargins    Dimension       VerticalSpace

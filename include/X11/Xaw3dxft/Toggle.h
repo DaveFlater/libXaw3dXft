@@ -60,6 +60,7 @@ in this Software without prior written authorization from the X Consortium.
  cursor		     Cursor		Cursor		None
  destroyCallback     Callback		Pointer		NULL
  font		     Font		XFontStructx*	XtDefaultFont
+ fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground	     Foreground		Pixel		XtDefaultForeground
  height		     Height		Dimension	text height
  highlightThickness  Thickness		Dimension	2
@@ -73,7 +74,17 @@ in this Software without prior written authorization from the X Consortium.
  sensitive	     Sensitive		Boolean		True
  width		     Width		Dimension	text width
  x		     Position		Position	0
+ xftFont             XftFont            String          NULL
  y		     Position		Position	0
+
+ shadowWidth	      ShadowWidth          Dimension    2
+ topShadowPixel       TopShadowPixel       Pixel        dynamic
+ bottomShadowPixel    BottomShadowPixel    Pixel        dynamic
+ topShadowContrast    TopShadowContrast    Int          20
+ bottomShadowContrast BottomShadowContrast Int          40
+ userData             UserData             XtPointer    NULL
+ beNiceToColormap     BeNiceToColormap     Boolean      True
+ relief               Relief               XtRelief     XtReliefRaised
 
 + To use the toggle as a radio toggle button, set this resource to point to
   any other widget in the radio group.

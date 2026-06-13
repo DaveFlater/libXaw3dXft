@@ -59,9 +59,9 @@ SOFTWARE.
 
 /* Resources:
 
- Name		     Class		RepType		Default Value
- ----		     -----		-------		-------------
- editType	     EditType		XawTextEditType	XawtextRead
+ Name		     Class	      RepType		Default Value
+ ----		     -----	      -------		-------------
+ editType	     EditType	      XawTextEditType	XawtextRead
 
 */
 

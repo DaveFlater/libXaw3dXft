@@ -84,6 +84,10 @@ static_assert(Got_XAW_defines);
 
 /* Resources:
 
+  "Some of the resources listed below are not actually resources of the
+  AsciiText, but belong to the associated source or sink." — Xaw R6.3
+  documentation, §5.5
+
  Name		     Class		RepType		  Default Value
  ----		     -----		-------		  -------------
  autoFill	     AutoFill		Boolean		  False
@@ -96,11 +100,12 @@ static_assert(Got_XAW_defines);
  displayCaret	     Output		Boolean		  True
  displayPosition     TextPosition	int		  0
  editType	     EditType		XawTextEditType	  XawtextRead
- font		     Font		XFontStruct*	  Fixed
+ font		     Font		XFontStruct*	  XtDefaultFont
+ fontSet             FontSet            XFontSet          XtDefaultFontSet
  foreground	     Foreground		Pixel		  Black
  height		     Height		Dimension	  font height
  insertPosition	     TextPosition	int		  0
- international	     International		Boolean		false
+ international	     International	Boolean		  false
  leftMargin	     Margin		Position	  2
  mappedWhenManaged   MappedWhenManaged	Boolean		  True
  resize		     Resize		XawTextResizeMode XawtextResizeNever
@@ -117,6 +122,7 @@ static_assert(Got_XAW_defines);
  width		     Width		Dimension	  100
  wrap		     Wrap		XawTextWrapMode	  XawtextWrapNever
  x		     Position		Position	  0
+ xftFont             XftFont            String            NULL
  y		     Position		Position	  0
 
  (see also *Src.h and *Sink.h)

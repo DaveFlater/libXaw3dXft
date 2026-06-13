@@ -64,6 +64,7 @@ SOFTWARE.
  ----		     -----	     -------		-------------
  autoFill	    AutoFill	     Boolean		False
  bottomMargin	    Margin	     Position		2
+ displayCaret       Output           Boolean            True
  displayPosition    TextPosition     XawTextPosition	0
  insertPosition	    TextPosition     XawTextPosition	0
  leftMargin	    Margin	     Position		2

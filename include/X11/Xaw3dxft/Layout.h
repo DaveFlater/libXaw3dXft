@@ -42,14 +42,15 @@
  borderColor	         BorderColor       Pixel	    XtDefaultForeground
  borderWidth	         BorderWidth       Dimension	    1
  cursor		         Cursor	           Cursor	    None
+ debug 	                 Boolean 	   Boolean 	    False
  destroyCallback         Callback	   Pointer	    NULL
  height		         Height	           Dimension	    0
+ layout			 Layout		   Layout	    NULL
  mappedWhenManaged       MappedWhenManaged Boolean	    True
  sensitive	         Sensitive	   Boolean	    True
  width		         Width	           Dimension	    0
  x		         Position	   Position	    0
  y		         Position	   Position    	    0
- layout			 Layout		   Layout	    NULL
 
 */
 

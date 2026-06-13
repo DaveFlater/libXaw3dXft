@@ -52,12 +52,14 @@ in this Software without prior written authorization from the X Consortium.
  borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  callback            Callback           XtCallbackList  NULL       **6
+ colorSwitch 	     ColorSwitch 	Pointer 	NULL
  columnSpacing       Spacing            Dimension       6
  cursor		     Cursor		Cursor		left_ptr
  cursorName	     Cursor		String		NULL
  defaultColumns      Columns            int             2          **5
  destroyCallback     Callback		Pointer		NULL
  font		     Font		XFontStruct*	XtDefaultFont
+ fontSet             FontSet            XFontSet        XtDefaultFontSet
  forceColumns        Columns            Boolean         False      **5
  foreground	     Foreground		Pixel		XtDefaultForeground
  height		     Height		Dimension	0          **1
@@ -76,6 +78,7 @@ in this Software without prior written authorization from the X Consortium.
  verticalList        Boolean            Boolean         False
  width		     Width		Dimension	0          **1
  x		     Position		Position	0
+ xftFont             XftFont            String          NULL
  y		     Position		Position	0
 
  **1 - If the Width or Height of the list widget is zero (0) then the value

@@ -83,6 +83,7 @@ SOFTWARE.
  mappedWhenManaged   MappedWhenManaged	Boolean		True
  minimumThumb	     MinimumThumb	Dimension	7
  orientation	     Orientation	XtOrientation	XtorientVertical
+ pickTop 	     PickTop 	        Boolean 	False
  pointerColor	     Foreground		Pixel		XtDefaultForeground
  pointerColorBackground Background	Pixel		XtDefaultBackground
  screen		     Screen		Screen		parent's screen
@@ -99,11 +100,19 @@ SOFTWARE.
  thumb		     Thumb		Bitmap		GreyPixmap
  thumbProc	     Callback		XtCallbackList	NULL
  topOfThumb	     TopOfThumb		Float		0.0
- pickTop	     PickTop		Boolean		False
  translations	     Translations	TranslationTable see source or doc
  width		     Width		Dimension	thickness or length
  x		     Position		Position	0
  y		     Position		Position	0
+
+ shadowWidth	      ShadowWidth          Dimension    2
+ topShadowPixel       TopShadowPixel       Pixel        dynamic
+ bottomShadowPixel    BottomShadowPixel    Pixel        dynamic
+ topShadowContrast    TopShadowContrast    Int          20
+ bottomShadowContrast BottomShadowContrast Int          40
+ userData             UserData             XtPointer    NULL
+ beNiceToColormap     BeNiceToColormap     Boolean      True
+ relief               Relief               XtRelief     XtReliefRaised
 
 */
 
