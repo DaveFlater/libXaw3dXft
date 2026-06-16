@@ -2,6 +2,7 @@
 Copyright 1987, 1988 by Digital Equipment Corporation, Maynard, Massachusetts,
 and the Massachusetts Institute of Technology, Cambridge, Massachusetts.
 Copyright 1992 by Kaleb Keithley
+© 2026 David Flater
 
                         All Rights Reserved
 
@@ -43,6 +44,8 @@ typedef struct {
     XtPointer	    user_data;
     Boolean	    be_nice_to_cmap;
     Boolean	    shadowed;
+    int             visual_class;
+    int             visual_depth;
   } SmeThreeDPart;
 
 /* Full instance record declaration */

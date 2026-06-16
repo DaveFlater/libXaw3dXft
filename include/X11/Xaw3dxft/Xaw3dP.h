@@ -7,6 +7,7 @@
 /*********************************************************************
 Copyright (C) 1992 Kaleb Keithley
 Copyright (C) 2000, 2003 David J. Hawkey Jr.
+© 2026 David Flater
 
                         All Rights Reserved
 
@@ -71,5 +72,9 @@ stipplePixmap(
     unsigned int
 );
 #endif
+
+// Given a Widget or non-widget Object, get the class and depth of its visual.
+// (class or depth can be NULL if not wanted.)
+extern void Xaw3dXftGetVisualInfo (Widget object, int *class, int *depth);
 
 #endif	/* _Xaw3dP_h */

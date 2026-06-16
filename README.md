@@ -78,16 +78,14 @@ Disabled:  ![Scrollbar with only a slider](README_pics/arrow_disabled.png)
 
 ### --enable-gray-stipples
 
-This affects the behavior only when the beNiceToColormap resource is true,
-which means that libXaw3dXft allocates fewer colors to conserve slots in a
-256- or 16-color palette for displays that don't support true color.
---enable-gray-stipples makes libXaw3dXft allocate a gray colorcell and use it
-in stippled shadows when 1) widgets have black or white backgrounds and 2)
-the beNiceToColormap resource is true and 3) the display allows it.
+This option affects the rendering of stippled 3D shadows.  See the
+explanation under the [ThreeD widget](#threed) about stippled versus solid
+color shadows.
 
-Indexed color (non-true-color) modes are relevant for historical or
-retrocomputing purposes only.  Everyone else should always set the
-beNiceToColormap resource to false.
+--enable-gray-stipples makes libXaw3dXft allocate a gray colorcell and use it
+in stippled shadows when widgets have black or white backgrounds and the
+display allows it.  This improves the appearance of stippled shadows at the
+cost of using up another slot in the colormap.
 
 Enabled:  ![Scrollbar stippled with black, white, and gray pixels](README_pics/gray_enabled.png)
 
@@ -179,7 +177,7 @@ incorporate material from the Xaw3d and Xaw3dXft READMEs.
 
 ## <a name="newclasses"> Classes not present in Athena Widgets
 
-### ThreeD
+### <a name="threed"> ThreeD
 
 The ThreeD widget class does not exist in Xaw.  It is inherited by many other
 widget classes to add 3D shadows to them.  Those widgets thus acquire the
@@ -205,6 +203,17 @@ userData             | UserData             | XtPointer | NULL
 beNiceToColormap     | BeNiceToColormap     | Boolean   | True
 relief               | Relief               | XtRelief  | XtReliefRaised
 
+3D shadows can be drawn either as solid colors or as a stippled pattern.
+ThreeD decides which way to do it as follows:
+
+1. If the visual depth is greater than 8 bits and the visual has an immutable
+   colormap (i.e., the visual class is TrueColor, StaticColor, or
+   StaticGray), always use solid colors.  (This condition was added in
+   Xaw3dXft version 2.)
+2. If the visual depth is 1 bit (monochrome, 2-color black and white), always
+   stipple.
+3. Otherwise, stipple if and only if the beNiceToColormap resource is true.
+
 Shadows "grow outward" in the SimpleMenu and Text widgets, increasing these
 widgets' sizes, "grow inward" in the Viewport and Scrollbar widgets,
 decreasing the size of the clip widget and thumb, respectively, and "grow
@@ -219,9 +228,6 @@ XtReliefRidge, and XtReliefGroove} defined in ThreeD.h; however, the Text,
 SimpleMenu, Scrollbar, and Viewport widgets ignore this resource and display
 only raised or sunken shadows.
 
-When beNiceToColormap is true, ThreeD will use stippled shadows instead of
-allocating more colors.
-
 The undeclared resources topShadowPixmap and bottomShadowPixmap appear to be
 intended for internal use only.
 
@@ -229,9 +235,9 @@ intended for internal use only.
 
 (Sme = simple menu entry; BSB = bitmap-string-bitmap style)
 
-The SmeThreeD object class does not exist in Xaw.  It is inherited only by
-SmeBSB.  It has the following public resources in addition to those that it
-inherits from RectObj and Sme:
+The SmeThreeD object class does not exist in Xaw.  It is a clone-and-hack of
+ThreeD that is inherited only by SmeBSB.  It has the following public
+resources in addition to those that it inherits from RectObj and Sme:
 
 Name                 | Class                | RepType   | Default value
 :---                 | :---                 | :---      | :---
@@ -242,6 +248,9 @@ topShadowContrast    | TopShadowContrast    | Int       | 20
 bottomShadowContrast | BottomShadowContrast | Int       | 40
 userData             | UserData             | XtPointer | NULL
 beNiceToColormap     | BeNiceToColormap     | Boolean   | True
+
+The 3D shadows on an SmeThreeD object appear only when the mouse is over it.
+The outer shadow that is always present belongs to the menu.
 
 Like ThreeD, SmeThreeD has undeclared resources topShadowPixmap and
 bottomShadowPixmap that appear to be intended for internal use only.

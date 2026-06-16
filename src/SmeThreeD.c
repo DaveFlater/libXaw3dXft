@@ -2,6 +2,7 @@
 Copyright 1987, 1988 by Digital Equipment Corporation, Maynard, Massachusetts,
 and the Massachusetts Institute of Technology, Cambridge, Massachusetts.
 Copyright 1992, 1993 by Kaleb Keithley
+© 2026 David Flater
 
                         All Rights Reserved
 
@@ -26,6 +27,7 @@ SOFTWARE.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <assert.h>
 #include <X11/Xaw3dxft/Xaw3dP.h>
 #include <X11/Xlib.h>
 #include <X11/StringDefs.h>
@@ -135,6 +137,16 @@ WidgetClass smeThreeDObjectClass = (WidgetClass) &smeThreeDClassRec;
  *
  ****************************************************************/
 
+#define VisualClass(tdo) (tdo->sme_threeD.visual_class)
+#define VisualDepth(tdo) (tdo->sme_threeD.visual_depth)
+#define BeNice(tdo)      (tdo->sme_threeD.be_nice_to_cmap)
+
+// The values of visual class are at the bottom of X.h, which comments:
+// Note that the statically allocated ones are even numbered and the
+// dynamically changeable ones are odd numbered.
+#define ShouldStipple(tdo) ( \
+  (VisualDepth(tdo) <= 8 || VisualClass(tdo) & 1) && \
+  (VisualDepth(tdo) == 1 || BeNice(tdo)))
 
 #define shadowpm_width 8
 #define shadowpm_height 8
@@ -152,11 +164,10 @@ static void
 AllocTopShadowGC (Widget w)
 {
     SmeThreeDObject	tdo = (SmeThreeDObject) w;
-    Screen		*scn = XtScreenOfObject (w);
     XtGCMask		valuemask;
     XGCValues		myXGCV;
 
-    if (tdo->sme_threeD.be_nice_to_cmap || DefaultDepthOfScreen (scn) == 1) {
+    if (ShouldStipple(tdo)) {
 	valuemask = GCTile | GCFillStyle;
 	myXGCV.tile = tdo->sme_threeD.top_shadow_pxmap;
 	myXGCV.fill_style = FillTiled;
@@ -172,11 +183,10 @@ static void
 AllocBotShadowGC (Widget w)
 {
     SmeThreeDObject	tdo = (SmeThreeDObject) w;
-    Screen		*scn = XtScreenOfObject (w);
     XtGCMask		valuemask;
     XGCValues		myXGCV;
 
-    if (tdo->sme_threeD.be_nice_to_cmap || DefaultDepthOfScreen (scn) == 1) {
+    if (ShouldStipple(tdo)) {
 	valuemask = GCTile | GCFillStyle;
 	myXGCV.tile = tdo->sme_threeD.bot_shadow_pxmap;
 	myXGCV.fill_style = FillTiled;
@@ -219,12 +229,12 @@ AllocTopShadowPixmap (Widget new)
      * pixmap caching.
      */
 
-    if (DefaultDepthOfScreen (scn) == 1) {
+    if (VisualDepth(tdo) == 1) {
 	top_fg_pixel = BlackPixelOfScreen (scn);
 	top_bg_pixel = WhitePixelOfScreen (scn);
 	pm_data = mtshadowpm_bits;
 	create_pixmap = TRUE;
-    } else if (tdo->sme_threeD.be_nice_to_cmap) {
+    } else if (ShouldStipple(tdo)) {
 	if (parent->core.background_pixel == WhitePixelOfScreen (scn)) {
 	    top_fg_pixel = WhitePixelOfScreen (scn);
 	    top_bg_pixel = grayPixel( BlackPixelOfScreen (scn), dpy, scn);
@@ -255,7 +265,7 @@ AllocTopShadowPixmap (Widget new)
 			shadowpm_height,
 			top_fg_pixel,
 			top_bg_pixel,
-			DefaultDepthOfScreen (scn));
+			VisualDepth(tdo));
 }
 
 /* ARGSUSED */
@@ -270,12 +280,12 @@ AllocBotShadowPixmap (Widget new)
     char		*pm_data;
     Boolean		create_pixmap = FALSE;
 
-    if (DefaultDepthOfScreen (scn) == 1) {
+    if (VisualDepth(tdo) == 1) {
 	bot_fg_pixel = BlackPixelOfScreen (scn);
 	bot_bg_pixel = WhitePixelOfScreen (scn);
 	pm_data = mbshadowpm_bits;
 	create_pixmap = TRUE;
-    } else if (tdo->sme_threeD.be_nice_to_cmap) {
+    } else if (ShouldStipple(tdo)) {
 	if (parent->core.background_pixel == WhitePixelOfScreen (scn)) {
 	    bot_fg_pixel = grayPixel( WhitePixelOfScreen (scn), dpy, scn);
 	    bot_bg_pixel = BlackPixelOfScreen (scn);
@@ -305,7 +315,7 @@ AllocBotShadowPixmap (Widget new)
 			shadowpm_height,
 			bot_fg_pixel,
 			bot_bg_pixel,
-			DefaultDepthOfScreen (scn));
+			VisualDepth(tdo));
 }
 
 /* ARGSUSED */
@@ -416,14 +426,16 @@ ClassPartInitialize (WidgetClass wc)
 	tdwc->sme_threeD_class.shadowdraw = super->sme_threeD_class.shadowdraw;
 }
 
+
 /* ARGSUSED */
 static void
 Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-    SmeThreeDObject 	w = (SmeThreeDObject) new;
-    Screen		*scr = XtScreenOfObject (new);
+    SmeThreeDObject w = (SmeThreeDObject) new;
 
-    if (w->sme_threeD.be_nice_to_cmap || DefaultDepthOfScreen (scr) == 1) {
+    Xaw3dXftGetVisualInfo(new, &VisualClass(w), &VisualDepth(w));
+
+    if (ShouldStipple(w)) {
 	AllocTopShadowPixmap (new);
 	AllocBotShadowPixmap (new);
     } else {
@@ -467,10 +479,15 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
     (*threeDWidgetClass->core_class.superclass->core_class.set_values)
 	(gcurrent, grequest, gnew, NULL, 0);
 #endif
+    assert(VisualClass(new) == VisualClass(current));
+    assert(VisualDepth(new) == VisualDepth(current));
+    const Boolean ShouldStippleNew = ShouldStipple(new),
+              ShouldStippleCurrent = ShouldStipple(current);
+
     if (new->sme_threeD.shadow_width != current->sme_threeD.shadow_width)
 	redisplay = TRUE;
-    if (new->sme_threeD.be_nice_to_cmap != current->sme_threeD.be_nice_to_cmap) {
-	if (new->sme_threeD.be_nice_to_cmap) {
+    if (ShouldStippleNew != ShouldStippleCurrent) {
+        if (ShouldStippleNew) {
 	    alloc_top_pixmap = TRUE;
 	    alloc_bot_pixmap = TRUE;
 	} else {
@@ -479,10 +496,10 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
 	}
 	redisplay = TRUE;
     }
-    if (!new->sme_threeD.be_nice_to_cmap &&
+    if (!ShouldStippleNew &&
 	new->sme_threeD.top_shadow_contrast != current->sme_threeD.top_shadow_contrast)
 	alloc_top_pixel = TRUE;
-    if (!new->sme_threeD.be_nice_to_cmap &&
+    if (!ShouldStippleNew &&
 	new->sme_threeD.bot_shadow_contrast != current->sme_threeD.bot_shadow_contrast)
 	alloc_bot_pixel = TRUE;
     if (alloc_top_pixel)
@@ -493,13 +510,13 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
 	AllocTopShadowPixmap (gnew);
     if (alloc_bot_pixmap)
 	AllocBotShadowPixmap (gnew);
-    if (!new->sme_threeD.be_nice_to_cmap &&
+    if (!ShouldStippleNew &&
 	new->sme_threeD.top_shadow_pixel != current->sme_threeD.top_shadow_pixel)
 	alloc_top_pixel = TRUE;
-    if (!new->sme_threeD.be_nice_to_cmap &&
+    if (!ShouldStippleNew &&
 	new->sme_threeD.bot_shadow_pixel != current->sme_threeD.bot_shadow_pixel)
 	alloc_bot_pixel = TRUE;
-    if (new->sme_threeD.be_nice_to_cmap) {
+    if (ShouldStippleNew) {
 	if (alloc_top_pixmap) {
 	    XtReleaseGC (gcurrent, current->sme_threeD.top_shadow_GC);
 	    AllocTopShadowGC (gnew);
