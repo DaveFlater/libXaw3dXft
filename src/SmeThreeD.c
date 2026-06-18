@@ -138,7 +138,7 @@ WidgetClass smeThreeDObjectClass = (WidgetClass) &smeThreeDClassRec;
  ****************************************************************/
 
 #define VisualClass(tdo) (tdo->sme_threeD.visual_class)
-#define VisualDepth(tdo) (tdo->sme_threeD.visual_depth)
+#define VisualDepth(tdo) (tdo->sme_threeD.depth)
 #define BeNice(tdo)      (tdo->sme_threeD.be_nice_to_cmap)
 
 // The values of visual class are at the bottom of X.h, which comments:
@@ -433,7 +433,7 @@ Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     SmeThreeDObject w = (SmeThreeDObject) new;
 
-    Xaw3dXftGetVisualInfo(new, &VisualClass(w), &VisualDepth(w));
+    Xaw3dXftGetVisualInfo(new, NULL, &VisualClass(w), &VisualDepth(w));
 
     if (ShouldStipple(w)) {
 	AllocTopShadowPixmap (new);

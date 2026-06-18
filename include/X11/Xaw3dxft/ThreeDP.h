@@ -33,6 +33,7 @@ SOFTWARE.
 #define XtRRelief "Relief"
 
 typedef struct {
+    /* resources */
     Dimension	shadow_width;
     Pixel	top_shadow_pixel;
     Pixel	bot_shadow_pixel;
@@ -45,6 +46,8 @@ typedef struct {
     XtPointer	user_data;
     Boolean	be_nice_to_cmap;
     XtRelief	relief;
+
+    /* private */
     int         visual_class;
   } ThreeDPart;
 

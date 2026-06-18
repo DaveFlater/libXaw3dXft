@@ -73,8 +73,10 @@ stipplePixmap(
 );
 #endif
 
-// Given a Widget or non-widget Object, get the class and depth of its visual.
-// (class or depth can be NULL if not wanted.)
-extern void Xaw3dXftGetVisualInfo (Widget object, int *class, int *depth);
+// Given a Widget or non-widget Object, get its visual and the class and
+// depth of its visual.  The visual, class, and depth arguments can be NULL
+// if their values are unwanted.
+extern void Xaw3dXftGetVisualInfo (Widget object, Visual **visual,
+				   int *class, Cardinal *depth);
 
 #endif	/* _Xaw3dP_h */

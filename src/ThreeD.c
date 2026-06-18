@@ -488,7 +488,7 @@ Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     ThreeDWidget tdw = (ThreeDWidget) new;
 
-    Xaw3dXftGetVisualInfo(new, &VisualClass(tdw), NULL);
+    Xaw3dXftGetVisualInfo(new, NULL, &VisualClass(tdw), NULL);
 
     if (ShouldStipple(tdw)) {
 	AllocTopShadowPixmap (new);

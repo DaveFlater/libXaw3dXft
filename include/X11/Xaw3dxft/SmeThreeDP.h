@@ -31,6 +31,7 @@ SOFTWARE.
 #include <X11/Xaw3dxft/SmeP.h>
 
 typedef struct {
+    /* resources */
     Dimension	    shadow_width;
     Pixel	    top_shadow_pixel;
     Pixel	    bot_shadow_pixel;
@@ -44,8 +45,10 @@ typedef struct {
     XtPointer	    user_data;
     Boolean	    be_nice_to_cmap;
     Boolean	    shadowed;
+
+    /* private */
     int             visual_class;
-    int             visual_depth;
+    Cardinal        depth;
   } SmeThreeDPart;
 
 /* Full instance record declaration */

@@ -215,56 +215,62 @@ stipplePixmap(Widget w, Pixmap pm, Colormap cm, Pixel bg, unsigned int d)
 
 
 /*
-  We need to know the class and depth of the visual that applies to our
-  Object.
+  We need the Visual that applies to our Object and the class and depth of
+  that visual.
 
   The application can pass a non-default visual when it creates a Shell.
   That visual gets inherited by everything below the Shell.  Thus, it is
-  unsafe to use DefaultVisualOfScreen, and probably unsafe to use
+  unsafe to use DefaultVisualOfScreen and probably unsafe to use
   DefaultDepthOfScreen.
 
-  If our object is realized, we can use Xlib:
+  If our Object is realized, we can use Xlib to get the answers:
     Status XGetWindowAttributes(XtDisplayOfObject(object),
                                 XtWindowOfObject(object),
                                 &attributes);
     *class = attributes.visual->class;
     *depth = attributes.depth;
-  But our object is not necessarily realized.
+  But our Object is not necessarily realized.
 
-  If our object is a Widget, we can get the depth from core.depth.  But our
-  object is not necessarily a Widget.  (E.g., SmeBSB and SmeThreeD are
-  non-widget Objects with no Core part.)
+  If our Object is a proper widget (meaning a subclass of Core), we can get
+  the depth from core.depth.  But our Object is not necessarily a widget.
+  AsciiSink, SmeBSB, and SmeThreeD are non-widget Objects with no Core part.
 
   When a Shell is created with a non-default visual, the pointer to the
-  Visual is stored in the Shell's visual resource, but that is never copied
-  into children.  So, what we have to do is climb up to the Shell to see
-  whether its visual resource has a value, and use DefaultVisualOfScreen if
-  it doesn't.
+  Visual is stored in the Shell's visual resource, but that is not even
+  copied into Core.  So we have to climb up to the Shell to see whether its
+  visual resource has a value.  If it doesn't, it's using the default visual.
 
   The Visual struct itself contains a field for its class but not its depth.
-  We could call XGetVisualInfo at this point using the visual ID, but we can
-  avoid that by getting the depth from the Shell or the first proper Widget
-  that we come to.
+  We could call XGetVisualInfo using the visual ID, but we can avoid that by
+  getting the depth from the first widget we come to.
 */
 
-// Given a Widget or non-widget Object, get the class and depth of its visual.
-void Xaw3dXftGetVisualInfo (Widget object, int *class, int *depth) {
+// Given a Widget or non-widget Object, get its visual and the class and
+// depth of its visual.  The visual, class, and depth arguments can be NULL
+// if their values are unwanted.
+void Xaw3dXftGetVisualInfo (Widget object, Visual **visual,
+			    int *class, Cardinal *depth) {
+  // Nobody calls this function wanting only depth.  If they do, there'll be
+  // some wasted work but no failure.
   Widget loopw = object;
-  Visual *visual = NULL;
+  Visual *_visual = NULL;
   if (depth) *depth = 0;
-  while (visual == NULL && loopw != NULL) {
+  while (_visual == NULL && loopw != NULL) {
     if (depth == NULL || *depth > 0)
-      XtVaGetValues(loopw, XtNvisual, (XtArgVal)(&visual), NULL);
+      XtVaGetValues(loopw, XtNvisual, (XtArgVal)(&_visual), NULL);
     else
-      XtVaGetValues(loopw, XtNvisual, (XtArgVal)(&visual),
+      XtVaGetValues(loopw,
+		    XtNvisual, (XtArgVal)(&_visual),
 		    XtNdepth, (XtArgVal)depth, NULL);
     loopw = XtParent(loopw);
   }
   if (depth) assert(*depth > 0);
+  if (_visual == NULL)
+    _visual = DefaultVisualOfScreen(XtScreenOfObject(object));
+  if (visual)
+    *visual = _visual;
   if (class) {
-    if (visual == NULL)
-      visual = DefaultVisualOfScreen(XtScreenOfObject(object));
-    *class = visual->class;
+    *class = _visual->class;
     assert(*class >= 0 && *class <= 5);
   }
 }
