@@ -73,6 +73,11 @@ SOFTWARE.
  x		     Position		Position	0
  y		     Position		Position	0
 
+ sbShiftX1 	     Position 	        Position 	0
+ sbShiftX2 	     Position 	        Position 	0
+ sbShiftY1 	     Position 	        Position 	0
+ sbShiftY2 	     Position 	        Position 	0
+
 */
 
 /* fields added to Form */
