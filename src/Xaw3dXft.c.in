@@ -241,8 +241,6 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
 
     if (cmap==None) cmap = DefaultColormap(dpy, DefaultScreen(dpy));
 
-    if (_Xaw3dXft->string_use_pixmap) goto use_pixmap;
-
     draw = XftDrawCreate(dpy, win,
                          DefaultVisual(dpy, DefaultScreen(dpy)), cmap);
 
@@ -302,139 +300,6 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
         XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
 		     cmap, &color);
     XftDrawDestroy(draw);
-    XFlush(dpy);
-    return;
-
- use_pixmap :
-
-    if (win != win0 || font->max_advance_width>maxw ||
-        font->ascent + font->descent > maxh) {
-        if (draw) XftDrawDestroy(draw);
-        if (pixmap) XFreePixmap(dpy, pixmap);
-        if (gc) XFreeGC(dpy, gc);
-        draw = NULL;
-        win0 = win;
-        maxh = font->ascent + font->descent;
-        maxw = font->max_advance_width;
-    }
-
-    bg = WhitePixel(dpy, DefaultScreen(dpy));
-    XtVaGetValues(w, XtNbackground, &bg, NULL);
-
-    if (_Xaw3dXft->string_hilight && _Xaw3dXft->hilit_color && cmap) {
-        if (bg != bg0) {
-            xcol.pixel = bg;
-            xcol.flags = DoRed | DoGreen | DoBlue;
-            XQueryColor(dpy, cmap, &xcol);
-            XAllocNamedColor(dpy, cmap, _Xaw3dXft->hilit_color, &xhilit, &xhilit);
-            xcol.red = xcol.red ^ xhilit.red;
-            xcol.green = xcol.green ^ xhilit.green;
-            xcol.blue = xcol.blue ^ xhilit.blue;
-            XAllocColor(dpy, cmap, &xcol);
-	    bg0 = bg;
-            bg1 = xcol.pixel;
-        }
-        bg = bg1;
-    }
-
-    if (!draw) {
-        pixmap = XCreatePixmap(dpy, win, maxw, maxh,
-                               DefaultDepth(dpy, DefaultScreen(dpy)));
-        gc = XCreateGC(dpy, pixmap, 0, 0);
-        draw = XftDrawCreate(dpy, pixmap,
-		   DefaultVisual(dpy, DefaultScreen(dpy)),
-                   cmap);
-    }
-
-    xcol.pixel = fg;
-    xcol.flags = DoRed | DoGreen | DoBlue;
-    XQueryColor(dpy, cmap, &xcol);
-    xre_color.red = xcol.red;
-    xre_color.green = xcol.green;
-    xre_color.blue = xcol.blue;
-    xre_color.alpha = 0xffff;
-    if (!XtIsSensitive(w)) {
-        /* modify color for non sensitive items */
-        if (_Xaw3dXft->insensitive_twist[0] < 2) {
-            if (_Xaw3dXft->insensitive_twist[0] == 0) {
-                xre_color.red = _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = _Xaw3dXft->insensitive_twist[3];
-	    } else {
-                xre_color.red = xcol.red | _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = xcol.green | _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = xcol.blue | _Xaw3dXft->insensitive_twist[3];
-	    }
-	} else
-	if (_Xaw3dXft->insensitive_twist[0] < 4) {
-	    if (_Xaw3dXft->insensitive_twist[0] == 2) {
-                xre_color.red = xcol.red & _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = xcol.green & _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = xcol.blue & _Xaw3dXft->insensitive_twist[3];
-	    } else {
-                xre_color.red = xcol.red ^ _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = xcol.green ^ _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = xcol.blue ^ _Xaw3dXft->insensitive_twist[3];
-	    }
-	} else
-	    xre_color.alpha = _Xaw3dXft->insensitive_twist[1]*257;
-    }
-    XftColorAllocValue(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-		       cmap, &xre_color, &color);
-
-    XSetForeground(dpy, gc, bg);
-    if (_Xaw3dXft->encoding == -1) {
-        i = 0;
-        while (i < len) {
-            j = i + 1;
-            /* find length of UTF8 character */
-            if ((str[i] & 0x80))
-	        while (j < len && (str[j]&0xc0) == 0x80) j++;
-            d = j - i;
-            XftTextExtentsUtf8(dpy, font, (FcChar8*)(str+i), d,
-                               (XGlyphInfo*)&extents);
-            XFillRectangle(dpy, pixmap, gc, 0, 0, extents.xOff, maxh);
-            XftDrawStringUtf8(draw, &color, font, 0, font->ascent,
-                              (FcChar8*)(str+i), d);
-            XCopyArea(dpy, pixmap, win, gc, 0, 0, extents.xOff, maxh,
-                      x, y-font->ascent);
-            x += extents.xOff;
-            i = j;
-	}
-    } else
-    if (_Xaw3dXft->encoding == 8) {
-        i = 0;
-        while (i < len) {
-            /* find length of 8bit character */
-            XftTextExtents8(dpy, font, (FcChar8*)(str+i), 1,
-                            (XGlyphInfo*)&extents);
-            XFillRectangle(dpy, pixmap, gc, 0, 0, extents.xOff, maxh);
-            XftDrawString8(draw, &color, font, 0, font->ascent,
-                           (FcChar8*)(str+i), 1);
-            XCopyArea(dpy, pixmap, win, gc, 0, 0, extents.xOff, maxh,
-                      x, y-font->ascent);
-            x += extents.xOff;
-            ++i;
-	}
-    } else
-    if (_Xaw3dXft->encoding == 16) {
-        i = 0;
-        while (i < len) {
-            /* find length of 8bit character */
-            XftTextExtents16(dpy, font, (FcChar16*)(str+i), 2,
-                            (XGlyphInfo*)&extents);
-            XFillRectangle(dpy, pixmap, gc, 0, 0, extents.xOff, maxh);
-            XftDrawString16(draw, &color, font, 0, font->ascent,
-                           (FcChar16*)(str+i), 2);
-            XCopyArea(dpy, pixmap, win, gc, 0, 0, extents.xOff, maxh,
-                      x, y-font->ascent);
-            x += extents.xOff;
-            i += 2;
-	}
-    }
-    if (DefaultDepth(dpy, DefaultScreen(dpy))>8)
-        XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-		     cmap, &color);
     XFlush(dpy);
 }
 
@@ -516,11 +381,9 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->encoding  = 0;
     _Xaw3dXft->string_hilight  = 0;
     _Xaw3dXft->text_bg_hilight  = 0;
-    _Xaw3dXft->string_use_pixmap  = 0;
     _Xaw3dXft->menu_spacing  = 1;
     _Xaw3dXft->show_tips  = 1;
     _Xaw3dXft->tip_do_grab  = 1;
-    _Xaw3dXft->border_hack  = 1;
     _Xaw3dXft->no_hilit_reverse  = 0;
     _Xaw3dXft->button_inverse  = 1;
     _Xaw3dXft->button_dashed  = 0;

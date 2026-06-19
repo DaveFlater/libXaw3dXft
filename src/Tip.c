@@ -326,12 +326,31 @@ XawTipRealize(Widget w, Mask *mask, XSetWindowAttributes *attr)
     *mask |= CWOverrideRedirect;
     attr->override_redirect = True;
 
+    /*
+      Notes 2026-06-19 DWF:
+
+      In sources as incoming from Xaw3d, XCreateWindow was called with
+      XtBorderWidth(w) for border_width.  That somehow resulted in blurry
+      text.  It was blurry regardless whether the text rendering was done by
+      Xft or by Xlib.
+
+      The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
+      window's border width to 0 after the fact and then artificially drew a
+      black border.  In Xaw3dXft v2 I removed that hack and set border width
+      to 0 here.
+
+      The only two widgets with border_hack code were Tip and SimpleMenu.
+      Tip is the only widget directly creating a child of the root window
+      using XCreateWindow.  SimpleMenu is the only widget inheriting from
+      Shell.
+    */
+
     XtWindow(w) = XCreateWindow(DisplayOfScreen(XtScreen(w)),
 				RootWindowOfScreen(XtScreen(w)),
 				XtX(w), XtY(w),
 				XtWidth(w) ? XtWidth(w) : 1,
 				XtHeight(w) ? XtHeight(w) : 1,
-				XtBorderWidth(w),
+				0,
 				DefaultDepthOfScreen(XtScreen(w)),
 				InputOutput, CopyFromParent, *mask, attr);
 
@@ -347,21 +366,6 @@ XawTipExpose(Widget w, XEvent *event, Region region)
     char *nl, *label = tip->tip.label;
     Position y;
     int len;
-    static int bw = -1;
-
-    if (_Xaw3dXft->border_hack) {
-	/* work around composition/Xft related bug on some X servers... */
-        if (bw == -1)
-            bw = XtBorderWidth(w);
-        if (bw)
-            XSetWindowBorderWidth(XtDisplayOfObject(w), XtWindowOfObject(w), 0);
-        for (y=0; y<bw; y++) {
-	    len = 2*y + 1;
-            XDrawRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
-                           XtGetGC(w, 0, 0), y, y,
-                           XtWidth(w)-len, XtHeight(w)-len);
-	}
-    }
 
     y = tip->tip.internal_height + ((_Xaw3dXft->encoding)?
 	tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing :
@@ -389,10 +393,9 @@ XawTipExpose(Widget w, XEvent *event, Region region)
     else
 #endif
     if (_Xaw3dXft->encoding) {
-	bw = XtBorderWidth(w);
 	while ((nl = strchr(label, '\n')) != NULL) {
 	    Xaw3dXftDrawString(w, tip->tip.xftfont,
-		tip->tip.internal_width+3, y+_Xaw3dXft->border_hack,
+		tip->tip.internal_width+3, y,
 		label, (int)(nl - label));
 	    y += tip->tip.xftfont->height + 3*_Xaw3dXft->menu_spacing;
 	    label = nl + 1;
@@ -400,7 +403,7 @@ XawTipExpose(Widget w, XEvent *event, Region region)
 	len = strlen(label);
 	if (len)
 	    Xaw3dXftDrawString(w, tip->tip.xftfont,
-		tip->tip.internal_width+3, y+_Xaw3dXft->border_hack,
+		tip->tip.internal_width+3, y,
 		label, len);
     } else {
 	while ((nl = strchr(label, '\n')) != NULL) {

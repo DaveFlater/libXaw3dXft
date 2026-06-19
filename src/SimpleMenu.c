@@ -293,6 +293,25 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   XmuCallInitializers(XtWidgetToApplicationContext(new));
 
+  /*
+    Notes 2026-06-19 DWF:
+
+    In sources as incoming from Xaw3d, SimpleMenu inherited the default
+    border width of 1.  That somehow resulted in blurry text.  It was blurry
+    regardless whether the text rendering was done by Xft or by Xlib.
+
+    The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
+    window's border width to 0 after the fact and then artificially drew a
+    black border.  In Xaw3dXft v2 I removed that hack and set border width
+    to 0 here.
+
+    The only two widgets with border_hack code were Tip and SimpleMenu.
+    Tip is the only widget directly creating a child of the root window
+    using XCreateWindow.  SimpleMenu is the only widget inheriting from
+    Shell.
+  */
+  smw->core.border_width = 0;
+
   smw->simple_menu.label = NULL;
   smw->simple_menu.entry_set = NULL;
   smw->simple_menu.recursive_set_values = FALSE;
@@ -356,32 +375,16 @@ Redisplay(Widget w, XEvent * event, Region region)
     int y, max_y, new_y, dy, s = tdw->threeD.shadow_width;
     Boolean can_paint;
     XPoint point[3];
-    static int bw = -1;
 
     memset(&old_pos, 0, sizeof(RectObjPart));
 
     if (region == NULL)
 	XClearWindow(XtDisplay(w), XtWindow(w));
 
-    if (XtIsRealized((Widget)smw)) {
+    if (XtIsRealized((Widget)smw))
 	_ShadowSurroundedBox((Widget)smw, tdw,
 			0, 0, smw->core.width, smw->core.height,
 			tdw->threeD.relief, True);
-        if (_Xaw3dXft->border_hack) {
-	    /* work around composition/Xft related bug on some X servers... */
-	    if (bw == -1)
-	        bw = XtBorderWidth(w);
-            if (bw)
-                XSetWindowBorderWidth(XtDisplayOfObject(w),
-                                      XtWindowOfObject(w), 0);
-            for (y=0; y<bw; y++) {
-	        dy = 2*y+1;
-                XDrawRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
-                               XtGetGC(w, 0, 0), y, y,
-                               XtWidth(w)-dy, XtHeight(w)-dy);
-	    }
-        }
-    }
 
     smw->simple_menu.didnt_fit = False;
     y = 0;

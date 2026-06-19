@@ -92,11 +92,9 @@ typedef struct _Xaw3dXftData {
     char encoding;
     char string_hilight;
     char text_bg_hilight;
-    char string_use_pixmap;
     char menu_spacing;
     char show_tips;
     char tip_do_grab;
-    char border_hack;
     char no_hilit_reverse;
     char button_inverse;
     char button_dashed;

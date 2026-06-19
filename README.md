@@ -12,6 +12,7 @@
 - [Alterations to Athena Widgets classes](#alterations)
 - [Run-time options](#runtimeopts)
 - [Non-options](#nonoptions)
+- [Version 1.x to 2.0 migration](#migration)
 - [History](#history)
 - [To do](#todo)
 
@@ -716,11 +717,6 @@ Grab or don't grab while showing a tip.
 
 Background color of tips.  If -1, the default background color is left as-is.
 
-### char border_hack = 1
-
-Work around composition/Xft related bug with the drawing of borders on some X
-servers.  Whether this is still relevant is yet to be determined.
-
 ### char edit_delete_alternative = 0
 
 Determines what happens when Delete or another key is pressed while editable
@@ -764,12 +760,6 @@ set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | scroll_steps = value
 Messing with the following fields of xaw3dxft_data will cause glitchy
 misbehavior.
 
-### char string_use_pixmap = 0
-
-When writing strings with the Xft library, 1 = use a pixmap, 0 = write
-directly.  This was a workaround for some historical flickering problem.
-Enabling it now introduces glitches that make buttons and menus look worse.
-
 ### char string_hilight = 0
 
 Internal state of libXaw3dXft that should not have been exposed to
@@ -780,6 +770,39 @@ applications.
 Internal state of libXaw3dXft that should not have been exposed to
 applications.  See the colorSwitch resource of the [List widget](#listwidget)
 for its use.
+
+
+## <a name="migration"> Version 1.x to 2.0 migration
+
+Summary of backward-incompatible changes:
+
+**Renamed pkg-config file to xaw3dxft.pc**
+
+Dependents of libXaw3dXft that use pkg-config to find the library must look
+for xaw3dxft where previously they looked for libxaw3dxft.  For example,
+in configure.ac:
+
+    PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft])
+
+This renaming was for consistency with Xaw and Xaw3d, which use xaw7.pc and
+xaw3d.pc respectively.
+
+**Changed struct Xaw3dXftData**
+
+border_hack:  deleted  
+string_use_pixmap:  deleted
+
+**Eliminated header include cycles**
+
+Applications that include Text.h might now need to add includes for
+TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
+included by Text.h.
+
+**Enabled all four configure options by default**
+
+This is more likely to lead to unexpected improvement than accidental
+degradation.  Dependents needing the old behaviors must configure with the
+relevant --disable... switch or --enable...=no.
 
 
 ## <a name="history"> History
