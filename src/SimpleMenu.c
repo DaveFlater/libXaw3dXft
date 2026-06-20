@@ -554,6 +554,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     SimpleMenuWidget smw_old = (SimpleMenuWidget) current;
     SimpleMenuWidget smw_new = (SimpleMenuWidget) new;
     Boolean ret_val = FALSE, layout = FALSE;
+    smw_new->core.border_width = 0; // See Notes 2026-06-19 DWF above
 
     if (!XtIsRealized(current)) return(FALSE);
 

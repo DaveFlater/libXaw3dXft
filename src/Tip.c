@@ -253,6 +253,7 @@ XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
     XGCValues values;
 
     tip->tip.timer = 0;
+    tip->core.border_width = 0; // See Notes 2026-06-19 DWF below
 
     values.foreground = tip->tip.foreground;
     values.background = tip->core.background_pixel;
@@ -439,6 +440,7 @@ XawTipSetValues(Widget current, Widget request, Widget cnew, ArgList args, Cardi
     TipWidget curtip = (TipWidget)current;
     TipWidget newtip = (TipWidget)cnew;
     Boolean redisplay = False;
+    newtip->core.border_width = 0; // See Notes 2026-06-19 DWF above
 
     if (curtip->tip.font->fid != newtip->tip.font->fid ||
 		curtip->tip.foreground != newtip->tip.foreground) {
