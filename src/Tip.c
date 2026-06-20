@@ -264,7 +264,7 @@ XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
 			       GCGraphicsExposures, &values, GCFont, 0);
 
     if (_Xaw3dXft->encoding)
-	tip->tip.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(w), tip->tip.xftfontname);
+	tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
     else {
 	tip->tip.xftfont = NULL;
 	if (!tip->tip.font) XtError("Aborting: no font found\n");

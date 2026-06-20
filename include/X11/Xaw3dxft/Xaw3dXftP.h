@@ -54,7 +54,7 @@ extern void Xaw3dXftSetDefaultHilitColor(void);
 extern void Xaw3dXftSetHilitColor(char * value);
 extern void Xaw3dXftSetDefaultFontName(char *name);
 extern void Xaw3dXftSetInsensitiveTwist(char *value);
-extern XftFont * Xaw3dXftGetFont(Display *dpy, char *name);
+extern XftFont * Xaw3dXftGetFont(Widget object, char *name);
 
 extern int Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len);
 extern void Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len);

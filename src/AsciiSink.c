@@ -610,7 +610,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     sink->ascii_sink.laststate = XawisOff;
     sink->ascii_sink.cursor_x = sink->ascii_sink.cursor_y = 0;
     if (_Xaw3dXft->encoding)
-	sink->ascii_sink.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), sink->ascii_sink.xftfontname);
+	sink->ascii_sink.xftfont = Xaw3dXftGetFont(new, sink->ascii_sink.xftfontname);
     else {
 	sink->ascii_sink.xftfont = NULL;
 	if (!sink->ascii_sink.font) XtError("Aborting: no font found\n");

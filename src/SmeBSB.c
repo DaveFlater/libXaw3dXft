@@ -203,7 +203,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     SmeBSBObject entry = (SmeBSBObject) new;
 
     if (_Xaw3dXft->encoding)
-	entry->sme_bsb.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), entry->sme_bsb.xftfontname);
+	entry->sme_bsb.xftfont = Xaw3dXftGetFont(new, entry->sme_bsb.xftfontname);
     else {
 	entry->sme_bsb.xftfont = NULL;
 	if (!entry->sme_bsb.font) XtError("Aborting: no font found\n");

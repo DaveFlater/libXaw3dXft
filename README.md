@@ -363,8 +363,8 @@ Description (XLFD) syntax instead, prefix it with "core:"  e.g.,
 purely syntactic:  rendering is still done by FreeType using only the fonts
 that are known to Fontconfig.
 
-The default Xft font can be changed by calling
-Xaw3dXftSetDefaultFontName(char *name) before the first use or by directly
+The default Xft font can be changed by calling Xaw3dXftSetDefaultFontName
+(alias proc->set_default_fontname) before the first use or by directly
 modifying the default_fontname and/or default_font fields of xaw3dxft_data
 (see [Run-time options](#runtimeopts)).
 
@@ -791,6 +791,10 @@ xaw3d.pc respectively.
 
 border_hack:  deleted  
 string_use_pixmap:  deleted
+
+**Changed signatures of semi-private functions**
+
+Xaw3dXftGetFont (alias proc->get_font):  replace display with object
 
 **Eliminated header include cycles**
 

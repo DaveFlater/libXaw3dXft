@@ -127,26 +127,28 @@ void Xaw3dXftSetInsensitiveTwist(char *value)
         _Xaw3dXft->insensitive_twist[i] = (hexa(value[2*i-1])*16+hexa(value[2*i]))*257;
 }
 
-XftFont * Xaw3dXftGetFont(Display *dpy, char *name)
+XftFont * Xaw3dXftGetFont(Widget object, char *name)
 {
+    Display *dpy = XtDisplayOfObject(object);
+    int scrnum = XScreenNumberOfScreen(XtScreenOfObject(object));
     if (name) {
         if (strncasecmp(name, "core:",5))
-            return XftFontOpenName(dpy, DefaultScreen(dpy), name);
+            return XftFontOpenName(dpy, scrnum, name);
         else
-            return XftFontOpenXlfd(dpy, DefaultScreen(dpy), name+5);
+            return XftFontOpenXlfd(dpy, scrnum, name+5);
     }
     if (!_Xaw3dXft->default_font) {
         if (!_Xaw3dXft->default_fontname)
 	    _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;
         if (strncasecmp(_Xaw3dXft->default_fontname, "core:",5))
             _Xaw3dXft->default_font =
-                XftFontOpenName(dpy, DefaultScreen(dpy), _Xaw3dXft->default_fontname);
+                XftFontOpenName(dpy, scrnum, _Xaw3dXft->default_fontname);
         else
             _Xaw3dXft->default_font =
-                XftFontOpenXlfd(dpy, DefaultScreen(dpy), _Xaw3dXft->default_fontname+5);
+                XftFontOpenXlfd(dpy, scrnum, _Xaw3dXft->default_fontname+5);
         if (!_Xaw3dXft->default_font)
             _Xaw3dXft->default_font =
-                XftFontOpenName(dpy, DefaultScreen(dpy), XAW3DXFT_DEFAULTFONT);
+                XftFontOpenName(dpy, scrnum, XAW3DXFT_DEFAULTFONT);
     }
     return _Xaw3dXft->default_font;
 }

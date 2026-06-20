@@ -427,7 +427,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     LabelWidget lw = (LabelWidget) new;
 
     if (_Xaw3dXft->encoding)
-	lw->label.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), lw->label.xftfontname);
+	lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
     else {
 	lw->label.xftfont = NULL;
 	if (!lw->label.font) XtError("Aborting: no font found\n");

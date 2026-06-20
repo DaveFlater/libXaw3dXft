@@ -395,7 +395,7 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
                         (lw->list.longest != 0) * LongestLock;
 
     if (_Xaw3dXft->encoding)
-	lw->list.xftfont = Xaw3dXftGetFont(XtDisplayOfObject(new), lw->list.xftfontname);
+	lw->list.xftfont = Xaw3dXftGetFont(new, lw->list.xftfontname);
     else {
 	lw->list.xftfont = NULL;
 	if (!lw->list.font) XtError("Aborting: no font found\n");
