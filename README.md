@@ -800,9 +800,8 @@ included by Text.h.
 
 **Enabled all four configure options by default**
 
-This is more likely to lead to unexpected improvement than accidental
-degradation.  Dependents needing the old behaviors must configure with the
-relevant --disable... switch or --enable...=no.
+Dependents needing to build without libXpm now must configure with
+--disable-multiplane-bitmaps or --enable-multiplane-bitmaps=no.
 
 
 ## <a name="history"> History
