@@ -296,9 +296,38 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
         AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawString16(draw, &color, font, x, y, (FcChar16*)str, len/2);
     }
-    if (DefaultDepth(dpy, DefaultScreen(dpy))>8)
-        XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-		     cmap, &color);
+    /*
+      Notes 2026-06-20 DWF on:
+
+      if (DefaultDepth(dpy, DefaultScreen(dpy))>8)
+          XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+                       cmap, &color);
+
+      Call XftColorFree only if DefaultDepth > 8?
+
+      I assume that Depth > 8 was intended to test for an immutable colormap.
+      The correct test for that would have been visual->class & 1 == 0 for
+      the visual that applies to the object, which is not necessarily the
+      default visual.  Depth > 8 works if you reduce the possibilities to
+      TrueColor depth >8 and PseudoColor depth 8 or less, the only two
+      configurations that were in common use at the time.
+
+      That implies an intent to free the color only if there was no risk of
+      the color mapping being changed for the pixels we just drew.  But that
+      means we are calling XftColorFree specifically only in the cases where
+      it makes no difference.
+
+      Neither XftColorFree nor XFreeColors is called anywhere but here.  For
+      8-bit PseudoColor, we leak a colormap entry every time that
+      insensitive_twist or text_fg_alternate_color changes—with or without
+      this code.  So this code appears to serve no purpose, and it is better
+      to delete it than to get it using the correct depth of the correct
+      visual.
+
+      N.B., libXft itself checks for visual->class == TrueColor and skips
+      XAllocColor and XFreeColors in that case.  StaticGray and StaticColor
+      take the alloc/free path despite having immutable colormaps.
+    */
     XftDrawDestroy(draw);
     XFlush(dpy);
 }
