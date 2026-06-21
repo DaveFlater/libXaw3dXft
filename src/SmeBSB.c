@@ -174,6 +174,8 @@ WidgetClass smeBSBObjectClass = (WidgetClass) &smeBSBClassRec;
  *
  ************************************************************/
 
+#define VisualOf(w) (w->sme_bsb.visual)
+
 /*	Function Name: ClassInitialize
  *	Description: Initializes the SmeBSBObject.
  *	Arguments: none.
@@ -201,6 +203,8 @@ static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     SmeBSBObject entry = (SmeBSBObject) new;
+
+    Xaw3dXftGetVisualInfo(new, &VisualOf(entry), NULL, NULL);
 
     if (_Xaw3dXft->encoding)
 	entry->sme_bsb.xftfont = Xaw3dXftGetFont(new, entry->sme_bsb.xftfontname);
@@ -361,7 +365,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 		       (int)entry->rectangle.width - 2,
 		       (int)entry->rectangle.height, False);
 
-	    Xaw3dXftDrawString(w, entry->sme_bsb.xftfont,
+	    Xaw3dXftDrawString(VisualOf(entry), w, entry->sme_bsb.xftfont,
 			x_loc + s, y_loc, label, len);
 	} else
 #ifdef XAW_INTERNATIONALIZATION

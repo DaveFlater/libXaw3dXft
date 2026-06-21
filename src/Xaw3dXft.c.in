@@ -175,129 +175,109 @@ Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len)
 }
 
 static void
-AdjustBackground(Widget ww, int x, int y, int w, int h)
+AdjustBackground(Display *dpy, Window win, Colormap cmap, Widget widget,
+		 int x, int y, int w, int h)
 {
-    Display *dpy = XtDisplayOfObject(ww);
-    Window win = XtWindowOfObject(ww);
-    Pixel bg, fg;
-    GC gc;
-    Colormap cmap = None;
-    XColor xcol;
-    static Pixel bg0 = -1, hc;
-    static Widget ww0 = None;
-
-    if (_Xaw3dXft->text_bg_hilight == -1 && _Xaw3dXft->text_bg_hilight_color != -1) {
-        XtVaGetValues(ww, XtNbackground, &bg, XtNforeground, &fg, NULL);
-        if (ww != ww0 || bg != bg0) {
-	    XtVaGetValues(ww, XtNcolormap, &cmap, NULL);
-            if (cmap==None) cmap = DefaultColormap(dpy, DefaultScreen(dpy));
-            xcol.pixel = bg;
-            xcol.flags = DoRed | DoGreen | DoBlue;
-            XQueryColor(dpy, cmap, &xcol);
-            xcol.red = xcol.red ^ ((_Xaw3dXft->text_bg_hilight_color&0xff0000)>>8);
-	    xcol.green = xcol.green ^ (_Xaw3dXft->text_bg_hilight_color&0xff00);
-	    xcol.blue = xcol.blue ^ ((_Xaw3dXft->text_bg_hilight_color&0xff) << 8);
-            XAllocColor(dpy, cmap, &xcol);
-            hc = xcol.pixel;
-	}
-	gc = XtGetGC(ww, 0, 0);
-        XSetForeground(dpy, gc, hc);
+    // Negation of text_bg_hilight is a covert signal from AsciiSink to let
+    // us know when to apply text_bg_hilight_color.  It negates
+    // text_bg_hilight, calls Xaw3dXftDrawString, and then sets it back.
+    if (_Xaw3dXft->text_bg_hilight == -1 &&
+	_Xaw3dXft->text_bg_hilight_color != -1) {
+	XColor xcol;
+	XtVaGetValues(widget, XtNbackground, &xcol.pixel, NULL);
+	xcol.flags = DoRed | DoGreen | DoBlue;
+	XQueryColor(dpy, cmap, &xcol);
+	xcol.red   ^= ((_Xaw3dXft->text_bg_hilight_color&0xff0000)>>8);
+	xcol.green ^=  (_Xaw3dXft->text_bg_hilight_color&0xff00);
+	xcol.blue  ^= ((_Xaw3dXft->text_bg_hilight_color&0xff) << 8);
+	XAllocColor(dpy, cmap, &xcol);
+	XGCValues values;
+	values.foreground = xcol.pixel;
+	GC gc = XtGetGC(widget, GCForeground, &values);
         XFillRectangle(dpy, win, gc, x, y, w, h);
-        XSetForeground(dpy, gc, fg);
-    } else
-    if (!_Xaw3dXft->string_hilight)
+        XtReleaseGC(widget, gc);
+    // string_hilight is a similar covert signal from List to let us know
+    // when we should not clear the area.
+    } else if (!_Xaw3dXft->string_hilight)
         XClearArea(dpy, win, x, y, w, h, False);
 }
 
 void
-Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
+Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y,
+		   char *str, int len)
 {
-    static XftDraw *draw = NULL;
-    static Pixmap pixmap = None;
-    static GC gc = None;
-    static Window win0 = None;
-    static int maxw=0, maxh = 0;
-    static Pixel bg0 = -1, bg1 = 0;
-
-    Display *dpy;
-    Window win;
-    XftColor color;
-    XRenderColor xre_color;
-    XColor xcol, xhilit;
-    Pixel bg, fg;
-    Colormap cmap = None;
-    XGlyphInfo extents = {};
-    int i, j, d;
-
-    if (!font) return;
-    if (!len) return;
-    dpy = XtDisplayOfObject(w);
-    win = XtWindowOfObject(w);
+    if (!visual || !font || !len || !str) return;
+    Display *dpy = XtDisplayOfObject(w);
+    Window win = XtWindowOfObject(w);
     if (!win) return;
 
-    fg = BlackPixel(dpy, DefaultScreen(dpy));
-    XtVaGetValues(w, XtNforeground, &fg, XtNcolormap, &cmap, NULL);
-
-    if (_Xaw3dXft->text_fg_alternate_color != -1)
+    Colormap cmap = None;
+    Pixel fg = ULONG_MAX;
+    if (_Xaw3dXft->text_fg_alternate_color != -1) {
         fg = _Xaw3dXft->text_fg_alternate_color;
+        XtVaGetValues(w, XtNcolormap, &cmap, NULL);
+    } else
+        XtVaGetValues(w, XtNforeground, &fg, XtNcolormap, &cmap, NULL);
 
-    if (cmap==None) cmap = DefaultColormap(dpy, DefaultScreen(dpy));
+    if (cmap==None)
+        cmap = DefaultColormap(dpy, XScreenNumberOfScreen(XtScreenOfObject(w)));
+    XftDraw *draw = XftDrawCreate(dpy, win, visual, cmap);
 
-    draw = XftDrawCreate(dpy, win,
-                         DefaultVisual(dpy, DefaultScreen(dpy)), cmap);
+    XRenderColor xre_color = {0U, 0U, 0U, USHRT_MAX}; // default black
+    if (fg != ULONG_MAX) {
+        XColor xcol;
+        xcol.pixel = fg;
+        xcol.flags = DoRed | DoGreen | DoBlue;
+        XQueryColor(dpy, cmap, &xcol);
+        xre_color.red = xcol.red;
+        xre_color.green = xcol.green;
+        xre_color.blue = xcol.blue;
+    }
 
-    xcol.pixel = fg;
-    xcol.flags = DoRed | DoGreen | DoBlue;
-    XQueryColor(dpy, cmap, &xcol);
-    xre_color.red = xcol.red;
-    xre_color.green = xcol.green;
-    xre_color.blue = xcol.blue;
-    xre_color.alpha = 0xffff;
     if (!XtIsSensitive(w)) {
         /* modify color for non sensitive items */
         if (_Xaw3dXft->insensitive_twist[0] < 2) {
             if (_Xaw3dXft->insensitive_twist[0] == 0) {
-                xre_color.red = _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = _Xaw3dXft->insensitive_twist[3];
+                xre_color.red    = _Xaw3dXft->insensitive_twist[1];
+                xre_color.green  = _Xaw3dXft->insensitive_twist[2];
+                xre_color.blue   = _Xaw3dXft->insensitive_twist[3];
 	    } else {
-                xre_color.red = xcol.red | _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = xcol.green | _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = xcol.blue | _Xaw3dXft->insensitive_twist[3];
+                xre_color.red   |= _Xaw3dXft->insensitive_twist[1];
+                xre_color.green |= _Xaw3dXft->insensitive_twist[2];
+                xre_color.blue  |= _Xaw3dXft->insensitive_twist[3];
 	    }
-	} else
-	if (_Xaw3dXft->insensitive_twist[0] < 4) {
+	} else if (_Xaw3dXft->insensitive_twist[0] < 4) {
 	    if (_Xaw3dXft->insensitive_twist[0] == 2) {
-                xre_color.red = xcol.red & _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = xcol.green & _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = xcol.blue & _Xaw3dXft->insensitive_twist[3];
+                xre_color.red   &= _Xaw3dXft->insensitive_twist[1];
+                xre_color.green &= _Xaw3dXft->insensitive_twist[2];
+                xre_color.blue  &= _Xaw3dXft->insensitive_twist[3];
 	    } else {
-                xre_color.red = xcol.red ^ _Xaw3dXft->insensitive_twist[1];
-                xre_color.green = xcol.green ^ _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue = xcol.blue ^ _Xaw3dXft->insensitive_twist[3];
+                xre_color.red   ^= _Xaw3dXft->insensitive_twist[1];
+                xre_color.green ^= _Xaw3dXft->insensitive_twist[2];
+                xre_color.blue  ^= _Xaw3dXft->insensitive_twist[3];
 	    }
 	} else
 	    xre_color.alpha = _Xaw3dXft->insensitive_twist[1]*257;
     }
-    XftColorAllocValue(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-		       cmap, &xre_color, &color);
 
+    XftColor color;
+    XftColorAllocValue(dpy, visual, cmap, &xre_color, &color);
+
+    XGlyphInfo extents = {};
     if (_Xaw3dXft->encoding == -1) {
         XftTextExtentsUtf8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
-        AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
+        AdjustBackground(dpy, win, cmap, w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawStringUtf8(draw, &color, font, x, y, (FcChar8*)str, len);
-    } else
-    if (_Xaw3dXft->encoding == 8) {
+    } else if (_Xaw3dXft->encoding == 8) {
         XftTextExtents8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
-        AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
+        AdjustBackground(dpy, win, cmap, w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawString8(draw, &color, font, x, y, (FcChar8*)str, len);
-    } else
-    if (_Xaw3dXft->encoding == 16) {
-        XftTextExtents16(dpy, font, (FcChar16*)str, len/2,
-                         (XGlyphInfo*)&extents);
-        AdjustBackground(w, x, y-font->ascent, extents.xOff, font->height);
+    } else if (_Xaw3dXft->encoding == 16) {
+        XftTextExtents16(dpy, font, (FcChar16*)str, len/2, (XGlyphInfo*)&extents);
+        AdjustBackground(dpy, win, cmap, w, x, y-font->ascent, extents.xOff, font->height);
         XftDrawString16(draw, &color, font, x, y, (FcChar16*)str, len/2);
     }
+
     /*
       Notes 2026-06-20 DWF on:
 
@@ -330,6 +310,7 @@ Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len)
       XAllocColor and XFreeColors in that case.  StaticGray and StaticColor
       take the alloc/free path despite having immutable colormaps.
     */
+
     XftDrawDestroy(draw);
     XFlush(dpy);
 }

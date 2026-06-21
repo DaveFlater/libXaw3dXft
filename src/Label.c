@@ -186,6 +186,8 @@ WidgetClass labelWidgetClass = (WidgetClass)&labelClassRec;
  *
  ****************************************************************/
 
+#define VisualOf(w) (w->label.visual)
+
 static void
 ClassInitialize(void)
 {
@@ -426,6 +428,8 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     LabelWidget lw = (LabelWidget) new;
 
+    Xaw3dXftGetVisualInfo(new, &VisualOf(lw), NULL, NULL);
+
     if (_Xaw3dXft->encoding)
 	lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
     else {
@@ -560,7 +564,7 @@ Redisplay(Widget gw, XEvent *event, Region region)
 	    if (len == MULTI_LINE_LABEL) {
 	        char *nl;
 	        while ((nl = strchr(label, '\n')) != NULL) {
-		    Xaw3dXftDrawString(gw, w->label.xftfont,
+		    Xaw3dXftDrawString(VisualOf(w), gw, w->label.xftfont,
 				       w->label.label_x, y,
 				       label, (int)(nl - label));
 		    y += w->label.xftfont->height;
@@ -569,7 +573,7 @@ Redisplay(Widget gw, XEvent *event, Region region)
 	        len = strlen(label);
 	    }
 	    if (len) {
-		Xaw3dXftDrawString(gw, w->label.xftfont,
+		Xaw3dXftDrawString(VisualOf(w), gw, w->label.xftfont,
 				   w->label.label_x, y,
 				   label, len);
 	    }

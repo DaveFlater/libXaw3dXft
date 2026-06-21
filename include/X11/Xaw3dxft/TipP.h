@@ -68,6 +68,7 @@ typedef struct _TipPart {
 #endif
     unsigned char encoding;
     XftFont *xftfont;
+    Visual *visual;
 } TipPart;
 
 typedef struct _TipRec {

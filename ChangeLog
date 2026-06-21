@@ -18,6 +18,7 @@ Next release, v2.0  Dave Flater
 
   - Changed signatures of semi-private functions.
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object
+  Xaw3dXftDrawString (alias proc->draw_string):  add visual
 
   - Eliminated header include cycles.
   Applications that include Text.h might now need to add includes for

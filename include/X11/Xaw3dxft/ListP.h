@@ -104,6 +104,7 @@ typedef struct {
     int         freedoms;       /* flags for resizing height and width */
     void *      colorswitch;
     XftFont *	xftfont;
+    Visual *    visual;
 } ListPart;
 
 

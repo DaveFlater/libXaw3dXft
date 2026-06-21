@@ -794,7 +794,8 @@ string_use_pixmap:  deleted
 
 **Changed signatures of semi-private functions**
 
-Xaw3dXftGetFont (alias proc->get_font):  replace display with object
+Xaw3dXftGetFont (alias proc->get_font):  replace display with object  
+Xaw3dXftDrawString (alias proc->draw_string):  add visual
 
 **Eliminated header include cycles**
 

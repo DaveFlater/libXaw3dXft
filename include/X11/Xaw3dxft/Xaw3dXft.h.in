@@ -79,7 +79,7 @@ typedef struct _Xaw3dXftProc {
     void (* set_insensitive_twist)(char *value);
     XftFont * (* get_font)(Widget object, char *name);
     int (* text_width)(Widget w, XftFont *font, char *str, int len);
-    void (* draw_string)(Widget w, XftFont *font, int x, int y, char *str, int len);
+    void (* draw_string)(Visual *visual, Widget w, XftFont *font, int x, int y, char *str, int len);
 #ifdef XAW_ARROW_SCROLLBARS
     Widget (* get_scrollbar)(Widget w, XtPointer ptr);
     void (* handle_mousewheel)(Widget w, XtPointer ptr, XEvent *event, Boolean * flg);

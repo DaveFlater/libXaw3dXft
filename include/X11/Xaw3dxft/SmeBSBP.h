@@ -98,6 +98,7 @@ typedef struct {
     unsigned int right_depth;
     String menu_name;		/* name of nested sub-menu or NULL */
     XftFont * xftfont;
+    Visual * visual;
 } SmeBSBPart;
 
 /****************************************************************

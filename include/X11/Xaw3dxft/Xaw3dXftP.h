@@ -57,7 +57,7 @@ extern void Xaw3dXftSetInsensitiveTwist(char *value);
 extern XftFont * Xaw3dXftGetFont(Widget object, char *name);
 
 extern int Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len);
-extern void Xaw3dXftDrawString(Widget w, XftFont *font, int x, int y, char *str, int len);
+extern void Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y, char *str, int len);
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS

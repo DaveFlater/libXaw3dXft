@@ -98,6 +98,7 @@ typedef struct {
     XawTextInsertState laststate;
     short cursor_x, cursor_y;	/* Cursor Location. */
     XftFont *xftfont;
+    Visual *visual;
 } AsciiSinkPart;
 
 /****************************************************************

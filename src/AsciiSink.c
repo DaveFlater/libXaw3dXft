@@ -156,6 +156,8 @@ AsciiSinkClassRec asciiSinkClassRec = {
 
 WidgetClass asciiSinkObjectClass = (WidgetClass)&asciiSinkClassRec;
 
+#define VisualOf(w) (w->ascii_sink.visual)
+
 /* Utilities */
 
 static int
@@ -282,7 +284,8 @@ PaintText(Widget w, GC gc, Position x, Position y, unsigned char * buf, int len)
         if (gc == sink->ascii_sink.invgc) {
             _Xaw3dXft->text_bg_hilight = -_Xaw3dXft->text_bg_hilight;
 	}
-	Xaw3dXftDrawString((Widget)ctx, sink->ascii_sink.xftfont,
+	Xaw3dXftDrawString(VisualOf(sink), (Widget)ctx,
+			   sink->ascii_sink.xftfont,
                            (int) x, (int) y, (char *) buf, len);
         if (gc == sink->ascii_sink.invgc) {
 	    _Xaw3dXft->text_bg_hilight = -_Xaw3dXft->text_bg_hilight;
@@ -605,6 +608,8 @@ static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     AsciiSinkObject sink = (AsciiSinkObject) new;
+
+    Xaw3dXftGetVisualInfo(new, &VisualOf(sink), NULL, NULL);
 
     sink->ascii_sink.insertCursorOn= CreateInsertCursor(XtScreenOfObject(new));
     sink->ascii_sink.laststate = XawisOff;

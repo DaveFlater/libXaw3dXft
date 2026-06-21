@@ -177,6 +177,8 @@ TipClassRec tipClassRec = {
 
 WidgetClass tipWidgetClass = (WidgetClass)&tipClassRec;
 
+#define VisualOf(w) (w->tip.visual)
+
 static XawTipInfo *TipInfoList = NULL;
 static TimeoutInfo TimeoutData;
 
@@ -250,11 +252,13 @@ static void
 XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
 {
     TipWidget tip = (TipWidget)w;
-    XGCValues values;
+
+    Xaw3dXftGetVisualInfo(w, &VisualOf(tip), NULL, NULL);
 
     tip->tip.timer = 0;
     tip->core.border_width = 0; // See Notes 2026-06-19 DWF below
 
+    XGCValues values;
     values.foreground = tip->tip.foreground;
     values.background = tip->core.background_pixel;
     values.font = tip->tip.font->fid;
@@ -395,7 +399,7 @@ XawTipExpose(Widget w, XEvent *event, Region region)
 #endif
     if (_Xaw3dXft->encoding) {
 	while ((nl = strchr(label, '\n')) != NULL) {
-	    Xaw3dXftDrawString(w, tip->tip.xftfont,
+	    Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
 		tip->tip.internal_width+3, y,
 		label, (int)(nl - label));
 	    y += tip->tip.xftfont->height + 3*_Xaw3dXft->menu_spacing;
@@ -403,7 +407,7 @@ XawTipExpose(Widget w, XEvent *event, Region region)
 	}
 	len = strlen(label);
 	if (len)
-	    Xaw3dXftDrawString(w, tip->tip.xftfont,
+	    Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
 		tip->tip.internal_width+3, y,
 		label, len);
     } else {

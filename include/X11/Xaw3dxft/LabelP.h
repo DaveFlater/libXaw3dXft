@@ -113,6 +113,7 @@ typedef struct {
     unsigned int lbm_width, lbm_height;	/* size of pixmap */
     unsigned int depth;			/* depth of pixmaps */
     XftFont	*xftfont;
+    Visual      *visual;
 } LabelPart;
 
 

@@ -3010,8 +3010,11 @@ ChangeSensitive(Widget w)
 static void
 GetValuesHook(Widget w, ArgList args, Cardinal * num_args)
 {
-  XtGetValues( ((TextWidget) w)->text.source, args, *num_args );
-  XtGetValues( ((TextWidget) w)->text.sink, args, *num_args );
+    TextWidget tw = (TextWidget)w;
+    if (tw->text.source)
+        XtGetValues(tw->text.source, args, *num_args);
+    if (tw->text.sink)
+        XtGetValues(tw->text.sink, args, *num_args);
 }
 
 /*	Function Name: FindGoodPosition

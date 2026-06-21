@@ -189,6 +189,8 @@ WidgetClass listWidgetClass = (WidgetClass)&listClassRec;
  *
  ****************************************************************/
 
+#define VisualOf(w) (w->list.visual)
+
 static void
 GetGCs(Widget w)
 {
@@ -388,6 +390,7 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
 /*
  * Initialize all private resources.
  */
+    Xaw3dXftGetVisualInfo(new, &VisualOf(lw), NULL, NULL);
 
     /* record for posterity if we are free */
     lw->list.freedoms = (lw->core.width != 0) * WidthLock +
@@ -695,7 +698,7 @@ PaintItemName(Widget w, int item)
 	   (w, item, x, str_y, &_Xaw3dXft->text_fg_alternate_color);
 
     if (_Xaw3dXft->encoding) {
-	Xaw3dXftDrawString(w, lw->list.xftfont,
+        Xaw3dXftDrawString(VisualOf(lw), w, lw->list.xftfont,
 			   x, str_y, str, strlen( str ) );
         _Xaw3dXft->string_hilight = 0;
     } else
