@@ -35,14 +35,14 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xos.h>
 #include <X11/Xmu/Converters.h>
-#include <X11/Xaw3dxft/TipP.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/TipP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 
 #include <stdlib.h>
 

@@ -51,8 +51,8 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/MenuButtoP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/MenuButtoP.h>
 
 static void ClassInitialize(void);
 static void PopupMenu(Widget, XEvent *, String *, Cardinal *);

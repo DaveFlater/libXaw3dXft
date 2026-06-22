@@ -63,7 +63,7 @@ SOFTWARE.
 
 /* Make sure all wm properties can make it out of the resource manager */
 
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
@@ -84,8 +84,8 @@ static_assert(Got_XAW_defines);
 
 /* The following two headers are for the input method. */
 #ifdef XAW_INTERNATIONALIZATION
-#include <X11/Xaw3dxft/VendorEP.h>
-#include <X11/Xaw3dxft/XawImP.h>
+#include <X11/Xaw3dXft/VendorEP.h>
+#include <X11/Xaw3dXft/XawImP.h>
 #endif
 
 

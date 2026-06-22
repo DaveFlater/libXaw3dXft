@@ -12,9 +12,13 @@ Next release, v2.0  Dave Flater
   This renaming was for consistency with Xaw and Xaw3d, which use xaw7.pc and
   xaw3d.pc respectively.
 
-  - Renamed installed library to libXaw3dXft (.a, .so)
-  Dependents using pkg-config will get this change automatically.  Others
-  will need to modify their link lines.
+  - Harmonized spelling to [lib]Xaw3dXft elsewhere.
+    - The library changes from libXaw3dxft to libXaw3dXft (.a, .so).
+      Dependents using pkg-config will get this change automatically.  Others
+      will need to modify their link lines.
+    - The include path changes from X11/Xaw3dxft to X11/Xaw3dXft.  An install
+      hook creates a symbolic link from the old name.
+    - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
   - Changed struct Xaw3dXftData.
   border_hack:  deleted
@@ -29,11 +33,8 @@ Next release, v2.0  Dave Flater
   TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
   included by Text.h.
 
-  - Enabled all four configure options by default.
-  Dependents needing to build without libXpm now must configure with
-  --disable-multiplane-bitmaps or --enable-multiplane-bitmaps=no.
-
   Other noteworthy changes:
+  - Enabled all four configure options by default.
   - Added version identification mechanisms (see README for details).
   - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
   - Put the macros for the enable/disable configure options in Xaw3d.h.

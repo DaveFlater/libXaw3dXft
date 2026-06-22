@@ -29,7 +29,7 @@ in this Software without prior written authorization from the X Consortium.
 #include "config.h"
 #endif
 #include <X11/IntrinsicP.h>
-#include <X11/Xaw3dxft/AllWidgets.h>
+#include <X11/Xaw3dXft/AllWidgets.h>
 
 #include <X11/Composite.h>
 #include <X11/Constraint.h>
@@ -38,32 +38,32 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/RectObj.h>
 #include <X11/Shell.h>
 #include <X11/Vendor.h>
-#include <X11/Xaw3dxft/AsciiSink.h>
-#include <X11/Xaw3dxft/AsciiText.h>
-#include <X11/Xaw3dxft/Box.h>
-#include <X11/Xaw3dxft/Dialog.h>
-#include <X11/Xaw3dxft/Form.h>
-#include <X11/Xaw3dxft/Grip.h>
-#include <X11/Xaw3dxft/Layout.h>
-#include <X11/Xaw3dxft/List.h>
-#include <X11/Xaw3dxft/MenuButton.h>
-#include <X11/Xaw3dxft/MultiSink.h>
-#include <X11/Xaw3dxft/MultiSrc.h>
-#include <X11/Xaw3dxft/Paned.h>
-#include <X11/Xaw3dxft/Panner.h>
-#include <X11/Xaw3dxft/Porthole.h>
-#include <X11/Xaw3dxft/Repeater.h>
-#include <X11/Xaw3dxft/Scrollbar.h>
-#include <X11/Xaw3dxft/SimpleMenu.h>
-#include <X11/Xaw3dxft/Sme.h>
-#include <X11/Xaw3dxft/SmeBSB.h>
-#include <X11/Xaw3dxft/SmeLine.h>
-#include <X11/Xaw3dxft/SmeThreeD.h>
-#include <X11/Xaw3dxft/StripChart.h>
-#include <X11/Xaw3dxft/ThreeD.h>
-#include <X11/Xaw3dxft/Toggle.h>
-#include <X11/Xaw3dxft/Tree.h>
-#include <X11/Xaw3dxft/Viewport.h>
+#include <X11/Xaw3dXft/AsciiSink.h>
+#include <X11/Xaw3dXft/AsciiText.h>
+#include <X11/Xaw3dXft/Box.h>
+#include <X11/Xaw3dXft/Dialog.h>
+#include <X11/Xaw3dXft/Form.h>
+#include <X11/Xaw3dXft/Grip.h>
+#include <X11/Xaw3dXft/Layout.h>
+#include <X11/Xaw3dXft/List.h>
+#include <X11/Xaw3dXft/MenuButton.h>
+#include <X11/Xaw3dXft/MultiSink.h>
+#include <X11/Xaw3dXft/MultiSrc.h>
+#include <X11/Xaw3dXft/Paned.h>
+#include <X11/Xaw3dXft/Panner.h>
+#include <X11/Xaw3dXft/Porthole.h>
+#include <X11/Xaw3dXft/Repeater.h>
+#include <X11/Xaw3dXft/Scrollbar.h>
+#include <X11/Xaw3dXft/SimpleMenu.h>
+#include <X11/Xaw3dXft/Sme.h>
+#include <X11/Xaw3dXft/SmeBSB.h>
+#include <X11/Xaw3dXft/SmeLine.h>
+#include <X11/Xaw3dXft/SmeThreeD.h>
+#include <X11/Xaw3dXft/StripChart.h>
+#include <X11/Xaw3dXft/ThreeD.h>
+#include <X11/Xaw3dXft/Toggle.h>
+#include <X11/Xaw3dXft/Tree.h>
+#include <X11/Xaw3dXft/Viewport.h>
 
 static_assert(Got_XAW_defines);
 XmuWidgetNode XawWidgetArray[] = {

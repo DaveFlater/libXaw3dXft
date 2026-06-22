@@ -68,22 +68,22 @@ SOFTWARE.
  *          kit@expo.lcs.mit.edu
  */
 
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Cardinals.h>
-#include <X11/Xaw3dxft/AsciiTextP.h>
-#include <X11/Xaw3dxft/AsciiSrc.h>
-#include <X11/Xaw3dxft/AsciiSink.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/AsciiTextP.h>
+#include <X11/Xaw3dXft/AsciiSrc.h>
+#include <X11/Xaw3dXft/AsciiSink.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
-#include <X11/Xaw3dxft/MultiSrc.h>
-#include <X11/Xaw3dxft/MultiSinkP.h>
-#include <X11/Xaw3dxft/XawImP.h>
+#include <X11/Xaw3dXft/MultiSrc.h>
+#include <X11/Xaw3dXft/MultiSinkP.h>
+#include <X11/Xaw3dXft/XawImP.h>
 #endif
 
 #define TAB_COUNT 32

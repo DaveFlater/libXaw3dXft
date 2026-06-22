@@ -8,17 +8,18 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libXaw3dXft.la
 libXaw3dXft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
+docdir = ${datarootdir}/doc/libXaw3dXft
 
 if XAW_INTERNATIONALIZATION
 I18N_SRCS = src/MultiSrc.c src/MultiSink.c src/XawIm.c src/XawI18n.c \
   src/XawI18n.h
 I18N_HDRS = \
-  include/X11/Xaw3dxft/MultiSrc.h \
-  include/X11/Xaw3dxft/MultiSrcP.h \
-  include/X11/Xaw3dxft/MultiSink.h \
-  include/X11/Xaw3dxft/MultiSinkP.h \
-  include/X11/Xaw3dxft/VendorEP.h \
-  include/X11/Xaw3dxft/XawImP.h
+  include/X11/Xaw3dXft/MultiSrc.h \
+  include/X11/Xaw3dXft/MultiSrcP.h \
+  include/X11/Xaw3dXft/MultiSink.h \
+  include/X11/Xaw3dXft/MultiSinkP.h \
+  include/X11/Xaw3dXft/VendorEP.h \
+  include/X11/Xaw3dXft/XawImP.h
 endif
 
 libXaw3dXft_la_SOURCES = \
@@ -67,87 +68,87 @@ libXaw3dXft_la_SOURCES = \
   $(I18N_SRCS)
 nodist_libXaw3dXft_la_SOURCES = src/Xaw3dXft.c config.h
 
-xaw3dincludedir=${includedir}/X11/Xaw3dxft
+xaw3dincludedir=${includedir}/X11/Xaw3dXft
 xaw3dinclude_HEADERS = \
-  include/X11/Xaw3dxft/AllWidgets.h \
-  include/X11/Xaw3dxft/AsciiSink.h \
-  include/X11/Xaw3dxft/AsciiSinkP.h \
-  include/X11/Xaw3dxft/AsciiSrc.h \
-  include/X11/Xaw3dxft/AsciiSrcP.h \
-  include/X11/Xaw3dxft/AsciiText.h \
-  include/X11/Xaw3dxft/AsciiTextP.h \
-  include/X11/Xaw3dxft/Box.h \
-  include/X11/Xaw3dxft/BoxP.h \
-  include/X11/Xaw3dxft/Cardinals.h \
-  include/X11/Xaw3dxft/Command.h \
-  include/X11/Xaw3dxft/CommandP.h \
-  include/X11/Xaw3dxft/Dialog.h \
-  include/X11/Xaw3dxft/DialogP.h \
-  include/X11/Xaw3dxft/Form.h \
-  include/X11/Xaw3dxft/FormP.h \
-  include/X11/Xaw3dxft/Grip.h \
-  include/X11/Xaw3dxft/GripP.h \
-  include/X11/Xaw3dxft/Label.h \
-  include/X11/Xaw3dxft/LabelP.h \
-  include/X11/Xaw3dxft/Layout.h \
-  include/X11/Xaw3dxft/LayoutP.h \
-  include/X11/Xaw3dxft/List.h \
-  include/X11/Xaw3dxft/ListP.h \
-  include/X11/Xaw3dxft/MenuButton.h \
-  include/X11/Xaw3dxft/MenuButtoP.h \
-  include/X11/Xaw3dxft/Paned.h \
-  include/X11/Xaw3dxft/PanedP.h \
-  include/X11/Xaw3dxft/Panner.h \
-  include/X11/Xaw3dxft/PannerP.h \
-  include/X11/Xaw3dxft/Porthole.h \
-  include/X11/Xaw3dxft/PortholeP.h \
-  include/X11/Xaw3dxft/Repeater.h \
-  include/X11/Xaw3dxft/RepeaterP.h \
-  include/X11/Xaw3dxft/Reports.h \
-  include/X11/Xaw3dxft/Scrollbar.h \
-  include/X11/Xaw3dxft/ScrollbarP.h \
-  include/X11/Xaw3dxft/Simple.h \
-  include/X11/Xaw3dxft/SimpleMenP.h \
-  include/X11/Xaw3dxft/SimpleMenu.h \
-  include/X11/Xaw3dxft/SimpleP.h \
-  include/X11/Xaw3dxft/SmeBSB.h \
-  include/X11/Xaw3dxft/SmeBSBP.h \
-  include/X11/Xaw3dxft/Sme.h \
-  include/X11/Xaw3dxft/SmeLine.h \
-  include/X11/Xaw3dxft/SmeLineP.h \
-  include/X11/Xaw3dxft/SmeP.h \
-  include/X11/Xaw3dxft/SmeThreeD.h \
-  include/X11/Xaw3dxft/SmeThreeDP.h \
-  include/X11/Xaw3dxft/StripCharP.h \
-  include/X11/Xaw3dxft/StripChart.h \
-  include/X11/Xaw3dxft/Text.h \
-  include/X11/Xaw3dxft/TextP.h \
-  include/X11/Xaw3dxft/TextSink.h \
-  include/X11/Xaw3dxft/TextSinkP.h \
-  include/X11/Xaw3dxft/TextSrc.h \
-  include/X11/Xaw3dxft/TextSrcP.h \
-  include/X11/Xaw3dxft/ThreeD.h \
-  include/X11/Xaw3dxft/ThreeDP.h \
-  include/X11/Xaw3dxft/Tip.h \
-  include/X11/Xaw3dxft/TipP.h \
-  include/X11/Xaw3dxft/Toggle.h \
-  include/X11/Xaw3dxft/ToggleP.h \
-  include/X11/Xaw3dxft/Tree.h \
-  include/X11/Xaw3dxft/TreeP.h \
-  include/X11/Xaw3dxft/Viewport.h \
-  include/X11/Xaw3dxft/ViewportP.h \
-  include/X11/Xaw3dxft/Xaw3dP.h \
-  include/X11/Xaw3dxft/Xaw3dXftP.h \
-  include/X11/Xaw3dxft/XawInit.h \
+  include/X11/Xaw3dXft/AllWidgets.h \
+  include/X11/Xaw3dXft/AsciiSink.h \
+  include/X11/Xaw3dXft/AsciiSinkP.h \
+  include/X11/Xaw3dXft/AsciiSrc.h \
+  include/X11/Xaw3dXft/AsciiSrcP.h \
+  include/X11/Xaw3dXft/AsciiText.h \
+  include/X11/Xaw3dXft/AsciiTextP.h \
+  include/X11/Xaw3dXft/Box.h \
+  include/X11/Xaw3dXft/BoxP.h \
+  include/X11/Xaw3dXft/Cardinals.h \
+  include/X11/Xaw3dXft/Command.h \
+  include/X11/Xaw3dXft/CommandP.h \
+  include/X11/Xaw3dXft/Dialog.h \
+  include/X11/Xaw3dXft/DialogP.h \
+  include/X11/Xaw3dXft/Form.h \
+  include/X11/Xaw3dXft/FormP.h \
+  include/X11/Xaw3dXft/Grip.h \
+  include/X11/Xaw3dXft/GripP.h \
+  include/X11/Xaw3dXft/Label.h \
+  include/X11/Xaw3dXft/LabelP.h \
+  include/X11/Xaw3dXft/Layout.h \
+  include/X11/Xaw3dXft/LayoutP.h \
+  include/X11/Xaw3dXft/List.h \
+  include/X11/Xaw3dXft/ListP.h \
+  include/X11/Xaw3dXft/MenuButton.h \
+  include/X11/Xaw3dXft/MenuButtoP.h \
+  include/X11/Xaw3dXft/Paned.h \
+  include/X11/Xaw3dXft/PanedP.h \
+  include/X11/Xaw3dXft/Panner.h \
+  include/X11/Xaw3dXft/PannerP.h \
+  include/X11/Xaw3dXft/Porthole.h \
+  include/X11/Xaw3dXft/PortholeP.h \
+  include/X11/Xaw3dXft/Repeater.h \
+  include/X11/Xaw3dXft/RepeaterP.h \
+  include/X11/Xaw3dXft/Reports.h \
+  include/X11/Xaw3dXft/Scrollbar.h \
+  include/X11/Xaw3dXft/ScrollbarP.h \
+  include/X11/Xaw3dXft/Simple.h \
+  include/X11/Xaw3dXft/SimpleMenP.h \
+  include/X11/Xaw3dXft/SimpleMenu.h \
+  include/X11/Xaw3dXft/SimpleP.h \
+  include/X11/Xaw3dXft/SmeBSB.h \
+  include/X11/Xaw3dXft/SmeBSBP.h \
+  include/X11/Xaw3dXft/Sme.h \
+  include/X11/Xaw3dXft/SmeLine.h \
+  include/X11/Xaw3dXft/SmeLineP.h \
+  include/X11/Xaw3dXft/SmeP.h \
+  include/X11/Xaw3dXft/SmeThreeD.h \
+  include/X11/Xaw3dXft/SmeThreeDP.h \
+  include/X11/Xaw3dXft/StripCharP.h \
+  include/X11/Xaw3dXft/StripChart.h \
+  include/X11/Xaw3dXft/Text.h \
+  include/X11/Xaw3dXft/TextP.h \
+  include/X11/Xaw3dXft/TextSink.h \
+  include/X11/Xaw3dXft/TextSinkP.h \
+  include/X11/Xaw3dXft/TextSrc.h \
+  include/X11/Xaw3dXft/TextSrcP.h \
+  include/X11/Xaw3dXft/ThreeD.h \
+  include/X11/Xaw3dXft/ThreeDP.h \
+  include/X11/Xaw3dXft/Tip.h \
+  include/X11/Xaw3dXft/TipP.h \
+  include/X11/Xaw3dXft/Toggle.h \
+  include/X11/Xaw3dXft/ToggleP.h \
+  include/X11/Xaw3dXft/Tree.h \
+  include/X11/Xaw3dXft/TreeP.h \
+  include/X11/Xaw3dXft/Viewport.h \
+  include/X11/Xaw3dXft/ViewportP.h \
+  include/X11/Xaw3dXft/Xaw3dP.h \
+  include/X11/Xaw3dXft/Xaw3dXftP.h \
+  include/X11/Xaw3dXft/XawInit.h \
   $(I18N_HDRS)
 nodist_xaw3dinclude_HEADERS = \
-  include/X11/Xaw3dxft/Xaw3dXft.h \
-  include/X11/Xaw3dxft/Xaw3d.h
+  include/X11/Xaw3dXft/Xaw3dXft.h \
+  include/X11/Xaw3dXft/Xaw3d.h
 
 EXTRA_DIST = \
   src/Template.c \
-  include/X11/Xaw3dxft/Template.h \
-  include/X11/Xaw3dxft/TemplateP.h
+  include/X11/Xaw3dXft/Template.h \
+  include/X11/Xaw3dXft/TemplateP.h
 
 BUILT_SOURCES = src/laygram.h
 dist_doc_DATA = README.md Xresources
@@ -179,6 +180,12 @@ dist_olddocsxaw_DATA = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xaw3dxft.pc
+
+# Backward compatibility
+install-data-hook:
+	if [ -e $(DESTDIR)/$(xaw3dincludedir) ]; then ln -s Xaw3dXft $(DESTDIR)/${includedir}/X11/Xaw3dxft; fi
+uninstall-hook:
+	rm -f $(DESTDIR)/${includedir}/X11/Xaw3dxft
 
 # -version-info current:revision:age
 

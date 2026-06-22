@@ -49,12 +49,12 @@ SOFTWARE.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/SimpleP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/SimpleP.h>
 #include <X11/Xmu/Drawing.h>
 
 #define offset(field) XtOffsetOf(SimpleRec, simple.field)

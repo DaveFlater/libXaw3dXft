@@ -52,8 +52,8 @@ SOFTWARE.
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/StripCharP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/StripCharP.h>
 #include <X11/Xfuncs.h>
 
 #define MS_PER_SEC 1000

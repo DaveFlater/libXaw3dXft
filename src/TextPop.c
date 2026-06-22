@@ -49,17 +49,17 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
-#include <X11/Xaw3dxft/TextP.h>
-#include <X11/Xaw3dxft/AsciiText.h>
-#include <X11/Xaw3dxft/Cardinals.h>
-#include <X11/Xaw3dxft/Command.h>
-#include <X11/Xaw3dxft/Form.h>
-#include <X11/Xaw3dxft/Toggle.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/AsciiText.h>
+#include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/Command.h>
+#include <X11/Xaw3dXft/Form.h>
+#include <X11/Xaw3dXft/Toggle.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xmu/CharSet.h>
 
 static_assert(Got_XAW_defines);

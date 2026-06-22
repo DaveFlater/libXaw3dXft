@@ -41,14 +41,14 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 
-#include <X11/Xaw3dxft/Xaw3dP.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
-#include <X11/Xaw3dxft/SimpleMenP.h>
-#include <X11/Xaw3dxft/SmeBSBP.h>
-#include <X11/Xaw3dxft/SmeLine.h>
-#include <X11/Xaw3dxft/Cardinals.h>
-#include <X11/Xaw3dxft/ThreeDP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/SimpleMenP.h>
+#include <X11/Xaw3dXft/SmeBSBP.h>
+#include <X11/Xaw3dXft/SmeLine.h>
+#include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/ThreeDP.h>
 
 #include <X11/Xmu/Initer.h>
 #include <X11/Xmu/CharSet.h>

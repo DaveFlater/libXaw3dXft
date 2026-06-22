@@ -28,7 +28,7 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xutil.h>
@@ -36,14 +36,14 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xmu/Misc.h>
 #include <X11/Xmu/StdSel.h>		/* for XmuConvertStandardSelection */
 #include <X11/Xmu/Atoms.h>		/* for XA_COMPOUND_TEXT */
-#include <X11/Xaw3dxft/TextP.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
-#include <X11/Xaw3dxft/TextSink.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/TextSink.h>
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
-#include <X11/Xaw3dxft/MultiSrcP.h>
-#include <X11/Xaw3dxft/XawImP.h>
+#include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/XawImP.h>
 #endif
 #include <X11/Xfuncs.h>
 #ifdef XAW_INTERNATIONALIZATION

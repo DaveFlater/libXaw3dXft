@@ -30,7 +30,7 @@ in this Software without prior written authorization from the X Consortium.
 #endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/TemplateP.h>
+#include <X11/Xaw3dXft/TemplateP.h>
 
 static XtResource resources[] = {
 #define offset(field) XtOffsetOf(TemplateRec, template.field)

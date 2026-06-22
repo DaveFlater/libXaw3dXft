@@ -49,7 +49,7 @@ SOFTWARE.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
@@ -68,16 +68,16 @@ static_assert(Got_XAW_defines);
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/StdSel.h>
 #include <X11/Xmu/Misc.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Cardinals.h>
-#include <X11/Xaw3dxft/Scrollbar.h>
-#include <X11/Xaw3dxft/TextP.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/Scrollbar.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 #ifdef XAW_INTERNATIONALIZATION
-#include <X11/Xaw3dxft/MultiSinkP.h>
-#include <X11/Xaw3dxft/XawImP.h>
+#include <X11/Xaw3dXft/MultiSinkP.h>
+#include <X11/Xaw3dXft/XawImP.h>
 #endif
-#include <X11/Xaw3dxft/ThreeDP.h>
+#include <X11/Xaw3dXft/ThreeDP.h>
 #include <X11/Xfuncs.h>
 #include <ctype.h>		/* for isprint() */
 

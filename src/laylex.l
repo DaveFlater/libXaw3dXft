@@ -13,7 +13,7 @@
 #include    <X11/IntrinsicP.h>
 #include    <X11/StringDefs.h>
 
-#include    <X11/Xaw3dxft/LayoutP.h>
+#include    <X11/Xaw3dXft/LayoutP.h>
 #include    "laygram.h"
 #include    "LayYY.h"
 

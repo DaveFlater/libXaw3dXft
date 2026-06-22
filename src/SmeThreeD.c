@@ -28,14 +28,14 @@ SOFTWARE.
 #include "config.h"
 #endif
 #include <assert.h>
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/Xlib.h>
 #include <X11/StringDefs.h>
 #include <X11/IntrinsicP.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/ThreeDP.h>
-#include <X11/Xaw3dxft/SimpleMenP.h>
-#include <X11/Xaw3dxft/SmeThreeDP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/ThreeDP.h>
+#include <X11/Xaw3dXft/SimpleMenP.h>
+#include <X11/Xaw3dXft/SmeThreeDP.h>
 #include <X11/Xosdefs.h>
 
 /* Initialization of defaults */

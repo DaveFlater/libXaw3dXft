@@ -53,8 +53,8 @@ SOFTWARE.
 #include <X11/StringDefs.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/CharSet.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/FormP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/FormP.h>
 
 /* Private Definitions */
 

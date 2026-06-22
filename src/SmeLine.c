@@ -42,11 +42,11 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/ThreeDP.h>
-#include <X11/Xaw3dxft/SimpleMenP.h>
-#include <X11/Xaw3dxft/SmeLineP.h>
-#include <X11/Xaw3dxft/Cardinals.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/ThreeDP.h>
+#include <X11/Xaw3dXft/SimpleMenP.h>
+#include <X11/Xaw3dXft/SmeLineP.h>
+#include <X11/Xaw3dXft/Cardinals.h>
 
 #define offset(field) XtOffsetOf(SmeLineRec, sme_line.field)
 static XtResource resources[] = {

@@ -93,8 +93,8 @@ AC_SUBST([MACRO_GRAY_BLKWHT_STIPPLES])
 AC_CONFIG_FILES([
   Makefile
   xaw3dxft.pc
-  include/X11/Xaw3dxft/Xaw3dXft.h
-  include/X11/Xaw3dxft/Xaw3d.h
+  include/X11/Xaw3dXft/Xaw3dXft.h
+  include/X11/Xaw3dXft/Xaw3d.h
   src/Xaw3dXft.c
 ])
 AC_OUTPUT

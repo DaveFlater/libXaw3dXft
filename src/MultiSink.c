@@ -76,11 +76,11 @@ SOFTWARE.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xatom.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/MultiSinkP.h>
-#include <X11/Xaw3dxft/MultiSrcP.h>
-#include <X11/Xaw3dxft/TextP.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/MultiSinkP.h>
+#include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include "XawI18n.h"
 #include <stdio.h>
 #include <stdlib.h>

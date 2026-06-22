@@ -33,7 +33,7 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -42,19 +42,19 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xos.h>
 #include <stdlib.h>
 #include <X11/Xfuncs.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/AsciiSrcP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/AsciiSrcP.h>
 #include <X11/Xmu/Misc.h>
 #include <X11/Xmu/CharSet.h>
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
-#include <X11/Xaw3dxft/MultiSrcP.h>
+#include <X11/Xaw3dXft/MultiSrcP.h>
 #endif
 
 
 #if (defined(ASCII_STRING) || defined(ASCII_DISK))
-#  include <X11/Xaw3dxft/AsciiText.h> /* for Widget Classes. */
+#  include <X11/Xaw3dXft/AsciiText.h> /* for Widget Classes. */
 #endif
 
 #ifdef O_CLOEXEC
@@ -1295,7 +1295,7 @@ CvtStringToAsciiType(XrmValuePtr args, Cardinal * num_args, XrmValuePtr fromVal,
 }
 
 #if (defined(ASCII_STRING) || defined(ASCII_DISK))
-#  include <X11/Xaw3dxft/Cardinals.h>
+#  include <X11/Xaw3dXft/Cardinals.h>
 #endif
 
 #ifdef ASCII_STRING

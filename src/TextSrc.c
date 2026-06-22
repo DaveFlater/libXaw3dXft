@@ -39,12 +39,12 @@ in this Software without prior written authorization from the X Consortium.
 #include "config.h"
 #endif
 
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xutil.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/TextSrcP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/TextSrcP.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/CharSet.h>
 

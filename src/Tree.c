@@ -53,9 +53,9 @@ in this Software without prior written authorization from the X Consortium.
 #endif
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Cardinals.h>
-#include <X11/Xaw3dxft/TreeP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/TreeP.h>
 
 #define IsHorizontal(tw) ((tw)->tree.gravity == WestGravity || \
 			  (tw)->tree.gravity == EastGravity)

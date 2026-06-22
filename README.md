@@ -787,10 +787,14 @@ in configure.ac:
 This renaming was for consistency with Xaw and Xaw3d, which use xaw7.pc and
 xaw3d.pc respectively.
 
-**Renamed installed library to libXaw3dXft (.a, .so)**
+**Harmonized spelling to [lib]Xaw3dXft elsewhere**
 
-Dependents using pkg-config will get this change automatically.  Others will
-need to modify their link lines.
+- The library changes from libXaw3dxft to libXaw3dXft (.a, .so).
+  Dependents using pkg-config will get this change automatically.  Others
+  will need to modify their link lines.
+- The include path changes from X11/Xaw3dxft to X11/Xaw3dXft.  An install
+  hook creates a symbolic link from the old name.
+- The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
 **Changed struct Xaw3dXftData**
 
@@ -807,11 +811,6 @@ Xaw3dXftDrawString (alias proc->draw_string):  add visual
 Applications that include Text.h might now need to add includes for
 TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
 included by Text.h.
-
-**Enabled all four configure options by default**
-
-Dependents needing to build without libXpm now must configure with
---disable-multiplane-bitmaps or --enable-multiplane-bitmaps=no.
 
 
 ## <a name="history"> History

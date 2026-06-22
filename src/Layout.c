@@ -37,7 +37,7 @@
 #if defined(LAYOUT)
 # include "LayoutP.h"
 #else
-# include <X11/Xaw3dxft/LayoutP.h>
+# include <X11/Xaw3dXft/LayoutP.h>
 #endif
 
 #include <ctype.h>

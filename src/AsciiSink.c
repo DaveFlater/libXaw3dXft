@@ -55,11 +55,11 @@ SOFTWARE.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xft/Xft.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/AsciiSinkP.h>
-#include <X11/Xaw3dxft/AsciiSrcP.h>	/* For source function defs. */
-#include <X11/Xaw3dxft/TextP.h>	/* I also reach into the text widget. */
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/AsciiSinkP.h>
+#include <X11/Xaw3dXft/AsciiSrcP.h>	/* For source function defs. */
+#include <X11/Xaw3dXft/TextP.h>	/* I also reach into the text widget. */
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 
 #ifdef GETLASTPOS
 #undef GETLASTPOS		/* We will use our own GETLASTPOS. */

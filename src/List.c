@@ -37,16 +37,16 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xmu/Drawing.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
-#include <X11/Xaw3dxft/ListP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/ListP.h>
 
 /* These added so widget knows whether its height, width are user selected.
 I also added the freedoms member of the list widget part. */

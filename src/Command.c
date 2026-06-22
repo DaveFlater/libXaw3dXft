@@ -53,14 +53,14 @@ SOFTWARE.
  * Command.c - Command button widget
  */
 
-#include <X11/Xaw3dxft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xmu/Misc.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/Xaw3dXftP.h>
-#include <X11/Xaw3dxft/CommandP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/CommandP.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/extensions/shape.h>
 

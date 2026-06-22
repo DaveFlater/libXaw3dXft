@@ -43,10 +43,10 @@ in this Software without prior written authorization from the X Consortium.
 
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/XawInit.h>
+#include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Misc.h>
-#include <X11/Xaw3dxft/ToggleP.h>
+#include <X11/Xaw3dXft/ToggleP.h>
 
 /****************************************************************
  *

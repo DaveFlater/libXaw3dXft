@@ -52,10 +52,10 @@ SOFTWARE.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 
-#include <X11/Xaw3dxft/XawInit.h>
+#include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xmu/Misc.h>
-#include <X11/Xaw3dxft/Scrollbar.h>
-#include <X11/Xaw3dxft/ViewportP.h>
+#include <X11/Xaw3dXft/Scrollbar.h>
+#include <X11/Xaw3dXft/ViewportP.h>
 
 #include <stdint.h>
 

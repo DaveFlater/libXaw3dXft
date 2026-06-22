@@ -43,9 +43,9 @@ in this Software without prior written authorization from the X Consortium.
 #include <ctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dxft/XawInit.h>
-#include <X11/Xaw3dxft/TextSinkP.h>
-#include <X11/Xaw3dxft/TextP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/TextSinkP.h>
+#include <X11/Xaw3dXft/TextP.h>
 
 /****************************************************************
  *
