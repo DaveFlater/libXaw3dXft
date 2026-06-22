@@ -787,6 +787,11 @@ in configure.ac:
 This renaming was for consistency with Xaw and Xaw3d, which use xaw7.pc and
 xaw3d.pc respectively.
 
+**Renamed installed library to libXaw3dXft (.a, .so)**
+
+Dependents using pkg-config will get this change automatically.  Others will
+need to modify their link lines.
+
 **Changed struct Xaw3dXftData**
 
 border_hack:  deleted  

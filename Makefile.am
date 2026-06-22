@@ -6,8 +6,8 @@ AM_YFLAGS = -d -p LayYY
 AM_CFLAGS = $(X11_CFLAGS) $(XPM_CFLAGS)
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 ACLOCAL_AMFLAGS = -I m4
-lib_LTLIBRARIES = libXaw3dxft.la
-libXaw3dxft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
+lib_LTLIBRARIES = libXaw3dXft.la
+libXaw3dXft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
 
 if XAW_INTERNATIONALIZATION
 I18N_SRCS = src/MultiSrc.c src/MultiSink.c src/XawIm.c src/XawI18n.c \
@@ -21,7 +21,7 @@ I18N_HDRS = \
   include/X11/Xaw3dxft/XawImP.h
 endif
 
-libXaw3dxft_la_SOURCES = \
+libXaw3dXft_la_SOURCES = \
   src/AllWidgets.c \
   src/AsciiSink.c \
   src/AsciiSrc.c \
@@ -65,7 +65,7 @@ libXaw3dxft_la_SOURCES = \
   src/laygram.y \
   src/laylex.l \
   $(I18N_SRCS)
-nodist_libXaw3dxft_la_SOURCES = src/Xaw3dXft.c config.h
+nodist_libXaw3dXft_la_SOURCES = src/Xaw3dXft.c config.h
 
 xaw3dincludedir=${includedir}/X11/Xaw3dxft
 xaw3dinclude_HEADERS = \
@@ -200,4 +200,4 @@ pkgconfig_DATA = xaw3dxft.pc
 # then set age to 0.
 
 # FIXME: Update libtool version info on each release
-libXaw3dxft_la_LDFLAGS = -version-info 8:7:0 -no-undefined
+libXaw3dXft_la_LDFLAGS = -version-info 8:7:0 -no-undefined

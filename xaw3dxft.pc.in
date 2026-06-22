@@ -9,4 +9,4 @@ Version: @PACKAGE_VERSION@
 Requires: xproto xmu xt xft
 Requires.private: x11 xext
 Cflags: -I${includedir}
-Libs: -L${libdir} -lXaw3dxft -lXft -lfontconfig
+Libs: -L${libdir} -lXaw3dXft -lXft -lfontconfig
