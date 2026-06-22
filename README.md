@@ -131,7 +131,7 @@ constants:
                           libXaw3dXft_version_patch;
     extern const char     libXaw3dXft_version[];
 
-The built library libXaw3dxft.a or libXaw3dxft.so provides some linkable
+The built library libXaw3dXft.a or libXaw3dXft.so provides some linkable
 functions that can be used by the AC_CHECK_LIB macro in configure.ac:
 
     void libXaw3dXft_version_major_2 () {}
@@ -141,7 +141,7 @@ functions that can be used by the AC_CHECK_LIB macro in configure.ac:
 Finally, the built library provides a grep-friendly version string that can
 be retrieved from the command line:
 
-    bash$ strings libXaw3dxft.so | grep -F 'libXaw3dXft version'
+    bash$ strings libXaw3dXft.so | grep -F 'libXaw3dXft version'
     libXaw3dXft version 2.0.0
 
 Versions 1.3.3 through 1.6.4 exposed the version number only in the
@@ -556,7 +556,7 @@ The behaviors that are unique to Xaw3dXft rather than inherited from Xaw3d or
 Xaw must be enabled by the app at run time.  An app gets access to the
 Xaw3dXft control structure by doing
 
-    #include <X11/Xaw3dxft/Xaw3dXft.h>
+    #include <X11/Xaw3dXft/Xaw3dXft.h>
     Xaw3dXftData *xaw3dxft_data = NULL;
     GET_XAW3DXFT_DATA(xaw3dxft_data);
 
