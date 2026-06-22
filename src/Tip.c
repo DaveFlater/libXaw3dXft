@@ -177,7 +177,8 @@ TipClassRec tipClassRec = {
 
 WidgetClass tipWidgetClass = (WidgetClass)&tipClassRec;
 
-#define VisualOf(w) (w->tip.visual)
+#define VisualOf(w)    (w->tip.visual)
+#define VisualDepth(w) (w->core.depth)
 
 static XawTipInfo *TipInfoList = NULL;
 static TimeoutInfo TimeoutData;
@@ -355,9 +356,9 @@ XawTipRealize(Widget w, Mask *mask, XSetWindowAttributes *attr)
 				XtX(w), XtY(w),
 				XtWidth(w) ? XtWidth(w) : 1,
 				XtHeight(w) ? XtHeight(w) : 1,
-				0,
-				DefaultDepthOfScreen(XtScreen(w)),
-				InputOutput, CopyFromParent, *mask, attr);
+				0U, // unsigned int border_width
+				VisualDepth(tip), InputOutput, VisualOf(tip),
+				*mask, attr);
 
     if (_Xaw3dXft->tip_background_color != -1)
 	XtVaSetValues(w, XtNbackground, _Xaw3dXft->tip_background_color, NULL);
