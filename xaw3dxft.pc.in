@@ -3,7 +3,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: Xaw3dxft
+Name: Xaw3dXft
 Description: X Athena Widgets + 3D + FreeType font support
 Version: @PACKAGE_VERSION@
 Requires: xproto xmu xt xft
