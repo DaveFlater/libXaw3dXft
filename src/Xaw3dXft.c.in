@@ -40,6 +40,7 @@ SOFTWARE.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <assert.h>
 #include <X11/Xaw3dxft/Xaw3dXft.h>
 #include <X11/Xaw3dxft/AsciiTextP.h>
 #include <X11/Xaw3dxft/ScrollbarP.h>
@@ -184,6 +185,9 @@ AdjustBackground(Display *dpy, Window win, Colormap cmap, Widget widget,
     if (_Xaw3dXft->text_bg_hilight == -1 &&
 	_Xaw3dXft->text_bg_hilight_color != -1) {
 	XColor xcol;
+	// Background comes from Core.  Non-widget Object SmeBSB should never
+	// get here.  Pixel 0 would be valid but is probably black....
+	xcol.pixel = 0U;
 	XtVaGetValues(widget, XtNbackground, &xcol.pixel, NULL);
 	xcol.flags = DoRed | DoGreen | DoBlue;
 	XQueryColor(dpy, cmap, &xcol);
@@ -218,9 +222,13 @@ Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y,
         XtVaGetValues(w, XtNcolormap, &cmap, NULL);
     } else
         XtVaGetValues(w, XtNforeground, &fg, XtNcolormap, &cmap, NULL);
-
-    if (cmap==None)
-        cmap = DefaultColormap(dpy, XScreenNumberOfScreen(XtScreenOfObject(w)));
+    if (cmap==None) {
+        // Colormap comes from Core.  Non-widget Object SmeBSB has its own
+        // foreground resource, but not colormap.  SmeBSB itself uses
+        // parent->core.colormap, as does SmeThreeD.
+        XtVaGetValues(XtParent(w), XtNcolormap, &cmap, NULL);
+	assert(cmap != None);
+    }
     XftDraw *draw = XftDrawCreate(dpy, win, visual, cmap);
 
     XRenderColor xre_color = {0U, 0U, 0U, USHRT_MAX}; // default black
