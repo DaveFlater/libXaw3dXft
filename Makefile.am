@@ -8,7 +8,7 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libXaw3dXft.la
 libXaw3dXft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
-docdir = ${datarootdir}/doc/libXaw3dXft
+docdir = $(datarootdir)/doc/libXaw3dXft
 
 if XAW_INTERNATIONALIZATION
 I18N_SRCS = src/MultiSrc.c src/MultiSink.c src/XawIm.c src/XawI18n.c \
@@ -68,7 +68,7 @@ libXaw3dXft_la_SOURCES = \
   $(I18N_SRCS)
 nodist_libXaw3dXft_la_SOURCES = src/Xaw3dXft.c config.h
 
-xaw3dincludedir=${includedir}/X11/Xaw3dXft
+xaw3dincludedir=$(includedir)/X11/Xaw3dXft
 xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/AllWidgets.h \
   include/X11/Xaw3dXft/AsciiSink.h \
@@ -183,9 +183,9 @@ pkgconfig_DATA = xaw3dxft.pc
 
 # Backward compatibility
 install-data-hook:
-	if [ -e $(DESTDIR)/$(xaw3dincludedir) ]; then ln -s Xaw3dXft $(DESTDIR)/${includedir}/X11/Xaw3dxft; fi
+	if [ -e "$(DESTDIR)$(xaw3dincludedir)" ]; then ln -s Xaw3dXft "$(DESTDIR)$(includedir)/X11/Xaw3dxft"; fi
 uninstall-hook:
-	rm -f $(DESTDIR)/${includedir}/X11/Xaw3dxft
+	rm -f "$(DESTDIR)$(includedir)/X11/Xaw3dxft"
 
 # -version-info current:revision:age
 
