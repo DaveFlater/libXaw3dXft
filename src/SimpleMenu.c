@@ -296,9 +296,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   /*
     Notes 2026-06-19 DWF:
 
-    In sources as incoming from Xaw3d, SimpleMenu inherited the default
-    border width of 1.  That somehow resulted in blurry text.  It was blurry
-    regardless whether the text rendering was done by Xft or by Xlib.
+    In sources as incoming, SimpleMenu inherited the default border width of
+    1.  That somehow resulted in blurry text.  It was blurry regardless
+    whether the text rendering was done by Xft or by Xlib.  The problem
+    reproduced with plain Xaw and its default font.
 
     The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
     window's border width to 0 after the fact and then artificially drew a

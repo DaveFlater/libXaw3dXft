@@ -335,10 +335,12 @@ XawTipRealize(Widget w, Mask *mask, XSetWindowAttributes *attr)
     /*
       Notes 2026-06-19 DWF:
 
-      In sources as incoming from Xaw3d, XCreateWindow was called with
-      XtBorderWidth(w) for border_width.  That somehow resulted in blurry
-      text.  It was blurry regardless whether the text rendering was done by
-      Xft or by Xlib.
+      In sources as incoming, XCreateWindow was called with XtBorderWidth(w)
+      for border_width.  That somehow resulted in blurry text.  It was blurry
+      regardless whether the text rendering was done by Xft or by Xlib.  The
+      problem reproduced with Xaw3d and its default font.  (The same problem
+      with SimpleMenu reproduced even with Xaw, but I did not test Xaw's
+      version of Tip, which isn't comparable.)
 
       The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
       window's border width to 0 after the fact and then artificially drew a
