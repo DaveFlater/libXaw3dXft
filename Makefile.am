@@ -183,7 +183,7 @@ pkgconfig_DATA = xaw3dxft.pc
 
 # Backward compatibility
 install-data-hook:
-	if [ -e "$(DESTDIR)$(xaw3dincludedir)" ]; then ln -s Xaw3dXft "$(DESTDIR)$(includedir)/X11/Xaw3dxft"; fi
+	if [ -e "$(DESTDIR)$(xaw3dincludedir)" -a ! -e "$(DESTDIR)$(includedir)/X11/Xaw3dxft" ]; then ln -s Xaw3dXft "$(DESTDIR)$(includedir)/X11/Xaw3dxft"; fi
 uninstall-hook:
 	rm -f "$(DESTDIR)$(includedir)/X11/Xaw3dxft"
 
