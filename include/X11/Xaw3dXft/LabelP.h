@@ -109,7 +109,6 @@ typedef struct {
     Dimension	label_width;
     Dimension	label_height;
     Dimension	label_len;
-    int		lbm_y;			/* where in label */
     unsigned int lbm_width, lbm_height;	/* size of pixmap */
     unsigned int depth;			/* depth of pixmaps */
     XftFont	*xftfont;

@@ -660,10 +660,9 @@ color change that occurs.
 
 ### char button_dashed = 0
 
-When the mouse cursor is over a button, a line is drawn around the button's
-border.  1 = dashed line; 0 = solid line.  When encoding != 0, the border
-line may be overlapped by text and as a result appear only as bars on the
-left and right sides (bug).
+When the mouse cursor is over a Command button, a line is drawn around the
+button's border.  1 = dashed line, width 1 pixel; 0 = solid line, width
+specified by the highlightThickness resource.
 
 ### unsigned short insensitive_twist[4] = {0, 0, 0, 0}
 

@@ -397,29 +397,32 @@ GetgrayGC(LabelWidget lw)
 				&values);
 }
 
+// Given:    left_bitmap
+// Compute:  lbm_width, lbm_height
+// left_bitmap is ignored when pixmap is present.
 static void
-compute_bitmap_offsets (LabelWidget lw)
-{
-    if (lw->label.lbm_height != 0)
-	lw->label.lbm_y = (lw->core.height - lw->label.lbm_height) / 2;
-    else
-	lw->label.lbm_y = 0;
-}
-
-static void
-set_bitmap_info (LabelWidget lw)
+get_lbm_dimensions (LabelWidget lw)
 {
     Window root;
     int x, y;
-    unsigned int bw;
+    unsigned int bw, depth_return;
 
-    if (lw->label.pixmap || !(lw->label.left_bitmap &&
-	  XGetGeometry (XtDisplay(lw), lw->label.left_bitmap, &root, &x, &y,
-			&lw->label.lbm_width, &lw->label.lbm_height,
-			&bw, &lw->label.depth))) {
-	lw->label.lbm_width = lw->label.lbm_height = 0;
+    lw->label.lbm_width = lw->label.lbm_height = 0;
+    if (!lw->label.pixmap && lw->label.left_bitmap) {
+        // Originally, this overwrote label.depth.  The actual depth has to
+        // match, but label.depth can be 0 to mean copy from parent.
+	Status status = XGetGeometry(XtDisplay(lw),
+				     lw->label.left_bitmap,
+				     &root, &x, &y,
+				     &lw->label.lbm_width,
+				     &lw->label.lbm_height,
+				     &bw, &depth_return);
+	if (!status) {
+	    fprintf(stderr, "XGetGeometry failure in get_lbm_dimensions\n");
+	    // The following suppresses the left bitmap.
+	    lw->label.lbm_width = lw->label.lbm_height = 0;
+	}
     }
-    compute_bitmap_offsets (lw);
 }
 
 /* ARGSUSED */
@@ -441,10 +444,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 #endif
     }
 
-    /* disable shadows if we're not a subclass of Command */
-    if (!XtIsSubclass(new, commandWidgetClass))
-	lw->threeD.shadow_width = 0;
-
     if (lw->label.label == NULL)
         lw->label.label = XtNewString(lw->core.name);
     else
@@ -455,20 +454,19 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     SetTextWidthAndHeight(lw);  /* label.label or label.pixmap */
 
+    get_lbm_dimensions(lw);
     if (lw->core.height == 0)
-	lw->core.height = lw->label.label_height +
-				2 * lw->label.internal_height;
-
-    set_bitmap_info(lw);  /* req's core.height, sets label.lbm_* */
-
-    if (lw->label.lbm_height > lw->label.label_height)
-	lw->core.height = lw->label.lbm_height +
-				2 * lw->label.internal_height;
+	lw->core.height = (Dimension) (
+	  (lw->label.lbm_height > lw->label.label_height ?
+	   lw->label.lbm_height : lw->label.label_height) +
+				       2 * lw->label.internal_height +
+				       2 * lw->threeD.shadow_width);
 
     if (lw->core.width == 0)
-        lw->core.width = lw->label.label_width +
-				2 * lw->label.internal_width +
-				LEFT_OFFSET(lw);  /* req's label.lbm_width */
+	lw->core.width = (Dimension) (lw->label.label_width +
+				      (2 * lw->label.internal_width) +
+				      (2 * lw->threeD.shadow_width) +
+				      (Dimension) LEFT_OFFSET(lw)); /* req's label.lbm_width */
 
     lw->label.label_x = lw->label.label_y = 0;
     (*XtClass(new)->core_class.resize) ((Widget)lw);
@@ -534,7 +532,8 @@ Redisplay(Widget gw, XEvent *event, Region region)
             y = w->label.label_y + w->label.font->max_bounds.ascent;
 
 	/* display left bitmap */
-	if (w->label.left_bitmap && w->label.lbm_width != 0) {
+	if (w->label.left_bitmap && w->label.lbm_width &&
+	    w->label.lbm_height) {
 	    pm = w->label.left_bitmap;
 #ifdef XAW_MULTIPLANE_PIXMAPS
 	    if (!XtIsSensitive(gw)) {
@@ -550,14 +549,16 @@ Redisplay(Widget gw, XEvent *event, Region region)
 	    if (w->label.depth == 1)
 		XCopyPlane(XtDisplay(gw), pm, XtWindow(gw), gc, 0, 0,
 			   w->label.lbm_width, w->label.lbm_height,
-			   (int) w->label.internal_width,
-			   (int) w->label.lbm_y,
+			   (int) w->label.internal_width +
+				 w->threeD.shadow_width,
+			   ((int)w->core.height - (int)w->label.lbm_height)/2,
 			   (unsigned long) 1L);
 	    else
 		XCopyArea(XtDisplay(gw), pm, XtWindow(gw), gc, 0, 0,
 			  w->label.lbm_width, w->label.lbm_height,
-			  (int) w->label.internal_width,
-			  (int) w->label.lbm_y);
+			  (int) w->label.internal_width +
+				w->threeD.shadow_width,
+			  ((int)w->core.height - (int)w->label.lbm_height)/2);
 	}
 
 	if (_Xaw3dXft->encoding) {
@@ -665,14 +666,19 @@ _Reposition(LabelWidget lw, Dimension width, Dimension height,
             Position *dx, Position *dy)
 {
     Position newPos;
-    Position leftedge = lw->label.internal_width + LEFT_OFFSET(lw);
+    Position leftedge = (Position) (lw->label.internal_width +
+				    LEFT_OFFSET(lw) +
+				    lw->threeD.shadow_width);
 
     switch (lw->label.justify) {
 	case XtJustifyLeft:
 	    newPos = leftedge;
 	    break;
 	case XtJustifyRight:
-	    newPos = width - lw->label.label_width - lw->label.internal_width;
+	    newPos = (Position) (width -
+				 (lw->label.label_width +
+				  lw->label.internal_width +
+				  lw->threeD.shadow_width));
 	    break;
 	case XtJustifyCenter:
 	default:
@@ -688,10 +694,6 @@ _Reposition(LabelWidget lw, Dimension width, Dimension height,
     *dy = (newPos = (int)(height - lw->label.label_height) / 2)
 	  - lw->label.label_y;
     lw->label.label_y = newPos;
-
-    lw->label.lbm_y = (height - lw->label.lbm_height) / 2;
-
-    return;
 }
 
 static void
@@ -701,7 +703,6 @@ Resize(Widget w)
     Position dx, dy;
 
     _Reposition(lw, w->core.width, w->core.height, &dx, &dy);
-    compute_bitmap_offsets (lw);
 }
 
 /*
@@ -762,38 +763,42 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 
     /* recalculate the window size if something has changed. */
     if (newlw->label.resize && was_resized) {
+        get_lbm_dimensions(newlw);
 	if (curlw->core.height == reqlw->core.height && !checks[HEIGHT])
-	    newlw->core.height = newlw->label.label_height +
-				2 * newlw->label.internal_height;
-
-	set_bitmap_info (newlw);  /* req's core.height, sets label.lbm_* */
-
-	if (newlw->label.lbm_height > newlw->label.label_height)
-	    newlw->core.height = newlw->label.lbm_height +
-					2 * newlw->label.internal_height;
+	    newlw->core.height = (Dimension) (
+	      (newlw->label.lbm_height > newlw->label.label_height ?
+	       newlw->label.lbm_height : newlw->label.label_height) +
+					   2 * newlw->label.internal_height +
+					   2 * newlw->threeD.shadow_width);
 
 	if (curlw->core.width == reqlw->core.width && !checks[WIDTH])
-	    newlw->core.width = newlw->label.label_width +
-				2 * newlw->label.internal_width +
-				LEFT_OFFSET(newlw);  /* req's label.lbm_width */
+	    newlw->core.width = (Dimension) (newlw->label.label_width +
+					     (2 * newlw->label.internal_width) +
+					     (2 * newlw->threeD.shadow_width) +
+					     (int) LEFT_OFFSET(newlw)); /* req's label.lbm_width */
     }
 
     /* enforce minimum dimensions */
     if (newlw->label.resize) {
 	if (checks[HEIGHT]) {
 	    if (newlw->label.label_height > newlw->label.lbm_height)
-		i = newlw->label.label_height +
-			2 * newlw->label.internal_height;
+		i = (newlw->label.label_height
+		     + (2 * newlw->label.internal_height)
+		     + (2 * newlw->threeD.shadow_width));
 	    else
-		i = newlw->label.lbm_height + 2 * newlw->label.internal_height;
+		i = (int) (newlw->label.lbm_height
+			   + (2 * newlw->label.internal_height)
+			   + (2 * newlw->threeD.shadow_width));
 	    if (i > newlw->core.height)
-		newlw->core.height = i;
+		newlw->core.height = (Dimension) i;
 	}
 	if (checks[WIDTH]) {
-	    i = newlw->label.label_width + 2 * newlw->label.internal_width +
-			LEFT_OFFSET(newlw);  /* req's label.lbm_width */
+	    i = (int) (newlw->label.label_width
+		       + (2 * newlw->label.internal_width)
+		       + (2 * newlw->threeD.shadow_width)
+		       + (int) LEFT_OFFSET(newlw)); /* req's label.lbm_width */
 	    if (i > newlw->core.width)
-		newlw->core.width = i;
+		newlw->core.width = (Dimension) i;
 	}
     }
 
@@ -862,11 +867,15 @@ QueryGeometry(Widget w, XtWidgetGeometry *intended, XtWidgetGeometry *preferred)
     LabelWidget lw = (LabelWidget)w;
 
     preferred->request_mode = CWWidth | CWHeight;
-    preferred->width = (lw->label.label_width +
-			    2 * lw->label.internal_width +
-			    LEFT_OFFSET(lw));
-    preferred->height = lw->label.label_height +
-			    2 * lw->label.internal_height;
+    preferred->width = (Dimension) (lw->label.label_width
+				    + (2 * lw->label.internal_width)
+				    + (2 * lw->threeD.shadow_width)
+				    + (int) LEFT_OFFSET(lw));
+    preferred->height = (Dimension) (
+	  (lw->label.lbm_height > lw->label.label_height ?
+	   lw->label.lbm_height : lw->label.label_height)
+				     + (2 * lw->label.internal_height)
+				     + (2 * lw->threeD.shadow_width));
     if (  ((intended->request_mode & (CWWidth | CWHeight))
 	   	== (CWWidth | CWHeight)) &&
 	  intended->width == preferred->width &&
