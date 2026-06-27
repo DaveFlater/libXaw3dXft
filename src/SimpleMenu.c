@@ -1115,13 +1115,9 @@ Layout(Widget w, Dimension *width_ret, Dimension *height_ret)
 	height += tdw->threeD.shadow_width * 2;
     }
 
-    if (smw->simple_menu.menu_width)
-	width = smw->core.width;
-    else if (allow_change_size)
-    {
-	SetMarginWidths((Widget)smw);
+    SetMarginWidths((Widget)smw);
+    if (!smw->simple_menu.menu_width && allow_change_size)
 	width = GetMenuWidth((Widget)smw, (Widget)NULL);
-    }
     else
 	width = smw->core.width;
 
