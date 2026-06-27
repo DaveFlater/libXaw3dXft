@@ -310,47 +310,32 @@ Redisplay(Widget w, XEvent * event, Region region)
 	gc = entry->sme_bsb.norm_gray_gc;
 
     if (entry->sme_bsb.label != NULL) {
-        int x_loc = entry->rectangle.x + entry->sme_bsb.left_margin;
 	int len = strlen(entry->sme_bsb.label);
-	int width, t_width;
 	char * label = entry->sme_bsb.label;
 
-	switch(entry->sme_bsb.justify) {
-	    case XtJustifyCenter:
+	// Init value is correct for XtJustifyLeft
+        int x_loc = entry->rectangle.x + s + entry->sme_bsb.left_margin;
+	if (entry->sme_bsb.justify != XtJustifyLeft) {
+	    int t_width;
+	    if (_Xaw3dXft->encoding)
+		t_width = Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont,
+					    label, len);
+	    else
 #ifdef XAW_INTERNATIONALIZATION
-		if ( entry->sme.international == True )
-		    t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
-		else
+	    if (entry->sme.international == True)
+		t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
+	    else
 #endif
-		if (_Xaw3dXft->encoding)
-		    t_width = Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont,
-						label, len);
-		else
-		    t_width = XTextWidth(entry->sme_bsb.font, label, len);
-
-		width = entry->rectangle.width -
-				(entry->sme_bsb.left_margin +
-				entry->sme_bsb.right_margin);
-		x_loc += (width - t_width)/2;
-		break;
-	    case XtJustifyRight:
-#ifdef XAW_INTERNATIONALIZATION
-		if (_Xaw3dXft->encoding)
-		    t_width = Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont,
-						label, len);
-		else
-		if ( entry->sme.international == True)
-		    t_width = XmbTextEscapement(entry->sme_bsb.fontset,label,len);
-		else
-#endif
-		    t_width = XTextWidth(entry->sme_bsb.font, label, len);
-
+		t_width = XTextWidth(entry->sme_bsb.font, label, len);
+	    if (entry->sme_bsb.justify == XtJustifyCenter) {
+		int middle_width = entry->rectangle.width -
+		    entry->sme_bsb.left_margin -
+		    entry->sme_bsb.right_margin -
+		    s*2;
+		x_loc += (middle_width - t_width)/2;
+	    } else
 		x_loc = entry->rectangle.x + entry->rectangle.width -
-				(entry->sme_bsb.right_margin + t_width);
-		break;
-	    case XtJustifyLeft:
-	    default:
-		break;
+		    entry->sme_bsb.right_margin - s - t_width;
 	}
 
 	/* this will center the text in the gadget top-to-bottom */
@@ -366,7 +351,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 		       (int)entry->rectangle.height, False);
 
 	    Xaw3dXftDrawString(VisualOf(entry), w, entry->sme_bsb.xftfont,
-			x_loc + s, y_loc, label, len);
+			x_loc, y_loc, label, len);
 	} else
 #ifdef XAW_INTERNATIONALIZATION
         if ( entry->sme.international==True ) {
@@ -374,7 +359,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 		  (fontset_ascent + fontset_descent)) / 2 + fontset_ascent;
 
             XmbDrawString(XtDisplayOfObject(w), XtWindowOfObject(w),
-                entry->sme_bsb.fontset, gc, x_loc + s, y_loc, label, len);
+                entry->sme_bsb.fontset, gc, x_loc, y_loc, label, len);
         }
         else
 #endif
@@ -383,12 +368,12 @@ Redisplay(Widget w, XEvent * event, Region region)
 		  (font_ascent + font_descent)) / 2 + font_ascent;
 
             XDrawString(XtDisplayOfObject(w), XtWindowOfObject(w), gc,
-		    x_loc + s, y_loc, label, len);
+		    x_loc, y_loc, label, len);
         }
 
 	if (entry->sme_bsb.underline >= 0 && entry->sme_bsb.underline < len) {
 	    int ul = entry->sme_bsb.underline;
-	    int ul_x1_loc = x_loc + s;
+	    int ul_x1_loc = x_loc;
 	    int ul_wid;
 
 	    if (_Xaw3dXft->encoding) {
