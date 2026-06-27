@@ -439,29 +439,28 @@ The SimpleMenu widget supports scrolling through entries too numerous to fit
 on the screen.  The resource jumpScroll determines the number of entries to
 scroll by.
 
-#### Margins
+#### Margins / whitespace
 
 The leftWhitespace and rightWhitespace resources have been added to the
 SimpleMenu widget for margin management.
 
-The leftMargin resource can be different values in each SmeBSB widget, and
-SimpleMenu will oblige.  If a pixmap wider than the margin is specified in
-any SmeBSB widget, the result is less than desirable.  Set the leftWhitespace
-resource in the parent SimpleMenu widget, and SimpleMenu will set all
-children SmeBSB leftMargins to that value.  Specify a pixmap of any width for
-any SmeBSB child, and SimpleMenu will separate the elements (menu edge,
-pixmap, and text) of all SmeBSB children with that minimum distance as it
-vertically aligns their text elements.
+Each SmeBSB menu item has leftMargin and rightMargin resources, both of which
+default to 4 pixels.  SmeBSB by default sizes itself for the width of the
+text label, plus those margins, plus the shadow widths.  It does not
+automatically make room for the optional left or right bitmaps if they are
+provided; it expects someone to increase the margins to make room for them.
 
-The SimpleMenu widget now resizes not only to the above, but also to changes
-in these SmeBSB traits:  labels and fonts, pixmaps, and margins.
+If leftWhitespace or rightWhitespace is set to a nonzero value on the
+SimpleMenu widget, SimpleMenu will set the corresponding margins of all
+SmeBSB children as follows:
 
-Implementation notes:  The SimpleMenu \*Whitespace resources override and
-replace the values of SmeBSB \*Margin resources.  To nullify this behavior, a
-\*Whitespace resource must first be set to zero, and the corresponding
-\*Margin resources then set appropriately.  The \*Margin resources remain
-unchanged in and of themselves; they behave just as always when the
-\*Whitespace resources are not used.
+- If none of the children has a bitmap, set all of their margins to the
+  whitespace value.
+- Otherwise, set all of their margins to the width of the widest bitmap
+  plus twice the whitespace value.
+
+By default, leftWhitespace and rightWhitespace are both 0, and each SmeBSB
+will be laid out according to its own leftMargin and rightMargin resources.
 
 #### <a name="submenus"> Sub-menus
 
