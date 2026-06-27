@@ -28,6 +28,11 @@ Next release, v2.0  Dave Flater
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object
   Xaw3dXftDrawString (alias proc->draw_string):  add visual
 
+  - Changed default size of Label widgets.
+  The default size of Label widgets (which includes subclasses like Command
+  buttons) has increased by 2×shadowWidth in both dimensions.  The shadow
+  widths were previously unaccounted for, causing display glitches.
+
   - Eliminated header include cycles.
   Applications that include Text.h might now need to add includes for
   TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
