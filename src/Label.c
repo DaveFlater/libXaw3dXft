@@ -208,15 +208,18 @@ SetTextWidthAndHeight(LabelWidget lw)
     if (lw->label.pixmap != None) {
 	Window root;
 	int x, y;
-	unsigned int width, height, bw, depth;
+	unsigned int width, height, bw;
 
+        // label.depth is not core.depth
 	if (XGetGeometry(XtDisplay(lw), lw->label.pixmap, &root, &x, &y,
-			 &width, &height, &bw, &depth)) {
-	    lw->label.label_height = height;
-	    lw->label.label_width = width;
-	    lw->label.depth = depth;
+			 &width, &height, &bw, &lw->label.depth)) {
+	    lw->label.label_height = height; // uint32 to uint16
+	    lw->label.label_width = width;   // uint32 to uint16
 	    return;
-	}
+	} else fprintf(stderr,
+"libXaw3dXft:  XGetGeometry failed in SetTextWidthAndHeight of Label.  There\n"
+"might be something wrong with the bitmap resource of a Label widget.\n");
+        // Then we just fall through and use the text dimensions...
     }
 
     if (_Xaw3dXft->encoding) {
@@ -405,20 +408,21 @@ get_lbm_dimensions (LabelWidget lw)
 {
     Window root;
     int x, y;
-    unsigned int bw, depth_return;
+    unsigned int bw;
 
     lw->label.lbm_width = lw->label.lbm_height = 0;
     if (!lw->label.pixmap && lw->label.left_bitmap) {
-        // Originally, this overwrote label.depth.  The actual depth has to
-        // match, but label.depth can be 0 to mean copy from parent.
+        // label.depth is not core.depth
 	Status status = XGetGeometry(XtDisplay(lw),
 				     lw->label.left_bitmap,
 				     &root, &x, &y,
 				     &lw->label.lbm_width,
 				     &lw->label.lbm_height,
-				     &bw, &depth_return);
+				     &bw, &lw->label.depth);
 	if (!status) {
-	    fprintf(stderr, "XGetGeometry failure in get_lbm_dimensions\n");
+	    fprintf(stderr,
+"libXaw3dXft:  XGetGeometry failed in get_lbm_dimensions of Label.  There\n"
+"might be something wrong with the leftBitmap resource of a Label widget.\n");
 	    // The following suppresses the left bitmap.
 	    lw->label.lbm_width = lw->label.lbm_height = 0;
 	}
