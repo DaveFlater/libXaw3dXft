@@ -215,12 +215,6 @@ ThreeD decides which way to do it as follows:
    stipple.
 3. Otherwise, stipple if and only if the beNiceToColormap resource is true.
 
-Shadows "grow outward" in the SimpleMenu and Text widgets, increasing these
-widgets' sizes, "grow inward" in the Viewport and Scrollbar widgets,
-decreasing the size of the clip widget and thumb, respectively, and "grow
-inward" in the Label (and subclasses thereof) and SmeBSB widgets, encroaching
-on their label parts.
-
 The userData resource may be used by applications to store
 application-specific data on a widget.  It is not touched by Xaw3dXft code.
 
@@ -420,6 +414,10 @@ scrollbar.  When true, the thumb warps to the position where its top aligns
 with the mouse pointer (like in Xaw).  When false, you can grab onto the
 thumb anywhere along its length, and the act of grabbing it does not cause it
 to move.
+
+The Scrollbar widget does not adjust its size to accommodate 3D shadows.  The
+shadows "grow inward" and crowd the scrollbar's contents.  To make room for
+wider shadows, increase the thickness resource (default 14 pixels).
 
 ### SimpleMenu
 
