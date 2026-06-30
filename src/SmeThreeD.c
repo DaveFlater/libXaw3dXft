@@ -554,29 +554,31 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
 static void
 _XawSme3dDrawShadows(Widget gw)
 {
-    SmeThreeDObject tdo = (SmeThreeDObject) gw;
-    SimpleMenuWidget smw = (SimpleMenuWidget) XtParent(gw);
-    ThreeDWidget tdw = (ThreeDWidget) smw->simple_menu.threeD;
-    Dimension s = tdo->sme_threeD.shadow_width;
-    Dimension ps = tdw->threeD.shadow_width;
-    XPoint pt[6];
+    // 2026-06-29
+    // This is the *third* shadow-drawing function after _Xaw3dDrawShadows
+    // and _ShadowSurroundedBox in ThreeD.c.  This one was broken.  Complete
+    // replacement based on _ShadowSurroundedBox.
 
-    /*
-     * draw the shadows using the core part width and height,
-     * and the threeD part shadow_width.
-     *
-     * no point to do anything if the shadow_width is 0 or the
-     * widget has not been realized.
-     */
+    SmeThreeDObject tdo = (SmeThreeDObject) gw;
+    Dimension s = tdo->sme_threeD.shadow_width;
+
     if (s > 0 && XtIsRealized(gw))
     {
-	Dimension	h = tdo->rectangle.height;
-	Dimension	w = tdo->rectangle.width - ps;
-	Dimension	x = tdo->rectangle.x + ps;
-	Dimension	y = tdo->rectangle.y;
-	Display		*dpy = XtDisplayOfObject(gw);
-	Window		win = XtWindowOfObject(gw);
-	GC		top, bot;
+	Dimension  w = tdo->rectangle.width,
+	           h = tdo->rectangle.height,
+	         wms = w - s,
+	         hms = h - s,
+	          sm = (s > 1 ? s / 2 : 1),
+	        wmsm = w - sm,
+	        hmsm = h - sm;
+	Position  x0 = tdo->rectangle.x,
+	          y0 = tdo->rectangle.y,
+	          x1 = x0 + w,
+	          y1 = y0 + h;
+	Display	*dpy = XtDisplayOfObject(gw);
+	Window	 win = XtWindowOfObject(gw);
+	GC	 top, bot;
+	XPoint   pt[6];
 
 	if (tdo->sme_threeD.shadowed)
 	{
@@ -586,22 +588,38 @@ _XawSme3dDrawShadows(Widget gw)
 	else
 	    top = bot = tdo->sme_threeD.erase_GC;
 
+	// The rest is identical to _ShadowSurroundedBox.
+
 	/* top-left shadow */
-	pt[0].x = x;		pt[0].y = y + h;
-	pt[1].x = x;		pt[1].y = y;
-	pt[2].x = w;		pt[2].y = y;
-	pt[3].x = w - s;	pt[3].y = y + s;
-	pt[4].x = ps + s;       pt[4].y = y + s;
-	pt[5].x = ps + s;       pt[5].y = y + h - s;
+	pt[0].x = x0;		pt[0].y = y0 + h;
+	pt[1].x = x0;		pt[1].y = y0;
+	pt[2].x = x0 + w;	pt[2].y = y0;
+	pt[3].x = x0 + wmsm;	pt[3].y = y0 + sm - 1;
+	pt[4].x = x0 + sm;	pt[4].y = y0 + sm;
+	pt[5].x = x0 + sm - 1;	pt[5].y = y0 + hmsm;
 	XFillPolygon(dpy, win, top, pt, 6, Complex, CoordModeOrigin);
+	if (s > 1)
+	{
+	    pt[0].x = x0 + s - 1;	pt[0].y = y0 + hms;
+	    pt[1].x = x0 + s;		pt[1].y = y0 + s;
+	    pt[2].x = x0 + wms;		pt[2].y = y0 + s - 1;
+	    XFillPolygon(dpy, win, top, pt, 6, Complex, CoordModeOrigin);
+	}
 
 	/* bottom-right shadow */
-/*	pt[0].x = x;		pt[0].y = y + h;	*/
-	pt[1].x = w;		pt[1].y = y + h;
-/*	pt[2].x = w;		pt[2].y = y;		*/
-/*	pt[3].x = w - s;	pt[3].y = y + s;	*/
-	pt[4].x = w - s;	pt[4].y = y + h - s;
-/*	pt[5].x = ps + s;	pt[5].y = y + h - s;	*/
+	pt[0].x = x0;		pt[0].y = y0 + h;
+	pt[1].x = x0 + w;	pt[1].y = y0 + h;
+	pt[2].x = x0 + w;	pt[2].y = y0;
+	pt[3].x = x0 + wmsm;	pt[3].y = y0 + sm - 1;
+	pt[4].x = x0 + wmsm;	pt[4].y = y0 + hmsm;
+	pt[5].x = x0 + sm - 1;	pt[5].y = y0 + hmsm;
 	XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
+	if (s > 1)
+	{
+	    pt[0].x = x0 + s - 1;	pt[0].y = y0 + hms;
+	    pt[1].x = x0 + wms;		pt[1].y = y0 + hms;
+	    pt[2].x = x0 + wms;		pt[2].y = y0 + s - 1;
+	    XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
+	}
     }
 }

@@ -84,7 +84,6 @@ typedef struct {
 
     /* private resources. */
     Boolean set_values_area_cleared; /* Remember if we need to unhighlight. */
-    Boolean set_values_area_reverse; /* Remember if color is reversed. */
     GC norm_gc;			/* normal color gc. */
     GC rev_gc;			/* reverse color gc. */
     GC norm_gray_gc;		/* Normal color (grayed out) gc. */

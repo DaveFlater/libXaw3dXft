@@ -211,8 +211,6 @@ Redisplay(Widget w, XEvent *event, Region region)
 {
     SmeLineObject entry = (SmeLineObject) w;
     SimpleMenuWidget smw = (SimpleMenuWidget) XtParent (w);
-    ThreeDWidget tdw = (ThreeDWidget) smw->simple_menu.threeD;
-    Dimension s = tdw->threeD.shadow_width;
     int y = entry->rectangle.y +
 	    (int)(entry->rectangle.height - entry->sme_line.line_width) / 2;
 
@@ -221,7 +219,8 @@ Redisplay(Widget w, XEvent *event, Region region)
 
     XFillRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
 		   entry->sme_line.gc,
-		   s, y, (unsigned int) entry->rectangle.width - 2 * s,
+		   entry->rectangle.x, y,
+		   (unsigned int) entry->rectangle.width,
 		   (unsigned int) entry->sme_line.line_width );
 }
 

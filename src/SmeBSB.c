@@ -289,20 +289,11 @@ Redisplay(Widget w, XEvent * event, Region region)
         font_descent = entry->sme_bsb.font->max_bounds.descent;
     }
     y_loc = entry->rectangle.y;
-    entry->sme_bsb.set_values_area_reverse = FALSE;
 
-    if (XtIsSensitive(w) && XtIsSensitive( XtParent(w) ) ) {
-	if ( w == XawSimpleMenuGetActiveEntry(XtParent(w)) ) {
-	    if (_Xaw3dXft->no_hilit_reverse)
-	        entry->sme_bsb.set_values_area_reverse = True;
-            else
-	        XFillRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
-			   entry->sme_bsb.norm_gc,
-			   entry->rectangle.x + s, y_loc + s,
-			   (unsigned int) entry->rectangle.width - 2 * s,
-			   (unsigned int) entry->rectangle.height - 2 * s);
+    if (XtIsSensitive(w) && XtIsSensitive(XtParent(w))) {
+	if (_Xaw3dXft->no_hilit_reverse &&
+	    w == XawSimpleMenuGetActiveEntry(XtParent(w)))
 	    gc = entry->sme_bsb.rev_gc;
-	}
 	else
 	    gc = entry->sme_bsb.norm_gc;
     }
@@ -345,10 +336,10 @@ Redisplay(Widget w, XEvent * event, Region region)
 			(font_ascent + font_descent)) / 2 + font_ascent;
 
 	    XClearArea(XtDisplayOfObject(w), XtWindowOfObject(w),
-		       (int)entry->rectangle.x + 1,
-		       (int)entry->rectangle.y,
-		       (int)entry->rectangle.width - 2,
-		       (int)entry->rectangle.height, False);
+		       (int)entry->rectangle.x + s,
+		       (int)entry->rectangle.y + s,
+		       (int)entry->rectangle.width - 2*s,
+		       (int)entry->rectangle.height - 2*s, False);
 
 	    Xaw3dXftDrawString(VisualOf(entry), w, entry->sme_bsb.xftfont,
 			x_loc, y_loc, label, len);
@@ -379,11 +370,14 @@ Redisplay(Widget w, XEvent * event, Region region)
 	    if (_Xaw3dXft->encoding) {
 		if (ul != 0)
 		    ul_x1_loc += Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont, label, ul);
-		ul_wid = Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont, &label[ul], 1) - 2;
+		ul_wid = Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont, &label[ul], 1);
 	    } else {
+		// In Label and Tip we use XTextWidth16 when the encoding
+		// resource is XawTextEncodingChar2b.  SmeBSB has no encoding
+		// resource.  Omission inherited from Xaw.
 		if (ul != 0)
 		    ul_x1_loc += XTextWidth(entry->sme_bsb.font, label, ul);
-		ul_wid = XTextWidth(entry->sme_bsb.font, &label[ul], 1) - 2;
+		ul_wid = XTextWidth(entry->sme_bsb.font, &label[ul], 1);
 	    }
 	    XDrawLine(XtDisplayOfObject(w), XtWindowOfObject(w), gc,
 		      ul_x1_loc, y_loc + 1, ul_x1_loc + ul_wid, y_loc + 1);
@@ -904,26 +898,21 @@ FlipColors(Widget w)
     ThreeDWidget tdw = (ThreeDWidget) smw->simple_menu.threeD;
     Dimension s = tdw->threeD.shadow_width;
 
-    if (entry->sme_bsb.set_values_area_reverse) {
-      if (!strcmp(XtName((Widget)smw), "popup-menu")) {
-	    entry->sme_threeD.shadowed = False;
-            entry->sme_bsb.set_values_area_reverse = False;
-            return;
-	}
-    }
-
+    // From Xaw.  Comment on set_values_area_cleared says:
+    //   do we need to unhighlight?
+    // set_values_area_cleared is true if SetValues has changed something
+    // and Redisplay has not yet been called.
     if (entry->sme_bsb.set_values_area_cleared) {
 	entry->sme_threeD.shadowed = False;
 	return;
     }
 
-    if (!_Xaw3dXft->no_hilit_reverse && entry->sme_threeD.shadow_width > 0 &&
-	entry->rectangle.x == 0) {
+    if (!_Xaw3dXft->no_hilit_reverse && entry->sme_threeD.shadow_width > 0)
 	(*oclass->sme_threeD_class.shadowdraw) (w);
-    } else
+    else
+	// May as well include the unused shadow border
 	XFillRectangle(XtDisplayOfObject(w), XtWindowOfObject(w),
-		   entry->sme_bsb.invert_gc,
-		   entry->rectangle.x + s, (int) entry->rectangle.y,
-		   (unsigned int) entry->rectangle.width - 2 * s,
-		   (unsigned int) entry->rectangle.height);
+		       entry->sme_bsb.invert_gc,
+		       entry->rectangle.x, entry->rectangle.y,
+		       entry->rectangle.width, entry->rectangle.height);
 }

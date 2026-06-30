@@ -460,10 +460,14 @@ SmeBSB children as follows:
 By default, leftWhitespace and rightWhitespace are both 0, and each SmeBSB
 will be laid out according to its own leftMargin and rightMargin resources.
 
+Space is allowed for 3D shadows to be used as a highlighting mechanism on
+menu items.  Extra vertical space comes from the vertSpace resource (from
+Xaw) and from xaw3dxft_data->menu_spacing.
+
 #### <a name="submenus"> Sub-menus
 
-The SimpleMenu and SmeBSB widgets have been extended to support sub-menus.
-The new variables are simple_menu.sub_menu and simple_menu.state (neither are
+SimpleMenu and SmeBSB have been extended to support sub-menus.  The new
+variables are simple_menu.sub_menu and simple_menu.state (neither are
 public), and sme_bsb.menu_name, which is resourced as XtNmenuName, and
 classed as XtCMenuName.  It's the latter resource that is used by an
 application, and by default it is NULL; menus behave as they always have.
@@ -531,6 +535,14 @@ The resource underline is used to specify a character to underline in the
 label.  The integer value is the index of the character.  A value less than
 zero or greater than or equal to the label length inhibits underlining.
 
+The following anomalies were inherited from Xaw:
+
+- SmeBSB inherits a borderWidth resource from Rectangle, but no corresponding
+  border is drawn.
+- Unlike Label and Tip, SmeBSB has no encoding resource.  Support for
+  XawTextEncodingChar2b with core fonts (XTextWidth16, XDrawString16) is not
+  there.
+
 ### Viewport
 
 Viewport has the following extra resources:
@@ -595,14 +607,11 @@ and stored here for reuse.
 
 ### char multi_column_menu = 0
 
-Applicable when:  no_hilit_reverse == 1
+Applicable when:  a SimpleMenu is not realized or its allowShellResize
+resource is true
 
 Determines the behavior of a menu when it doesn't fit on the screen in a
 single column.  1 = multiple columns; 0 = single column with scroll arrows.
-
-Multi-column menus are disabled if the widget cannot change size or if
-no_hilit_reverse is 0.  The latter restriction is due to the 3D effect for
-menu item mouseover not being implemented for multiple columns.
 
 ### char no_hilit_reverse = 0
 
