@@ -380,7 +380,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 		ul_wid = XTextWidth(entry->sme_bsb.font, &label[ul], 1);
 	    }
 	    XDrawLine(XtDisplayOfObject(w), XtWindowOfObject(w), gc,
-		      ul_x1_loc, y_loc + 1, ul_x1_loc + ul_wid, y_loc + 1);
+		      ul_x1_loc, y_loc + 1, ul_x1_loc + ul_wid - 1, y_loc + 1);
 	}
     }
 
