@@ -466,15 +466,15 @@ Xaw) and from xaw3dxft_data->menu_spacing.
 
 #### <a name="submenus"> Sub-menus
 
-SimpleMenu and SmeBSB have been extended to support sub-menus.  The new
-variables are simple_menu.sub_menu and simple_menu.state (neither are
-public), and sme_bsb.menu_name, which is resourced as XtNmenuName, and
-classed as XtCMenuName.  It's the latter resource that is used by an
-application, and by default it is NULL; menus behave as they always have.
-When this resource is set to a menu name, the parent SimpleMenu widget will
-use the SmeBSB widget as the entry point to a child SimpleMenu widget,
-managing its visibility and location.  No constraints are placed on focus or
-the pointer.  Consider this code fragment:
+Support for sub-menus was added to Xaw3d after its fork from Xaw.  Compatible
+functionality was added to Xaw in X11R6.7, but it still is not mentioned in
+the X11R7.7 Xaw documentation.
+
+SmeBSB has a resource menuName that defaults to NULL.  When this resource is
+set to a menu name, the parent SimpleMenu widget will use the SmeBSB widget
+as the entry point to a child SimpleMenu widget, managing its visibility and
+location.  No constraints are placed on focus or the pointer.  Consider this
+code fragment:
 
     /* create a menu button */
     opsbutton = XtCreateManagedWidget("ops", menuButtonWidgetClass,
@@ -516,8 +516,7 @@ first sub-menu next to the SmeBSB widget named "file", and the second next to
 the SmeBSB widget named "page".  A sub-menu will be mapped (or unmapped) when
 the pointer enters (or leaves) the superior SmeBSB widget.  Note that a
 sub-menu's parent must be the superior SimpleMenu widget, not the superior
-SmeBSB widget.  The other resources of SmeBSB widgets are unaffected by the
-menuName resource.
+SmeBSB widget.
 
 ### SmeBSB
 
@@ -541,7 +540,7 @@ The following anomalies were inherited from Xaw:
   border is drawn.
 - Unlike Label and Tip, SmeBSB has no encoding resource.  Support for
   XawTextEncodingChar2b with core fonts (XTextWidth16, XDrawString16) is not
-  there.
+  present.
 
 ### Viewport
 
