@@ -731,12 +731,12 @@ _Xaw3dDrawShadows (Widget gw, XEvent *event, Region region, XtRelief relief, Boo
 	    if ((region == NULL) ||
 		    (XRectInRegion (region, 0, 0, w, s) != RectangleOut) ||
 		    (XRectInRegion (region, 0, 0, s, h) != RectangleOut)) {
-		pt[0].x = s;		pt[0].y = h;
+		pt[0].x = s;		pt[0].y = hms;
 		pt[1].x =		pt[1].y = s;
-		pt[2].x = w;		pt[2].y = s;
-		pt[3].x = wms;		pt[3].y = s * 2;
+		pt[2].x = wms;		pt[2].y = s;
+		pt[3].x = wms - s;	pt[3].y = s * 2;
 		pt[4].x =		pt[4].y = s * 2;
-		pt[5].x = s * 2;	pt[5].y = hms;
+		pt[5].x = s * 2;	pt[5].y = hms - s;
 		XFillPolygon (dpy, win,
 			(relief == XtReliefRidge) ? bot: top,
 			pt, 6, Complex, CoordModeOrigin);
