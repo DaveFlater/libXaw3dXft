@@ -21,8 +21,9 @@ Next release, v2.0  Dave Flater
     - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
   - Changed struct Xaw3dXftData.
-  border_hack:  deleted
-  string_use_pixmap:  deleted
+  border_hack:  deleted (not needed anymore)
+  string_use_pixmap:  deleted (not needed anymore)
+  tip_background_color:  deleted (redundant; set resource *.Tip.background via xrdb or XrmPutStringResource)
 
   - Changed signatures of semi-private functions.
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object

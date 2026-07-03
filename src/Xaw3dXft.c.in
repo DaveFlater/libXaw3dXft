@@ -412,7 +412,6 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->text_sb_right = 0;
     memset(_Xaw3dXft->insensitive_twist, 0, 4*sizeof(unsigned short));
     _Xaw3dXft->text_bg_hilight_color  = -1;
-    _Xaw3dXft->tip_background_color  = -1;
     _Xaw3dXft->text_fg_alternate_color  = -1;
     _Xaw3dXft->hilit_color  = NULL;
     _Xaw3dXft->default_fontname  = NULL;

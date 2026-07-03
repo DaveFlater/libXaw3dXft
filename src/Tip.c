@@ -361,9 +361,6 @@ XawTipRealize(Widget w, Mask *mask, XSetWindowAttributes *attr)
 				0U, // unsigned int border_width
 				VisualDepth(tip), InputOutput, VisualOf(tip),
 				*mask, attr);
-
-    if (_Xaw3dXft->tip_background_color != -1)
-	XtVaSetValues(w, XtNbackground, _Xaw3dXft->tip_background_color, NULL);
 }
 
 static void

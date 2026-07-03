@@ -717,10 +717,6 @@ Globally enable/disable showing tips.
 
 Grab or don't grab while showing a tip.
 
-### Pixel tip_background_color = -1
-
-Background color of tips.  If -1, the default background color is left as-is.
-
 ### char edit_delete_alternative = 0
 
 Determines what happens when Delete or another key is pressed while editable
@@ -802,8 +798,9 @@ xaw3d.pc respectively.
 
 **Changed struct Xaw3dXftData**
 
-border_hack:  deleted  
-string_use_pixmap:  deleted
+border_hack:  deleted (not needed anymore)  
+string_use_pixmap:  deleted (not needed anymore)  
+tip_background_color:  deleted (redundant; set resource *.Tip.background via xrdb or XrmPutStringResource)
 
 **Changed signatures of semi-private functions**
 
