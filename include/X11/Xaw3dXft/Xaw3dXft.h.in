@@ -64,9 +64,6 @@ extern const char     libXaw3dXft_version[];
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/Xaw3d.h>
 
-#define XtN3dxftData "3dxftData"
-#define XtN3dxftProc "3dxftProc"
-
 #define GET_XAW3DXFT_DATA(x) XawInitializeWidgetSet(); \
     x = (Xaw3dXftData *)XrmQuarkToString(XrmStringToQuark("Xaw3dXftData")+1); \
     if (x) x = (Xaw3dXftData *) strtoul((char *)((char *)x+4), NULL, 10);
