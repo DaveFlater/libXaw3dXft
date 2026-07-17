@@ -56,6 +56,7 @@ SOFTWARE.
  ***********************************************************************/
 
 #include <X11/Xaw3dXft/Simple.h>
+#include <X11/Xaw3dXft/Encoding.h>
 
 /* Resources:
 
@@ -99,9 +100,6 @@ SOFTWARE.
  relief               Relief               XtRelief     XtReliefRaised
 
 */
-
-#define XawTextEncoding8bit	0
-#define XawTextEncodingChar2b	1
 
 #define XtNencoding "encoding"
 #define XtNleftBitmap "leftBitmap"

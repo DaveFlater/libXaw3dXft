@@ -93,8 +93,6 @@ typedef struct _Xaw3dXftData {
     char show_tips;
     char tip_do_grab;
     char no_hilit_reverse;
-    char button_inverse;
-    char button_dashed;
     char multi_column_menu;
     char edit_delete_alternative;
     char text_sb_right;

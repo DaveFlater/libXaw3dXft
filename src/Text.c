@@ -72,6 +72,8 @@ static_assert(Got_XAW_defines);
 #include <X11/Xaw3dXft/Cardinals.h>
 #include <X11/Xaw3dXft/Scrollbar.h>
 #include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/TextSrc.h>
+#include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/MultiSinkP.h>

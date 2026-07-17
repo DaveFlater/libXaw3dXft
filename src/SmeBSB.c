@@ -367,6 +367,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 	    int ul_x1_loc = x_loc;
 	    int ul_wid;
 
+	    // FIXME, pretty sure this is broken for multiline labels
 	    if (_Xaw3dXft->encoding) {
 		if (ul != 0)
 		    ul_x1_loc += Xaw3dXftTextWidth(w, entry->sme_bsb.xftfont, label, ul);

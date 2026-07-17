@@ -105,19 +105,26 @@ extern CommandClassRec commandClassRec;
     /* New fields for the Command widget record */
 typedef struct {
     /* resources */
-    Dimension   highlight_thickness;
-    XtCallbackList callbacks;
+    Boolean          highlight_dashed;
+    Dimension        highlight_thickness;
+    XtCallbackList   callbacks;
+    int		     shape_style;
+    Dimension	     corner_round;
 
     /* private state */
     Pixmap      	gray_pixmap;
-    GC          	normal_GC;
-    GC          	inverse_GC;
     Boolean     	set;
     XtCommandHighlight	highlighted;
-    Dimension		shadow_width;
-    /* more resources */
-    int			shape_style;
-    Dimension		corner_round;
+    GC          	normal_GC;   // fg bg font
+    GC          	inverse_GC;  // bg fg font
+    GC                  inverse_stipple_GC;  // set + insensitive
+    GC                  xorGC;     // Mangle all colors by fg ^ bg
+    GC                  dashedGC;  // Draw dashed line for highlight
+
+    /* Save values that are overridden when shape is not rectangle. */
+    Dimension           orig_shadow_width;
+    Dimension           orig_border_width;
+    Dimension           orig_highlight_thickness;
 } CommandPart;
 
 

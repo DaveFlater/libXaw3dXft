@@ -1110,8 +1110,7 @@ Destroy(Widget w)
     XtReleaseGC(w, lw->list.graygc);
     XtReleaseGC(w, lw->list.revgc);
     XtReleaseGC(w, lw->list.normgc);
-    if (lw->list.xftfont && lw->list.xftfont != _Xaw3dXft->default_font)
-        XftFontClose(XtDisplayOfObject(w), lw->list.xftfont);
+    // Xft fonts are cached; never call XftFontClose.
 }
 
 /* Exported Functions */

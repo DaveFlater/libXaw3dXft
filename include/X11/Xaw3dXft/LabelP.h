@@ -99,20 +99,28 @@ typedef struct {
     char	*xftfontname;
 
     /* private state */
-    GC		normal_GC;
-    GC          gray_GC;
-    Pixmap	stipple;
-    Pixmap	stippled;		/* insensitive pixmap */
-    Pixmap	left_stippled;		/* ditto */
-    Position	label_x;
-    Position	label_y;
-    Dimension	label_width;
-    Dimension	label_height;
-    Dimension	label_len;
-    unsigned int lbm_width, lbm_height;	/* size of pixmap */
-    unsigned int depth;			/* depth of pixmaps */
-    XftFont	*xftfont;
+    GC          normal_GC;
+    GC          gray_GC;                /* for insensitive */
+    GC          stipple_GC;             /* for AnyString */
+    Pixmap      stipple;                /* not the same stipple... */
+    Pixmap      stippled;               /* insensitive pixmap */
+    Pixmap      left_stippled;          /* ditto */
+    Position    label_x;
+    Position    label_y;
+    Dimension   label_width;
+    Dimension   label_height;
+    unsigned int lbm_width, lbm_height; /* size of pixmap */
+    unsigned int depth;                 /* depth of pixmaps */
+    XftFont     *xftfont;
     Visual      *visual;
+    XftColor    xftfg;                  /* like normal_GC */
+    XftColor    xftbg;                  /* like normal_GC */
+
+    // If Label's SetValues returns True, it clears this flag.  That lets
+    // Command know that its color changing state from Set got wiped out by
+    // XClearArea.
+    Boolean     xorSet;
+
 } LabelPart;
 
 

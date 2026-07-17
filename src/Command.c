@@ -44,23 +44,29 @@ WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
 ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
+
+DEC is not to blame for what you find here now. — DWF
+
 ******************************************************************/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <assert.h>
+#include <stdio.h>
+
 /*
  * Command.c - Command button widget
  */
 
 #include <X11/Xaw3dXft/Xaw3dP.h>
-#include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xmu/Misc.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/CommandP.h>
+#include <X11/Xaw3dXft/AnyString.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/extensions/shape.h>
 
@@ -85,9 +91,11 @@ static char defaultTranslations[] =
 static XtResource resources[] = {
    {XtNcallback, XtCCallback, XtRCallback, sizeof(XtPointer),
       offset(command.callbacks), XtRCallback, (XtPointer)NULL},
+   {XtNhighlightDashed, XtCBoolean, XtRBoolean, sizeof(Boolean),
+      offset(command.highlight_dashed), XtRImmediate, (XtPointer)FALSE},
    {XtNhighlightThickness, XtCThickness, XtRDimension, sizeof(Dimension),
       offset(command.highlight_thickness), XtRImmediate,
-      (XtPointer) DEFAULT_SHAPE_HIGHLIGHT},
+      (XtPointer)DEFAULT_SHAPE_HIGHLIGHT},
    {XtNshapeStyle, XtCShapeStyle, XtRShapeStyle, sizeof(int),
       offset(command.shape_style), XtRImmediate, (XtPointer)XawShapeRectangle},
    {XtNcornerRoundPercent, XtCCornerRoundPercent, XtRDimension,
@@ -111,11 +119,12 @@ static void Unset(Widget, XEvent *, String *, Cardinal *);
 static void Highlight(Widget, XEvent *, String *, Cardinal *);
 static void Unhighlight(Widget, XEvent *, String *, Cardinal *);
 static void Destroy(Widget);
-static void PaintCommandWidget(Widget, XEvent *, Region, Boolean);
+static void PaintCommandWidget(Widget, XEvent *);
 static void ClassInitialize(void);
 static Boolean ShapeButton(CommandWidget, Boolean);
 static void Realize(Widget, Mask *, XSetWindowAttributes *);
 static void Resize(Widget);
+static void SetValuesAlmost(Widget, Widget, XtWidgetGeometry *, XtWidgetGeometry *);
 
 static XtActionsRec actionsList[] = {
   {"set",		Set},
@@ -153,7 +162,7 @@ CommandClassRec commandClassRec = {
     Redisplay,				/* expose		  */
     SetValues,				/* set_values		  */
     NULL,				/* set_values_hook	  */
-    XtInheritSetValuesAlmost,		/* set_values_almost	  */
+    SetValuesAlmost,		        /* set_values_almost	  */
     NULL,				/* get_values_hook	  */
     NULL,				/* accept_focus		  */
     XtVersion,				/* version		  */
@@ -186,34 +195,77 @@ WidgetClass commandWidgetClass = (WidgetClass) &commandClassRec;
  *
  ****************************************************************/
 
+static void get_or_change_xorGC (CommandWidget cbw, Pixel fg, Pixel bg) {
+  // Default fill_style FillSolid uses only foreground
+  XGCValues values;
+  values.foreground = fg ^ bg;
+  values.function = GXxor;
+  values.graphics_exposures = False;
+  if (cbw->command.xorGC)
+    XtReleaseGC((Widget)cbw, cbw->command.xorGC);
+  cbw->command.xorGC = XtGetGC((Widget)cbw,
+    GCForeground|GCFunction|GCGraphicsExposures, &values);
+}
+
+static void get_or_change_dashedGC (CommandWidget cbw, Pixel fg) {
+  XGCValues values;
+  values.foreground = fg;
+  values.line_style = LineOnOffDash;
+  // char dashes acts like a uint8_t.  0 gets you a BadValue error.
+  if (cbw->command.highlight_thickness < 1)
+    values.dashes = (char)4;
+  else if (cbw->command.highlight_thickness < 64)
+    values.dashes = (char)(cbw->command.highlight_thickness * 4);
+  else
+    values.dashes = (char)255;
+  values.graphics_exposures = False;
+
+  // Xlib special case
+  // "The line-width is measured in pixels and either can be greater than or
+  // equal to one (wide line) or can be the special value zero (thin line)."
+  if (cbw->command.highlight_thickness > 1)
+    values.line_width = cbw->command.highlight_thickness;
+  else
+    values.line_width = 0;
+
+  if (cbw->command.dashedGC)
+    XtReleaseGC((Widget)cbw, cbw->command.dashedGC);
+  cbw->command.dashedGC = XtGetGC((Widget)cbw,
+    GCForeground|GCLineStyle|GCLineWidth|GCDashList|GCGraphicsExposures,
+				  &values);
+}
+
 static GC
 Get_GC(CommandWidget cbw, Pixel fg, Pixel bg)
 {
   XGCValues	values;
 
   values.foreground   = fg;
-  values.background	= bg;
-  values.font		= cbw->label.font->fid;
+  values.background   = bg;
+  values.font	      = cbw->label.font->fid;
   values.cap_style = CapProjecting;
+  values.graphics_exposures = False;
 
-  if (cbw->command.highlight_thickness > 1 )
-    values.line_width   = cbw->command.highlight_thickness;
+  // Xlib special case
+  // "The line-width is measured in pixels and either can be greater than or
+  // equal to one (wide line) or can be the special value zero (thin line)."
+  if (cbw->command.highlight_thickness > 1)
+    values.line_width = cbw->command.highlight_thickness;
   else
-    values.line_width   = 0;
+    values.line_width = 0;
 
   static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
   if ( cbw->simple.international == True )
       return XtAllocateGC((Widget)cbw, 0,
-		 (GCForeground|GCBackground|GCLineWidth|GCCapStyle),
+		 (GCForeground|GCBackground|GCLineWidth|GCCapStyle|GCGraphicsExposures),
 		 &values, GCFont, 0 );
   else
 #endif
       return XtGetGC((Widget)cbw,
-		 (GCForeground|GCBackground|GCFont|GCLineWidth|GCCapStyle),
+		 (GCForeground|GCBackground|GCFont|GCLineWidth|GCCapStyle|GCGraphicsExposures),
 		 &values);
 }
-
 
 /* ARGSUSED */
 static void
@@ -221,6 +273,13 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
   CommandWidget cbw = (CommandWidget) new;
   int shape_event_base, shape_error_base;
+
+  cbw->command.xorGC = cbw->command.dashedGC = NULL;
+
+  /* Save values that are overridden when shape is not rectangle. */
+  cbw->command.orig_shadow_width = cbw->threeD.shadow_width;
+  cbw->command.orig_border_width = cbw->core.border_width;
+  cbw->command.orig_highlight_thickness = cbw->command.highlight_thickness;
 
   if (cbw->command.shape_style != XawShapeRectangle
       && !XShapeQueryExtension(XtDisplay(new), &shape_event_base,
@@ -232,53 +291,51 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       else
 	  cbw->command.highlight_thickness = DEFAULT_HIGHLIGHT_THICKNESS;
   }
-
   if (cbw->command.shape_style != XawShapeRectangle) {
     cbw->threeD.shadow_width = 0;
-    cbw->core.border_width = 1;
+    if (cbw->core.border_width == 0)
+      cbw->core.border_width = 1;
   }
-  cbw->command.shadow_width = cbw->threeD.shadow_width;
 
-  cbw->command.normal_GC = Get_GC(cbw, cbw->label.foreground,
-				  cbw->core.background_pixel);
-  cbw->command.inverse_GC = Get_GC(cbw, cbw->core.background_pixel,
-				   cbw->label.foreground);
-  XtReleaseGC(new, cbw->label.normal_GC);
-  cbw->label.normal_GC = cbw->command.normal_GC;
+  const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
+  cbw->command.normal_GC = Get_GC(cbw, fg, bg);
+  cbw->command.inverse_GC = Get_GC(cbw, bg, fg);
+  cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC(new, fg);
+  get_or_change_xorGC(cbw, fg, bg);
+  get_or_change_dashedGC(cbw, fg);
 
-  cbw->command.set = FALSE;
+  cbw->command.set = False;
   cbw->command.highlighted = HighlightNone;
 }
 
-static Region
-HighlightRegion(CommandWidget cbw)
-{
-  static Region outerRegion = NULL, innerRegion, emptyRegion;
-  Dimension s = cbw->threeD.shadow_width;
-  XRectangle rect;
-
-  if (cbw->command.highlight_thickness == 0 ||
-      cbw->command.highlight_thickness >
-      (Dimension) ((Dimension) Min(cbw->core.width, cbw->core.height)/2))
-    return(NULL);
-
-  if (outerRegion == NULL) {
-    /* save time by allocating scratch regions only once. */
-    outerRegion = XCreateRegion();
-    innerRegion = XCreateRegion();
-    emptyRegion = XCreateRegion();
+// Apply the xor effect for the Set state (needed by both the Set action
+// procedure and PaintCommandWidget).
+static void setEffect (Widget w) {
+  assert(XtIsRealized(w));
+  CommandWidget cbw = (CommandWidget)w;
+  assert(cbw->command.set);
+  const Dimension s = cbw->threeD.shadow_width;
+  // Flip the entire contents
+  if (!cbw->label.xorSet) {
+    XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xorGC,
+      s, s, cbw->core.width - 2*s, cbw->core.height - 2*s);
+    cbw->label.xorSet = True;
   }
-
-  rect.x = rect.y = s;
-  rect.width = cbw->core.width - 2 * s;
-  rect.height = cbw->core.height - 2 * s;
-  XUnionRectWithRegion( &rect, emptyRegion, outerRegion );
-  rect.x = rect.y += cbw->command.highlight_thickness;
-  rect.width -= cbw->command.highlight_thickness * 2;
-  rect.height -= cbw->command.highlight_thickness * 2;
-  XUnionRectWithRegion( &rect, emptyRegion, innerRegion );
-  XSubtractRegion( outerRegion, innerRegion, outerRegion );
-  return outerRegion;
+  // Redraw anti-aliased text to fix edges.  Minor glitch:  if
+  // highlightThickness exceeds internalHeight or internalWidth, this may
+  // draw over the highlight.
+  if (cbw->label.pixmap == None && cbw->label.label != None &&
+      cbw->label.xftfont != None)
+    Xaw3dXftDrawAnyString(XtDisplay(w), cbw->label.visual,
+      cbw->core.colormap, XtWindow(w), cbw->label.font, labelFontSet(cbw),
+      cbw->label.xftfont, XtIsSensitive(w), international(cbw),
+      cbw->command.inverse_GC, cbw->command.inverse_stipple_GC,
+      &cbw->label.xftbg, &cbw->label.xftfg, cbw->label.label_x,
+      cbw->label.label_y, cbw->label.encoding, cbw->label.label);
+  // Flip the shadow
+  CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
+  (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cbw->threeD.relief,
+    !cbw->command.set);
 }
 
 /***************************
@@ -292,13 +349,17 @@ static void
 Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cbw = (CommandWidget)w;
-
   if (cbw->command.set)
     return;
-
-  cbw->command.set= TRUE;
-  if (XtIsRealized(w))
-    PaintCommandWidget(w, event, (Region) NULL, TRUE);
+  cbw->command.set = True;
+  if (XtIsRealized(w)) {
+    if (cbw->command.highlighted == HighlightWhenUnset &&
+	cbw->command.highlight_thickness > 0)
+      PaintCommandWidget(w, event); // Clear the highlight
+    else
+      setEffect(w);
+  }
+  // Else set but not realized
 }
 
 /* ARGSUSED */
@@ -306,15 +367,39 @@ static void
 Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cbw = (CommandWidget)w;
-
   if (!cbw->command.set)
     return;
-
-  cbw->command.set = FALSE;
+  cbw->command.set = False;
   if (XtIsRealized(w)) {
-    XClearWindow(XtDisplay(w), XtWindow(w));
-    PaintCommandWidget(w, event, (Region) NULL, TRUE);
+    if (cbw->command.highlighted == HighlightWhenUnset &&
+	cbw->command.highlight_thickness > 0)
+      PaintCommandWidget(w, event); // Reapply the highlight
+    else {
+      const Dimension s = cbw->threeD.shadow_width;
+      // Flip the entire contents
+      if (cbw->label.xorSet) {
+	XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xorGC,
+	  s, s, cbw->core.width - 2*s, cbw->core.height - 2*s);
+	cbw->label.xorSet = False;
+      }
+      // Redraw anti-aliased text to fix edges.  Minor glitch:  if
+      // highlightThickness exceeds internalHeight or internalWidth, this may
+      // draw over the highlight.
+      if (cbw->label.pixmap == None && cbw->label.label != None &&
+	  cbw->label.xftfont != None)
+	Xaw3dXftDrawAnyString(XtDisplay(w), cbw->label.visual,
+	  cbw->core.colormap, XtWindow(w), cbw->label.font, labelFontSet(cbw),
+	  cbw->label.xftfont, XtIsSensitive(w), international(cbw),
+	  cbw->command.normal_GC, cbw->label.stipple_GC, &cbw->label.xftfg,
+	  &cbw->label.xftbg, cbw->label.label_x, cbw->label.label_y,
+	  cbw->label.encoding, cbw->label.label);
+      // Flip the shadow
+      CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
+      (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cbw->threeD.relief,
+	!cbw->command.set);
+    }
   }
+  // Else unset but not realized
 }
 
 /* ARGSUSED */
@@ -322,8 +407,9 @@ static void
 Reset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cbw = (CommandWidget)w;
-
   if (cbw->command.set) {
+    // This doesn't get called by Toggle, so assume HighlightWhenUnset, and
+    // we don't have to clear the highlight.
     cbw->command.highlighted = HighlightNone;
     Unset(w, event, params, num_params);
   } else
@@ -335,7 +421,9 @@ static void
 Highlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cbw = (CommandWidget)w;
-
+  const Boolean isHighlighted =
+    cbw->command.highlighted == HighlightWhenUnset && !cbw->command.set ||
+    cbw->command.highlighted == HighlightAlways;
   if ( *num_params == (Cardinal) 0)
     cbw->command.highlighted = HighlightWhenUnset;
   else {
@@ -351,9 +439,10 @@ Highlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
       break;
     }
   }
-
-  if (XtIsRealized(w))
-    PaintCommandWidget(w, event, HighlightRegion(cbw), TRUE);
+  if (XtIsRealized(w) &&
+      cbw->command.highlight_thickness > 0 &&
+      !isHighlighted)
+    PaintCommandWidget(w, event);
 }
 
 /* ARGSUSED */
@@ -361,10 +450,14 @@ static void
 Unhighlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cbw = (CommandWidget)w;
-
+  const Boolean isHighlighted =
+    cbw->command.highlighted == HighlightWhenUnset && !cbw->command.set ||
+    cbw->command.highlighted == HighlightAlways;
   cbw->command.highlighted = HighlightNone;
-  if (XtIsRealized(w))
-    PaintCommandWidget(w, event, HighlightRegion(cbw), TRUE);
+  if (XtIsRealized(w) &&
+      cbw->command.highlight_thickness > 0 &&
+      isHighlighted)
+    PaintCommandWidget(w, event);
 }
 
 /* ARGSUSED */
@@ -395,109 +488,73 @@ Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 Redisplay(Widget w, XEvent *event, Region region)
 {
-  PaintCommandWidget(w, event, region, FALSE);
+  PaintCommandWidget(w, event);
 }
 
 /*	Function Name: PaintCommandWidget
  *	Description: Paints the command widget.
  *	Arguments: w - the command widget.
- *                 region - region to paint (passed to the superclass).
- *                 change - did it change either set or highlight state?
  *	Returns: none
  */
-
 static void
-PaintCommandWidget(Widget w, XEvent *event, Region region, Boolean change)
+PaintCommandWidget(Widget w, XEvent *event)
 {
   CommandWidget cbw = (CommandWidget) w;
   CommandWidgetClass cwclass = (CommandWidgetClass) XtClass (w);
-  Boolean very_thick;
-  GC norm_gc, rev_gc;
   Dimension	s = cbw->threeD.shadow_width;
+  Boolean very_thick = cbw->command.highlight_thickness >
+    Min(cbw->core.width, cbw->core.height)/2;
 
-  very_thick = cbw->command.highlight_thickness >
-               (Dimension)((Dimension) Min(cbw->core.width, cbw->core.height)/2);
+  // Clean slate.
+  XClearWindow(XtDisplay(w), XtWindow(w));
+  cbw->label.xorSet = False;
 
-  if (cbw->command.set) {
-    cbw->label.normal_GC = cbw->command.inverse_GC;
-    if (_Xaw3dXft->button_inverse)
-        XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.normal_GC,
-		       s, s, cbw->core.width - 2 * s, cbw->core.height - 2 * s);
-    region = NULL;		/* Force label to repaint text. */
+  // The following line causes Label Redisplay.
+  (*SuperClass->core_class.expose) (w, event, NULL);
+
+  // Draw highlight rectangle on top of that.
+  if (cbw->command.highlight_thickness > 0) {
+    if (cbw->command.highlighted == HighlightWhenUnset && !cbw->command.set ||
+        cbw->command.highlighted == HighlightAlways) {
+      GC gc;
+      if (cbw->command.highlight_dashed)
+	gc = cbw->command.dashedGC;
+      else
+	gc = cbw->command.normal_GC;
+      if (very_thick)
+	XFillRectangle(XtDisplay(w), XtWindow(w), gc,
+	  s, s, cbw->core.width - 2 * s, cbw->core.height - 2 * s);
+      else {
+	/* wide lines are centered on the path, so indent it */
+	Position offset = cbw->command.highlight_thickness/2;
+	// Rectangle line thickness is line_width of the GC
+	XDrawRectangle(XtDisplay(w),XtWindow(w), gc,
+	  s + offset, s + offset,
+	  cbw->core.width - cbw->command.highlight_thickness - 2 * s,
+	  cbw->core.height - cbw->command.highlight_thickness - 2 * s);
+      }
+    }
   }
+
+  // Reapply xor if we are supposed to be set.  In the Xft case, the Label
+  // text is unfortunately being drawn twice if we are set.
+  if (cbw->command.set)
+    setEffect(w); // This takes care of the shadows.
   else
-    cbw->label.normal_GC = cbw->command.normal_GC;
-
-  if (cbw->command.highlight_thickness <= 0)
-  {
-    (*SuperClass->core_class.expose) (w, event, region);
-    (*cwclass->threeD_class.shadowdraw) (w, event, region, cbw->threeD.relief, !cbw->command.set);
-    return;
-  }
-
-/*
- * If we are set then use the same colors as if we are not highlighted.
- */
-
-  if (cbw->command.set == (cbw->command.highlighted == HighlightNone)) {
-    norm_gc = cbw->command.inverse_GC;
-    rev_gc = cbw->command.normal_GC;
-  }
-  else {
-    norm_gc = cbw->command.normal_GC;
-    rev_gc = cbw->command.inverse_GC;
-  }
-
-  if ( !( (!change && (cbw->command.highlighted == HighlightNone)) ||
-	  ((cbw->command.highlighted == HighlightWhenUnset) &&
-	   (cbw->command.set))) ) {
-    if (very_thick) {
-      cbw->label.normal_GC = norm_gc; /* Give the label the right GC. */
-      XFillRectangle(XtDisplay(w),XtWindow(w), rev_gc,
-		     s, s, cbw->core.width - 2 * s, cbw->core.height - 2 * s);
-    }
-    else {
-      /* wide lines are centered on the path, so indent it */
-      int offset = cbw->command.highlight_thickness/2;
-      if (_Xaw3dXft->button_dashed) {
-        int i;
-        for (i=0; i<cbw->core.width-cbw->command.highlight_thickness-2*s; ++i)
-    	if (i%3!=0)
-   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s + offset+i, s + offset);
-        for (i=0; i<cbw->core.width-cbw->command.highlight_thickness-2*s; ++i)
-   	if (i%3!=0)
-   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s+offset+i,
-                offset+cbw->core.height - cbw->command.highlight_thickness-s-1);
-
-        for (i=0; i<cbw->core.height-cbw->command.highlight_thickness-2*s; ++i)
-   	if (i%3!=0)
-   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc, s+offset, s+offset+i);
-
-        for (i=0; i<cbw->core.height-cbw->command.highlight_thickness-2*s; ++i)
-   	if (i%3!=0)
-   	  XDrawPoint(XtDisplay(w),XtWindow(w), rev_gc,
-   	     offset+cbw->core.width - cbw->command.highlight_thickness-s-1,
-   	     s+offset+i);
-      } else
-	  XDrawRectangle(XtDisplay(w),XtWindow(w), rev_gc, s + offset, s + offset,
-		         cbw->core.width - cbw->command.highlight_thickness - 2 * s,
-		     	 cbw->core.height - cbw->command.highlight_thickness - 2 * s);
-    }
-  }
-  (*SuperClass->core_class.expose) (w, event, region);
-  (*cwclass->threeD_class.shadowdraw) (w, event, region, cbw->threeD.relief, !cbw->command.set);
+    (*cwclass->threeD_class.shadowdraw) (w, event, NULL, cbw->threeD.relief, !cbw->command.set);
 }
 
 static void
 Destroy(Widget w)
 {
   CommandWidget cbw = (CommandWidget) w;
-
-  /* so Label can release it */
-  if (cbw->label.normal_GC == cbw->command.normal_GC)
-    XtReleaseGC( w, cbw->command.inverse_GC );
-  else
-    XtReleaseGC( w, cbw->command.normal_GC );
+  XtReleaseGC(w, cbw->command.normal_GC);
+  XtReleaseGC(w, cbw->command.inverse_GC);
+  XtReleaseGC(w, cbw->command.inverse_stipple_GC);
+  if (cbw->command.xorGC)
+    XtReleaseGC(w, cbw->command.xorGC);
+  if (cbw->command.dashedGC)
+    XtReleaseGC(w, cbw->command.dashedGC);
 }
 
 /*
@@ -512,61 +569,106 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
   CommandWidget cbw = (CommandWidget) new;
   Boolean redisplay = False;
 
-  if ( oldcbw->core.sensitive != cbw->core.sensitive && !cbw->core.sensitive) {
+  // Label has already noticed if XtIsSensitive(current) !=
+  // XtIsSensitive(new), but we have additional cleanup if we are becoming
+  // insensitive.  XtIsSensitive returns False if core.sensitive and
+  // core.ancestor_sensitive disagree, but ancestor_sensitive should not be
+  // changing at the moment.
+  if (oldcbw->core.sensitive != cbw->core.sensitive && !cbw->core.sensitive) {
     /* about to become insensitive */
-    cbw->command.set = FALSE;
+    cbw->command.set = False;
     cbw->command.highlighted = HighlightNone;
-    redisplay = TRUE;
-  }
-
-  if ( (oldcbw->label.foreground != cbw->label.foreground)           ||
-       (oldcbw->core.background_pixel != cbw->core.background_pixel) ||
-       (oldcbw->command.highlight_thickness !=
-                                   cbw->command.highlight_thickness) ||
-       (oldcbw->label.font != cbw->label.font) )
-  {
-    if (oldcbw->label.normal_GC == oldcbw->command.normal_GC)
-	/* Label has release one of these */
-      XtReleaseGC(new, cbw->command.inverse_GC);
-    else
-      XtReleaseGC(new, cbw->command.normal_GC);
-
-    cbw->command.normal_GC = Get_GC(cbw, cbw->label.foreground,
-				    cbw->core.background_pixel);
-    cbw->command.inverse_GC = Get_GC(cbw, cbw->core.background_pixel,
-				     cbw->label.foreground);
-    XtReleaseGC(new, cbw->label.normal_GC);
-    cbw->label.normal_GC = (cbw->command.set
-			    ? cbw->command.inverse_GC
-			    : cbw->command.normal_GC);
-
     redisplay = True;
   }
 
+  // These widths are messed with depending on shape (see Initialize).  For
+  // now we pretend that the new shape is the same as the old shape.  If it
+  // is not, things get fixed in the next block.
   if (cbw->threeD.shadow_width != oldcbw->threeD.shadow_width) {
-      cbw->command.shadow_width = cbw->threeD.shadow_width;
-      redisplay = True;
-  }
-  if (cbw->core.border_width != oldcbw->core.border_width)
-      redisplay = True;
-
-  if ( XtIsRealized(new)
-       && oldcbw->command.shape_style != cbw->command.shape_style
-       && !ShapeButton(cbw, TRUE))
-  {
-      cbw->command.shape_style = oldcbw->command.shape_style;
-  }
-
-  if (cbw->command.shape_style != XawShapeRectangle) {
+    cbw->command.orig_shadow_width = cbw->threeD.shadow_width;
+    if (cbw->command.shape_style != XawShapeRectangle)
       cbw->threeD.shadow_width = 0;
-      ShapeButton(cbw, FALSE);
+    if (cbw->threeD.shadow_width != oldcbw->threeD.shadow_width)
       redisplay = True;
   }
-  if (cbw->command.shape_style == XawShapeRectangle) {
-      cbw->threeD.shadow_width =
-		(cbw->command.shadow_width) ? cbw->command.shadow_width : 2;
+  if (cbw->core.border_width != oldcbw->core.border_width) {
+    cbw->command.orig_border_width = cbw->core.border_width;
+    if (cbw->command.shape_style != XawShapeRectangle &&
+        cbw->core.border_width == 0)
+      cbw->core.border_width = 1;
+    if (cbw->core.border_width != oldcbw->core.border_width)
       redisplay = True;
   }
+  if (cbw->command.highlight_thickness != oldcbw->command.highlight_thickness)
+    cbw->command.orig_highlight_thickness = cbw->command.highlight_thickness;
+
+  // Shape changes
+  Boolean shape_changed = False;
+  if (oldcbw->command.shape_style != cbw->command.shape_style) {
+    shape_changed = True;
+    if (XtIsRealized(new) && !ShapeButton(cbw, True)) {
+      // Requested shape change was rejected by XmuReshapeWidget.
+      // ShapeButton sets shape_style to rectangle when it fails.
+      // Just keep the old shape and act casual.
+      cbw->command.shape_style = oldcbw->command.shape_style;
+      shape_changed = False;
+    }
+    // If not realized, the shape is deemed changed; but ShapeButton could
+    // fail later in Realize(), and then we'll be stuck with the wrong
+    // widths.
+    if (shape_changed) {
+      redisplay = True;
+      if (cbw->command.shape_style == XawShapeRectangle) {
+	cbw->threeD.shadow_width = cbw->command.orig_shadow_width;
+	cbw->core.border_width = cbw->command.orig_border_width;
+	if (cbw->command.orig_highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT)
+	  cbw->command.highlight_thickness = DEFAULT_HIGHLIGHT_THICKNESS;
+      } else {
+	cbw->threeD.shadow_width = 0;
+	if (cbw->core.border_width == 0)
+	  cbw->core.border_width = 1;
+	if (cbw->command.orig_highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT)
+	  cbw->command.highlight_thickness = 0;
+      }
+    }
+  }
+
+  // Change our GCs if necessary.
+  if (oldcbw->label.foreground != cbw->label.foreground           ||
+      oldcbw->core.background_pixel != cbw->core.background_pixel ||
+      oldcbw->label.font->fid != cbw->label.font->fid             ||
+      oldcbw->command.highlight_thickness != cbw->command.highlight_thickness) {
+    const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
+    XtReleaseGC(new, cbw->command.normal_GC);
+    XtReleaseGC(new, cbw->command.inverse_GC);
+    XtReleaseGC(new, cbw->command.inverse_stipple_GC);
+    cbw->command.normal_GC = Get_GC(cbw, fg, bg);
+    cbw->command.inverse_GC = Get_GC(cbw, bg, fg);
+    cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC(new, fg);
+    get_or_change_xorGC(cbw, fg, bg);
+    get_or_change_dashedGC(cbw, fg);
+    redisplay = True;
+  }
+
+  // Changing from 0 to 1 border to make a new shape show up falls through
+  // the cracks and we end up with no border until the next cycle.  I'm
+  // guessing this is because Label's SetValues ran before we made the
+  // change.  Calling Resize here might be a bad thing to do, but it fixes
+  // the problem.
+  if (shape_changed && cbw->core.border_width != oldcbw->core.border_width)
+    Resize(new);
+
+  // Unfortunately, changes to border_width can be rejected by the geometry
+  // manager.  Any recovery has to be done in SetValuesAlmost.
+
+  /*
+    "After calling all the set_values procedures, XtSetValues forces a
+    redisplay by calling XClearArea if any of the set_values procedures
+    returned True." - libXt docs, Widget State: The set_values Procedure
+
+    That fill with bg color clears the Xor state from Set/Unset.
+  */
+  if (redisplay) cbw->label.xorSet = False;
 
   return (redisplay);
 }
@@ -594,27 +696,47 @@ ShapeButton(CommandWidget cbw, Boolean checkRectangular)
     if (checkRectangular || cbw->command.shape_style != XawShapeRectangle) {
 	if (!XmuReshapeWidget((Widget) cbw, cbw->command.shape_style,
 			      corner_size, corner_size)) {
+	    fprintf(stderr, "Command ShapeButton:  failed to reshape widget\n");
+	    // Assuming that it was rectangle to begin with?
 	    cbw->command.shape_style = XawShapeRectangle;
 	    return(False);
 	}
     }
-    return(TRUE);
+    return(True);
 }
 
 static void
 Realize(Widget w, Mask *valueMask, XSetWindowAttributes *attributes)
 {
-    (*commandWidgetClass->core_class.superclass->core_class.realize)
-	(w, valueMask, attributes);
-
-    ShapeButton( (CommandWidget) w, FALSE);
+  (*commandWidgetClass->core_class.superclass->core_class.realize)
+    (w, valueMask, attributes);
+  // No recovery if shape change fails.  Things will be wrong.
+  ShapeButton((CommandWidget)w, False);
 }
 
 static void
 Resize(Widget w)
 {
-    if (XtIsRealized(w))
-	ShapeButton( (CommandWidget) w, FALSE);
+  // No recovery if shape change fails.  Things will be wrong.
+  if (XtIsRealized(w))
+    ShapeButton((CommandWidget)w, False);
+  (*commandWidgetClass->core_class.superclass->core_class.resize)(w);
+}
 
-    (*commandWidgetClass->core_class.superclass->core_class.resize)(w);
+// If the attempt to change border_width in SetValues is rejected, we end up
+// here.
+static void
+SetValuesAlmost (Widget old, Widget new, XtWidgetGeometry *request,
+  XtWidgetGeometry *reply) {
+  if (reply->request_mode == 0) {
+    fprintf(stderr, "Xaw3dXft Command widget:  geometry manager said no\n");
+    // Recovery steps?
+  } else if (request->border_width != reply->border_width) {
+    fprintf(stderr, "Xaw3dXft Command widget:  geometry manager said almost, rejected change to border_width\n");
+    // Recovery steps?
+  } else {
+    fprintf(stderr, "Xaw3dXft Command widget:  geometry manager said almost\n");
+  }
+  Resize(new);
+  (*commandWidgetClass->core_class.superclass->core_class.set_values_almost)(old, new, request, reply);
 }

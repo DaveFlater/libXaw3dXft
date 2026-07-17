@@ -41,6 +41,7 @@ SOFTWARE.
 #include "config.h"
 #endif
 #include <assert.h>
+#include <sysexits.h>
 #include <X11/Xaw3dXft/Xaw3dXft.h>
 #include <X11/Xaw3dXft/AsciiTextP.h>
 #include <X11/Xaw3dXft/ScrollbarP.h>
@@ -128,30 +129,62 @@ void Xaw3dXftSetInsensitiveTwist(char *value)
         _Xaw3dXft->insensitive_twist[i] = (hexa(value[2*i-1])*16+hexa(value[2*i]))*257;
 }
 
-XftFont * Xaw3dXftGetFont(Widget object, char *name)
-{
-    Display *dpy = XtDisplayOfObject(object);
-    int scrnum = XScreenNumberOfScreen(XtScreenOfObject(object));
-    if (name) {
-        if (strncasecmp(name, "core:",5))
-            return XftFontOpenName(dpy, scrnum, name);
-        else
-            return XftFontOpenXlfd(dpy, scrnum, name+5);
-    }
-    if (!_Xaw3dXft->default_font) {
-        if (!_Xaw3dXft->default_fontname)
-	    _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;
-        if (strncasecmp(_Xaw3dXft->default_fontname, "core:",5))
-            _Xaw3dXft->default_font =
-                XftFontOpenName(dpy, scrnum, _Xaw3dXft->default_fontname);
-        else
-            _Xaw3dXft->default_font =
-                XftFontOpenXlfd(dpy, scrnum, _Xaw3dXft->default_fontname+5);
-        if (!_Xaw3dXft->default_font)
-            _Xaw3dXft->default_font =
-                XftFontOpenName(dpy, scrnum, XAW3DXFT_DEFAULTFONT);
-    }
-    return _Xaw3dXft->default_font;
+/*
+  Calling XftFontOpen* repeatedly is *amazingly* slow.  This was hidden by
+  Xaw3dXft 1.x because 99.99% of calls just returned the previously opened
+  _Xaw3dXft->default_font.  To achieve comparable performance with every
+  Label looking up the font by name, cache all Xft fonts by their
+  non-canonicalized names and never call XftFontClose.
+*/
+typedef struct _xftcache {
+  const char *name;
+  XftFont *xftFont;
+  struct _xftcache *next;
+} xftcache;
+
+static xftcache *xftFontCache = NULL;
+
+static void cacheNewFont (const char *name, XftFont *xftFont) {
+  xftcache *new = malloc(sizeof(xftcache));
+  assert(new);
+  new->name = strdup(name);
+  assert(new->name);
+  new->xftFont = xftFont;
+  new->next = xftFontCache;
+  xftFontCache = new;
+}
+
+static XftFont *findOrGetFont (Widget object, const char *name) {
+  for (xftcache *l = xftFontCache; l; l = l->next)
+    if (!strcmp(name, l->name))
+      return l->xftFont;
+  Display *dpy = XtDisplayOfObject(object);
+  int scrnum = XScreenNumberOfScreen(XtScreenOfObject(object));
+  XftFont *xftFont;
+  if (strncasecmp(name, "core:",5))
+    xftFont = XftFontOpenName(dpy, scrnum, name);
+  else
+    xftFont = XftFontOpenXlfd(dpy, scrnum, name+5);
+  if (!xftFont) {
+    // XftFontOpen never returns null.  It just silently substitutes a
+    // different font.  But if the impossible happens, this message will be
+    // more helpful than a crash.
+    fprintf(stderr, "Xft font not found: %s\n", name);
+    exit(EX_UNAVAILABLE);
+  }
+  cacheNewFont(name, xftFont);
+  return xftFont;
+}
+
+XftFont *Xaw3dXftGetFont (Widget object, char *name) {
+  if (name)
+    return findOrGetFont(object, name);
+  if (!_Xaw3dXft->default_font) {
+    if (!_Xaw3dXft->default_fontname)
+      _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;
+    _Xaw3dXft->default_font = findOrGetFont(object, _Xaw3dXft->default_fontname);
+  }
+  return _Xaw3dXft->default_font;
 }
 
 int
@@ -216,6 +249,9 @@ Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y,
     if (!win) return;
 
     Colormap cmap = None;
+    // There is no safe sentinel value.  This has a good chance of replacing
+    // white with black on a deep colormap.  But this whole function is going
+    // away.
     Pixel fg = ULONG_MAX;
     if (_Xaw3dXft->text_fg_alternate_color != -1) {
         fg = _Xaw3dXft->text_fg_alternate_color;
@@ -405,8 +441,6 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->show_tips  = 1;
     _Xaw3dXft->tip_do_grab  = 1;
     _Xaw3dXft->no_hilit_reverse  = 0;
-    _Xaw3dXft->button_inverse  = 1;
-    _Xaw3dXft->button_dashed  = 0;
     _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
     _Xaw3dXft->text_sb_right = 0;

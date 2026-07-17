@@ -35,6 +35,7 @@
  */
 
 #include <X11/Xaw3dXft/Simple.h>
+#include <X11/Xaw3dXft/Encoding.h>
 
 /* Resources:
 
@@ -67,9 +68,6 @@ typedef struct _TipClassRec *TipWidgetClass;
 typedef struct _TipRec *TipWidget;
 
 extern WidgetClass tipWidgetClass;
-
-#define XawTextEncoding8bit	0
-#define XawTextEncodingChar2b	1
 
 #define XtNencoding "encoding"
 #define XtNtimeout "timeout"

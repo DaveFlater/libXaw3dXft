@@ -24,6 +24,7 @@ endif
 
 libXaw3dXft_la_SOURCES = \
   src/AllWidgets.c \
+  src/AnyString.c \
   src/AsciiSink.c \
   src/AsciiSrc.c \
   src/AsciiText.c \
@@ -71,6 +72,7 @@ nodist_libXaw3dXft_la_SOURCES = src/Xaw3dXft.c config.h
 xaw3dincludedir=$(includedir)/X11/Xaw3dXft
 xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/AllWidgets.h \
+  include/X11/Xaw3dXft/AnyString.h \
   include/X11/Xaw3dXft/AsciiSink.h \
   include/X11/Xaw3dXft/AsciiSinkP.h \
   include/X11/Xaw3dXft/AsciiSrc.h \
@@ -84,6 +86,7 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/CommandP.h \
   include/X11/Xaw3dXft/Dialog.h \
   include/X11/Xaw3dXft/DialogP.h \
+  include/X11/Xaw3dXft/Encoding.h \
   include/X11/Xaw3dXft/Form.h \
   include/X11/Xaw3dXft/FormP.h \
   include/X11/Xaw3dXft/Grip.h \

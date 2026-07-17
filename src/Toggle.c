@@ -227,16 +227,16 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     }
     XtAddCallback(new, XtNdestroyCallback, ToggleDestroy, (XtPointer)NULL);
 
-/*
- * Command widget assumes that the widget is unset, so we only
- * have to handle the case where it needs to be set.
- *
- * If this widget is in a radio group then it may cause another
- * widget to be unset, thus calling the notify procedure.
- *
- * I want to set the toggle if the user set the state to "On" in
- * the resource group, regardless of what my ancestors did.
- */
+    /*
+     * Command widget assumes that the widget is unset, so we only
+     * have to handle the case where it needs to be set.
+     *
+     * If this widget is in a radio group then it may cause another
+     * widget to be unset, thus calling the notify procedure.
+     *
+     * I want to set the toggle if the user set the state to "On" in
+     * the resource group, regardless of what my ancestors did.
+     */
 
     if (tw_req->command.set)
       ToggleSet(new, (XEvent *)NULL, (String *)NULL, (Cardinal *)0);
@@ -297,14 +297,18 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
     if (oldtw->toggle.widget != tw->toggle.widget)
       XawToggleChangeRadioGroup(new, tw->toggle.widget);
 
+    // Xaw docs:  "Toggle widget state is preserved across changes in
+    // sensitivity."  Undo unsetting by Command SetValues.
     if (!tw->core.sensitive && oldtw->core.sensitive && rtw->command.set)
 	tw->command.set = True;
 
+    // Apply change to set/unset state.
     if (oldtw->command.set != tw->command.set) {
 	tw->command.set = oldtw->command.set;
 	Toggle(new, (XEvent *)NULL, (String *)NULL, (Cardinal *)0);
     }
-    return(FALSE);
+    // Toggle already handled redraw.
+    return(False);
 }
 
 /*	Function Name: ToggleDestroy

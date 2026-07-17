@@ -75,6 +75,7 @@ SOFTWARE.
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground	     Foreground		Pixel		XtDefaultForeground
  height		     Height		Dimension	text height
+ highlightDashed     Boolean            Boolean         False
  highlightThickness  Thickness		Dimension	0 if shaped, else 2
  insensitiveBorder   Insensitive	Pixmap		Gray
  internalHeight	     Height		Dimension	2
@@ -106,6 +107,7 @@ SOFTWARE.
 
 */
 
+#define XtNhighlightDashed    "highlightDashed"
 #define XtNhighlightThickness "highlightThickness"
 
 #define XtNshapeStyle "shapeStyle"

@@ -103,11 +103,11 @@ stipplePixmap(Widget w, Pixmap pm, Colormap cm, Pixel bg, unsigned int d)
 	return (None);
     }
 
+    char dst_rgb[14];
     if (d > 1)
     {
 	XColor x_color;
 	XpmColor *dst_color;
-	char dst_rgb[14];
 
 	/*
 	 * Multi-plane (XPM) pixmap. Don't bother scanning the color table

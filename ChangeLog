@@ -20,14 +20,18 @@ Next release, v2.0  Dave Flater
       hook creates a symbolic link from the old name.
     - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
-  - Changed struct Xaw3dXftData.
-  border_hack:  deleted (not needed anymore)
-  string_use_pixmap:  deleted (not needed anymore)
-  tip_background_color:  deleted (redundant; set resource *.Tip.background via xrdb or XrmPutStringResource)
+  - Retired global struct Xaw3dXftData.
+  border_hack:  deleted (necessary workaround always on)
+  button_dashed:  use resource Command.highlightDashed
+  button_inverse:  deleted (button presses always get inverse)
+  default_font, default_fontname:  use resource xftFont
+  encoding:  use resource encoding
+  insensitive_twist:  deleted (all insensitive widgets are stippled)
+  string_use_pixmap:  deleted (workaround not needed anymore)
+  tip_background_color:  use resource *Tip.background
 
   - Changed signatures of semi-private functions.
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object
-  Xaw3dXftDrawString (alias proc->draw_string):  add visual
 
   - Changed default size of Label widgets.
   The default size of Label widgets (which includes subclasses like Command

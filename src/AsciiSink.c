@@ -639,9 +639,7 @@ Destroy(Widget w)
    XtReleaseGC(w, sink->ascii_sink.invgc);
    XtReleaseGC(w, sink->ascii_sink.xorgc);
    XFreePixmap(XtDisplayOfObject(w), sink->ascii_sink.insertCursorOn);
-   if (_Xaw3dXft->encoding && sink->ascii_sink.xftfont &&
-       sink->ascii_sink.xftfont != _Xaw3dXft->default_font)
-       XftFontClose(XtDisplayOfObject(w), sink->ascii_sink.xftfont);
+   // Xft fonts are cached; never call XftFontClose.
 }
 
 /*	Function Name: SetValues

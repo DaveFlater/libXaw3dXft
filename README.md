@@ -1,5 +1,9 @@
 # libXaw3dXft: Athena Widgets + 3D + FreeType font support
 
+🚨 libXaw3dXft is currently in the midst of a major revision.  Features that
+previously worked through a global control structure are being transitioned
+to use "normal" Xt widget resources.  Some widgets are using the new system
+while some have not yet migrated.
 
 - [Overview](#overview)
 - [Building a release](#building)
@@ -8,6 +12,7 @@
 - [Linking with libXaw3dXft](#linking)
 - [Version identification](#version)
 - [Old documentation](#olddocs)
+- [Generalities](#generalities)
 - [Classes not present in Athena Widgets](#newclasses)
 - [Alterations to Athena Widgets classes](#alterations)
 - [Run-time options](#runtimeopts)
@@ -176,6 +181,132 @@ The following sections assume familiarity with Xaw R6.3 and Xt and
 incorporate material from the Xaw3d and Xaw3dXft READMEs.
 
 
+## <a name="generalities"> Generalities
+
+### <a name="encodings"> Encodings
+
+The encoding specifies how character strings are to be interpreted.  The
+encodings understood by Xaw3dXft are enumerated in the Encoding.h header
+file:
+
+    typedef enum {
+      XawTextEncoding8bit   = 0, // Default ISO-8859-1
+      XawTextEncodingChar2b = 1, // XChar2b (big-endian UCS-2)
+      XawTextEncodingUTF8   = 2, // UTF-8
+      XawTextEncoding16bit  = 3  // FcChar16 (UCS-2 in machine byte order)
+    } XawTextEncoding;
+
+The "multibyte character strings" that are expected by XmbDrawString when a
+font set is used are a special case (see [X font sets](#fontset) below).
+
+### <a name="fontsys"> Font systems
+
+#### Original core X11 fonts system (plain old X fonts)
+
+The standard set of core X11 fonts consists mainly of bitmap fonts available
+in limited sizes and with limited character repertoires.  Newer fonts with
+wide character repertoires can be used via the FreeType backend; however, the
+rendering quality is limited by the core X11 fonts system.
+
+When a plain old X font is used, Xaw3dXft calls the Xlib function XDrawString
+or XDrawString16 to render text.  XDrawString and XDrawString16 are fixed on
+ISO 8859-1 and Char2b encodings respectively.  If a UTF-8 encoded string is
+provided, Xaw3dXft translates it to Char2b, and characters outside of the
+[Basic Multilingual
+Plane](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane)
+are replaced with ?.
+
+#### <a name="fontset"> X font sets
+
+An X font set is basically an ordered list of plain old X fonts such that,
+when a character is missing from the first font on the list, the server goes
+down the list until a font containing the needed character is found.  In this
+way, a wide character repertoire can be cobbled together from several fonts
+that support different pieces of it.  However, the rendering is done by the
+same core X11 fonts system, UTF-8 is sometimes translated incorrectly, and
+the results of merging fonts with different characteristics can be ugly.
+
+When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString to
+render text.  XmbDrawString expects the string to conform to the codeset that
+is specified in the
+[locale](https://en.wikipedia.org/wiki/Locale_(computer_software)) (e.g.,
+UTF-8 from en_US.UTF-8 or ISO 8859 part 7 from el_GR.ISO8859-7).
+
+Support for this functionality is included or excluded by the
+--enable-internationalization configure option.
+
+#### FreeType
+
+FreeType is an improved font rendering system that circumvents the
+limitations of the original core X11 fonts system.  Newer fonts can be scaled
+and rendered at higher quality, and anti-aliasing is supported.
+
+When a FreeType font is used, Xaw3dXft calls the libXft function
+XftDrawString8, XftDrawString16, or XftDrawStringUtf8 to render text.
+
+### <a name="resources"> Resources
+
+A widget accepting text (e.g., Label or its subclasses) will offer the
+following resources related to fonts and encodings:
+
+Name          | Class         | RepType      | Default value
+:---          | :----         | :---         | :---
+encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit
+font          | Font          | XFontStruct* | XtDefaultFont
+fontSet       | FontSet       | XFontSet     | XtDefaultFontSet
+international | International | Boolean      | False
+xftFont       | XftFont       | String       | NULL
+
+The font system that Xaw3dXft will use to render the text is decided as
+follows:
+
+1. If xftFont is not null, use it (FreeType).
+2. Else, if international is true, use fontSet.
+3. Otherwise, use font (plain old X font).
+
+The usual syntax of the string value given to xftFont is the Xft font name
+syntax described in [this
+tutorial](https://keithp.com/~keithp/render/Xft.tutorial); e.g., "times-24"
+for 24 point Times, "times:pixelsize=34" for 34 pixel Times, or
+"times-24:foundry=adobe" to match Adobe Times only.  To use X Logical Font
+Description (XLFD) syntax instead, prefix it with "core:"  e.g.,
+"core:-adobe-times-medium-r-\*-\*-\*-240-\*-\*-\*-\*-\*-\*".  This change is
+purely syntactic:  rendering is still done by FreeType using only the fonts
+that are known to Fontconfig.
+
+If a named xftFont fails to load, another font will be substituted without
+warning.  🤷
+
+The interpretation of the text string is fully specified by encoding when
+font or xftFont is used.  When a font set is used, encoding only determines
+how Xaw3dXft will find terminating nulls and newlines in the string.  Any
+locale codeset that preserves single-byte ASCII should work with
+XawTextEncoding8bit.  Any codeset that neither preserves single-byte ASCII
+nor is UCS-2 compatible is unsupported.
+
+To make Xaw3dXft default to using 16 point Libertinus Serif font and UTF-8
+encoding for everything, you would put the following in your .Xresources file
+that is loaded by xrdb:
+
+    *xftFont: Libertinus Serif-16
+    *encoding: 2
+
+(2 is the numeric value assigned to the enum XawTextEncodingUTF8 in
+[Encoding.h](#encodings).)
+
+To achieve the same global effect in application code, you could do this
+right after opening the display:
+
+    XrmDatabase database = XrmGetDatabase(display);
+    XrmPutStringResource(&database, "*xftFont", "Libertinus Serif-16");
+    unsigned char encoding = XawTextEncodingUTF8;
+    XrmValue rmval = {sizeof(unsigned char), &encoding};
+    XrmPutResource(&database, "*encoding", XtRUnsignedChar, &rmval);
+
+Of course, the resources can also be set on an individual basis when widgets
+are created using XtCreateManagedWidget or XtVaCreateManagedWidget.
+
+
 ## <a name="newclasses"> Classes not present in Athena Widgets
 
 ### <a name="threed"> ThreeD
@@ -297,6 +428,9 @@ label          | Label        | String       | NULL
 timeout        | Timeout      | Int          | 1200
 xftFont        | XftFont      | String       | NULL
 
+The border width of Tip widgets is permanently fixed at 0 to prevent a blurry
+text glitch from affecting the pop-up window.
+
 ### Layout
 
 The Layout widget class does not exist in Xaw.  It was created out-of-tree
@@ -337,52 +471,60 @@ Name    | Class   | RepType | Default value
 :---    | :----   | :---    | :---
 xftFont | XftFont | String  | NULL
 
+Usage was described in the [Generalities](#resources) section above.
+
 \* Font resources for the complex of Text, AsciiText, TextSink, AsciiSink,
 and MultiSink are split up among the classes.
 
-If the FreeType features of Xaw3dXft have been activated by setting
-xaw3dxft_data->encoding to something other than 0 (see [Run-time
-options](#runtimeopts)), the font is determined by the xftFont resource.
-Otherwise, if internationalization is enabled and active, the font is
-determined by the fontSet resource.  Otherwise, the font is determined by the
-font resource.
 
-The usual syntax of the string value given to xftFont is the Xft font name
-syntax described in [this
-tutorial](https://keithp.com/~keithp/render/Xft.tutorial); e.g., "times-24"
-for 24 point Times, "times:pixelsize=34" for 34 pixel Times, or
-"times-24:foundry=adobe" to match Adobe Times only.  To use X Logical Font
-Description (XLFD) syntax instead, prefix it with "core:"  e.g.,
-"core:-adobe-times-medium-r-\*-\*-\*-240-\*-\*-\*-\*-\*-\*".  This change is
-purely syntactic:  rendering is still done by FreeType using only the fonts
-that are known to Fontconfig.
+### Command
 
-The default Xft font can be changed by calling Xaw3dXftSetDefaultFontName
-(alias proc->set_default_fontname) before the first use or by directly
-modifying the default_fontname and/or default_font fields of xaw3dxft_data
-(see [Run-time options](#runtimeopts)).
+Added resource:
 
-If a named font fails to load, another font will be substituted without
-warning.  🤷
+Name    | Class   | RepType | Default value
+:---    | :----   | :---    | :---
+highlightDashed | Boolean | Boolean | False
+
+When the mouse cursor is over a Command button, a line is drawn around the
+inside of the button's border.  True = dashed line; false = solid line.
+Width is specified by the highlightThickness resource.
+
+The highlight appears within the margin created by the internalHeight and
+internalWidth resources inherited from Label.  If highlightThickness exceeds
+internalHeight or internalWidth, the highlight and the label contents will
+draw over one another.
+
+Button presses are acknowledged with a color transformation that switches
+foreground and background colors on text labels.  Unlike Xaw, Xaw3dXft
+applies a transformation to pixmaps supplied on the bitmap and leftBitmap
+resources as well, but the results are colormap-dependent.
+
+When a Command button's shape is changed from the default rectangle, Xaw3dXft
+adjusts some dimensions automatically:
+
+- Shadow width is changed to 0.  (Shadow drawing is implemented only for
+  rectangles.)
+- If border width is 0, it is set to 1.  (Without this, the shape would have
+  no outline.)
+- Highlight thickness is changed to 0 unless a value was explicitly set.
+  (Highlights are cropped by the shape, so they might look odd or be
+  invisible.)
 
 ### Label
 
-The Label widget has some modifications ("bug fixes" \*) with respect to
-geometry and positioning.  First, the internalHeight and internalWidth
+The default size of Label widgets (which includes subclasses like Command
+buttons) has increased by 2×shadowWidth in both dimensions.
+
+The Label widget has some other modifications ("bug fixes") with respect
+to geometry and positioning.  First, the internalHeight and internalWidth
 resources are used to enforce a minimum size when the resize resource is
 true.  Second, the Label widget and its subclasses respond "properly" to
 changes in label parts and internal margins (subject to any constraints
 placed on the widgets).
 
-A Label widget will not resize shorter than its font even if its label is the
-empty string.  Plain Xaw has no such inhibition.
-
-\* The current maintainer finds the minimum size enforcement to be
-inconsistent with the underlying model of Xaw:  "[Widgets] have little
-control over issues such as their size or placement relative to other widget
-peers.  Mechanisms are provided for associating geometric managers with
-widgets and for widgets to make suggestions about their own geometry."  —
-[Xaw R6.3 documentation](Docs_old/Xaw_R6.3/widgets.ps), §1.3
+As in Xaw, Label will use its core name as the label text if XtNlabel is not
+supplied, but Xaw3dXft will still use encoding as the interpretation.  Since
+Xt treats core name as a regular C string, only 8bit and UTF8 can work.
 
 ### <a name="listwidget"> List
 
@@ -420,6 +562,10 @@ shadows "grow inward" and crowd the scrollbar's contents.  To make room for
 wider shadows, increase the thickness resource (default 14 pixels).
 
 ### SimpleMenu
+
+The border width of SimpleMenu widgets is permanently fixed at 0 in Xaw3dXft
+to prevent a blurry text glitch from affecting the pop-up window.  (The
+glitch can be reproduced with Xaw.)
 
 Added resources:
 
@@ -560,6 +706,9 @@ for debugging.
 
 ## <a name="runtimeopts"> Run-time options
 
+🚨 This feature is going away.  Functions are being transferred from the
+global struct to Xt resources.
+
 The behaviors that are unique to Xaw3dXft rather than inherited from Xaw3d or
 Xaw must be enabled by the app at run time.  An app gets access to the
 Xaw3dXft control structure by doing
@@ -650,24 +799,6 @@ Applicable when:  encoding != 0 && text_bg_hilight == 1
 Bitwise XOR value applied to background colors to highlight selected text.
 The Pixel is interpreted as a 3-byte value, one byte per color:  0xRRGGBB.
 If left on the default value of -1, no highlighting occurs.
-
-### char button_inverse = 1
-
-Applicable when:  encoding == 0
-
-Controls the color changing behavior when a Command button is pressed.  1 =
-reverse fg/bg colors; 0 = the label text vanishes (possibly a bug).
-
-When encoding != 0, there is no color changing behavior.
-
-The button press is always indicated with a 3D effect in addition to any
-color change that occurs.
-
-### char button_dashed = 0
-
-When the mouse cursor is over a Command button, a line is drawn around the
-button's border.  1 = dashed line, width 1 pixel; 0 = solid line, width
-specified by the highlightThickness resource.
 
 ### unsigned short insensitive_twist[4] = {0, 0, 0, 0}
 
@@ -796,16 +927,20 @@ xaw3d.pc respectively.
   hook creates a symbolic link from the old name.
 - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
-**Changed struct Xaw3dXftData**
+**Retired global struct Xaw3dXftData**
 
-border_hack:  deleted (not needed anymore)  
-string_use_pixmap:  deleted (not needed anymore)  
-tip_background_color:  deleted (redundant; set resource *.Tip.background via xrdb or XrmPutStringResource)
+border_hack:  deleted (necessary workaround always on)  
+button_dashed:  use resource Command.highlightDashed  
+button_inverse:  deleted (button presses always get inverse)  
+default_font, default_fontname:  use resource xftFont  
+encoding:  use resource encoding  
+insensitive_twist:  deleted (all insensitive widgets are stippled)  
+string_use_pixmap:  deleted (workaround not needed anymore)  
+tip_background_color:  use resource *Tip.background
 
 **Changed signatures of semi-private functions**
 
 Xaw3dXftGetFont (alias proc->get_font):  replace display with object  
-Xaw3dXftDrawString (alias proc->draw_string):  add visual
 
 **Changed default size of Label widgets**
 

@@ -550,6 +550,7 @@ GeometryManager(Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
     XtWidgetGeometry allowed;
     XtGeometryResult ret_val;
 
+    // FIXME:  Form automatically rejects requests to change border width
     if ((request->request_mode & ~(XtCWQueryOnly | CWWidth | CWHeight)) ||
 	!form->form.allow_resize) {
 
