@@ -44,7 +44,6 @@ static_assert(Got_XAW_defines);
 #endif
 
 #ifdef XAW_GRAY_BLKWHT_STIPPLES
-/* ARGSUSED */
 unsigned long
 grayPixel(unsigned long p, Display *dpy, Screen *scn)
 {
@@ -72,7 +71,6 @@ grayPixel(unsigned long p, Display *dpy, Screen *scn)
 #define IS_EVEN(x)	(((x) % 2) == 0)
 #define IS_ODD(x)	(((x) % 2) == 1)
 
-/* ARGSUSED */
 Pixmap
 stipplePixmap(Widget w, Pixmap pm, Colormap cm, Pixel bg, unsigned int d)
 {

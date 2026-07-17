@@ -166,7 +166,6 @@ WidgetClass repeaterWidgetClass = (WidgetClass) &repeaterClassRec;
  *                                                                           *
  *****************************************************************************/
 
-/* ARGSUSED */
 static void
 tic (XtPointer client_data, XtIntervalId *id)
 {
@@ -202,7 +201,6 @@ tic (XtPointer client_data, XtIntervalId *id)
  *                                                                           *
  *****************************************************************************/
 
-/* ARGSUSED */
 static void
 Initialize (Widget greq, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -218,7 +216,6 @@ Destroy (Widget gw)
     CLEAR_TIMEOUT ((RepeaterWidget) gw);
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget gcur, Widget greq, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -240,7 +237,6 @@ SetValues (Widget gcur, Widget greq, Widget gnew, ArgList args, Cardinal *num_ar
  *                                                                           *
  *****************************************************************************/
 
-/* ARGSUSED */
 static void
 ActionStart (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -256,7 +252,6 @@ ActionStart (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 }
 
 
-/* ARGSUSED */
 static void
 ActionStop (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {

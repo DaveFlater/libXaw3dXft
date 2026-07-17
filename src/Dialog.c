@@ -149,7 +149,6 @@ DialogClassRec dialogClassRec = {
 
 WidgetClass dialogWidgetClass = (WidgetClass)&dialogClassRec;
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -187,7 +186,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
         dw->dialog.valueW = NULL;
 }
 
-/* ARGSUSED */
 static void
 ConstraintInitialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -223,7 +221,6 @@ ConstraintInitialize(Widget request, Widget new, ArgList args, Cardinal *num_arg
 #define LABEL 1
 #define NUM_CHECKS 2
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList in_args, Cardinal *in_num_args)
 {

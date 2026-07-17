@@ -212,7 +212,6 @@ CreateScrollbar(ViewportWidget w, Boolean horizontal)
     return bar;
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -314,7 +313,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     XtSetValues(w->viewport.clip, clip_args, arg_cnt);
 }
 
-/* ARGSUSED */
 static void
 ConstraintInitialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -347,7 +345,6 @@ Realize(Widget widget, XtValueMask *value_mask, XSetWindowAttributes *attributes
     }
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -861,7 +858,6 @@ Resize(Widget widget)
 }
 
 
-/* ARGSUSED */
 static Boolean
 Layout(FormWidget w, Dimension width, Dimension height, Boolean junk)
 {
@@ -888,7 +884,6 @@ ScrollUpDownProc(Widget widget, XtPointer closure, XtPointer call_data)
 }
 
 
-/* ARGSUSED */
 static void
 ThumbProc(Widget widget, XtPointer closure, XtPointer call_data)
 {

@@ -187,7 +187,6 @@ ClassPartInitialize(WidgetClass wc)
  *	Returns: The number of characters read into the buffer.
  */
 
-/* ARGSUSED */
 static XawTextPosition
 Read(Widget w, XawTextPosition pos, XawTextBlock *text, int length)
 {
@@ -205,7 +204,6 @@ Read(Widget w, XawTextPosition pos, XawTextBlock *text, int length)
  *	Returns: XawEditError.
  */
 
-/*ARGSUSED*/
 static int
 Replace (Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextBlock *text)
 {
@@ -226,7 +224,6 @@ Replace (Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextBloc
  *
  */
 
-/* ARGSUSED */
 static
 XawTextPosition
 Scan(Widget w, XawTextPosition position, XawTextScanType type,
@@ -247,7 +244,6 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
  *	Returns: XawTextSearchError.
  */
 
-/* ARGSUSED */
 static XawTextPosition
 Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBlock *text)
 {
@@ -266,7 +262,6 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
  *
  */
 
-/* ARGSUSED */
 static Boolean
 ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
                  XtPointer *value, unsigned long *length, int *format)
@@ -282,7 +277,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
  *	Returns: none
  */
 
-/* ARGSUSED */
 static void
 SetSelection(Widget w, XawTextPosition left, XawTextPosition right, Atom selection)
 {
@@ -290,7 +284,6 @@ SetSelection(Widget w, XawTextPosition left, XawTextPosition right, Atom selecti
 }
 
 
-/* ARGSUSED */
 static void
 CvtStringToEditMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal, XrmValuePtr toVal)
 {
@@ -366,7 +359,6 @@ XawTextSourceRead(Widget w, XawTextPosition pos, XawTextBlock *text,
  *	Returns: XawEditError or XawEditDone.
  */
 
-/*ARGSUSED*/
 int
 XawTextSourceReplace (Widget w, XawTextPosition startPos,
 		      XawTextPosition endPos, XawTextBlock *text)

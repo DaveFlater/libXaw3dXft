@@ -509,7 +509,6 @@ parse_page_string (char *s, int pagesize, int canvassize, Boolean *relative)
  *****************************************************************************/
 
 
-/*ARGSUSED*/
 static void
 Initialize (Widget greq, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -581,7 +580,6 @@ Resize (Widget gw)
 }
 
 
-/* ARGSUSED */
 static void
 Redisplay (Widget gw, XEvent *event, Region region)
 {
@@ -621,7 +619,6 @@ Redisplay (Widget gw, XEvent *event, Region region)
 }
 
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget gcur, Widget greq, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -734,7 +731,6 @@ QueryGeometry (Widget gw, XtWidgetGeometry *intended, XtWidgetGeometry *pref)
  *                                                                           *
  *****************************************************************************/
 
-/* ARGSUSED */
 static void
 ActionStart (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -756,7 +752,6 @@ ActionStart (Widget gw, XEvent *event, String *params, Cardinal *num_params)
     if (pw->panner.rubber_band) DRAW_TMP (pw);
 }
 
-/* ARGSUSED */
 static void
 ActionStop (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -772,7 +767,6 @@ ActionStop (Widget gw, XEvent *event, String *params, Cardinal *num_params)
     pw->panner.tmp.doing = FALSE;
 }
 
-/* ARGSUSED */
 static void
 ActionAbort (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -791,7 +785,6 @@ ActionAbort (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 }
 
 
-/* ARGSUSED */
 static void
 ActionMove (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -818,7 +811,6 @@ ActionMove (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 }
 
 
-/* ARGSUSED */
 static void
 ActionPage (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -858,7 +850,6 @@ ActionPage (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 }
 
 
-/* ARGSUSED */
 static void
 ActionNotify (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -906,7 +897,6 @@ ActionNotify (Widget gw, XEvent *event, String *params, Cardinal *num_params)
     }
 }
 
-/* ARGSUSED */
 static void
 ActionSet (Widget gw, XEvent *event, String *params, Cardinal *num_params)
 {

@@ -603,7 +603,6 @@ GetGC(AsciiSinkObject sink)
  *
  */
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -650,7 +649,6 @@ Destroy(Widget w)
  *	Returns: True if redisplay is needed.
  */
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -683,7 +681,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
  *	Returns: the number of lines that will fit.
  */
 
-/* ARGSUSED */
 static int
 MaxLines(Widget w, Dimension height)
 {
@@ -703,7 +700,6 @@ MaxLines(Widget w, Dimension height)
  *	Returns: the height.
  */
 
-/* ARGSUSED */
 static int
 MaxHeight(Widget w, int lines)
 {

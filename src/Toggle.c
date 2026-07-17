@@ -207,7 +207,6 @@ ClassInit(void)
   XtError("Aborting, due to errors resolving bindings in the Toggle widget.");
 }
 
-/*ARGSUSED*/
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -248,7 +247,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  *
  ************************************************************/
 
-/* ARGSUSED */
 static void
 ToggleSet(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -258,7 +256,6 @@ ToggleSet(Widget w, XEvent *event, String *params, Cardinal *num_params)
     class->toggle_class.Set(w, event, NULL, 0);
 }
 
-/* ARGSUSED */
 static void
 Toggle(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -271,7 +268,6 @@ Toggle(Widget w, XEvent *event, String *params, Cardinal *num_params)
     ToggleSet(w, event, params, num_params);
 }
 
-/* ARGSUSED */
 static void Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   ToggleWidget tw = (ToggleWidget) w;
@@ -286,7 +282,6 @@ static void Notify(Widget w, XEvent *event, String *params, Cardinal *num_params
  *
  ***********************************************************/
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -318,7 +313,6 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 ToggleDestroy(Widget w, XtPointer junk, XtPointer garbage)
 {

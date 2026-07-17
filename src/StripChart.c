@@ -188,7 +188,6 @@ DestroyGC(StripChartWidget w, unsigned int which)
     XtReleaseGC((Widget) w, w->strip_chart.hiGC);
 }
 
-/* ARGSUSED */
 static void
 Initialize (Widget greq, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -226,7 +225,6 @@ Destroy (Widget gw)
  *       going to hold off until then.
  */
 
-/* ARGSUSED */
 static void
 Redisplay(Widget gw, XEvent *event, Region region)
 {
@@ -252,7 +250,6 @@ Redisplay(Widget gw, XEvent *event, Region region)
     (void) repaint_window (gw, x, width);
 }
 
-/* ARGSUSED */
 static void
 draw_it(XtPointer client_data, XtIntervalId *id)
 {
@@ -467,7 +464,6 @@ MoveChart(StripChartWidget w, Boolean blit)
     return;
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {

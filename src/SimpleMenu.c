@@ -286,7 +286,6 @@ ClassPartInitialize(WidgetClass wc)
  *      Returns: none.
  */
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -354,7 +353,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  *      Returns: none.
  */
 
-/* ARGSUSED */
 static void
 Redisplay(Widget w, XEvent * event, Region region)
 {
@@ -528,7 +526,6 @@ Resize(Widget w)
  *      Returns: none
  */
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -737,7 +734,6 @@ ChangeManaged(Widget w)
  *      Returns: none
  */
 
-/* ARGSUSED */
 static void
 PositionMenuAction(Widget w, XEvent * event, String * params, Cardinal * num_params)
 {
@@ -799,7 +795,6 @@ PositionMenuAction(Widget w, XEvent * event, String * params, Cardinal * num_par
  *      Returns: none
  */
 
-/* ARGSUSED */
 static void
 Unhighlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
 {
@@ -844,7 +839,6 @@ Unhighlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
  *      Returns: none
  */
 
-/* ARGSUSED */
 static void
 Highlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
 {
@@ -893,7 +887,6 @@ Highlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
  *      Returns: none
  */
 
-/* ARGSUSED */
 static void
 Notify(Widget w, XEvent * event, String * params, Cardinal * num_params)
 {
@@ -1129,7 +1122,6 @@ Layout(Widget w, Dimension *width_ret, Dimension *height_ret)
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 AddPositionAction(XtAppContext app_con, XPointer data)
 {
@@ -1257,7 +1249,6 @@ MoveMenu(Widget w, Position x, Position y)
  *	Returns: None.
  */
 
-/* ARGSUSED */
 static void
 ChangeCursorOnGrab(Widget w, XtPointer junk, XtPointer garbage)
 {
@@ -1511,7 +1502,6 @@ GetEventEntry(Widget w, XEvent * event)
     return NULL;
 }
 
-/*ARGSUSED*/
 static void
 PopupCB(Widget w, XtPointer client_data, XtPointer call_data)
 {

@@ -497,7 +497,6 @@ TryNewLayout(BoxWidget bbw)
  *
  */
 
-/*ARGSUSED*/
 static XtGeometryResult
 GeometryManager(Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 {
@@ -575,7 +574,6 @@ ClassInitialize(void)
 		    (XtConvertArgList)NULL, (Cardinal)0 );
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -604,7 +602,6 @@ Realize(Widget w, Mask *valueMask, XSetWindowAttributes *attributes)
 		    *valueMask, attributes);
 } /* Realize */
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {

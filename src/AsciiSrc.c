@@ -206,7 +206,6 @@ ClassInitialize(void)
  *      Returns: none.
  */
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -273,7 +272,6 @@ ReadText(Widget w, XawTextPosition pos, XawTextBlock *text, int length)
  *	Returns: XawEditError or XawEditDone.
  */
 
-/*ARGSUSED*/
 static int
 ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
              XawTextBlock *text)
@@ -621,7 +619,6 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir,
  *	Returns: True if redisplay is needed.
  */
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args,
           Cardinal * num_args)
@@ -1259,7 +1256,6 @@ BreakPiece(AsciiSrcObject src, Piece * piece)
   new->used = src->ascii_src.piece_size - HALF_PIECE;
 }
 
-/* ARGSUSED */
 static void
 CvtStringToAsciiType(XrmValuePtr args, Cardinal * num_args, XrmValuePtr fromVal,
                      XrmValuePtr toVal)

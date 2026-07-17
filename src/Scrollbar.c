@@ -538,7 +538,6 @@ SetDimensions (ScrollbarWidget sbw)
     }
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -591,7 +590,6 @@ Realize(Widget w, Mask *valueMask, XSetWindowAttributes *attributes)
 	(w, valueMask, attributes);
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget desired, ArgList args, Cardinal *num_args)
 {
@@ -637,7 +635,6 @@ Resize (Widget w)
 }
 
 
-/* ARGSUSED */
 static void
 Redisplay(Widget w, XEvent *event, Region region)
 {
@@ -769,7 +766,6 @@ ExtractPosition(XEvent *event, Position *x, Position *y)
 }
 
 #ifdef XAW_ARROW_SCROLLBARS
-/* ARGSUSED */
 static void
 HandleThumb(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -809,7 +805,6 @@ RepeatNotify(XtPointer client_data, XtIntervalId *idp)
 }
 
 #else /* XAW_ARROW_SCROLLBARS */
-/* ARGSUSED */
 static void
 StartScroll (Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -1000,7 +995,6 @@ NotifyScroll (Widget w, XEvent *event, String *params, Cardinal *num_params)
 }
 #endif /* XAW_ARROW_SCROLLBARS */
 
-/* ARGSUSED */
 static void
 EndScroll(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -1084,7 +1078,6 @@ MoveThumb (Widget w, XEvent *event, String *params, Cardinal *num_params)
 }
 
 
-/* ARGSUSED */
 static void
 NotifyThumb (Widget w, XEvent *event, String *params, Cardinal *num_params)
 {

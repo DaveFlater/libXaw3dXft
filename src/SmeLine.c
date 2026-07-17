@@ -136,7 +136,6 @@ WidgetClass smeLineObjectClass = (WidgetClass) &smeLineClassRec;
  *      Returns: none.
  */
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -205,7 +204,6 @@ DestroyGC(Widget w)
  *	Returns: none
  */
 
-/*ARGSUSED*/
 static void
 Redisplay(Widget w, XEvent *event, Region region)
 {
@@ -232,7 +230,6 @@ Redisplay(Widget w, XEvent *event, Region region)
  *      Returns: none
  */
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {

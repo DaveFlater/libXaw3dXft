@@ -161,7 +161,6 @@ static char mtshadowpm_bits[] = {0x02, 0x04, 0x01};
 #define shadowpm_size 2
 static char shadowpm_bits[] = {0x02, 0x01};
 
-/* ARGSUSED */
 static void
 AllocTopShadowGC (Widget w)
 {
@@ -180,7 +179,6 @@ AllocTopShadowGC (Widget w)
     tdw->threeD.top_shadow_GC = XtGetGC(w, valuemask, &myXGCV);
 }
 
-/* ARGSUSED */
 static void
 AllocBotShadowGC (Widget w)
 {
@@ -199,7 +197,6 @@ AllocBotShadowGC (Widget w)
     tdw->threeD.bot_shadow_GC = XtGetGC(w, valuemask, &myXGCV);
 }
 
-/* ARGSUSED */
 static void
 AllocTopShadowPixmap (Widget new)
 {
@@ -263,7 +260,6 @@ AllocTopShadowPixmap (Widget new)
 			VisualDepth(tdw));
 }
 
-/* ARGSUSED */
 static void
 AllocBotShadowPixmap (Widget new)
 {
@@ -319,7 +315,6 @@ AllocBotShadowPixmap (Widget new)
 			VisualDepth(tdw));
 }
 
-/* ARGSUSED */
 void
 Xaw3dComputeTopShadowRGB (Widget new, XColor *xcol_out)
 {
@@ -351,7 +346,6 @@ Xaw3dComputeTopShadowRGB (Widget new, XColor *xcol_out)
 	xcol_out->red = xcol_out->green = xcol_out->blue = 0;
 }
 
-/* ARGSUSED */
 static void
 AllocTopShadowPixel (Widget new)
 {
@@ -365,7 +359,6 @@ AllocTopShadowPixel (Widget new)
     tdw->threeD.top_shadow_pixel = set_c.pixel;
 }
 
-/* ARGSUSED */
 void
 Xaw3dComputeBottomShadowRGB (Widget new, XColor *xcol_out)
 {
@@ -395,7 +388,6 @@ Xaw3dComputeBottomShadowRGB (Widget new, XColor *xcol_out)
 	xcol_out->red = xcol_out->green = xcol_out->blue = 0;
 }
 
-/* ARGSUSED */
 static void
 AllocBotShadowPixel (Widget new)
 {
@@ -419,7 +411,6 @@ static XrmQuark	XtQReliefNone, XtQReliefRaised, XtQReliefSunken,
 	  return; \
 	}
 
-/* ARGSUSED */
 static void
 _CvtStringToRelief(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal, XrmValuePtr toVal)
 {
@@ -469,7 +460,6 @@ ClassInitialize(void)
 }
 
 
-/* ARGSUSED */
 static void
 ClassPartInitialize (WidgetClass wc)
 
@@ -482,7 +472,6 @@ ClassPartInitialize (WidgetClass wc)
 }
 
 
-/* ARGSUSED */
 static void
 Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -534,7 +523,6 @@ Destroy (Widget w)
 	XFreePixmap (XtDisplay (w), tdw->threeD.bot_shadow_pxmap);
 }
 
-/* ARGSUSED */
 static void
 Redisplay (Widget w, XEvent *event, Region region)
 {
@@ -543,7 +531,6 @@ Redisplay (Widget w, XEvent *event, Region region)
     _Xaw3dDrawShadows (w, event, region, tdw->threeD.relief, True);
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -630,7 +617,6 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
     return (redisplay);
 }
 
-/* ARGSUSED */
 static void
 _Xaw3dDrawShadows (Widget gw, XEvent *event, Region region, XtRelief relief, Boolean out)
 {
@@ -765,7 +751,6 @@ _Xaw3dDrawShadows (Widget gw, XEvent *event, Region region, XtRelief relief, Boo
  * but has a more explicit interface, and ignores threeD part relief.
  */
 
-/* ARGSUSED */
 void
 _ShadowSurroundedBox(Widget gw, ThreeDWidget tdw, Position x0, Position y0,
                      Position x1, Position y1, XtRelief relief, Boolean out)

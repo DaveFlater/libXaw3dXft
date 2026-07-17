@@ -381,7 +381,6 @@ ChangeSize(Widget w, Dimension width, Dimension height)
  *	Returns: none
  */
 
-/* ARGSUSED */
 static void
 Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -723,7 +722,6 @@ PaintItemName(Widget w, int item)
  * event - the expose event for this repaint.
  * junk - not used, unless three-d patch enabled. */
 
-/* ARGSUSED */
 static void
 Redisplay(Widget w, XEvent *event, Region junk)
 {
@@ -914,7 +912,6 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
  * calls the callback; if the XtNpasteBuffer resource is true
  * then the name of the item is also put in CUT_BUFFER0.	*/
 
-/* ARGSUSED */
 static void
 Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -955,7 +952,6 @@ Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
  *
  * unhighlights the current element. */
 
-/* ARGSUSED */
 static void
 Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -967,7 +963,6 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
  *
  * Highlights the current element. */
 
-/* ARGSUSED */
 static void
 Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {

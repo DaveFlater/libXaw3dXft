@@ -221,7 +221,6 @@ static XtResource resources[] = {
 };
 #undef offset
 
-/* ARGSUSED */
 static void
 CvtStringToScrollMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
                       XrmValuePtr toVal)
@@ -259,7 +258,6 @@ CvtStringToScrollMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
   toVal->addr = NULL;
 }
 
-/* ARGSUSED */
 static void
 CvtStringToWrapMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
                     XrmValuePtr toVal)
@@ -297,7 +295,6 @@ CvtStringToWrapMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
   toVal->addr = NULL;
 }
 
-/* ARGSUSED */
 static void
 CvtStringToResizeMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
                       XrmValuePtr toVal)
@@ -545,7 +542,6 @@ DestroyHScrollBar(TextWidget ctx)
   ctx->text.hbar = NULL;
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -669,7 +665,6 @@ Realize(Widget w, Mask *valueMask, XSetWindowAttributes *attributes)
   _XawTextCheckResize(ctx);
 }
 
-/*ARGSUSED*/
 static void
 UnrealizeScrollbars(Widget widget, XtPointer client, XtPointer call)
 {
@@ -1309,7 +1304,6 @@ _XawTextVScroll(TextWidget ctx, int n)
 		((ThreeDWidget)ctx->text.threeD)->threeD.relief, False);
 }
 
-/*ARGSUSED*/
 static void
 HScroll(Widget w, XtPointer closure, XtPointer callData)
 {
@@ -1389,7 +1383,6 @@ HScroll(Widget w, XtPointer closure, XtPointer callData)
   _XawTextSetScrollBars(ctx);
 }
 
-/*ARGSUSED*/
 static void
 HJump(Widget w, XtPointer closure, XtPointer callData)
 {
@@ -1467,7 +1460,6 @@ UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
  * positive, move up; otherwise, move down.
  */
 
-/*ARGSUSED*/
 static void
 VScroll(Widget w, XtPointer closure, XtPointer callData)
 {
@@ -1499,7 +1491,6 @@ VScroll(Widget w, XtPointer closure, XtPointer callData)
  * cause thumbing to always position to the start of the source.
  */
 
-/*ARGSUSED*/
 static void
 VJump(Widget w, XtPointer closure, XtPointer callData)
 {
@@ -2650,7 +2641,6 @@ UpdateTextInRectangle(TextWidget ctx, XRectangle * rect)
  * window, that it can.
  */
 
-/* ARGSUSED */
 static void
 ProcessExposeRegion(Widget w, XEvent *event, Region region)
 {
@@ -2906,7 +2896,6 @@ Resize(Widget w)
  * This routine allow the application program to Set attributes.
  */
 
-/*ARGSUSED*/
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -3325,7 +3314,6 @@ XawTextInvalidate(Widget w, XawTextPosition from, XawTextPosition to)
   _XawTextExecuteUpdate(ctx);
 }
 
-/*ARGSUSED*/
 void
 XawTextDisableRedisplay(Widget w)
 {

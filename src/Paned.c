@@ -1013,7 +1013,6 @@ CommitGripAdjustment(PanedWidget pw)
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 HandleGrip(Widget grip, XtPointer junk, XtPointer callData)
 {
@@ -1498,7 +1497,6 @@ GeometryManager(Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
     return XtGeometryDone;
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -1658,14 +1656,12 @@ Resize(Widget w)
     RefigureLocationsAndCommit(w);
 }
 
-/* ARGSUSED */
 static void
 Redisplay(Widget w, XEvent * event, Region region)
 {
     DrawInternalBorders( (PanedWidget) w);
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget old, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -1725,7 +1721,6 @@ SetValues(Widget old, Widget request, Widget new, ArgList args, Cardinal *num_ar
 } /* SetValues */
 
 
-/* ARGSUSED */
 static Boolean
 PaneSetValues(Widget old, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {

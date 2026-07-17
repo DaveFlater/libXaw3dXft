@@ -192,7 +192,6 @@ static TimeoutInfo TimeoutData;
  * X.Org's distribution doesn't have it.
  */
 
-/*ARGSUSED*/
 static Boolean
 XawCvtBackingStoreToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
                            XrmValuePtr fromVal, XrmValuePtr toVal, XtPointer *data)
@@ -248,7 +247,6 @@ XawTipClassInitialize(void)
 		       NULL, 0, XtCacheNone, NULL);
 }
 
-/*ARGSUSED*/
 static void
 XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
 {
@@ -437,7 +435,6 @@ XawTipExpose(Widget w, XEvent *event, Region region)
     }
 }
 
-/*ARGSUSED*/
 static Boolean
 XawTipSetValues(Widget current, Widget request, Widget cnew, ArgList args, Cardinal *num_args)
 {
@@ -707,7 +704,6 @@ TipTimeoutCallback(XtPointer closure, XtIntervalId *id)
     }
 }
 
-/*ARGSUSED*/
 static void
 TipShellEventHandler(Widget w, XtPointer client_data, XEvent *event, Boolean *continue_to_dispatch)
 {
@@ -716,7 +712,6 @@ TipShellEventHandler(Widget w, XtPointer client_data, XEvent *event, Boolean *co
     ResetTip(info, FindWidgetInfo(info, w), False);
 }
 
-/*ARGSUSED*/
 static void
 TipEventHandler(Widget w, XtPointer client_data, XEvent *event, Boolean *continue_to_dispatch)
 {

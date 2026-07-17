@@ -321,7 +321,6 @@ ClassInitialize (void)
 }
 
 
-/*ARGSUSED*/
 static void
 Initialize (Widget grequest, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -377,7 +376,6 @@ Initialize (Widget grequest, Widget gnew, ArgList args, Cardinal *num_args)
 }
 
 
-/* ARGSUSED */
 static void
 ConstraintInitialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -407,7 +405,6 @@ ConstraintInitialize (Widget request, Widget new, ArgList args, Cardinal *num_ar
 }
 
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -453,7 +450,6 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
 }
 
 
-/* ARGSUSED */
 static Boolean
 ConstraintSetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -509,7 +505,6 @@ ConstraintDestroy (Widget w)
     layout_tree ((TreeWidget) (w->core.parent), FALSE);
 }
 
-/* ARGSUSED */
 static XtGeometryResult
 GeometryManager (Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 {
@@ -555,7 +550,6 @@ Destroy (Widget gw)
 }
 
 
-/* ARGSUSED */
 static void
 Redisplay (Widget gw, XEvent *event, Region region)
 {

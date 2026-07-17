@@ -174,7 +174,6 @@ WidgetClass formWidgetClass = (WidgetClass)&formClassRec;
 static XrmQuark	XtQChainLeft, XtQChainRight, XtQChainTop,
 		XtQChainBottom, XtQRubber;
 
-/* ARGSUSED */
 static void
 _CvtStringToEdgeType(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
                      XrmValuePtr toVal)
@@ -236,7 +235,6 @@ ClassPartInitialize(WidgetClass class)
 	c->form_class.layout = super->form_class.layout;
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -319,7 +317,6 @@ ChangeFormGeometry(Widget w, Boolean query_only, Dimension width, Dimension heig
  *               current locations to the new ones.
  */
 
-/* ARGSUSED */
 static Boolean Layout(FormWidget fw, Dimension width, Dimension height,
                       Boolean force_relayout)
 {
@@ -540,7 +537,6 @@ Resize(Widget w)
  * I don't want to even think about what ``Almost'' would mean - Chris.
  */
 
-/* ARGSUSED */
 static XtGeometryResult
 GeometryManager(Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 {
@@ -660,7 +656,6 @@ GeometryManager(Widget w, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 }
 
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -668,7 +663,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 }
 
 
-/* ARGSUSED */
 static void
 ConstraintInitialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -687,7 +681,6 @@ ConstraintInitialize(Widget request, Widget new, ArgList args, Cardinal *num_arg
     form->form.deferred_resize = False;
 }
 
-/*ARGSUSED*/
 static Boolean
 ConstraintSetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {

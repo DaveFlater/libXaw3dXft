@@ -192,7 +192,6 @@ ClassPartInitialize(WidgetClass wc)
  *
  */
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -227,7 +226,6 @@ Destroy(Widget w)
  *	Returns: True if redisplay is needed.
  */
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -259,7 +257,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
  * holder.
  */
 
-/* ARGSUSED */
 static void
 DisplayText(Widget w, Position x, Position y, XawTextPosition pos1,
             XawTextPosition pos2, Boolean highlight)
@@ -278,7 +275,6 @@ DisplayText(Widget w, Position x, Position y, XawTextPosition pos1,
  * holder.
  */
 
-/* ARGSUSED */
 static void
 InsertCursor(Widget w, Position x, Position y, XawTextInsertState state)
 {
@@ -294,7 +290,6 @@ InsertCursor(Widget w, Position x, Position y, XawTextInsertState state)
  *
  */
 
-/* ARGSUSED */
 static void
 ClearToBackground(Widget w, Position x, Position y, Dimension width, Dimension height)
 {
@@ -321,7 +316,6 @@ ClearToBackground(Widget w, Position x, Position y, Dimension width, Dimension h
  *	Returns: none (see above).
  */
 
-/* ARGSUSED */
 static void
 FindPosition(Widget w, XawTextPosition fromPos, int fromx, int width, Boolean stopAtWordBreak,
              XawTextPosition *resPos, int *resWidth, int *resHeight)
@@ -342,7 +336,6 @@ FindPosition(Widget w, XawTextPosition fromPos, int fromx, int width, Boolean st
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 FindDistance(Widget w, XawTextPosition fromPos, int fromx, XawTextPosition toPos,
              int *resWidth, XawTextPosition *resPos, int *resHeight)
@@ -361,7 +354,6 @@ FindDistance(Widget w, XawTextPosition fromPos, int fromx, XawTextPosition toPos
  *	Returns: none
  */
 
-/* ARGSUSED */
 static void
 Resolve(Widget w, XawTextPosition pos, int fromx, int width, XawTextPosition *resPos)
 {
@@ -376,7 +368,6 @@ Resolve(Widget w, XawTextPosition pos, int fromx, int width, XawTextPosition *re
  *	Returns: the number of lines that will fit.
  */
 
-/* ARGSUSED */
 static int
 MaxLines(Widget w, Dimension height)
 {
@@ -397,7 +388,6 @@ MaxLines(Widget w, Dimension height)
  *	Returns: the height.
  */
 
-/* ARGSUSED */
 static int
 MaxHeight(Widget w, int lines)
 {
@@ -412,7 +402,6 @@ MaxHeight(Widget w, int lines)
  *	Returns: none
  */
 
-/*ARGSUSED*/
 static void
 SetTabs(Widget w, int tab_count, short *tabs)
 {
@@ -426,7 +415,6 @@ SetTabs(Widget w, int tab_count, short *tabs)
  *	Returns: none (fills in rect).
  */
 
-/* ARGSUSED */
 static void
 GetCursorBounds(Widget w, XRectangle * rect)
 {
@@ -452,7 +440,6 @@ GetCursorBounds(Widget w, XRectangle * rect)
  * holder.
  */
 
-/* ARGSUSED */
 void
 XawTextSinkDisplayText(Widget w,
 #if NeedWidePrototypes
@@ -483,7 +470,6 @@ XawTextSinkDisplayText(Widget w,
  * holder.
  */
 
-/* ARGSUSED */
 void
 XawTextSinkInsertCursor(Widget w,
 #if NeedWidePrototypes
@@ -509,7 +495,6 @@ XawTextSinkInsertCursor(Widget w,
  * holder.
  */
 
-/* ARGSUSED */
 void
 XawTextSinkClearToBackground (Widget w,
 #if NeedWidePrototypes
@@ -537,7 +522,6 @@ XawTextSinkClearToBackground (Widget w,
  *	Returns: none (see above).
  */
 
-/* ARGSUSED */
 void
 XawTextSinkFindPosition(Widget w, XawTextPosition fromPos, int fromx,
 			int width,
@@ -567,7 +551,6 @@ XawTextSinkFindPosition(Widget w, XawTextPosition fromPos, int fromx,
  *	Returns: none.
  */
 
-/* ARGSUSED */
 void
 XawTextSinkFindDistance (Widget w, XawTextPosition fromPos, int fromx,
 			 XawTextPosition toPos, int *resWidth,
@@ -589,7 +572,6 @@ XawTextSinkFindDistance (Widget w, XawTextPosition fromPos, int fromx,
  *	Returns: none
  */
 
-/* ARGSUSED */
 void
 XawTextSinkResolve(Widget w, XawTextPosition pos, int fromx, int width,
 		   XawTextPosition *resPos)
@@ -607,7 +589,6 @@ XawTextSinkResolve(Widget w, XawTextPosition pos, int fromx, int width,
  *	Returns: the number of lines that will fit.
  */
 
-/* ARGSUSED */
 int
 XawTextSinkMaxLines(Widget w,
 #if NeedWidePrototypes
@@ -629,7 +610,6 @@ XawTextSinkMaxLines(Widget w,
  *	Returns: the height.
  */
 
-/* ARGSUSED */
 int
 XawTextSinkMaxHeight(Widget w, int lines)
 {
@@ -669,7 +649,6 @@ XawTextSinkSetTabs(Widget w, int tab_count, int *tabs)
  *	Returns: none (fills in rect).
  */
 
-/* ARGSUSED */
 void
 XawTextSinkGetCursorBounds(Widget w, XRectangle *rect)
 {

@@ -156,7 +156,6 @@ static char rep_text_trans[] =
  *	Returns:     none.
  */
 
-/* ARGSUSED */
 void
 _XawTextInsertFileAction(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -220,7 +219,6 @@ _XawTextInsertFile(Widget w, XEvent *event, String *params, Cardinal *num_params
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 PopdownFileInsert(Widget w, XtPointer closure, XtPointer call_data)
 {
@@ -240,7 +238,6 @@ PopdownFileInsert(Widget w, XtPointer closure, XtPointer call_data)
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 DoInsert(Widget w, XtPointer closure, XtPointer call_data)
 {
@@ -412,7 +409,6 @@ AddInsertFileChildren(Widget form, String ptr, Widget tw)
  * search widget.
  */
 
-/* ARGSUSED */
 void
 _XawTextDoSearchAction(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -434,7 +430,6 @@ _XawTextDoSearchAction(Widget w, XEvent *event, String *params, Cardinal *num_pa
  *	Returns:     none.
  */
 
-/* ARGSUSED */
 void
 _XawTextPopdownSearchAction(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -451,7 +446,6 @@ _XawTextPopdownSearchAction(Widget w, XEvent *event, String *params, Cardinal *n
  *	Returns: none
  */
 
-/* ARGSUSED */
 static void
 PopdownSearch(Widget w, XtPointer closure, XtPointer call_data)
 {
@@ -469,7 +463,6 @@ PopdownSearch(Widget w, XtPointer closure, XtPointer call_data)
  *	Returns:
  */
 
-/* ARGSUSED */
 static void
 SearchButton(Widget w, XtPointer closure, XtPointer call_data)
 {
@@ -795,7 +788,6 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
  *	Returns: TRUE if successful.
  */
 
-/* ARGSUSED */
 static Boolean
 DoSearch(struct SearchAndReplace * search)
 {
@@ -859,7 +851,6 @@ DoSearch(struct SearchAndReplace * search)
  *	Returns:     none.
  */
 
-/* ARGSUSED */
 void
 _XawTextDoReplaceAction(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -884,7 +875,6 @@ _XawTextDoReplaceAction(Widget w, XEvent *event, String *params, Cardinal *num_p
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 DoReplaceOne(Widget w, XtPointer closure, XtPointer call_data)
 {
@@ -901,7 +891,6 @@ DoReplaceOne(Widget w, XtPointer closure, XtPointer call_data)
  *	Returns: none.
  */
 
-/* ARGSUSED */
 static void
 DoReplaceAll(Widget w, XtPointer closure, XtPointer call_data)
 {
@@ -1052,7 +1041,6 @@ SetSearchLabels(struct SearchAndReplace *search, String msg1, String msg2, Boole
  *	Returns:     none.
  */
 
-/* ARGSUSED */
 void
 _XawTextSetField(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {

@@ -295,7 +295,6 @@ externaldef(xawvendorshellwidgetclass) WidgetClass
 #endif
 
 
-/*ARGSUSED*/
 static Boolean
 XawCvtCompoundTextToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
                            XrmValue *fromVal, XrmValue *toVal, XtPointer *cvt_data)
@@ -330,7 +329,6 @@ XawCvtCompoundTextToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
 #define DONE(type, address) \
 	{to->size = sizeof(type); to->addr = (XPointer)address;}
 
-/* ARGSUSED */
 static Boolean
 _XawCvtStringToPixmap(Display *dpy, XrmValuePtr args, Cardinal *nargs,
                       XrmValuePtr from, XrmValuePtr to, XtPointer *data)
@@ -478,7 +476,6 @@ _XawFixupVendorShell(void)
 }
 #endif
 
-/* ARGSUSED */
 static void
 XawVendorShellInitialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -490,7 +487,6 @@ XawVendorShellInitialize(Widget req, Widget new, ArgList args, Cardinal *num_arg
 #endif
 }
 
-/* ARGSUSED */
 static Boolean
 XawVendorShellSetValues(Widget old, Widget ref, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -517,21 +513,18 @@ XawVendorShellExtClassInitialize(void)
 {
 }
 
-/* ARGSUSED */
 static void
 XawVendorShellExtInitialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
 {
     _XawImInitialize(new->core.parent, new);
 }
 
-/* ARGSUSED */
 static void
 XawVendorShellExtDestroy(Widget w)
 {
     _XawImDestroy( w->core.parent, w );
 }
 
-/* ARGSUSED */
 static Boolean
 XawVendorShellExtSetValues(Widget old, Widget ref, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -557,7 +550,6 @@ XawVendorShellExtResize(Widget w)
 	}
 }
 
-/*ARGSUSED*/
 void
 XawVendorStructureNotifyHandler(Widget w, XtPointer closure _X_UNUSED, XEvent *event _X_UNUSED,
 				Boolean *continue_to_dispatch _X_UNUSED)
@@ -566,7 +558,6 @@ XawVendorStructureNotifyHandler(Widget w, XtPointer closure _X_UNUSED, XEvent *e
 }
 #endif
 
-/*ARGSUSED*/
 static XtGeometryResult
 GeometryManager(Widget wid, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 {

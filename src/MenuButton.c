@@ -155,7 +155,6 @@ ClassInitialize(void)
 			 GrabModeAsync, GrabModeAsync);
 }
 
-/* ARGSUSED */
 static void
 PopupMenu(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {

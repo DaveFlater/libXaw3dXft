@@ -205,7 +205,6 @@ WidgetClass layoutWidgetClass = (WidgetClass) &layoutClassRec;
  *	Returns: none.
  */
 
-/*ARGSUSED*/
 static Boolean
 CvtStringToLayout (Display *dpy, XrmValue *args, Cardinal *num_args,
                    XrmValue *from, XrmValue *to, XtPointer *converter_data)
@@ -219,7 +218,6 @@ CvtStringToLayout (Display *dpy, XrmValue *args, Cardinal *num_args,
     return  LayYYparse() ? FALSE : TRUE;
 }
 
-/*ARGSUSED*/
 static void
 DisposeLayout (XtAppContext app, XrmValue *to, XtPointer data, XrmValuePtr args,
                Cardinal *num_args)
@@ -251,7 +249,6 @@ Redisplay (Widget gw, XEvent *event, Region region)
 }
 #endif
 
-/*ARGSUSED*/
 static XtGeometryResult
 GeometryManager(Widget child, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 {
@@ -288,7 +285,6 @@ GeometryManager(Widget child, XtWidgetGeometry *request, XtWidgetGeometry *reply
     return XtGeometryDone;
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -338,7 +334,6 @@ Resize(Widget gw)
     LayoutLayout ((LayoutWidget) gw, FALSE);
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget gold, Widget greq, Widget gnew, ArgList args, Cardinal *num_args)
 {

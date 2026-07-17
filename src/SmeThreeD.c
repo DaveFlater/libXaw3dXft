@@ -159,7 +159,6 @@ static char mtshadowpm_bits[] = {
 static char mbshadowpm_bits[] = {
     0x6d, 0xdb, 0xb6, 0x6d, 0xdb, 0xb6, 0x6d, 0xdb};
 
-/* ARGSUSED */
 static void
 AllocTopShadowGC (Widget w)
 {
@@ -178,7 +177,6 @@ AllocTopShadowGC (Widget w)
     tdo->sme_threeD.top_shadow_GC = XtGetGC(w, valuemask, &myXGCV);
 }
 
-/* ARGSUSED */
 static void
 AllocBotShadowGC (Widget w)
 {
@@ -197,7 +195,6 @@ AllocBotShadowGC (Widget w)
     tdo->sme_threeD.bot_shadow_GC = XtGetGC(w, valuemask, &myXGCV);
 }
 
-/* ARGSUSED */
 static void
 AllocEraseGC (Widget w)
 {
@@ -211,7 +208,6 @@ AllocEraseGC (Widget w)
     tdo->sme_threeD.erase_GC = XtGetGC(w, valuemask, &myXGCV);
 }
 
-/* ARGSUSED */
 static void
 AllocTopShadowPixmap (Widget new)
 {
@@ -268,7 +264,6 @@ AllocTopShadowPixmap (Widget new)
 			VisualDepth(tdo));
 }
 
-/* ARGSUSED */
 static void
 AllocBotShadowPixmap (Widget new)
 {
@@ -318,7 +313,6 @@ AllocBotShadowPixmap (Widget new)
 			VisualDepth(tdo));
 }
 
-/* ARGSUSED */
 void
 XawSme3dComputeTopShadowRGB (Widget new, XColor *xcol_out)
 {
@@ -351,7 +345,6 @@ XawSme3dComputeTopShadowRGB (Widget new, XColor *xcol_out)
 	xcol_out->red = xcol_out->green = xcol_out->blue = 0;
 }
 
-/* ARGSUSED */
 static void
 AllocTopShadowPixel (Widget new)
 {
@@ -367,7 +360,6 @@ AllocTopShadowPixel (Widget new)
 }
 
 
-/* ARGSUSED */
 void
 XawSme3dComputeBottomShadowRGB (Widget new, XColor *xcol_out)
 {
@@ -398,7 +390,6 @@ XawSme3dComputeBottomShadowRGB (Widget new, XColor *xcol_out)
 	xcol_out->red = xcol_out->green = xcol_out->blue = 0;
 }
 
-/* ARGSUSED */
 static void
 AllocBotShadowPixel (Widget new)
 {
@@ -414,7 +405,6 @@ AllocBotShadowPixel (Widget new)
 }
 
 
-/* ARGSUSED */
 static void
 ClassPartInitialize (WidgetClass wc)
 {
@@ -427,7 +417,6 @@ ClassPartInitialize (WidgetClass wc)
 }
 
 
-/* ARGSUSED */
 static void
 Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -463,7 +452,6 @@ Destroy (Widget gw)
 	XFreePixmap (XtDisplayOfObject (gw), w->sme_threeD.bot_shadow_pxmap);
 }
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal *num_args)
 {
@@ -550,7 +538,6 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
     return (redisplay);
 }
 
-/* ARGSUSED */
 static void
 _XawSme3dDrawShadows(Widget gw)
 {

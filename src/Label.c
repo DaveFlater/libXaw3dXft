@@ -318,7 +318,6 @@ get_lbm_dimensions (LabelWidget lw)
     }
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -381,7 +380,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  * Repaint the widget window
  */
 
-/* ARGSUSED */
 static void
 Redisplay(Widget gw, XEvent *event, Region region)
 {

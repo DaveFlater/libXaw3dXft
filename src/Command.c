@@ -267,7 +267,6 @@ Get_GC(CommandWidget cbw, Pixel fg, Pixel bg)
 		 &values);
 }
 
-/* ARGSUSED */
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
@@ -344,7 +343,6 @@ static void setEffect (Widget w) {
 *
 ***************************/
 
-/* ARGSUSED */
 static void
 Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -362,7 +360,6 @@ Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
   // Else set but not realized
 }
 
-/* ARGSUSED */
 static void
 Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -402,7 +399,6 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
   // Else unset but not realized
 }
 
-/* ARGSUSED */
 static void
 Reset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -416,7 +412,6 @@ Reset(Widget w, XEvent *event, String *params, Cardinal *num_params)
     Unhighlight(w, event, params, num_params);
 }
 
-/* ARGSUSED */
 static void
 Highlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -445,7 +440,6 @@ Highlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
     PaintCommandWidget(w, event);
 }
 
-/* ARGSUSED */
 static void
 Unhighlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -460,7 +454,6 @@ Unhighlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
     PaintCommandWidget(w, event);
 }
 
-/* ARGSUSED */
 static void
 Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
@@ -484,7 +477,6 @@ Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 *
 ************************/
 
-/* ARGSUSED */
 static void
 Redisplay(Widget w, XEvent *event, Region region)
 {
@@ -561,7 +553,6 @@ Destroy(Widget w)
  * Set specified arguments into widget
  */
 
-/* ARGSUSED */
 static Boolean
 SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {

@@ -235,7 +235,6 @@ ConvertCursor(Widget w)
 }
 
 
-/* ARGSUSED */
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
