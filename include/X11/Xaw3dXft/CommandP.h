@@ -112,19 +112,18 @@ typedef struct {
     Dimension	     corner_round;
 
     /* private state */
-    Pixmap      	gray_pixmap;
-    Boolean     	set;
-    XtCommandHighlight	highlighted;
-    GC          	normal_GC;   // fg bg font
-    GC          	inverse_GC;  // bg fg font
-    GC                  inverse_stipple_GC;  // set + insensitive
-    GC                  xorGC;     // Mangle all colors by fg ^ bg
-    GC                  dashedGC;  // Draw dashed line for highlight
+    Boolean set;            // click/unclick condition
+    XtCommandHighlight highlighted; // mouseover condition
+    GC normal_GC;           // fg, bg, font, line width, cap style
+    GC inverse_GC;          // bg, fg, font, line width, cap style
+    GC inverse_stipple_GC;  // FillStippled with fg
+    GC xorGC;               // function = GXxor by fg ^ bg
+    GC dashedGC;            // fg, line width, line style = LineOnOffDash
 
     /* Save values that are overridden when shape is not rectangle. */
-    Dimension           orig_shadow_width;
-    Dimension           orig_border_width;
-    Dimension           orig_highlight_thickness;
+    Dimension orig_shadow_width;
+    Dimension orig_border_width;
+    Dimension orig_highlight_thickness;
 } CommandPart;
 
 

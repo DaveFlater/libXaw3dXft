@@ -92,19 +92,19 @@ typedef struct {
     XtJustify	justify;
     Dimension	internal_width;
     Dimension	internal_height;
-    Pixmap	pixmap;
+    Pixmap	pixmap;         // replaces label text
     Boolean	resize;
     unsigned char encoding;
-    Pixmap	left_bitmap;
+    Pixmap	left_bitmap;    // appears to the left of label text
     char	*xftfontname;
 
     /* private state */
-    GC          normal_GC;
-    GC          gray_GC;                /* for insensitive */
-    GC          stipple_GC;             /* for AnyString */
-    Pixmap      stipple;                /* not the same stipple... */
-    Pixmap      stippled;               /* insensitive pixmap */
-    Pixmap      left_stippled;          /* ditto */
+    GC          normal_GC;      // fg, bg, font
+    GC          gray_GC;        // normal + FillTiled with Xmu stipple
+    GC          stipple_GC;     // FillStippled with bg
+    Pixmap      stipple;        // tile pixmap of gray_GC
+    Pixmap      stippled;       // pixmap stippled with bg
+    Pixmap      left_stippled;  // left_bitmap stippled with bg
     Position    label_x;
     Position    label_y;
     Dimension   label_width;
@@ -113,8 +113,8 @@ typedef struct {
     unsigned int depth;                 /* depth of pixmaps */
     XftFont     *xftfont;
     Visual      *visual;
-    XftColor    xftfg;                  /* like normal_GC */
-    XftColor    xftbg;                  /* like normal_GC */
+    XftColor    xftfg;
+    XftColor    xftbg;
 
     // If Label's SetValues returns True, it clears this flag.  That lets
     // Command know that its color changing state from Set got wiped out by
