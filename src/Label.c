@@ -261,8 +261,6 @@ GetgrayGC(LabelWidget lw)
 {
     XGCValues	values;
 
-    values.foreground = lw->label.foreground;
-    values.background = lw->core.background_pixel;
     values.font	      = lw->label.font->fid;
     values.fill_style = FillTiled;
     values.tile       = XmuCreateStippledPixmap(XtScreen((Widget)lw),
@@ -276,15 +274,13 @@ GetgrayGC(LabelWidget lw)
     if ( lw->simple.international == True )
         /* Since Xmb/wcDrawString eats the font, I must use XtAllocateGC. */
         lw->label.gray_GC = XtAllocateGC((Widget)lw,  0,
-				(unsigned) GCForeground | GCBackground |
-					   GCTile | GCFillStyle |
+				(unsigned) GCTile | GCFillStyle |
 					   GCGraphicsExposures,
 				&values, GCFont, 0);
     else
 #endif
         lw->label.gray_GC = XtGetGC((Widget)lw,
-				(unsigned) GCForeground | GCBackground |
-					   GCFont | GCTile | GCFillStyle |
+				(unsigned) GCFont | GCTile | GCFillStyle |
 					   GCGraphicsExposures,
 				&values);
 }

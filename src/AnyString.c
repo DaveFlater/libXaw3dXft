@@ -170,18 +170,10 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
   We currently have three different stippling methods:
 
   1. When the widgets draw with a stipple, they do this:
-    v.foreground = fg;
-    v.background = bg;
     v.font       = font->fid;
     v.fill_style = FillTiled;
     v.tile       = XmuCreateStippledPixmap(screen, fg, bg, depth);
     v.graphics_exposures = False;
-
-  XmuCreateStippledPixmap:  This function creates a two pixel by one pixel
-  stippled pixmap of specified depth on the specified screen.  The pixmap is
-  cached so that multiple requests share the same pixmap.  The pixmap should
-  be freed with XmuReleaseStippledPixmap to maintain correct reference
-  counts.
 
   2. stipplePixmap modifies a pixmap by adding an entry to the colorTable and
   then changing half of the pixels to point to that.

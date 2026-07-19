@@ -100,7 +100,7 @@ typedef struct {
 
     /* private state */
     GC          normal_GC;      // fg, bg, font
-    GC          gray_GC;        // normal + FillTiled with Xmu stipple
+    GC          gray_GC;        // FillTiled with Xmu pixmap fg & bg
     GC          stipple_GC;     // FillStippled with bg
     Pixmap      stipple;        // tile pixmap of gray_GC
     Pixmap      stippled;       // pixmap stippled with bg
