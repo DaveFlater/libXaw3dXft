@@ -186,20 +186,20 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
   2. stipplePixmap modifies a pixmap by adding an entry to the colorTable and
   then changing half of the pixels to point to that.
 
-  3. drawOneXftLine fills a rectangle with fill_style = FillStippled.
+  3. drawOneXftLine fills a rectangle with fill_style = FillStippled.  While
+  method 1 uses a pixmap with specified fg and bg, this method uses a bitmap
+  as a stencil for the bg color being sprayed by the GC.
 */
 
-// Give a Pixel, get a stipple_gc.  We need a widget or non-widget Object
-// here to take advantage of the GC caching that is done by Xt.
+// Give a Pixel, get a stipple_gc for DrawAnyString.  We need a widget or
+// non-widget Object here to take advantage of the GC caching that is done by
+// Xt.
 GC Xaw3dXftGetStippleGC (Widget w, Pixel bg) {
   static Boolean first = True;
   static Pixmap p;
   if (first) {
     // libx11/src/CrBFData.c XCreateBitmapFromData:
     // "D is any drawable on the same screen that the pixmap will be used in."
-    // XQueryBestStipple:  "The XQueryBestStipple function returns the best or
-    // closest size, that is, the size that can be stippled fastest on the
-    // screen specified by which_screen..."
     first = false;
     Display *display = XtDisplayOfObject(w);
     // Avoid requiring XtIsRealized(w)

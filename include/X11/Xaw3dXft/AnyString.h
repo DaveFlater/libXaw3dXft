@@ -134,8 +134,9 @@ extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text);
 extern void Xaw3dXftGetXftColor (Display *display, Visual *visual,
   Colormap cmap, Pixel pixel, XftColor *result);
 
-// Give a Pixel, get a stipple_gc.  We need a widget or non-widget Object
-// here to take advantage of the GC caching that is done by Xt.
+// Give a Pixel, get a stipple_gc for DrawAnyString.  We need a widget or
+// non-widget Object here to take advantage of the GC caching that is done by
+// Xt.
 extern GC Xaw3dXftGetStippleGC (Widget w, Pixel bg);
 
 #ifdef __cplusplus
