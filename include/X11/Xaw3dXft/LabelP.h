@@ -99,7 +99,7 @@ typedef struct {
     char	*xftfontname;
 
     /* private state */
-    GC          normal_GC;      // fg, bg, font
+    GC          normal_GC;      // fg, font
     GC          gray_GC;        // FillTiled with Xmu pixmap fg & bg
     GC          stipple_GC;     // FillStippled with bg
     Pixmap      stipple;        // tile pixmap of gray_GC

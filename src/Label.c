@@ -228,16 +228,14 @@ SetTextWidthAndHeight(LabelWidget lw)
 static void
 GetnormalGC(LabelWidget lw)
 {
-    XGCValues	values;
-
     // There's no slack given here for the plain old font to be null when
     // you're using a fontSet or xftFont.  It won't *be* null unless someone
     // explicitly nulls it out.
     assert(lw->label.font);
 
-    values.foreground	= lw->label.foreground;
-    values.background	= lw->core.background_pixel;
-    values.font		= lw->label.font->fid;
+    XGCValues values;
+    values.foreground	      = lw->label.foreground;
+    values.font		      = lw->label.font->fid;
     values.graphics_exposures = False;
 
 #ifdef XAW_INTERNATIONALIZATION
@@ -246,13 +244,13 @@ GetnormalGC(LabelWidget lw)
         // That means:  Xmb/wcDrawString does XSetFont on the GC.
         lw->label.normal_GC = XtAllocateGC(
                 (Widget)lw, 0,
-	(unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+	(unsigned) GCForeground | GCGraphicsExposures,
 	&values, GCFont, 0 );
     else
 #endif
         lw->label.normal_GC = XtGetGC(
 	(Widget)lw,
-	(unsigned) GCForeground | GCBackground | GCFont | GCGraphicsExposures,
+	(unsigned) GCForeground | GCFont | GCGraphicsExposures,
 	&values);
 }
 
@@ -260,7 +258,6 @@ static void
 GetgrayGC(LabelWidget lw)
 {
     XGCValues	values;
-
     values.font	      = lw->label.font->fid;
     values.fill_style = FillTiled;
     values.tile       = XmuCreateStippledPixmap(XtScreen((Widget)lw),
