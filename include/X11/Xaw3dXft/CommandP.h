@@ -114,10 +114,10 @@ typedef struct {
     /* private state */
     Boolean set;            // click/unclick condition
     XtCommandHighlight highlighted; // mouseover condition
-    GC normal_GC;           // fg, bg, font, line width for highlight
+    GC hl_solid_GC;         // fg, line width for highlight
+    GC hl_dashed_GC;        // fg, line width, line style = LineOnOffDash
+    GC xor_GC;              // function = GXxor by fg ^ bg
     GC inverse_stipple_GC;  // FillStippled with fg
-    GC xorGC;               // function = GXxor by fg ^ bg
-    GC dashedGC;            // fg, line width, line style = LineOnOffDash
 
     /* Save values that are overridden when shape is not rectangle. */
     Dimension orig_shadow_width;

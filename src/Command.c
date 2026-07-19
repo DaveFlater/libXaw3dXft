@@ -195,21 +195,41 @@ WidgetClass commandWidgetClass = (WidgetClass) &commandClassRec;
  *
  ****************************************************************/
 
-static void get_or_change_xorGC (CommandWidget cbw, Pixel fg, Pixel bg) {
-  // Default fill_style FillSolid uses only foreground
+static void get_or_change_GCs (CommandWidget cbw) {
+  const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
+
+  // inverse_stipple_GC
+  if (cbw->command.inverse_stipple_GC)
+    XtReleaseGC((Widget)cbw, cbw->command.inverse_stipple_GC);
+  cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC((Widget)cbw, fg);
+
   XGCValues values;
+  values.graphics_exposures = False;
+
+  // xor_GC
+  // Default fill_style FillSolid uses only foreground
   values.foreground = fg ^ bg;
   values.function = GXxor;
-  values.graphics_exposures = False;
-  if (cbw->command.xorGC)
-    XtReleaseGC((Widget)cbw, cbw->command.xorGC);
-  cbw->command.xorGC = XtGetGC((Widget)cbw,
+  if (cbw->command.xor_GC)
+    XtReleaseGC((Widget)cbw, cbw->command.xor_GC);
+  cbw->command.xor_GC = XtGetGC((Widget)cbw,
     GCForeground|GCFunction|GCGraphicsExposures, &values);
-}
 
-static void get_or_change_dashedGC (CommandWidget cbw, Pixel fg) {
-  XGCValues values;
+  // hl_solid_GC
   values.foreground = fg;
+  // Xlib special case
+  // "The line-width is measured in pixels and either can be greater than or
+  // equal to one (wide line) or can be the special value zero (thin line)."
+  if (cbw->command.highlight_thickness > 1)
+    values.line_width = cbw->command.highlight_thickness;
+  else
+    values.line_width = 0;
+  if (cbw->command.hl_solid_GC)
+    XtReleaseGC((Widget)cbw, cbw->command.hl_solid_GC);
+  cbw->command.hl_solid_GC = XtGetGC((Widget)cbw,
+    GCForeground|GCLineWidth|GCGraphicsExposures, &values);
+
+  // hl_dashed_GC
   values.line_style = LineOnOffDash;
   // char dashes acts like a uint8_t.  0 gets you a BadValue error.
   if (cbw->command.highlight_thickness < 1)
@@ -218,52 +238,11 @@ static void get_or_change_dashedGC (CommandWidget cbw, Pixel fg) {
     values.dashes = (char)(cbw->command.highlight_thickness * 4);
   else
     values.dashes = (char)255;
-  values.graphics_exposures = False;
-
-  // Xlib special case
-  // "The line-width is measured in pixels and either can be greater than or
-  // equal to one (wide line) or can be the special value zero (thin line)."
-  if (cbw->command.highlight_thickness > 1)
-    values.line_width = cbw->command.highlight_thickness;
-  else
-    values.line_width = 0;
-
-  if (cbw->command.dashedGC)
-    XtReleaseGC((Widget)cbw, cbw->command.dashedGC);
-  cbw->command.dashedGC = XtGetGC((Widget)cbw,
+  if (cbw->command.hl_dashed_GC)
+    XtReleaseGC((Widget)cbw, cbw->command.hl_dashed_GC);
+  cbw->command.hl_dashed_GC = XtGetGC((Widget)cbw,
     GCForeground|GCLineStyle|GCLineWidth|GCDashList|GCGraphicsExposures,
 				  &values);
-}
-
-static GC
-Get_GC(CommandWidget cbw, Pixel fg, Pixel bg)
-{
-  XGCValues	values;
-
-  values.foreground   = fg;
-  values.background   = bg;
-  values.font	      = cbw->label.font->fid;
-  values.graphics_exposures = False;
-
-  // Xlib special case
-  // "The line-width is measured in pixels and either can be greater than or
-  // equal to one (wide line) or can be the special value zero (thin line)."
-  if (cbw->command.highlight_thickness > 1)
-    values.line_width = cbw->command.highlight_thickness;
-  else
-    values.line_width = 0;
-
-  static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
-  if ( cbw->simple.international == True )
-      return XtAllocateGC((Widget)cbw, 0,
-		 (GCForeground|GCBackground|GCLineWidth|GCGraphicsExposures),
-		 &values, GCFont, 0 );
-  else
-#endif
-      return XtGetGC((Widget)cbw,
-		 (GCForeground|GCBackground|GCFont|GCLineWidth|GCGraphicsExposures),
-		 &values);
 }
 
 static void
@@ -272,7 +251,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   CommandWidget cbw = (CommandWidget) new;
   int shape_event_base, shape_error_base;
 
-  cbw->command.xorGC = cbw->command.dashedGC = NULL;
+  cbw->command.hl_solid_GC =
+    cbw->command.hl_dashed_GC =
+    cbw->command.inverse_stipple_GC =
+    cbw->command.xor_GC = NULL;
 
   /* Save values that are overridden when shape is not rectangle. */
   cbw->command.orig_shadow_width = cbw->threeD.shadow_width;
@@ -295,12 +277,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       cbw->core.border_width = 1;
   }
 
-  const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
-  cbw->command.normal_GC = Get_GC(cbw, fg, bg);
-  cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC(new, fg);
-  get_or_change_xorGC(cbw, fg, bg);
-  get_or_change_dashedGC(cbw, fg);
-
+  get_or_change_GCs(cbw);
   cbw->command.set = False;
   cbw->command.highlighted = HighlightNone;
 }
@@ -314,7 +291,7 @@ static void setEffect (Widget w) {
   const Dimension s = cbw->threeD.shadow_width;
   // Flip the entire contents
   if (!cbw->label.xorSet) {
-    XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xorGC,
+    XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xor_GC,
       s, s, cbw->core.width - 2*s, cbw->core.height - 2*s);
     cbw->label.xorSet = True;
   }
@@ -373,7 +350,7 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
       const Dimension s = cbw->threeD.shadow_width;
       // Flip the entire contents
       if (cbw->label.xorSet) {
-	XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xorGC,
+	XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xor_GC,
 	  s, s, cbw->core.width - 2*s, cbw->core.height - 2*s);
 	cbw->label.xorSet = False;
       }
@@ -508,9 +485,9 @@ PaintCommandWidget(Widget w, XEvent *event)
         cbw->command.highlighted == HighlightAlways) {
       GC gc;
       if (cbw->command.highlight_dashed)
-	gc = cbw->command.dashedGC;
+	gc = cbw->command.hl_dashed_GC;
       else
-	gc = cbw->command.normal_GC;
+	gc = cbw->command.hl_solid_GC;
       if (very_thick)
 	XFillRectangle(XtDisplay(w), XtWindow(w), gc,
 	  s, s, cbw->core.width - 2 * s, cbw->core.height - 2 * s);
@@ -538,12 +515,14 @@ static void
 Destroy(Widget w)
 {
   CommandWidget cbw = (CommandWidget) w;
-  XtReleaseGC(w, cbw->command.normal_GC);
-  XtReleaseGC(w, cbw->command.inverse_stipple_GC);
-  if (cbw->command.xorGC)
-    XtReleaseGC(w, cbw->command.xorGC);
-  if (cbw->command.dashedGC)
-    XtReleaseGC(w, cbw->command.dashedGC);
+  if (cbw->command.hl_solid_GC)
+    XtReleaseGC(w, cbw->command.hl_solid_GC);
+  if (cbw->command.hl_dashed_GC)
+    XtReleaseGC(w, cbw->command.hl_dashed_GC);
+  if (cbw->command.xor_GC)
+    XtReleaseGC(w, cbw->command.xor_GC);
+  if (cbw->command.inverse_stipple_GC)
+    XtReleaseGC(w, cbw->command.inverse_stipple_GC);
 }
 
 /*
@@ -624,15 +603,8 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
   // Change our GCs if necessary.
   if (oldcbw->label.foreground != cbw->label.foreground           ||
       oldcbw->core.background_pixel != cbw->core.background_pixel ||
-      oldcbw->label.font->fid != cbw->label.font->fid             ||
       oldcbw->command.highlight_thickness != cbw->command.highlight_thickness) {
-    const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
-    XtReleaseGC(new, cbw->command.normal_GC);
-    XtReleaseGC(new, cbw->command.inverse_stipple_GC);
-    cbw->command.normal_GC = Get_GC(cbw, fg, bg);
-    cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC(new, fg);
-    get_or_change_xorGC(cbw, fg, bg);
-    get_or_change_dashedGC(cbw, fg);
+    get_or_change_GCs(cbw);
     redisplay = True;
   }
 
