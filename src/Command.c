@@ -297,7 +297,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
   cbw->command.normal_GC = Get_GC(cbw, fg, bg);
-  cbw->command.inverse_GC = Get_GC(cbw, bg, fg);
   cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC(new, fg);
   get_or_change_xorGC(cbw, fg, bg);
   get_or_change_dashedGC(cbw, fg);
@@ -327,7 +326,7 @@ static void setEffect (Widget w) {
     Xaw3dXftDrawAnyString(XtDisplay(w), cbw->label.visual,
       cbw->core.colormap, XtWindow(w), cbw->label.font, labelFontSet(cbw),
       cbw->label.xftfont, XtIsSensitive(w), international(cbw),
-      cbw->command.inverse_GC, cbw->command.inverse_stipple_GC,
+      None, cbw->command.inverse_stipple_GC,
       &cbw->label.xftbg, &cbw->label.xftfg, cbw->label.label_x,
       cbw->label.label_y, cbw->label.encoding, cbw->label.label);
   // Flip the shadow
@@ -386,7 +385,7 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 	Xaw3dXftDrawAnyString(XtDisplay(w), cbw->label.visual,
 	  cbw->core.colormap, XtWindow(w), cbw->label.font, labelFontSet(cbw),
 	  cbw->label.xftfont, XtIsSensitive(w), international(cbw),
-	  cbw->command.normal_GC, cbw->label.stipple_GC, &cbw->label.xftfg,
+	  None, cbw->label.stipple_GC, &cbw->label.xftfg,
 	  &cbw->label.xftbg, cbw->label.label_x, cbw->label.label_y,
 	  cbw->label.encoding, cbw->label.label);
       // Flip the shadow
@@ -540,7 +539,6 @@ Destroy(Widget w)
 {
   CommandWidget cbw = (CommandWidget) w;
   XtReleaseGC(w, cbw->command.normal_GC);
-  XtReleaseGC(w, cbw->command.inverse_GC);
   XtReleaseGC(w, cbw->command.inverse_stipple_GC);
   if (cbw->command.xorGC)
     XtReleaseGC(w, cbw->command.xorGC);
@@ -630,10 +628,8 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
       oldcbw->command.highlight_thickness != cbw->command.highlight_thickness) {
     const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
     XtReleaseGC(new, cbw->command.normal_GC);
-    XtReleaseGC(new, cbw->command.inverse_GC);
     XtReleaseGC(new, cbw->command.inverse_stipple_GC);
     cbw->command.normal_GC = Get_GC(cbw, fg, bg);
-    cbw->command.inverse_GC = Get_GC(cbw, bg, fg);
     cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC(new, fg);
     get_or_change_xorGC(cbw, fg, bg);
     get_or_change_dashedGC(cbw, fg);

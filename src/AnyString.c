@@ -391,8 +391,8 @@ void Xaw3dXftDrawAnyStringLen (
   Cardinal num_bytes
 ) {
   if (num_bytes == 0) return;
-  assert(text_gc);
   assert(!xftFont || sensitive || stipple_gc);
+  assert(xftFont || text_gc);
 
   // The Boolean international resource is from Xaw.  The docs say:  when
   // true, use fontSet; when false, use font.  When true, encoding is from

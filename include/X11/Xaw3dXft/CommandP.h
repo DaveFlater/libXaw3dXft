@@ -115,7 +115,6 @@ typedef struct {
     Boolean set;            // click/unclick condition
     XtCommandHighlight highlighted; // mouseover condition
     GC normal_GC;           // fg, bg, font, line width for highlight
-    GC inverse_GC;          // bg, fg, font, line width for highlight
     GC inverse_stipple_GC;  // FillStippled with fg
     GC xorGC;               // function = GXxor by fg ^ bg
     GC dashedGC;            // fg, line width, line style = LineOnOffDash
