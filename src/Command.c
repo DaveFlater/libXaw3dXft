@@ -243,7 +243,6 @@ Get_GC(CommandWidget cbw, Pixel fg, Pixel bg)
   values.foreground   = fg;
   values.background   = bg;
   values.font	      = cbw->label.font->fid;
-  values.cap_style = CapProjecting;
   values.graphics_exposures = False;
 
   // Xlib special case
@@ -258,12 +257,12 @@ Get_GC(CommandWidget cbw, Pixel fg, Pixel bg)
 #ifdef XAW_INTERNATIONALIZATION
   if ( cbw->simple.international == True )
       return XtAllocateGC((Widget)cbw, 0,
-		 (GCForeground|GCBackground|GCLineWidth|GCCapStyle|GCGraphicsExposures),
+		 (GCForeground|GCBackground|GCLineWidth|GCGraphicsExposures),
 		 &values, GCFont, 0 );
   else
 #endif
       return XtGetGC((Widget)cbw,
-		 (GCForeground|GCBackground|GCFont|GCLineWidth|GCCapStyle|GCGraphicsExposures),
+		 (GCForeground|GCBackground|GCFont|GCLineWidth|GCGraphicsExposures),
 		 &values);
 }
 
