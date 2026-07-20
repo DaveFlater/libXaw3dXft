@@ -63,6 +63,8 @@ SOFTWARE.
  *
  ***********************************************************************/
 
+// This enum is to implement different behavior for Toggle than for standard
+// Command.  It's an internal control, not for use with any resource.
 typedef enum {
   HighlightNone,		/* Do not highlight. */
   HighlightWhenUnset,		/* Highlight only when unset, this is
@@ -77,7 +79,6 @@ typedef enum {
  *  Class structure
  *
  ***********************************/
-
 
    /* New fields for the Command widget class record */
 typedef struct _CommandClass
@@ -102,6 +103,12 @@ extern CommandClassRec commandClassRec;
  *
  **************************************/
 
+/*
+  SmeBSB and List use reverse colors for their highlights.  Command instead
+  uses reverse colors for its set/unset condition (mouse click/unclick).  Its
+  "highlight" is the rectangle drawn on mouseover.
+*/
+
     /* New fields for the Command widget record */
 typedef struct {
     /* resources */
@@ -124,10 +131,6 @@ typedef struct {
     Dimension orig_border_width;
     Dimension orig_highlight_thickness;
 } CommandPart;
-
-
-/*    XtEventsPtr eventTable;*/
-
 
    /* Full widget declaration */
 typedef struct _CommandRec {
