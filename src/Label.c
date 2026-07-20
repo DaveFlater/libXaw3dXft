@@ -588,8 +588,9 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     if (curlw->label.font->fid != newlw->label.font->fid)
       was_resized = True;
 #ifdef XAW_INTERNATIONALIZATION
-    if (curlw->simple.international &&
-      curlw->label.fontset != newlw->label.fontset)
+    if (curlw->simple.international != newlw->simple.international ||
+	newlw->simple.international &&
+	  curlw->label.fontset != newlw->label.fontset)
       was_resized = True;
 #endif
 
