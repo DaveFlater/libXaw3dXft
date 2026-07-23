@@ -22,6 +22,7 @@ AC_PROG_YACC
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_REQUIRE_CPP
 LT_INIT
+AC_C_BIGENDIAN
 
 # [Unhelpful X.Org boilerplate deleted]
 # https://www.x.org/wiki/NewModuleGuidelines/ recommends some boilerplate

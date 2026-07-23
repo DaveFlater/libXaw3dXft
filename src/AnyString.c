@@ -10,6 +10,9 @@ Copyright © 2026 David Flater
 X11 license (as per the historical licenses that the package inherits)
 *********************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -22,12 +25,9 @@ static_assert(Got_XAW_defines);
 static_assert(sizeof(XChar2b) == 2);
 static_assert(sizeof(FcChar16) == 2);
 
-// If this isn't good enough, it can be determined easily at run time.
-// See also:
-// autoconf AC_C_BIGENDIAN
-// Boost.Predef BOOST_ENDIAN_*
-// Boost.Endian
-#if defined(__BIG_ENDIAN__) || defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+// configure.ac autoconf test AC_C_BIGENDIAN defines or undefines
+// WORDS_BIGENDIAN in config.h
+#ifdef WORDS_BIGENDIAN
 #define isBigEndian 1
 #else
 #define isBigEndian 0
