@@ -66,6 +66,7 @@ SOFTWARE.
 
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/ScrollbarP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 
 #include <X11/Xmu/Drawing.h>
 
@@ -489,20 +490,17 @@ CreateGC (Widget w)
     ScrollbarWidget sbw = (ScrollbarWidget) w;
     XGCValues gcValues;
     XtGCMask mask;
-    unsigned int depth = 1;
+    Cardinal depth = 1;
 
     if (sbw->scrollbar.thumb == XtUnspecifiedPixmap) {
         sbw->scrollbar.thumb = XmuCreateStippledPixmap (XtScreen(w),
 					(Pixel) 1, (Pixel) 0, depth);
     } else if (sbw->scrollbar.thumb != None) {
-	Window root;
-	int x, y;
-	unsigned int width, height, bw;
-	if (XGetGeometry (XtDisplay(w), sbw->scrollbar.thumb, &root, &x, &y,
-			 &width, &height, &bw, &depth) == 0) {
+      if (!Xaw3dXftGetDrawableDimensions(XtDisplay(w), sbw->scrollbar.thumb,
+					 NULL, NULL, &depth)) {
 	    XtAppError (XtWidgetToApplicationContext (w),
 	       "Scrollbar Widget: Could not get geometry of thumb pixmap.");
-	}
+      }
     }
 
     gcValues.foreground = sbw->scrollbar.foreground;

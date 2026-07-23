@@ -46,6 +46,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xmu/Drawing.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/ListP.h>
 
 /* These added so widget knows whether its height, width are user selected.

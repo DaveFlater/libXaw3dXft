@@ -69,7 +69,6 @@ typedef struct _TipRec *TipWidget;
 
 extern WidgetClass tipWidgetClass;
 
-#define XtNencoding "encoding"
 #define XtNtimeout "timeout"
 #define XtNtip "tip"
 #define XtNxftFont "xftFont"
@@ -84,7 +83,6 @@ static_assert(Got_XAW_defines);
 #endif
 #endif
 
-#define XtCEncoding "Encoding"
 #define XtCTimeout "Timeout"
 #define XtCTip "Tip"
 #define XtCXftFont "XftFont"

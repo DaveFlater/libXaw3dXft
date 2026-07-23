@@ -1,6 +1,8 @@
 /*
- * AnyString.h
- * Widget-agnostic functions for dealing with text and related issues
+ * AnyStringP.h
+ *
+ * Widget-agnostic functions for dealing with text.  These functions are in
+ * the global namespace, but they are not part of the public API.
  */
 
 /*********************************************************************
@@ -38,10 +40,6 @@ X11 license (as per the historical licenses that the package inherits)
   from Core!  So make the callers do the scavenger hunt themselves.
 */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Certain widget resources disappear entirely if XAW_INTERNATIONALIZATION is
 // disabled.  Callers should use these macros in the parameter lists to avoid
 // adding ifdefs.  Note that the typedef for XFontSet goes away if
@@ -49,20 +47,25 @@ extern "C" {
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #define international(w) w->simple.international
+#define menuIntl(w)      w->sme.international
 #define labelFontSet(w)  w->label.fontset
+#define menuFontSet(w)   w->sme_bsb.fontset
 #else
 #define international(w) False
+#define menuIntl(w)      False
 #define labelFontSet(w)  NULL
+#define menuFontSet(w)   NULL
 #endif
 
-// Genericized DrawString
+
+// Genericized DrawString with specified length (num_bytes)
 extern void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
 
   // One of the following will apply.
   XFontStruct *font, void *fontSet, XftFont *xftFont,
 
-  // Pass XtIsSensitive(widget) and international(widget)
+  // Pass XtIsSensitive(widget) and international(widget) or menuIntl(widget)
   Boolean sensitive,
   Boolean international,
 
@@ -101,14 +104,15 @@ extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
   GC stipple_gc, XftColor *fg, XftColor *bg, Position x, Position y,
   XawTextEncoding encoding, void *text);
 
-// Genericized TextWidth/TextHeight
+
+// Genericized TextWidth/TextHeight with specified length (num_bytes)
 extern void Xaw3dXftSizeAnyStringLen (
   Display *display,
 
   // One of the following will apply.
   XFontStruct *font, void *fontSet, XftFont *xftFont,
 
-  // Pass international(widget)
+  // Pass international(widget) or menuIntl(widget)
   Boolean international,
 
   // A string in the specified encoding
@@ -127,18 +131,21 @@ extern void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
   void *fontSet, XftFont *xftFont, Boolean international,
   XawTextEncoding encoding, void *text, Dimension *width, Dimension *height);
 
+
 // Strdup for any encoding
 extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text);
 
-// Give a Pixel, get a XftColor
-extern void Xaw3dXftGetXftColor (Display *display, Visual *visual,
-  Colormap cmap, Pixel pixel, XftColor *result);
-
-// Give a Pixel, get a stipple_gc for DrawAnyString.  We need a widget or
-// non-widget Object here to take advantage of the GC caching that is done by
-// Xt.
-extern GC Xaw3dXftGetStippleGC (Widget w, Pixel bg);
-
-#ifdef __cplusplus
-}
-#endif
+// Find the coordinates to underline one character in supplied text.  Returns
+// True if coordinates are valid, False if cannot comply.  For international
+// multibyte strings using fontSet, the indicated character must be in the
+// first line of text.
+extern Boolean Xaw3dXftLocateUnderline (
+  // Similar to Xaw3dXftSizeAnyString
+  Display *display,
+  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  Boolean international,
+  XawTextEncoding encoding,
+  void *text,
+  int character_index, // characters, not bytes
+  // Results out
+  Position *x1, Position *x2, Position *y);

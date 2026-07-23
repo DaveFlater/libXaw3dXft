@@ -1,6 +1,8 @@
 /*
  * AnyString.c
- * Widget-agnostic functions for dealing with text and related issues
+ *
+ * Widget-agnostic functions for dealing with text.  These functions are in
+ * the global namespace, but they are not part of the public API.
  */
 
 /*********************************************************************
@@ -14,7 +16,7 @@ X11 license (as per the historical licenses that the package inherits)
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
-#include <X11/Xaw3dXft/AnyString.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
 
 static_assert(Got_XAW_defines);
 static_assert(sizeof(XChar2b) == 2);
@@ -132,20 +134,6 @@ void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
   return strdup(text);
 }
 
-// Give a Pixel, get a XftColor
-void Xaw3dXftGetXftColor (Display *display, Visual *visual, Colormap cmap,
-Pixel pixel, XftColor *result) {
-  XRenderColor xre_color = {0U, 0U, 0U, USHRT_MAX}; // default black
-  XColor xcol;
-  xcol.pixel = pixel;
-  xcol.flags = DoRed | DoGreen | DoBlue;
-  XQueryColor(display, cmap, &xcol);
-  xre_color.red = xcol.red;
-  xre_color.green = xcol.green;
-  xre_color.blue = xcol.blue;
-  XftColorAllocValue(display, visual, cmap, &xre_color, result);
-}
-
 // Generalized strchr(s, '\n')
 // For 16-bit encodings, the returned pointer points to the first byte of
 // the newline.
@@ -164,47 +152,6 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
     return NULL;
   }
   return strchr(text, '\n');
-}
-
-/*
-  We currently have three different stippling methods:
-
-  1. When the widgets draw with a stipple, they do this:
-    v.font       = font->fid;
-    v.fill_style = FillTiled;
-    v.tile       = XmuCreateStippledPixmap(screen, fg, bg, depth);
-    v.graphics_exposures = False;
-
-  2. stipplePixmap modifies a pixmap by adding an entry to the colorTable and
-  then changing half of the pixels to point to that.
-
-  3. drawOneXftLine fills a rectangle with fill_style = FillStippled.  While
-  method 1 uses a pixmap with specified fg and bg, this method uses a bitmap
-  as a stencil for the bg color being sprayed by the GC.
-*/
-
-// Give a Pixel, get a stipple_gc for DrawAnyString.  We need a widget or
-// non-widget Object here to take advantage of the GC caching that is done by
-// Xt.
-GC Xaw3dXftGetStippleGC (Widget w, Pixel bg) {
-  static Boolean first = True;
-  static Pixmap p;
-  if (first) {
-    // libx11/src/CrBFData.c XCreateBitmapFromData:
-    // "D is any drawable on the same screen that the pixmap will be used in."
-    first = false;
-    Display *display = XtDisplayOfObject(w);
-    // Avoid requiring XtIsRealized(w)
-    Window window = RootWindowOfScreen(XtScreenOfObject(w));
-    uint8_t data[] = {0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa};
-    p = XCreateBitmapFromData(display, window, (char*)data, 8, 8);
-  }
-  XGCValues v;
-  v.foreground = bg;
-  v.stipple = p;
-  v.fill_style = FillStippled;
-  v.graphics_exposures = False;
-  return XtGetGC(w, GCForeground|GCStipple|GCFillStyle|GCGraphicsExposures, &v);
 }
 
 // Xaw3dXftSizeAnyString component for a single line with Xft font
@@ -256,8 +203,18 @@ static void drawOneXftLine (
     } else
       width = sizeOneXftLine(display, xftFont, encoding, text, num_bytes);
 
-    // Fill the background.
+    // It's mandatory to reset the area over which XftDrawString will draw.
+    // Redrawing over previous lettering causes degradation because it
+    // anti-aliases over the previous fringe instead of the original
+    // background.
+
+    // FIXME
+    // This obliterates a background pixmap.
     XftDrawRect(xftDraw, bg, x, y, width, xftFont->height);
+
+    // This restores a background pixmap to its original state, but that's
+    // not always what we need.
+    // (void)XClearArea(display, window, x, y, width, xftFont->height, False);
 
     // Draw the string.
     Position yadj = y + xftFont->ascent;
@@ -355,39 +312,13 @@ static void drawOneLine (
 
 void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
-
-  // One of the following will apply.
   XFontStruct *font, void *fontSet, XftFont *xftFont,
-
-  // Pass XtIsSensitive(widget) and international(widget)
   Boolean sensitive,
   Boolean international,
-
-  // If xftFont is not null:
-  //   Background is cleared to bg
-  //   Text is drawn with fg
-  //   If !sensitive, stipple is applied using stipple_gc
-  //   Setting fg.color.alpha has an effect, but it's not what you'd want.
-  //   (Transparency is not relative to the specified bg.)
-  // else if international:
-  //   fontSet must be valid
-  //   text_gc must have modifiable font
-  //   Foreground must be set in text_gc
-  //   Background is not cleared
-  //   Text is drawn with text_gc
-  // else plain old X font:
-  //   Foreground and font must be set in text_gc
-  //   Background is not cleared
-  //   Text is drawn with text_gc
   GC text_gc, GC stipple_gc, XftColor *fg, XftColor *bg,
-
   Position x, Position y,
-
-  // A string in the specified encoding
   XawTextEncoding encoding,
   void *text,
-
-  // Number of bytes (not characters) to draw from text
   Cardinal num_bytes
 ) {
   if (num_bytes == 0) return;
@@ -511,25 +442,10 @@ static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
 }
 
 // Genericized TextWidth/TextHeight
-void Xaw3dXftSizeAnyStringLen (
-  Display *display,
-
-  // One of the following will apply.
-  XFontStruct *font, void *fontSet, XftFont *xftFont,
-
-  // Pass international(widget)
-  Boolean international,
-
-  // A string in the specified encoding
-  XawTextEncoding encoding,
-  void *text,
-
-  // Number of bytes (not characters) to draw from text
-  Cardinal num_bytes,
-
-  // Results out
-  Dimension *width, Dimension *height
-) {
+void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
+  void *fontSet, XftFont *xftFont, Boolean international,
+  XawTextEncoding encoding, void *text, Cardinal num_bytes, Dimension *width,
+  Dimension *height) {
   if (width == NULL && height == NULL) return;
   if (num_bytes == 0) {
     if (width) *width = 0;
@@ -618,4 +534,117 @@ void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font, void *fontSet,
   void *text, Dimension *width, Dimension *height) {
   Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
     encoding, text, AnyStrlen(encoding, text), width, height);
+}
+
+// Find the bytes corresponding to the start of a character and the start of
+// the next character.  Not applicable to mb strings (international).
+// Returns True if results are valid, False if cannot comply.
+static Boolean locateChar (XawTextEncoding encoding, void *text,
+			   int character_index,
+			   Cardinal *b1, Cardinal *b2) {
+  if (character_index < 0) return False;
+  assert(b1 && b2);
+  const Cardinal l = AnyStrlen(encoding, text);
+  switch (encoding) {
+  case XawTextEncoding8bit:
+    if (character_index < l) {
+      *b1 = character_index;
+      *b2 = character_index+1;
+      return True;
+    }
+    break;
+  case XawTextEncodingChar2b:
+  case XawTextEncoding16bit:
+    Cardinal byte_index = character_index*2;
+    if (byte_index < l) {
+      *b1 = byte_index;
+      *b2 = byte_index+2;
+      return True;
+    }
+    break;
+  case XawTextEncodingUTF8:
+    Cardinal charsFound = 0, i = 0;
+    uint8_t *c = text;
+    while (i < l) {
+      if ((c[i] & 0xc0) != 0x80 && charsFound++ == character_index) break;
+      ++i;
+    }
+    if (i < l) {
+      *b1 = i++;
+      while ((c[i] & 0xc0) == 0x80 && i < l) ++i;
+      *b2 = i;
+      return True;
+    }
+  }
+  return False;
+}
+
+Boolean Xaw3dXftLocateUnderline (
+  Display *display,
+  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  Boolean international,
+  XawTextEncoding encoding,
+  void *text,
+  int character_index, // characters, not bytes
+  Position *x1, Position *x2, Position *y) {
+  if (character_index < 0) return False;
+  assert(x1 && x2 && y);
+
+#ifdef XAW_INTERNATIONALIZATION
+  if (international) {
+    Cardinal l = AnyStrlen(encoding, text);
+    XRectangle ink[l], logical[l];
+    int nchars;
+    // Behavior is undefined for a multiline string.
+    if (XmbTextPerCharExtents(fontSet, text, l, ink, logical, l, &nchars,
+                              NULL, NULL) && character_index < nchars) {
+      const XRectangle ti=ink[character_index], tl=logical[character_index];
+      *x1 = ti.x;
+      *x2 = ti.x + ti.width - 1;
+      *y  = tl.height + 2; // +1 or +2?  Results are inconsistent.
+      return True;
+    }
+    return False;
+  }
+#endif
+
+  Cardinal b1, b2;
+  if (locateChar(encoding, text, character_index, &b1, &b2)) {
+    assert(b2 > b1);
+
+    // Get us on the right line
+    Cardinal linesSkipped = 0;
+    void *line = text, *nl = nextnl(encoding, line);
+    while (nl && text + b2 > nl) {
+      if (text + b1 <= nl) return False;
+      ++linesSkipped;
+      line = nl + nlsize(encoding);
+      nl = nextnl(encoding, line);
+    }
+    *y = linesSkipped * (xftFont ? xftFont->height :
+                         font->max_bounds.ascent + font->max_bounds.descent);
+    const Cardinal bytesSkipped = line - text;
+    assert(bytesSkipped <= b1);
+    b1 -= bytesSkipped;
+    b2 -= bytesSkipped;
+
+    // Guess where the baseline is relative to the bottom of the drawing
+    // (Font sets not handled here)
+    Position baseline = (xftFont ?
+                         xftFont->descent - 1 : font->max_bounds.descent);
+
+    Dimension w2, h2;
+    Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
+                             encoding, line, b2, &w2, &h2);
+    *y += (Position)h2 - baseline + 1;
+    *x2 = w2 - 1;
+    if (b1) {
+      Dimension w1;
+      Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
+                               encoding, line, b1, &w1, NULL);
+      *x1 = w1;
+    } else *x1 = 0;
+    return True;
+  }
+  return False;
 }

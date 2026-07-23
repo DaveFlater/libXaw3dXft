@@ -58,6 +58,7 @@ SOFTWARE.
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/AsciiSinkP.h>
 #include <X11/Xaw3dXft/AsciiSrcP.h>	/* For source function defs. */
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/TextP.h>	/* I also reach into the text widget. */
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 

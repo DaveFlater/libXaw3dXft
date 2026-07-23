@@ -55,5 +55,8 @@ typedef enum {
   XawTextEncoding16bit  = 3  // FcChar16 (UCS-2 in machine byte order)
 } XawTextEncoding;
 
+#define XtNencoding "encoding"
+#define XtCEncoding "Encoding"
+
 #define some16(e) (e == XawTextEncodingChar2b || e == XawTextEncoding16bit)
 #define nlsize(e) (some16(e) ? 2 : 1)

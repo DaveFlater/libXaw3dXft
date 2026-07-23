@@ -74,30 +74,40 @@ typedef struct {
     Pixmap left_bitmap, right_bitmap; /* pixmaps to show. */
     Dimension left_margin, right_margin; /* left and right margins. */
     Pixel foreground;		/* foreground color. */
+    Pixel highlight;            /* highlight background color */
     XFontStruct * font;		/* The font to show label in. */
 #ifdef XAW_INTERNATIONALIZATION
     XFontSet fontset;		/* or fontset */
 #endif
     XtJustify justify;		/* Justification for the label. */
     int underline;		/* index of letter to underline in label. */
-    char * xftfontname;
+    char *xftfontname;
+    unsigned char highlightStyle;
+    unsigned char encoding;
 
     /* private resources. */
-    Boolean set_values_area_cleared; /* Remember if we need to unhighlight. */
-    GC norm_gc;			/* normal color gc. */
-    GC rev_gc;			/* reverse color gc. */
-    GC norm_gray_gc;		/* Normal color (grayed out) gc. */
-    GC invert_gc;		/* gc for flipping colors. */
-    Pixmap left_stippled, right_stippled; /* insensitive pixmaps */
+    // Unlike Command/Toggle, we never have to deal with reverse color &
+    // insensitive at the same time.
+    GC normal_GC;               // fg, font
+    GC rev_GC;                  // foreground = bg, font
+    GC stipple_GC;              // FillStippled with bg
+    GC xor_fgbg_GC;             // function = GXxor by fg ^ bg
+    GC xor_bghl_GC;             // function = GXxor by bg ^ hl
+    XftColor xftfg;
+    XftColor xftbg;
+    XftColor xfthl;
+    Boolean xorSet;
+    Dimension label_width;
+    Dimension label_height;
     Dimension left_bitmap_width; /* size and depth of each pixmap. */
     Dimension left_bitmap_height;
     Dimension right_bitmap_width;
     Dimension right_bitmap_height;
-    unsigned int left_depth;
-    unsigned int right_depth;
+    Cardinal left_depth;
+    Cardinal right_depth;
     String menu_name;		/* name of nested sub-menu or NULL */
-    XftFont * xftfont;
-    Visual * visual;
+    XftFont *xftfont;
+    Visual *visual;
 } SmeBSBPart;
 
 /****************************************************************

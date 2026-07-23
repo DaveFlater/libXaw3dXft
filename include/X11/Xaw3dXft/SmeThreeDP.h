@@ -41,7 +41,6 @@ typedef struct {
     int		    bot_shadow_contrast;
     GC		    top_shadow_GC;
     GC		    bot_shadow_GC;
-    GC		    erase_GC;
     XtPointer	    user_data;
     Boolean	    be_nice_to_cmap;
     Boolean	    shadowed;

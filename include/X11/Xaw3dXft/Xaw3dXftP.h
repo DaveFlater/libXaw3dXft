@@ -55,9 +55,6 @@ extern void Xaw3dXftSetHilitColor(char * value);
 extern void Xaw3dXftSetDefaultFontName(char *name);
 extern void Xaw3dXftSetInsensitiveTwist(char *value);
 
-// This function caches fonts.  Never call XftFontClose on the returned font!
-extern XftFont *Xaw3dXftGetFont(Widget object, char *name);
-
 // Original text functions being phased out
 extern int Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len);
 extern void Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y, char *str, int len);

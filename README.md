@@ -580,7 +580,7 @@ The use of these resources is explained in the following subsections.
 #### Scrolling
 
 The SimpleMenu widget supports scrolling through entries too numerous to fit
-on the screen.  The resource jumpScroll determines the number of entries to
+on the screen.  The jumpScroll resource determines the number of entries to
 scroll by.
 
 #### Margins / whitespace
@@ -670,23 +670,37 @@ Added resources:
 
 Name      | Class     | RepType | Default value
 :---      | :---      | :---    | :---
+encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit
+highlight | Background | Pixel | XtDefaultBackground
+highlightStyle | MenuHighlightStyle | UnsignedChar | MenuHighlightReverse
 menuName  | MenuName  | String  | NULL
 underline | Underline | Int     | -1
 
-The resource menuName is used to specify the name of a sub-menu.  The use of
+As incoming from Xaw, SmeBSB had no encoding resource and did not handle
+multi-line label text, so it was inconsistent with Label.  These
+inconsistencies have been removed.
+
+The values of the highlightStyle resource are as follows:
+
+    typedef enum {
+      MenuHighlightReverse=0,    // Reverse foreground and background colors
+      MenuHighlightBackground=1, // Paint background with highlight color
+      MenuHighlightShadow=2      // Add shadows, do not change colors
+    } MenuHighlightStyle;
+
+The highlight resource gives the alternate background color that is used
+when highlightStyle is MenuHighlightBackground.
+
+The menuName resource is used to specify the name of a sub-menu.  The use of
 sub-menus was explained above under SimpleMenu [Sub-menus](#submenus).
 
-The resource underline is used to specify a character to underline in the
-label.  The integer value is the index of the character.  A value less than
-zero or greater than or equal to the label length inhibits underlining.
+The underline resource is used to specify a character to underline in the
+label.  The integer value is the index of the character.  For multi-line
+labels, it need not be in the first line unless international is true.  A
+value less than zero inhibits underlining.
 
-The following anomalies were inherited from Xaw:
-
-- SmeBSB inherits a borderWidth resource from Rectangle, but no corresponding
-  border is drawn.
-- Unlike Label and Tip, SmeBSB has no encoding resource.  Support for
-  XawTextEncodingChar2b with core fonts (XTextWidth16, XDrawString16) is not
-  present.
+Being a non-widget Object, SmeBSB does not have a window of its own, so the
+borderWidth resource that it inherits from Rectangle is inoperative.
 
 ### Viewport
 
@@ -930,13 +944,16 @@ xaw3d.pc respectively.
 **Retired global struct Xaw3dXftData**
 
 border_hack:  deleted (necessary workaround always on)  
-button_dashed:  use resource Command.highlightDashed  
+button_dashed:  use Command.highlightDashed resource  
 button_inverse:  deleted (button presses always get inverse)  
-default_font, default_fontname:  use resource xftFont  
-encoding:  use resource encoding  
+default_font, default_fontname:  use xftFont resource  
+encoding:  use encoding resource  
+hilit_color:  use highlight resource  
+menu_spacing:  use SmeBSB.vertSpace resource  
+no_hilit_reverse:  use highlightStyle resource  
 insensitive_twist:  deleted (all insensitive widgets are stippled)  
 string_use_pixmap:  deleted (workaround not needed anymore)  
-tip_background_color:  use resource *Tip.background
+tip_background_color:  use Tip.background resource
 
 **Changed signatures of semi-private functions**
 

@@ -101,12 +101,10 @@ SOFTWARE.
 
 */
 
-#define XtNencoding "encoding"
 #define XtNleftBitmap "leftBitmap"
 #define XtNxftFont "xftFont"
 
 #define XtCLeftBitmap "LeftBitmap"
-#define XtCEncoding "Encoding"
 #define XtCXftFont "XftFont"
 
 static_assert(Got_XAW_defines);

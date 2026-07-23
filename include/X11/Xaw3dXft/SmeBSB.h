@@ -55,10 +55,13 @@ in this Software without prior written authorization from the X Consortium.
  ----		     -----		-------		-------------
  callback            Callback           Callback        NULL
  destroyCallback     Callback		Pointer		NULL
+ encoding	     Encoding		unsigned char	XawTextEncoding8bit
  font                Font               XFontStruct *   XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground          Foreground         Pixel           XtDefaultForeground
  height		     Height		Dimension	0
+ highlight           Background         Pixel           XtDefaultBackground
+ highlightStyle      MenuHighlightStyle unsigned char   MenuHighlightReverse
  label               Label              String          Name of entry
  leftBitmap          LeftBitmap         Pixmap          None
  leftMargin          HorizontalMargins  Dimension       4
@@ -88,6 +91,17 @@ typedef struct _SmeBSBRec         *SmeBSBObject;
 
 extern WidgetClass smeBSBObjectClass;
 
+typedef enum {
+  MenuHighlightReverse=0,    // Reverse foreground and background colors
+  MenuHighlightBackground=1, // Paint background with highlight color
+  MenuHighlightShadow=2      // Add shadows, do not change colors
+} MenuHighlightStyle;
+
+// XtNhighlight is in StringDefs.h
+#ifndef XtNhighlight
+#define XtNhighlight "highlight"
+#endif
+
 #define XtNleftBitmap "leftBitmap"
 #define XtNleftMargin "leftMargin"
 #define XtNleftWhitespace "leftWhitespace"
@@ -98,6 +112,7 @@ extern WidgetClass smeBSBObjectClass;
 #define XtNmenuName "menuName"
 #define XtNunderline "underline"
 #define XtNxftFont "xftFont"
+#define XtNhighlightStyle "highlightStyle"
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
@@ -116,5 +131,6 @@ static_assert(Got_XAW_defines);
 #define XtCMenuName "MenuName"
 #define XtCUnderline "Underline"
 #define XtCXftFont "XftFont"
+#define XtCMenuHighlightStyle "MenuHighlightStyle"
 
 #endif /* _SmeBSB_h */

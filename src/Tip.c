@@ -40,6 +40,7 @@
 #include <X11/StringDefs.h>
 #include <X11/Xos.h>
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/TipP.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>

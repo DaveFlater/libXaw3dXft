@@ -196,19 +196,6 @@ AllocBotShadowGC (Widget w)
 }
 
 static void
-AllocEraseGC (Widget w)
-{
-    Widget		parent = XtParent (w);
-    SmeThreeDObject	tdo = (SmeThreeDObject) w;
-    XtGCMask		valuemask;
-    XGCValues		myXGCV;
-
-    valuemask = GCForeground;
-    myXGCV.foreground = parent->core.background_pixel;
-    tdo->sme_threeD.erase_GC = XtGetGC(w, valuemask, &myXGCV);
-}
-
-static void
 AllocTopShadowPixmap (Widget new)
 {
     SmeThreeDObject	tdo = (SmeThreeDObject) new;
@@ -436,7 +423,6 @@ Initialize (Widget request, Widget new, ArgList args, Cardinal *num_args)
     }
     AllocTopShadowGC (new);
     AllocBotShadowGC (new);
-    AllocEraseGC (new);
 }
 
 static void
@@ -445,7 +431,6 @@ Destroy (Widget gw)
     SmeThreeDObject w = (SmeThreeDObject) gw;
     XtReleaseGC (gw, w->sme_threeD.top_shadow_GC);
     XtReleaseGC (gw, w->sme_threeD.bot_shadow_GC);
-    XtReleaseGC (gw, w->sme_threeD.erase_GC);
     if (w->sme_threeD.top_shadow_pxmap)
 	XFreePixmap (XtDisplayOfObject (gw), w->sme_threeD.top_shadow_pxmap);
     if (w->sme_threeD.bot_shadow_pxmap)
@@ -538,75 +523,73 @@ SetValues (Widget gcurrent, Widget grequest, Widget gnew, ArgList args, Cardinal
     return (redisplay);
 }
 
-static void
-_XawSme3dDrawShadows(Widget gw)
-{
-    // 2026-06-29
-    // This is the *third* shadow-drawing function after _Xaw3dDrawShadows
-    // and _ShadowSurroundedBox in ThreeD.c.  This one was broken.  Complete
-    // replacement based on _ShadowSurroundedBox.
+static void _XawSme3dDrawShadows(Widget gw) {
+  // 2026-06-29
+  // This is the *third* shadow-drawing function after _Xaw3dDrawShadows
+  // and _ShadowSurroundedBox in ThreeD.c.  This one was broken.  Complete
+  // replacement based on _ShadowSurroundedBox.
 
-    SmeThreeDObject tdo = (SmeThreeDObject) gw;
-    Dimension s = tdo->sme_threeD.shadow_width;
+  SmeThreeDObject tdo = (SmeThreeDObject)gw;
+  Dimension s = tdo->sme_threeD.shadow_width;
 
-    if (s > 0 && XtIsRealized(gw))
-    {
-	Dimension  w = tdo->rectangle.width,
-	           h = tdo->rectangle.height,
-	         wms = w - s,
-	         hms = h - s,
-	          sm = (s > 1 ? s / 2 : 1),
-	        wmsm = w - sm,
-	        hmsm = h - sm;
-	Position  x0 = tdo->rectangle.x,
-	          y0 = tdo->rectangle.y,
-	          x1 = x0 + w,
-	          y1 = y0 + h;
-	Display	*dpy = XtDisplayOfObject(gw);
-	Window	 win = XtWindowOfObject(gw);
-	GC	 top, bot;
-	XPoint   pt[6];
+  if (s > 0 && XtIsRealized(gw)) {
+    Display *dpy = XtDisplayOfObject(gw);
+    Window   win = XtWindowOfObject(gw);
+    Dimension  w = tdo->rectangle.width,
+	       h = tdo->rectangle.height,
+	     wms = w - s,
+             hms = h - s;
+    Position  x0 = tdo->rectangle.x,
+              y0 = tdo->rectangle.y;
 
-	if (tdo->sme_threeD.shadowed)
-	{
-	    top = tdo->sme_threeD.top_shadow_GC;
-	    bot = tdo->sme_threeD.bot_shadow_GC;
-	}
-	else
-	    top = bot = tdo->sme_threeD.erase_GC;
+    if (!tdo->sme_threeD.shadowed) {
+      // Painting with bg color doesn't restore the background pixmap.
+      // This does.
+      (void)XClearArea(dpy, win, x0, y0,     w, s, False); // top
+      (void)XClearArea(dpy, win, x0, y0+hms, w, s, False); // bottom
+      (void)XClearArea(dpy, win, x0,     y0+s, s, h-2*s, False); // left
+      (void)XClearArea(dpy, win, x0+wms, y0+s, s, h-2*s, False); // right
+    } else {
+      Dimension sm = (s > 1 ? s / 2 : 1),
+	      wmsm = w - sm,
+	      hmsm = h - sm;
+      GC top = tdo->sme_threeD.top_shadow_GC;
+      GC bot = tdo->sme_threeD.bot_shadow_GC;
+      XPoint pt[6];
 
-	// The rest is identical to _ShadowSurroundedBox.
+      // The rest is identical to _ShadowSurroundedBox.
 
-	/* top-left shadow */
-	pt[0].x = x0;		pt[0].y = y0 + h;
-	pt[1].x = x0;		pt[1].y = y0;
-	pt[2].x = x0 + w;	pt[2].y = y0;
-	pt[3].x = x0 + wmsm;	pt[3].y = y0 + sm - 1;
-	pt[4].x = x0 + sm;	pt[4].y = y0 + sm;
-	pt[5].x = x0 + sm - 1;	pt[5].y = y0 + hmsm;
-	XFillPolygon(dpy, win, top, pt, 6, Complex, CoordModeOrigin);
-	if (s > 1)
-	{
-	    pt[0].x = x0 + s - 1;	pt[0].y = y0 + hms;
-	    pt[1].x = x0 + s;		pt[1].y = y0 + s;
-	    pt[2].x = x0 + wms;		pt[2].y = y0 + s - 1;
-	    XFillPolygon(dpy, win, top, pt, 6, Complex, CoordModeOrigin);
-	}
+      /* top-left shadow */
+      pt[0].x = x0;		pt[0].y = y0 + h;
+      pt[1].x = x0;		pt[1].y = y0;
+      pt[2].x = x0 + w;	pt[2].y = y0;
+      pt[3].x = x0 + wmsm;	pt[3].y = y0 + sm - 1;
+      pt[4].x = x0 + sm;	pt[4].y = y0 + sm;
+      pt[5].x = x0 + sm - 1;	pt[5].y = y0 + hmsm;
+      XFillPolygon(dpy, win, top, pt, 6, Complex, CoordModeOrigin);
+      if (s > 1)
+      {
+	  pt[0].x = x0 + s - 1;	pt[0].y = y0 + hms;
+	  pt[1].x = x0 + s;		pt[1].y = y0 + s;
+	  pt[2].x = x0 + wms;		pt[2].y = y0 + s - 1;
+	  XFillPolygon(dpy, win, top, pt, 6, Complex, CoordModeOrigin);
+      }
 
-	/* bottom-right shadow */
-	pt[0].x = x0;		pt[0].y = y0 + h;
-	pt[1].x = x0 + w;	pt[1].y = y0 + h;
-	pt[2].x = x0 + w;	pt[2].y = y0;
-	pt[3].x = x0 + wmsm;	pt[3].y = y0 + sm - 1;
-	pt[4].x = x0 + wmsm;	pt[4].y = y0 + hmsm;
-	pt[5].x = x0 + sm - 1;	pt[5].y = y0 + hmsm;
-	XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
-	if (s > 1)
-	{
-	    pt[0].x = x0 + s - 1;	pt[0].y = y0 + hms;
-	    pt[1].x = x0 + wms;		pt[1].y = y0 + hms;
-	    pt[2].x = x0 + wms;		pt[2].y = y0 + s - 1;
-	    XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
-	}
+      /* bottom-right shadow */
+      pt[0].x = x0;		pt[0].y = y0 + h;
+      pt[1].x = x0 + w;	pt[1].y = y0 + h;
+      pt[2].x = x0 + w;	pt[2].y = y0;
+      pt[3].x = x0 + wmsm;	pt[3].y = y0 + sm - 1;
+      pt[4].x = x0 + wmsm;	pt[4].y = y0 + hmsm;
+      pt[5].x = x0 + sm - 1;	pt[5].y = y0 + hmsm;
+      XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
+      if (s > 1)
+      {
+	  pt[0].x = x0 + s - 1;	pt[0].y = y0 + hms;
+	  pt[1].x = x0 + wms;		pt[1].y = y0 + hms;
+	  pt[2].x = x0 + wms;		pt[2].y = y0 + s - 1;
+	  XFillPolygon(dpy, win, bot, pt, 6, Complex, CoordModeOrigin);
+      }
     }
+  }
 }

@@ -62,7 +62,8 @@ SOFTWARE.
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/Command.h>
 #include <X11/Xaw3dXft/LabelP.h>
-#include <X11/Xaw3dXft/AnyString.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Drawing.h>
 #include <stdio.h>
@@ -197,61 +198,29 @@ ClassInitialize(void)
  * Calculate width and height of displayed text in pixels
  */
 
-static void
-SetTextWidthAndHeight(LabelWidget lw)
-{
-    if (lw->label.pixmap != None) {
-	Window root;
-	int x, y;
-	unsigned int width, height, bw;
-
-        // label.depth is not core.depth
-	if (XGetGeometry(XtDisplay(lw), lw->label.pixmap, &root, &x, &y,
-			 &width, &height, &bw, &lw->label.depth)) {
-	    lw->label.label_height = height; // uint32 to uint16
-	    lw->label.label_width = width;   // uint32 to uint16
-	    return;
-	} else fprintf(stderr,
+static void SetTextWidthAndHeight(LabelWidget lw) {
+  if (lw->label.pixmap != None) {
+    // label.depth is not core.depth
+    if (Xaw3dXftGetDrawableDimensions(XtDisplay(lw), lw->label.pixmap,
+    &lw->label.label_width, &lw->label.label_height, &lw->label.depth))
+      return;
+    fprintf(stderr,
 "libXaw3dXft:  XGetGeometry failed in SetTextWidthAndHeight of Label.  There\n"
 "might be something wrong with the bitmap resource of a Label widget.\n");
-        // Then we just fall through and use the text dimensions‽
-    }
+    // Then we just fall through and use the text dimensions‽
+  }
 
-    if (lw->label.label == NULL)
-      lw->label.label_height = lw->label.label_width = 0;
-    else
-      Xaw3dXftSizeAnyString(XtDisplay(lw), lw->label.font, labelFontSet(lw),
-	lw->label.xftfont, international(lw), lw->label.encoding,
-	lw->label.label, &lw->label.label_width, &lw->label.label_height);
+  if (lw->label.label == NULL)
+    lw->label.label_height = lw->label.label_width = 0;
+  else
+    Xaw3dXftSizeAnyString(XtDisplay(lw), lw->label.font, labelFontSet(lw),
+      lw->label.xftfont, international(lw), lw->label.encoding,
+      lw->label.label, &lw->label.label_width, &lw->label.label_height);
 }
 
-static void
-GetnormalGC(LabelWidget lw)
-{
-    // There's no slack given here for the plain old font to be null when
-    // you're using a fontSet or xftFont.  It won't *be* null unless someone
-    // explicitly nulls it out.
-    assert(lw->label.font);
-
-    XGCValues values;
-    values.foreground	      = lw->label.foreground;
-    values.font		      = lw->label.font->fid;
-    values.graphics_exposures = False;
-
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        /* Since Xmb/wcDrawString eats the font, I must use XtAllocateGC. */
-        // That means:  Xmb/wcDrawString does XSetFont on the GC.
-        lw->label.normal_GC = XtAllocateGC(
-                (Widget)lw, 0,
-	(unsigned) GCForeground | GCGraphicsExposures,
-	&values, GCFont, 0 );
-    else
-#endif
-        lw->label.normal_GC = XtGetGC(
-	(Widget)lw,
-	(unsigned) GCForeground | GCFont | GCGraphicsExposures,
-	&values);
+static void GetnormalGC (LabelWidget lw) {
+  lw->label.normal_GC = Xaw3dXftGetTextGC((Widget)lw, lw->label.foreground,
+					  lw->label.font, international(lw));
 }
 
 static void
@@ -285,30 +254,15 @@ GetgrayGC(LabelWidget lw)
 // Given:    left_bitmap
 // Compute:  lbm_width, lbm_height
 // left_bitmap is ignored when pixmap is present.
-static void
-get_lbm_dimensions (LabelWidget lw)
-{
-    Window root;
-    int x, y;
-    unsigned int bw;
-
-    lw->label.lbm_width = lw->label.lbm_height = 0;
-    if (!lw->label.pixmap && lw->label.left_bitmap) {
-        // label.depth is not core.depth
-	Status status = XGetGeometry(XtDisplay(lw),
-				     lw->label.left_bitmap,
-				     &root, &x, &y,
-				     &lw->label.lbm_width,
-				     &lw->label.lbm_height,
-				     &bw, &lw->label.depth);
-	if (!status) {
-	    fprintf(stderr,
+static void get_lbm_dimensions (LabelWidget lw) {
+  lw->label.lbm_width = lw->label.lbm_height = 0;
+  if (!lw->label.pixmap && lw->label.left_bitmap)
+    // label.depth is not core.depth
+    if (!Xaw3dXftGetDrawableDimensions(XtDisplay(lw), lw->label.left_bitmap,
+    &lw->label.lbm_width, &lw->label.lbm_height, &lw->label.depth))
+      fprintf(stderr,
 "libXaw3dXft:  XGetGeometry failed in get_lbm_dimensions of Label.  There\n"
 "might be something wrong with the leftBitmap resource of a Label widget.\n");
-	    // The following suppresses the left bitmap.
-	    lw->label.lbm_width = lw->label.lbm_height = 0;
-	}
-    }
 }
 
 static void
@@ -427,20 +381,10 @@ Redisplay(Widget gw, XEvent *event, Region region)
 		    pm = w->label.left_stippled;
 	    }
 #endif
-
-	    if (w->label.depth == 1)
-		XCopyPlane(XtDisplay(gw), pm, XtWindow(gw), gc, 0, 0,
-			   w->label.lbm_width, w->label.lbm_height,
-			   (int) w->label.internal_width +
-				 w->threeD.shadow_width,
-			   ((int)w->core.height - (int)w->label.lbm_height)/2,
-			   (unsigned long) 1L);
-	    else
-		XCopyArea(XtDisplay(gw), pm, XtWindow(gw), gc, 0, 0,
-			  w->label.lbm_width, w->label.lbm_height,
-			  (int) w->label.internal_width +
-				w->threeD.shadow_width,
-			  ((int)w->core.height - (int)w->label.lbm_height)/2);
+	    Xaw3dXftCopy(XtDisplay(gw), pm, XtWindow(gw), gc,
+	      w->label.lbm_width, w->label.lbm_height, w->label.depth,
+	      w->label.internal_width + w->threeD.shadow_width,
+	      ((Position)w->core.height - (Position)w->label.lbm_height)/2);
 	}
 
 	/* draw label text */
@@ -464,16 +408,9 @@ Redisplay(Widget gw, XEvent *event, Region region)
 		pm = w->label.stippled;
 	}
 #endif
-
-	if (w->label.depth == 1)
-	    XCopyPlane(XtDisplay(gw), pm, XtWindow(gw), gc, 0, 0,
-		       w->label.label_width, w->label.label_height,
-		       w->label.label_x, w->label.label_y,
-		       1L);
-	else
-	    XCopyArea(XtDisplay(gw), pm, XtWindow(gw), gc, 0, 0,
-		      w->label.label_width, w->label.label_height,
-		      w->label.label_x, w->label.label_y);
+	Xaw3dXftCopy(XtDisplay(gw), pm, XtWindow(gw), gc,
+	  w->label.label_width, w->label.label_height, w->label.depth,
+	  w->label.label_x, w->label.label_y);
     }
 
     /*

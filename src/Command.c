@@ -66,7 +66,8 @@ DEC is not to blame for what you find here now. — DWF
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/CommandP.h>
-#include <X11/Xaw3dXft/AnyString.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/extensions/shape.h>
 

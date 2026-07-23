@@ -22,13 +22,16 @@ Next release, v2.0  Dave Flater
 
   - Retired global struct Xaw3dXftData.
   border_hack:  deleted (necessary workaround always on)
-  button_dashed:  use resource Command.highlightDashed
+  button_dashed:  use Command.highlightDashed resource
   button_inverse:  deleted (button presses always get inverse)
-  default_font, default_fontname:  use resource xftFont
-  encoding:  use resource encoding
+  default_font, default_fontname:  use xftFont resource
+  encoding:  use encoding resource
+  hilit_color:  use highlight resource
   insensitive_twist:  deleted (all insensitive widgets are stippled)
+  menu_spacing:  use SmeBSB.vertSpace resource
+  no_hilit_reverse:  use highlightStyle resource
   string_use_pixmap:  deleted (workaround not needed anymore)
-  tip_background_color:  use resource *Tip.background
+  tip_background_color:  use Tip.background resource
 
   - Changed signatures of semi-private functions.
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object

@@ -46,6 +46,7 @@ SOFTWARE.
 #include <X11/Xaw3dXft/AsciiTextP.h>
 #include <X11/Xaw3dXft/ScrollbarP.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 
 // Make sure we got the right header file.
 static_assert(LIBXAW3DXFT_VERSION_MAJOR == @LIBXAW3DXFT_VERSION_MAJOR@);
@@ -68,8 +69,6 @@ const char libXaw3dXft_version[] = @LIBXAW3DXFT_VERSION_STR@;
 // For strings | grep -F 'libXaw3dXft version'
 const char libXaw3dXft_version_long[] =
   "libXaw3dXft version " @LIBXAW3DXFT_VERSION_STR@;
-
-#define XAW3DXFT_DEFAULTFONT "Liberation-9"
 
 #ifndef Pixel
 typedef unsigned long Pixel;
@@ -127,64 +126,6 @@ void Xaw3dXftSetInsensitiveTwist(char *value)
     if (strlen(value)<7) return;
     for (i=1; i<=3; i++)
         _Xaw3dXft->insensitive_twist[i] = (hexa(value[2*i-1])*16+hexa(value[2*i]))*257;
-}
-
-/*
-  Calling XftFontOpen* repeatedly is *amazingly* slow.  This was hidden by
-  Xaw3dXft 1.x because 99.99% of calls just returned the previously opened
-  _Xaw3dXft->default_font.  To achieve comparable performance with every
-  Label looking up the font by name, cache all Xft fonts by their
-  non-canonicalized names and never call XftFontClose.
-*/
-typedef struct _xftcache {
-  const char *name;
-  XftFont *xftFont;
-  struct _xftcache *next;
-} xftcache;
-
-static xftcache *xftFontCache = NULL;
-
-static void cacheNewFont (const char *name, XftFont *xftFont) {
-  xftcache *new = malloc(sizeof(xftcache));
-  assert(new);
-  new->name = strdup(name);
-  assert(new->name);
-  new->xftFont = xftFont;
-  new->next = xftFontCache;
-  xftFontCache = new;
-}
-
-static XftFont *findOrGetFont (Widget object, const char *name) {
-  for (xftcache *l = xftFontCache; l; l = l->next)
-    if (!strcmp(name, l->name))
-      return l->xftFont;
-  Display *dpy = XtDisplayOfObject(object);
-  int scrnum = XScreenNumberOfScreen(XtScreenOfObject(object));
-  XftFont *xftFont;
-  if (strncasecmp(name, "core:",5))
-    xftFont = XftFontOpenName(dpy, scrnum, name);
-  else
-    xftFont = XftFontOpenXlfd(dpy, scrnum, name+5);
-  if (!xftFont) {
-    // XftFontOpen never returns null.  It just silently substitutes a
-    // different font.  But if the impossible happens, this message will be
-    // more helpful than a crash.
-    fprintf(stderr, "Xft font not found: %s\n", name);
-    exit(EX_UNAVAILABLE);
-  }
-  cacheNewFont(name, xftFont);
-  return xftFont;
-}
-
-XftFont *Xaw3dXftGetFont (Widget object, char *name) {
-  if (name)
-    return findOrGetFont(object, name);
-  if (!_Xaw3dXft->default_font) {
-    if (!_Xaw3dXft->default_fontname)
-      _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;
-    _Xaw3dXft->default_font = findOrGetFont(object, _Xaw3dXft->default_fontname);
-  }
-  return _Xaw3dXft->default_font;
 }
 
 int
