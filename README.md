@@ -543,6 +543,11 @@ text_fg_alternate_color is used in Xaw3dXftDrawString and then reset to -1.
 If encoding is 0, the text_fg_alternate_color value is discarded and reset to
 -1 with no effect.
 
+### Repeater
+
+The flash feature of the Repeater widget is disabled.  It does not work in
+Xaw and it has no reasonable implementation that works on a modern X server.
+
 ### Scrollbar
 
 Added resource:

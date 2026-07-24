@@ -172,20 +172,12 @@ tic (XtPointer client_data, XtIntervalId *id)
     RepeaterWidget rw = (RepeaterWidget) client_data;
 
     rw->repeater.timer = 0;		/* timer is removed */
-    if (rw->repeater.flash) {
-      // This attempt to make the button flash doesn't work and can't work on
-      // a modern X server.  Xaw has cleaner code but it still doesn't work.
-	XtExposeProc expose;
-	expose = repeaterWidgetClass->core_class.superclass->core_class.expose;
-	XClearWindow (XtDisplay((Widget) rw), XtWindow((Widget) rw));
-	rw->command.set = FALSE;
-	(*expose) ((Widget) rw, (XEvent *) NULL, (Region) NULL);
-	XClearWindow (XtDisplay((Widget) rw), XtWindow((Widget) rw));
-	rw->command.set = TRUE;
-	(*expose) ((Widget) rw, (XEvent *) NULL, (Region) NULL);
-    }
-    DO_CALLBACK (rw);
 
+    // Button flash has no reasonable implementation that works on a modern X
+    // server.  Useless code deleted.
+    // if (rw->repeater.flash)
+
+    DO_CALLBACK (rw);
     rw->repeater.timer = ADD_TIMEOUT (rw, rw->repeater.next_delay);
 
 					/* decrement delay time, but clamp */
