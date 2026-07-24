@@ -173,6 +173,8 @@ tic (XtPointer client_data, XtIntervalId *id)
 
     rw->repeater.timer = 0;		/* timer is removed */
     if (rw->repeater.flash) {
+      // This attempt to make the button flash doesn't work and can't work on
+      // a modern X server.  Xaw has cleaner code but it still doesn't work.
 	XtExposeProc expose;
 	expose = repeaterWidgetClass->core_class.superclass->core_class.expose;
 	XClearWindow (XtDisplay((Widget) rw), XtWindow((Widget) rw));
