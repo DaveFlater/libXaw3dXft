@@ -118,8 +118,11 @@ typedef struct {
     int		     shape_style;
     Dimension	     corner_round;
 
-    /* private state */
+    // This "private" state of Command is made public by Toggle through its
+    // state resource.
     Boolean set;            // click/unclick condition
+
+    /* private state */
     XtCommandHighlight highlighted; // mouseover condition
     GC rev_GC;              // foreground = bg, font
     GC hl_solid_GC;         // fg, line width for highlight

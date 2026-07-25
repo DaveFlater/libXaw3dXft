@@ -65,16 +65,12 @@ extern void Xaw3dXftDrawAnyStringLen (
   // One of the following will apply.
   XFontStruct *font, void *fontSet, XftFont *xftFont,
 
-  // Pass XtIsSensitive(widget) and international(widget) or menuIntl(widget)
-  Boolean sensitive,
+  // Pass international(widget) or menuIntl(widget)
   Boolean international,
 
   // If xftFont is not null:
   //   Background is cleared to bg
   //   Text is drawn with fg
-  //   If !sensitive, stipple is applied using stipple_gc
-  //   Setting fg.color.alpha has an effect, but it's not what you'd want.
-  //   (Transparency is not relative to the specified bg.)
   // else if international:
   //   fontSet must be valid
   //   text_gc must have modifiable font
@@ -85,7 +81,7 @@ extern void Xaw3dXftDrawAnyStringLen (
   //   Foreground and font must be set in text_gc
   //   Background is not cleared
   //   Text is drawn with text_gc
-  GC text_gc, GC stipple_gc, XftColor *fg, XftColor *bg,
+  GC text_gc, XftColor *fg, XftColor *bg,
 
   Position x, Position y,
 
@@ -100,10 +96,8 @@ extern void Xaw3dXftDrawAnyStringLen (
 // Ibid. but using the null teminator to determine num_bytes
 extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
   Colormap cmap, Window window, XFontStruct *font, void *fontSet,
-  XftFont *xftFont, Boolean sensitive, Boolean international, GC text_gc,
-  GC stipple_gc, XftColor *fg, XftColor *bg, Position x, Position y,
-  XawTextEncoding encoding, void *text);
-
+  XftFont *xftFont, Boolean international, GC text_gc, XftColor *fg,
+  XftColor *bg, Position x, Position y, XawTextEncoding encoding, void *text);
 
 // Genericized TextWidth/TextHeight with specified length (num_bytes)
 extern void Xaw3dXftSizeAnyStringLen (

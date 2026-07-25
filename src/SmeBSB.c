@@ -409,8 +409,8 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg,
   Position text_x, text_y;
   GetTextPosition(ent, &text_x, &text_y);
   Xaw3dXftDrawAnyString(display, visual, cmap, window, ent->sme_bsb.font,
-    menuFontSet(ent), ent->sme_bsb.xftfont, True, menuIntl(ent), gc, None,
-    xfg, xbg, text_x, text_y, ent->sme_bsb.encoding, ent->sme_bsb.label);
+    menuFontSet(ent), ent->sme_bsb.xftfont, menuIntl(ent), gc, xfg, xbg,
+    text_x, text_y, ent->sme_bsb.encoding, ent->sme_bsb.label);
   if (ent->sme_bsb.underline >= 0) {
     Position x1, x2, y;
     if (Xaw3dXftLocateUnderline(display, ent->sme_bsb.font, menuFontSet(ent),

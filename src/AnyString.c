@@ -187,9 +187,7 @@ static void drawOneXftLine (
   XawTextEncoding encoding,
   void *text,
   Cardinal num_bytes,
-  XftDraw *xftDraw,
-  Boolean sensitive,
-  GC stipple_gc
+  XftDraw *xftDraw
 ) {
   if (num_bytes) {
     // Avoid doing convert16 twice by passing the already-converted string to
@@ -232,10 +230,6 @@ static void drawOneXftLine (
     case XawTextEncodingUTF8:
       XftDrawStringUtf8(xftDraw, fg, xftFont, x, yadj, text, num_bytes);
     }
-
-    // Apply the stipple.
-    if (!sensitive)
-      XFillRectangle(display, window, stipple_gc, x, y, width, xftFont->height);
   }
 }
 
@@ -313,16 +307,14 @@ static void drawOneLine (
 void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
   XFontStruct *font, void *fontSet, XftFont *xftFont,
-  Boolean sensitive,
   Boolean international,
-  GC text_gc, GC stipple_gc, XftColor *fg, XftColor *bg,
+  GC text_gc, XftColor *fg, XftColor *bg,
   Position x, Position y,
   XawTextEncoding encoding,
   void *text,
   Cardinal num_bytes
 ) {
   if (num_bytes == 0) return;
-  assert(!xftFont || sensitive || stipple_gc);
   assert(xftFont || text_gc);
 
   // The Boolean international resource is from Xaw.  The docs say:  when
@@ -359,7 +351,7 @@ void Xaw3dXftDrawAnyStringLen (
     // In-loop switch
     if (xftFont) {
       drawOneXftLine(display, window, xftFont, fg, bg, x, y, encoding,
-	text, line_bytes, xftDraw, sensitive, stipple_gc);
+	text, line_bytes, xftDraw);
       y += xftFont->height;
     } else
 #ifdef XAW_INTERNATIONALIZATION
@@ -387,7 +379,7 @@ void Xaw3dXftDrawAnyStringLen (
   // Post-loop switch
   if (xftFont) {
     drawOneXftLine(display, window, xftFont, fg, bg, x, y, encoding,
-      text, num_bytes, xftDraw, sensitive, stipple_gc);
+      text, num_bytes, xftDraw);
     XftDrawDestroy(xftDraw);
   } else
 #ifdef XAW_INTERNATIONALIZATION
@@ -400,14 +392,13 @@ void Xaw3dXftDrawAnyStringLen (
 }
 
 // Ibid. but using the null teminator to determine num_bytes
-void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
-  Colormap cmap, Window window, XFontStruct *font, void *fontSet,
-  XftFont *xftFont, Boolean sensitive, Boolean international, GC text_gc,
-  GC stipple_gc, XftColor *fg, XftColor *bg, Position x, Position y,
-  XawTextEncoding encoding, void *text) {
+void Xaw3dXftDrawAnyString (Display *display, Visual *visual, Colormap cmap,
+  Window window, XFontStruct *font, void *fontSet, XftFont *xftFont,
+  Boolean international, GC text_gc, XftColor *fg, XftColor *bg, Position x,
+  Position y, XawTextEncoding encoding, void *text) {
   Xaw3dXftDrawAnyStringLen(display, visual, cmap, window, font, fontSet,
-    xftFont, sensitive, international, text_gc, stipple_gc, fg, bg, x, y,
-    encoding, text, AnyStrlen(encoding, text));
+    xftFont, international, text_gc, fg, bg, x, y, encoding, text,
+    AnyStrlen(encoding, text));
 }
 
 #ifdef XAW_INTERNATIONALIZATION

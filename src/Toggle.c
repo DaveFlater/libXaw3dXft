@@ -185,7 +185,7 @@ ClassInit(void)
 		     parentCvtArgs, XtNumber(parentCvtArgs), XtCacheNone,
 		     (XtDestructor)NULL);
 /*
- * Find the set and unset actions in the command widget's action table.
+ * Find the set and unset actions in the Command widget's action table.
  */
 
   XtGetActionList(commandWidgetClass, &actions, &num_actions);
@@ -247,25 +247,25 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  *
  ************************************************************/
 
+// The Set method for Toggle
 static void
 ToggleSet(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-    ToggleWidgetClass class = (ToggleWidgetClass) w->core.widget_class;
-
-    TurnOffRadioSiblings(w);
-    class->toggle_class.Set(w, event, NULL, 0);
+  ToggleWidgetClass class = (ToggleWidgetClass) w->core.widget_class;
+  TurnOffRadioSiblings(w);
+  class->toggle_class.Set(w, event, NULL, 0); // Call Command's Set
 }
 
+// Toggle set/unset state
 static void
 Toggle(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   ToggleWidget tw = (ToggleWidget)w;
   ToggleWidgetClass class = (ToggleWidgetClass) w->core.widget_class;
-
   if (tw->command.set)
-    class->toggle_class.Unset(w, event, NULL, 0);
+    class->toggle_class.Unset(w, event, NULL, 0); // Call Command's Unset
   else
-    ToggleSet(w, event, params, num_params);
+    ToggleSet(w, event, params, num_params); // Call the Set method for Toggle
 }
 
 static void Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)

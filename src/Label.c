@@ -336,10 +336,9 @@ static void Redisplay (Widget gw, XEvent *event, Region region) {
     /* draw label text */
     if (w->label.label)
       Xaw3dXftDrawAnyString(display, VisualOf(w), w->core.colormap, window,
-	w->label.font, labelFontSet(w), w->label.xftfont, True,
-	international(w), gc, None, &w->label.xftfg, &w->label.xftbg,
-        w->label.label_x, w->label.label_y, w->label.encoding,
-        w->label.label);
+	w->label.font, labelFontSet(w), w->label.xftfont, international(w), gc,
+	&w->label.xftfg, &w->label.xftbg, w->label.label_x, w->label.label_y,
+	w->label.encoding, w->label.label);
   } else // w->label.pixmap != None
     Xaw3dXftCopy(display, w->label.pixmap, window, gc,
 		 w->label.label_width, w->label.label_height, w->label.depth,

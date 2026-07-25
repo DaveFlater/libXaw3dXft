@@ -304,9 +304,11 @@ Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
     return;
   cw->command.set = True;
   if (XtIsRealized(w)) {
+    // If highlight needs to be cleared or if we are somehow changing state
+    // while insensitive, we have to do a complete Redisplay.
     if (cw->command.highlighted == HighlightWhenUnset &&
-	cw->command.highlight_thickness > 0)
-      Redisplay(w, event, NULL); // Clear the highlight
+	cw->command.highlight_thickness > 0 || !XtIsSensitive(w))
+      Redisplay(w, event, NULL);
     else {
       const Dimension s = cw->threeD.shadow_width;
       // Flip the entire contents
@@ -320,10 +322,9 @@ Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
 	  cw->label.xftfont != None)
 	Xaw3dXftDrawAnyString(XtDisplay(w), cw->label.visual,
 	  cw->core.colormap, XtWindow(w), cw->label.font, labelFontSet(cw),
-	  cw->label.xftfont, XtIsSensitive(w), international(cw),
-	  None, cw->command.inverse_stipple_GC,
-	  &cw->label.xftbg, &cw->label.xftfg, cw->label.label_x,
-	  cw->label.label_y, cw->label.encoding, cw->label.label);
+	  cw->label.xftfont, international(cw), None, &cw->label.xftbg,
+	  &cw->label.xftfg, cw->label.label_x, cw->label.label_y,
+	  cw->label.encoding, cw->label.label);
       // Flip the shadow
       CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
       (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cw->threeD.relief,
@@ -341,9 +342,11 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
     return;
   cw->command.set = False;
   if (XtIsRealized(w)) {
+    // If highlight needs to be applied or if we are somehow changing state
+    // while insensitive, we have to do a complete Redisplay.
     if (cw->command.highlighted == HighlightWhenUnset &&
-	cw->command.highlight_thickness > 0)
-      Redisplay(w, event, NULL); // Reapply the highlight
+	cw->command.highlight_thickness > 0 || !XtIsSensitive(w))
+      Redisplay(w, event, NULL);
     else {
       const Dimension s = cw->threeD.shadow_width;
       // Flip the entire contents
@@ -357,8 +360,7 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 	  cw->label.xftfont != None)
 	Xaw3dXftDrawAnyString(XtDisplay(w), cw->label.visual,
 	  cw->core.colormap, XtWindow(w), cw->label.font, labelFontSet(cw),
-	  cw->label.xftfont, XtIsSensitive(w), international(cw),
-	  None, cw->label.stipple_GC, &cw->label.xftfg,
+	  cw->label.xftfont, international(cw), None, &cw->label.xftfg,
 	  &cw->label.xftbg, cw->label.label_x, cw->label.label_y,
 	  cw->label.encoding, cw->label.label);
       // Flip the shadow
@@ -521,9 +523,9 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
       xbg = &cw->label.xftbg;
     }
     Xaw3dXftDrawAnyString(display, cw->label.visual, cw->core.colormap, window,
-      cw->label.font, labelFontSet(cw), cw->label.xftfont, True,
-      international(cw), gc, None, xfg, xbg, cw->label.label_x,
-      cw->label.label_y, cw->label.encoding, cw->label.label);
+      cw->label.font, labelFontSet(cw), cw->label.xftfont, international(cw),
+      gc, xfg, xbg, cw->label.label_x, cw->label.label_y, cw->label.encoding,
+      cw->label.label);
   }
 
   // Apply insensitive stipple
