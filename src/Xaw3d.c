@@ -1,5 +1,5 @@
 /*
- * Xaw3dP.c
+ * Xaw3d.c
  *
  * Global functions that don't really belong anywhere else.
  */
@@ -26,8 +26,6 @@ RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
 CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 *********************************************************************/
-
-#include <assert.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

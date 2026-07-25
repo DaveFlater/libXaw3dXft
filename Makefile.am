@@ -63,7 +63,7 @@ libXaw3dXft_la_SOURCES = \
   src/Tree.c \
   src/Vendor.c \
   src/Viewport.c \
-  src/Xaw3dP.c \
+  src/Xaw3d.c \
   src/XawInit.c \
   src/laygram.y \
   src/laylex.l \
