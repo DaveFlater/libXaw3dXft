@@ -599,7 +599,8 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
                new_ent = (SmeBSBObject)new;
   Boolean ret_val = False;
 
-  // Code as incoming from Xaw ignored changes to width and height.  ?
+  // Code as incoming from Xaw ignored changes to width and height.  That is
+  // consistent with Xt docs, but we have no resize procedure, either.
 
   // The default lazy policy is to recalculate everything and repaint.
   // rectangle.sensitive:  ancestor_sensitive can't change here.
