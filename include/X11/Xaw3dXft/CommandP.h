@@ -129,6 +129,7 @@ typedef struct {
     GC hl_dashed_GC;        // fg, line width, line style = LineOnOffDash
     GC xor_GC;              // function = GXxor by fg ^ bg
     GC inverse_stipple_GC;  // FillStippled with fg
+    XftColor xftbg;
 
     /* Save values that are overridden when shape is not rectangle. */
     Dimension orig_shadow_width;

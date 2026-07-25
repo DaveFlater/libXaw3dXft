@@ -241,7 +241,6 @@ static void get_or_change_GCs (LabelWidget lw) {
   Visual *visual = VisualOf(lw);
   Colormap cmap = lw->core.colormap;
   Xaw3dXftGetXftColor(display, visual, cmap, fg, &lw->label.xftfg);
-  Xaw3dXftGetXftColor(display, visual, cmap, bg, &lw->label.xftbg);
 }
 
 // Given:    left_bitmap

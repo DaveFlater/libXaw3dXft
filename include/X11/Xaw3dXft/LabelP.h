@@ -110,7 +110,6 @@ typedef struct {
     XftFont     *xftfont;
     Visual      *visual;
     XftColor    xftfg;
-    XftColor    xftbg;
 } LabelPart;
 
 

@@ -250,6 +250,12 @@ static void get_or_change_GCs (CommandWidget cw) {
   cw->command.hl_dashed_GC = XtGetGC((Widget)cw,
     GCForeground|GCLineStyle|GCLineWidth|GCDashList|GCGraphicsExposures,
 				  &values);
+
+  // XftColors
+  Display *display = XtDisplay(cw);
+  Visual *visual = cw->label.visual;
+  Colormap cmap = cw->core.colormap;
+  Xaw3dXftGetXftColor(display, visual, cmap, bg, &cw->command.xftbg);
 }
 
 static void
@@ -469,7 +475,7 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
     XftColor *xfg;
     if (set) {
       gc = cw->command.rev_GC;
-      xfg = &cw->label.xftbg;
+      xfg = &cw->command.xftbg;
     } else {
       gc = cw->label.normal_GC;
       xfg = &cw->label.xftfg;
