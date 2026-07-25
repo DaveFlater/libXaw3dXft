@@ -398,8 +398,7 @@ static void GetBitmapDimensions (Widget w, Boolean is_left) {
 }
 
 // Used in Redisplay, Highlight, and Unhighlight
-static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg,
-				  XftColor *xbg) {
+static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
   SmeBSBObject ent = (SmeBSBObject)w;
   Display *display = XtDisplayOfObject(w);
   Window window = XtWindowOfObject(w);
@@ -409,8 +408,8 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg,
   Position text_x, text_y;
   GetTextPosition(ent, &text_x, &text_y);
   Xaw3dXftDrawAnyString(display, visual, cmap, window, ent->sme_bsb.font,
-    menuFontSet(ent), ent->sme_bsb.xftfont, menuIntl(ent), gc, xfg, xbg,
-    text_x, text_y, ent->sme_bsb.encoding, ent->sme_bsb.label);
+    menuFontSet(ent), ent->sme_bsb.xftfont, menuIntl(ent), gc, xfg, text_x,
+    text_y, ent->sme_bsb.encoding, ent->sme_bsb.label);
   if (ent->sme_bsb.underline >= 0) {
     Position x1, x2, y;
     if (Xaw3dXftLocateUnderline(display, ent->sme_bsb.font, menuFontSet(ent),
@@ -556,24 +555,16 @@ static void Redisplay (Widget w, XEvent *event, Region region) {
   // Draw label text
   if (ent->sme_bsb.label) {
     GC gc;
-    XftColor *xfg, *xbg;
+    XftColor *xfg;
     if (sensitive && mouseover &&
-	ent->sme_bsb.highlightStyle != MenuHighlightShadow) {
-      if (ent->sme_bsb.highlightStyle == MenuHighlightReverse) {
-	gc = ent->sme_bsb.rev_GC;
-	xfg = &ent->sme_bsb.xftbg;
-	xbg = &ent->sme_bsb.xftfg;
-      } else {     // MenuHighlightBackground
-	gc = ent->sme_bsb.normal_GC;
-	xfg = &ent->sme_bsb.xftfg;
-	xbg = &ent->sme_bsb.xfthl;
-      }
+	ent->sme_bsb.highlightStyle == MenuHighlightReverse) {
+      gc = ent->sme_bsb.rev_GC;
+      xfg = &ent->sme_bsb.xftbg;
     } else {
       gc = ent->sme_bsb.normal_GC;
       xfg = &ent->sme_bsb.xftfg;
-      xbg = &ent->sme_bsb.xftbg;
     }
-    DrawTextAndUnderline(w, gc, xfg, xbg);
+    DrawTextAndUnderline(w, gc, xfg);
   }
 
   // Apply insensitive stipple (never on top of reverse color or highlight)
@@ -754,6 +745,13 @@ static void Highlight (Widget w) {
     Window window = XtWindowOfObject(w);
     GC gc = (ent->sme_bsb.highlightStyle == MenuHighlightReverse ?
 	     ent->sme_bsb.xor_fgbg_GC : ent->sme_bsb.xor_bghl_GC);
+    // Anti-aliased text must always be drawn on a clean background.
+    if (ent->sme_bsb.xftfont) {
+      Position text_x, text_y;
+      GetTextPosition(ent, &text_x, &text_y);
+      XClearArea(display, window, text_x, text_y, ent->sme_bsb.label_width,
+		 ent->sme_bsb.label_height, False);
+    }
     XFillRectangle(display, window, gc,
 		   ent->rectangle.x, ent->rectangle.y,
 		   ent->rectangle.width, ent->rectangle.height);
@@ -762,17 +760,15 @@ static void Highlight (Widget w) {
     // if anti-aliased.
     if (ent->sme_bsb.highlightStyle == MenuHighlightBackground ||
 	ent->sme_bsb.xftfont) {
-      XftColor *xfg, *xbg;
+      XftColor *xfg;
       if (ent->sme_bsb.highlightStyle == MenuHighlightReverse) {
 	gc = ent->sme_bsb.rev_GC;   // unused
 	xfg = &ent->sme_bsb.xftbg;
-	xbg = &ent->sme_bsb.xftfg;
       } else {     // MenuHighlightBackground
 	gc = ent->sme_bsb.normal_GC;
 	xfg = &ent->sme_bsb.xftfg;
-	xbg = &ent->sme_bsb.xfthl;
       }
-      DrawTextAndUnderline(w, gc, xfg, xbg);
+      DrawTextAndUnderline(w, gc, xfg);
     }
   }
 }
@@ -798,11 +794,17 @@ static void Unhighlight (Widget w) {
 		   ent->rectangle.x, ent->rectangle.y,
 		   ent->rectangle.width, ent->rectangle.height);
     ent->sme_bsb.xorSet = False;
+    // Anti-aliased text must always be drawn on a clean background.
+    if (ent->sme_bsb.xftfont) {
+      Position text_x, text_y;
+      GetTextPosition(ent, &text_x, &text_y);
+      XClearArea(display, window, text_x, text_y, ent->sme_bsb.label_width,
+		 ent->sme_bsb.label_height, False);
+    }
     // If highlightStyle == MenuHighlightReverse, text redraw is needed only
     // if anti-aliased.
     if (ent->sme_bsb.highlightStyle == MenuHighlightBackground ||
 	ent->sme_bsb.xftfont)
-      DrawTextAndUnderline(w, ent->sme_bsb.normal_GC, &ent->sme_bsb.xftfg,
-			   &ent->sme_bsb.xftbg);
+      DrawTextAndUnderline(w, ent->sme_bsb.normal_GC, &ent->sme_bsb.xftfg);
   }
 }

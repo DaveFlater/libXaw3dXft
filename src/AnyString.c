@@ -154,35 +154,10 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
   return strchr(text, '\n');
 }
 
-// Xaw3dXftSizeAnyString component for a single line with Xft font
-static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
-  XawTextEncoding encoding, void *text, Cardinal num_bytes) {
-  if (num_bytes == 0) return 0;
-  XGlyphInfo extents;
-  FcChar16 *cvt16 = NULL;
-  switch (encoding) {
-  case XawTextEncoding8bit:
-    XftTextExtents8(display, xftFont, text, num_bytes, &extents);
-    break;
-  case XawTextEncodingChar2b:
-    cvt16 = convert16(text, num_bytes);
-    XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
-    break;
-  case XawTextEncoding16bit:
-    XftTextExtents16(display, xftFont, text, num_bytes/2, &extents);
-    break;
-  case XawTextEncodingUTF8:
-    XftTextExtentsUtf8(display, xftFont, text, num_bytes, &extents);
-  }
-  if (cvt16) free(cvt16);
-  return extents.xOff;
-}
-
 // Xaw3dXftDrawAnyString component for a single line with Xft font
 static void drawOneXftLine (
-  Display *display, Window window,
   XftFont *xftFont,
-  XftColor *fg, XftColor *bg,
+  XftColor *fg,
   Position x, Position y,
   XawTextEncoding encoding,
   void *text,
@@ -190,37 +165,13 @@ static void drawOneXftLine (
   XftDraw *xftDraw
 ) {
   if (num_bytes) {
-    // Avoid doing convert16 twice by passing the already-converted string to
-    // sizeOneXftLine.
-    FcChar16 *cvt16 = NULL;
-    Dimension width = 0;
-    if (encoding == XawTextEncodingChar2b) {
-      cvt16 = convert16(text, num_bytes);
-      width = sizeOneXftLine(display, xftFont, XawTextEncoding16bit, cvt16,
-	num_bytes);
-    } else
-      width = sizeOneXftLine(display, xftFont, encoding, text, num_bytes);
-
-    // It's mandatory to reset the area over which XftDrawString will draw.
-    // Redrawing over previous lettering causes degradation because it
-    // anti-aliases over the previous fringe instead of the original
-    // background.
-
-    // FIXME
-    // This obliterates a background pixmap.
-    XftDrawRect(xftDraw, bg, x, y, width, xftFont->height);
-
-    // This restores a background pixmap to its original state, but that's
-    // not always what we need.
-    // (void)XClearArea(display, window, x, y, width, xftFont->height, False);
-
-    // Draw the string.
     Position yadj = y + xftFont->ascent;
     switch (encoding) {
     case XawTextEncoding8bit:
       XftDrawString8(xftDraw, fg, xftFont, x, yadj, text, num_bytes);
       break;
     case XawTextEncodingChar2b:
+      FcChar16 *cvt16 = convert16(text, num_bytes);
       XftDrawString16(xftDraw, fg, xftFont, x, yadj, cvt16, num_bytes/2);
       free(cvt16);
       break;
@@ -308,14 +259,14 @@ void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
   XFontStruct *font, void *fontSet, XftFont *xftFont,
   Boolean international,
-  GC text_gc, XftColor *fg, XftColor *bg,
+  GC text_gc, XftColor *fg,
   Position x, Position y,
   XawTextEncoding encoding,
   void *text,
   Cardinal num_bytes
 ) {
   if (num_bytes == 0) return;
-  assert(xftFont || text_gc);
+  assert(xftFont && fg || text_gc);
 
   // The Boolean international resource is from Xaw.  The docs say:  when
   // true, use fontSet; when false, use font.  When true, encoding is from
@@ -350,19 +301,19 @@ void Xaw3dXftDrawAnyStringLen (
 
     // In-loop switch
     if (xftFont) {
-      drawOneXftLine(display, window, xftFont, fg, bg, x, y, encoding,
-	text, line_bytes, xftDraw);
+      drawOneXftLine(xftFont, fg, x, y, encoding, text, line_bytes, xftDraw);
       y += xftFont->height;
     } else
 #ifdef XAW_INTERNATIONALIZATION
     if (international) {
-      drawOneXmbLine(display, window, fontSet, text_gc, x, y, text,
-	line_bytes, extents);
+      drawOneXmbLine(display, window, fontSet, text_gc, x, y, text, line_bytes,
+		     extents);
       y += extents->max_logical_extent.height;
     } else
 #endif
     {
-      drawOneLine(display, window, font, text_gc, x, y, encoding, text, line_bytes);
+      drawOneLine(display, window, font, text_gc, x, y, encoding, text,
+		  line_bytes);
       y += font->max_bounds.ascent + font->max_bounds.descent;
     }
 
@@ -378,14 +329,13 @@ void Xaw3dXftDrawAnyStringLen (
 
   // Post-loop switch
   if (xftFont) {
-    drawOneXftLine(display, window, xftFont, fg, bg, x, y, encoding,
-      text, num_bytes, xftDraw);
+    drawOneXftLine(xftFont, fg, x, y, encoding, text, num_bytes, xftDraw);
     XftDrawDestroy(xftDraw);
   } else
 #ifdef XAW_INTERNATIONALIZATION
   if (international)
-    drawOneXmbLine(display, window, fontSet, text_gc, x, y, text,
-      num_bytes, extents);
+    drawOneXmbLine(display, window, fontSet, text_gc, x, y, text, num_bytes,
+		   extents);
   else
 #endif
     drawOneLine(display, window, font, text_gc, x, y, encoding, text, num_bytes);
@@ -393,12 +343,35 @@ void Xaw3dXftDrawAnyStringLen (
 
 // Ibid. but using the null teminator to determine num_bytes
 void Xaw3dXftDrawAnyString (Display *display, Visual *visual, Colormap cmap,
-  Window window, XFontStruct *font, void *fontSet, XftFont *xftFont,
-  Boolean international, GC text_gc, XftColor *fg, XftColor *bg, Position x,
-  Position y, XawTextEncoding encoding, void *text) {
+Window window, XFontStruct *font, void *fontSet, XftFont *xftFont,
+Boolean international, GC text_gc, XftColor *fg, Position x, Position y,
+XawTextEncoding encoding, void *text) {
   Xaw3dXftDrawAnyStringLen(display, visual, cmap, window, font, fontSet,
-    xftFont, international, text_gc, fg, bg, x, y, encoding, text,
+    xftFont, international, text_gc, fg, x, y, encoding, text,
     AnyStrlen(encoding, text));
+}
+
+// Xaw3dXftSizeAnyString component for a single line with Xft font
+static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
+  XawTextEncoding encoding, void *text, Cardinal num_bytes) {
+  if (num_bytes == 0) return 0;
+  XGlyphInfo extents;
+  switch (encoding) {
+  case XawTextEncoding8bit:
+    XftTextExtents8(display, xftFont, text, num_bytes, &extents);
+    break;
+  case XawTextEncodingChar2b:
+    FcChar16 *cvt16 = convert16(text, num_bytes);
+    XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
+    free(cvt16);
+    break;
+  case XawTextEncoding16bit:
+    XftTextExtents16(display, xftFont, text, num_bytes/2, &extents);
+    break;
+  case XawTextEncodingUTF8:
+    XftTextExtentsUtf8(display, xftFont, text, num_bytes, &extents);
+  }
+  return extents.xOff;
 }
 
 #ifdef XAW_INTERNATIONALIZATION
@@ -521,8 +494,8 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
 
 // Ibid. but using the null teminator to determine num_bytes
 void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font, void *fontSet,
-  XftFont *xftFont, Boolean international, XawTextEncoding encoding,
-  void *text, Dimension *width, Dimension *height) {
+XftFont *xftFont, Boolean international, XawTextEncoding encoding, void *text,
+Dimension *width, Dimension *height) {
   Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
     encoding, text, AnyStrlen(encoding, text), width, height);
 }

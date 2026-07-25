@@ -132,7 +132,7 @@ static XftFont *findOrGetFont (Widget object, const char *name) {
 XftFont *Xaw3dXftGetFont (Widget object, char *name) {
   if (name)
     return findOrGetFont(object, name);
-  // FIXME
+  // FIXME lingering dependency on global struct for default font
   if (!_Xaw3dXft->default_font) {
     if (!_Xaw3dXft->default_fontname)
       _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;

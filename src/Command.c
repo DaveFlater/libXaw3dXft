@@ -466,19 +466,17 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
   // Draw label text
   if (cw->label.pixmap == None && cw->label.label) {
     GC gc;
-    XftColor *xfg, *xbg;
+    XftColor *xfg;
     if (set) {
       gc = cw->command.rev_GC;
       xfg = &cw->label.xftbg;
-      xbg = &cw->label.xftfg;
     } else {
       gc = cw->label.normal_GC;
       xfg = &cw->label.xftfg;
-      xbg = &cw->label.xftbg;
     }
     Xaw3dXftDrawAnyString(display, cw->label.visual, cw->core.colormap, window,
       cw->label.font, labelFontSet(cw), cw->label.xftfont, international(cw),
-      gc, xfg, xbg, cw->label.label_x, cw->label.label_y, cw->label.encoding,
+      gc, xfg, cw->label.label_x, cw->label.label_y, cw->label.encoding,
       cw->label.label);
   }
 

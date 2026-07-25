@@ -40,6 +40,7 @@ X11 license (as per the historical licenses that the package inherits)
   from Core!  So make the callers do the scavenger hunt themselves.
 */
 
+
 // Certain widget resources disappear entirely if XAW_INTERNATIONALIZATION is
 // disabled.  Callers should use these macros in the parameter lists to avoid
 // adding ifdefs.  Note that the typedef for XFontSet goes away if
@@ -58,6 +59,17 @@ static_assert(Got_XAW_defines);
 #endif
 
 
+/*
+  The Xft tutorial warns:  "Note that drawing the same string multiple times
+  in the same place will generate the wrong result with AA text."
+
+  When libXft draws anti-aliased text, the fringe of that text is blended
+  with the background.  If you then redraw that text in the same place, that
+  background at the fringe is not what it was:  it already has half of a
+  letter blended into it.  So each time you redraw, the fringe gets more
+  corrupted.
+*/
+
 // Genericized DrawString with specified length (num_bytes)
 extern void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
@@ -69,19 +81,18 @@ extern void Xaw3dXftDrawAnyStringLen (
   Boolean international,
 
   // If xftFont is not null:
-  //   Background is cleared to bg
   //   Text is drawn with fg
   // else if international:
   //   fontSet must be valid
   //   text_gc must have modifiable font
   //   Foreground must be set in text_gc
-  //   Background is not cleared
   //   Text is drawn with text_gc
   // else plain old X font:
   //   Foreground and font must be set in text_gc
-  //   Background is not cleared
   //   Text is drawn with text_gc
-  GC text_gc, XftColor *fg, XftColor *bg,
+  // Caller is responsible for preparing the background as necessary in all
+  // cases.
+  GC text_gc, XftColor *fg,
 
   Position x, Position y,
 
@@ -97,7 +108,7 @@ extern void Xaw3dXftDrawAnyStringLen (
 extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
   Colormap cmap, Window window, XFontStruct *font, void *fontSet,
   XftFont *xftFont, Boolean international, GC text_gc, XftColor *fg,
-  XftColor *bg, Position x, Position y, XawTextEncoding encoding, void *text);
+  Position x, Position y, XawTextEncoding encoding, void *text);
 
 // Genericized TextWidth/TextHeight with specified length (num_bytes)
 extern void Xaw3dXftSizeAnyStringLen (
