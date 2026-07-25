@@ -16,6 +16,12 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Intrinsic.h>
 #include <X11/Xft/Xft.h>
 
+// Given a Widget or non-widget Object, get its visual and the class and
+// depth of its visual.  The visual, class, and depth arguments can be NULL
+// if their values are unwanted.
+extern void Xaw3dXftGetVisualInfo (Widget object, Visual **visual,
+				   int *class, Cardinal *depth);
+
 // Get an XftFont.
 // This function caches fonts.  Never call XftFontClose on the returned font!
 extern XftFont *Xaw3dXftGetFont (Widget object, char *name);

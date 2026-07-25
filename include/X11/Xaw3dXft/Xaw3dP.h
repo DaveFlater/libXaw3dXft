@@ -7,7 +7,6 @@
 /*********************************************************************
 Copyright (C) 1992 Kaleb Keithley
 Copyright (C) 2000, 2003 David J. Hawkey Jr.
-© 2026 David Flater
 
                         All Rights Reserved
 
@@ -52,31 +51,10 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_GRAY_BLKWHT_STIPPLES
-extern unsigned long
-grayPixel(
-    unsigned long,
-    Display *,
-    Screen *
-);
+// p is unused by this function; it is used only by the macro below.
+extern unsigned long grayPixel (unsigned long p, Display *dpy, Screen *scn);
 #else
 #define grayPixel(p, dpy, scn)	(p)
 #endif
-
-#ifdef XAW_MULTIPLANE_PIXMAPS
-extern Pixmap
-stipplePixmap(
-    Widget,
-    Pixmap,
-    Colormap,
-    Pixel,
-    unsigned int
-);
-#endif
-
-// Given a Widget or non-widget Object, get its visual and the class and
-// depth of its visual.  The visual, class, and depth arguments can be NULL
-// if their values are unwanted.
-extern void Xaw3dXftGetVisualInfo (Widget object, Visual **visual,
-				   int *class, Cardinal *depth);
 
 #endif	/* _Xaw3dP_h */

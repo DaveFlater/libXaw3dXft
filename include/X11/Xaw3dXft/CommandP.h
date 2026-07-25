@@ -121,6 +121,7 @@ typedef struct {
     /* private state */
     Boolean set;            // click/unclick condition
     XtCommandHighlight highlighted; // mouseover condition
+    GC rev_GC;              // foreground = bg, font
     GC hl_solid_GC;         // fg, line width for highlight
     GC hl_dashed_GC;        // fg, line width, line style = LineOnOffDash
     GC xor_GC;              // function = GXxor by fg ^ bg

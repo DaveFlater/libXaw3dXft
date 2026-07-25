@@ -45,7 +45,8 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
 
-DEC is not to blame for what you find here now. — DWF
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
 
 ******************************************************************/
 
@@ -120,7 +121,6 @@ static void Unset(Widget, XEvent *, String *, Cardinal *);
 static void Highlight(Widget, XEvent *, String *, Cardinal *);
 static void Unhighlight(Widget, XEvent *, String *, Cardinal *);
 static void Destroy(Widget);
-static void PaintCommandWidget(Widget, XEvent *);
 static void ClassInitialize(void);
 static Boolean ShapeButton(CommandWidget, Boolean);
 static void Realize(Widget, Mask *, XSetWindowAttributes *);
@@ -196,13 +196,19 @@ WidgetClass commandWidgetClass = (WidgetClass) &commandClassRec;
  *
  ****************************************************************/
 
-static void get_or_change_GCs (CommandWidget cbw) {
-  const Pixel fg = cbw->label.foreground, bg = cbw->core.background_pixel;
+static void get_or_change_GCs (CommandWidget cw) {
+  const Pixel fg = cw->label.foreground, bg = cw->core.background_pixel;
+
+  // rev_GC
+  if (cw->command.rev_GC)
+    XtReleaseGC((Widget)cw, cw->command.rev_GC);
+  cw->command.rev_GC = Xaw3dXftGetTextGC((Widget)cw, bg, cw->label.font,
+					  international(cw));
 
   // inverse_stipple_GC
-  if (cbw->command.inverse_stipple_GC)
-    XtReleaseGC((Widget)cbw, cbw->command.inverse_stipple_GC);
-  cbw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC((Widget)cbw, fg);
+  if (cw->command.inverse_stipple_GC)
+    XtReleaseGC((Widget)cw, cw->command.inverse_stipple_GC);
+  cw->command.inverse_stipple_GC = Xaw3dXftGetStippleGC((Widget)cw, fg);
 
   XGCValues values;
   values.graphics_exposures = False;
@@ -211,9 +217,9 @@ static void get_or_change_GCs (CommandWidget cbw) {
   // Default fill_style FillSolid uses only foreground
   values.foreground = fg ^ bg;
   values.function = GXxor;
-  if (cbw->command.xor_GC)
-    XtReleaseGC((Widget)cbw, cbw->command.xor_GC);
-  cbw->command.xor_GC = XtGetGC((Widget)cbw,
+  if (cw->command.xor_GC)
+    XtReleaseGC((Widget)cw, cw->command.xor_GC);
+  cw->command.xor_GC = XtGetGC((Widget)cw,
     GCForeground|GCFunction|GCGraphicsExposures, &values);
 
   // hl_solid_GC
@@ -221,27 +227,27 @@ static void get_or_change_GCs (CommandWidget cbw) {
   // Xlib special case
   // "The line-width is measured in pixels and either can be greater than or
   // equal to one (wide line) or can be the special value zero (thin line)."
-  if (cbw->command.highlight_thickness > 1)
-    values.line_width = cbw->command.highlight_thickness;
+  if (cw->command.highlight_thickness > 1)
+    values.line_width = cw->command.highlight_thickness;
   else
     values.line_width = 0;
-  if (cbw->command.hl_solid_GC)
-    XtReleaseGC((Widget)cbw, cbw->command.hl_solid_GC);
-  cbw->command.hl_solid_GC = XtGetGC((Widget)cbw,
+  if (cw->command.hl_solid_GC)
+    XtReleaseGC((Widget)cw, cw->command.hl_solid_GC);
+  cw->command.hl_solid_GC = XtGetGC((Widget)cw,
     GCForeground|GCLineWidth|GCGraphicsExposures, &values);
 
   // hl_dashed_GC
   values.line_style = LineOnOffDash;
   // char dashes acts like a uint8_t.  0 gets you a BadValue error.
-  if (cbw->command.highlight_thickness < 1)
+  if (cw->command.highlight_thickness < 1)
     values.dashes = (char)4;
-  else if (cbw->command.highlight_thickness < 64)
-    values.dashes = (char)(cbw->command.highlight_thickness * 4);
+  else if (cw->command.highlight_thickness < 64)
+    values.dashes = (char)(cw->command.highlight_thickness * 4);
   else
     values.dashes = (char)255;
-  if (cbw->command.hl_dashed_GC)
-    XtReleaseGC((Widget)cbw, cbw->command.hl_dashed_GC);
-  cbw->command.hl_dashed_GC = XtGetGC((Widget)cbw,
+  if (cw->command.hl_dashed_GC)
+    XtReleaseGC((Widget)cw, cw->command.hl_dashed_GC);
+  cw->command.hl_dashed_GC = XtGetGC((Widget)cw,
     GCForeground|GCLineStyle|GCLineWidth|GCDashList|GCGraphicsExposures,
 				  &values);
 }
@@ -249,68 +255,39 @@ static void get_or_change_GCs (CommandWidget cbw) {
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-  CommandWidget cbw = (CommandWidget) new;
+  CommandWidget cw = (CommandWidget) new;
   int shape_event_base, shape_error_base;
 
-  cbw->command.hl_solid_GC =
-    cbw->command.hl_dashed_GC =
-    cbw->command.inverse_stipple_GC =
-    cbw->command.xor_GC = NULL;
+  cw->command.rev_GC =
+    cw->command.hl_solid_GC =
+    cw->command.hl_dashed_GC =
+    cw->command.inverse_stipple_GC =
+    cw->command.xor_GC = NULL;
 
   /* Save values that are overridden when shape is not rectangle. */
-  cbw->command.orig_shadow_width = cbw->threeD.shadow_width;
-  cbw->command.orig_border_width = cbw->core.border_width;
-  cbw->command.orig_highlight_thickness = cbw->command.highlight_thickness;
+  cw->command.orig_shadow_width = cw->threeD.shadow_width;
+  cw->command.orig_border_width = cw->core.border_width;
+  cw->command.orig_highlight_thickness = cw->command.highlight_thickness;
 
-  if (cbw->command.shape_style != XawShapeRectangle
+  if (cw->command.shape_style != XawShapeRectangle
       && !XShapeQueryExtension(XtDisplay(new), &shape_event_base,
 			       &shape_error_base))
-      cbw->command.shape_style = XawShapeRectangle;
-  if (cbw->command.highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT) {
-      if (cbw->command.shape_style != XawShapeRectangle)
-	  cbw->command.highlight_thickness = 0;
+      cw->command.shape_style = XawShapeRectangle;
+  if (cw->command.highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT) {
+      if (cw->command.shape_style != XawShapeRectangle)
+	  cw->command.highlight_thickness = 0;
       else
-	  cbw->command.highlight_thickness = DEFAULT_HIGHLIGHT_THICKNESS;
+	  cw->command.highlight_thickness = DEFAULT_HIGHLIGHT_THICKNESS;
   }
-  if (cbw->command.shape_style != XawShapeRectangle) {
-    cbw->threeD.shadow_width = 0;
-    if (cbw->core.border_width == 0)
-      cbw->core.border_width = 1;
+  if (cw->command.shape_style != XawShapeRectangle) {
+    cw->threeD.shadow_width = 0;
+    if (cw->core.border_width == 0)
+      cw->core.border_width = 1;
   }
 
-  get_or_change_GCs(cbw);
-  cbw->command.set = False;
-  cbw->command.highlighted = HighlightNone;
-}
-
-// Apply the xor effect for the Set state (needed by both the Set action
-// procedure and PaintCommandWidget).
-static void setEffect (Widget w) {
-  assert(XtIsRealized(w));
-  CommandWidget cbw = (CommandWidget)w;
-  assert(cbw->command.set);
-  const Dimension s = cbw->threeD.shadow_width;
-  // Flip the entire contents
-  if (!cbw->label.xorSet) {
-    XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xor_GC,
-      s, s, cbw->core.width - 2*s, cbw->core.height - 2*s);
-    cbw->label.xorSet = True;
-  }
-  // Redraw anti-aliased text to fix edges.  Minor glitch:  if
-  // highlightThickness exceeds internalHeight or internalWidth, this may
-  // draw over the highlight.
-  if (cbw->label.pixmap == None && cbw->label.label != None &&
-      cbw->label.xftfont != None)
-    Xaw3dXftDrawAnyString(XtDisplay(w), cbw->label.visual,
-      cbw->core.colormap, XtWindow(w), cbw->label.font, labelFontSet(cbw),
-      cbw->label.xftfont, XtIsSensitive(w), international(cbw),
-      None, cbw->command.inverse_stipple_GC,
-      &cbw->label.xftbg, &cbw->label.xftfg, cbw->label.label_x,
-      cbw->label.label_y, cbw->label.encoding, cbw->label.label);
-  // Flip the shadow
-  CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
-  (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cbw->threeD.relief,
-    !cbw->command.set);
+  get_or_change_GCs(cw);
+  cw->command.set = False;
+  cw->command.highlighted = HighlightNone;
 }
 
 /***************************
@@ -322,16 +299,36 @@ static void setEffect (Widget w) {
 static void
 Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-  CommandWidget cbw = (CommandWidget)w;
-  if (cbw->command.set)
+  CommandWidget cw = (CommandWidget)w;
+  if (cw->command.set)
     return;
-  cbw->command.set = True;
+  cw->command.set = True;
   if (XtIsRealized(w)) {
-    if (cbw->command.highlighted == HighlightWhenUnset &&
-	cbw->command.highlight_thickness > 0)
-      PaintCommandWidget(w, event); // Clear the highlight
-    else
-      setEffect(w);
+    if (cw->command.highlighted == HighlightWhenUnset &&
+	cw->command.highlight_thickness > 0)
+      Redisplay(w, event, NULL); // Clear the highlight
+    else {
+      const Dimension s = cw->threeD.shadow_width;
+      // Flip the entire contents
+      if (!cw->label.xorSet) {
+	XFillRectangle(XtDisplay(w), XtWindow(w), cw->command.xor_GC,
+		       s, s, cw->core.width - 2*s, cw->core.height - 2*s);
+	cw->label.xorSet = True;
+      }
+      // Redraw anti-aliased text to fix edges.
+      if (cw->label.pixmap == None && cw->label.label != None &&
+	  cw->label.xftfont != None)
+	Xaw3dXftDrawAnyString(XtDisplay(w), cw->label.visual,
+	  cw->core.colormap, XtWindow(w), cw->label.font, labelFontSet(cw),
+	  cw->label.xftfont, XtIsSensitive(w), international(cw),
+	  None, cw->command.inverse_stipple_GC,
+	  &cw->label.xftbg, &cw->label.xftfg, cw->label.label_x,
+	  cw->label.label_y, cw->label.encoding, cw->label.label);
+      // Flip the shadow
+      CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
+      (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cw->threeD.relief,
+					   !cw->command.set);
+    }
   }
   // Else set but not realized
 }
@@ -339,37 +336,35 @@ Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-  CommandWidget cbw = (CommandWidget)w;
-  if (!cbw->command.set)
+  CommandWidget cw = (CommandWidget)w;
+  if (!cw->command.set)
     return;
-  cbw->command.set = False;
+  cw->command.set = False;
   if (XtIsRealized(w)) {
-    if (cbw->command.highlighted == HighlightWhenUnset &&
-	cbw->command.highlight_thickness > 0)
-      PaintCommandWidget(w, event); // Reapply the highlight
+    if (cw->command.highlighted == HighlightWhenUnset &&
+	cw->command.highlight_thickness > 0)
+      Redisplay(w, event, NULL); // Reapply the highlight
     else {
-      const Dimension s = cbw->threeD.shadow_width;
+      const Dimension s = cw->threeD.shadow_width;
       // Flip the entire contents
-      if (cbw->label.xorSet) {
-	XFillRectangle(XtDisplay(w), XtWindow(w), cbw->command.xor_GC,
-	  s, s, cbw->core.width - 2*s, cbw->core.height - 2*s);
-	cbw->label.xorSet = False;
+      if (cw->label.xorSet) {
+	XFillRectangle(XtDisplay(w), XtWindow(w), cw->command.xor_GC,
+		       s, s, cw->core.width - 2*s, cw->core.height - 2*s);
+	cw->label.xorSet = False;
       }
-      // Redraw anti-aliased text to fix edges.  Minor glitch:  if
-      // highlightThickness exceeds internalHeight or internalWidth, this may
-      // draw over the highlight.
-      if (cbw->label.pixmap == None && cbw->label.label != None &&
-	  cbw->label.xftfont != None)
-	Xaw3dXftDrawAnyString(XtDisplay(w), cbw->label.visual,
-	  cbw->core.colormap, XtWindow(w), cbw->label.font, labelFontSet(cbw),
-	  cbw->label.xftfont, XtIsSensitive(w), international(cbw),
-	  None, cbw->label.stipple_GC, &cbw->label.xftfg,
-	  &cbw->label.xftbg, cbw->label.label_x, cbw->label.label_y,
-	  cbw->label.encoding, cbw->label.label);
+      // Redraw anti-aliased text to fix edges.
+      if (cw->label.pixmap == None && cw->label.label != None &&
+	  cw->label.xftfont != None)
+	Xaw3dXftDrawAnyString(XtDisplay(w), cw->label.visual,
+	  cw->core.colormap, XtWindow(w), cw->label.font, labelFontSet(cw),
+	  cw->label.xftfont, XtIsSensitive(w), international(cw),
+	  None, cw->label.stipple_GC, &cw->label.xftfg,
+	  &cw->label.xftbg, cw->label.label_x, cw->label.label_y,
+	  cw->label.encoding, cw->label.label);
       // Flip the shadow
       CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
-      (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cbw->threeD.relief,
-	!cbw->command.set);
+      (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cw->threeD.relief,
+	!cw->command.set);
     }
   }
   // Else unset but not realized
@@ -378,11 +373,11 @@ Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 Reset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-  CommandWidget cbw = (CommandWidget)w;
-  if (cbw->command.set) {
+  CommandWidget cw = (CommandWidget)w;
+  if (cw->command.set) {
     // This doesn't get called by Toggle, so assume HighlightWhenUnset, and
     // we don't have to clear the highlight.
-    cbw->command.highlighted = HighlightNone;
+    cw->command.highlighted = HighlightNone;
     Unset(w, event, params, num_params);
   } else
     Unhighlight(w, event, params, num_params);
@@ -391,56 +386,56 @@ Reset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 static void
 Highlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-  CommandWidget cbw = (CommandWidget)w;
+  CommandWidget cw = (CommandWidget)w;
   const Boolean isHighlighted =
-    cbw->command.highlighted == HighlightWhenUnset && !cbw->command.set ||
-    cbw->command.highlighted == HighlightAlways;
+    cw->command.highlighted == HighlightWhenUnset && !cw->command.set ||
+    cw->command.highlighted == HighlightAlways;
   if ( *num_params == (Cardinal) 0)
-    cbw->command.highlighted = HighlightWhenUnset;
+    cw->command.highlighted = HighlightWhenUnset;
   else {
     if ( *num_params != (Cardinal) 1)
       XtWarning("Too many parameters passed to highlight action table.");
     switch (params[0][0]) {
     case 'A':
     case 'a':
-      cbw->command.highlighted = HighlightAlways;
+      cw->command.highlighted = HighlightAlways;
       break;
     default:
-      cbw->command.highlighted = HighlightWhenUnset;
+      cw->command.highlighted = HighlightWhenUnset;
       break;
     }
   }
   if (XtIsRealized(w) &&
-      cbw->command.highlight_thickness > 0 &&
+      cw->command.highlight_thickness > 0 &&
       !isHighlighted)
-    PaintCommandWidget(w, event);
+    Redisplay(w, event, NULL);
 }
 
 static void
 Unhighlight(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-  CommandWidget cbw = (CommandWidget)w;
+  CommandWidget cw = (CommandWidget)w;
   const Boolean isHighlighted =
-    cbw->command.highlighted == HighlightWhenUnset && !cbw->command.set ||
-    cbw->command.highlighted == HighlightAlways;
-  cbw->command.highlighted = HighlightNone;
+    cw->command.highlighted == HighlightWhenUnset && !cw->command.set ||
+    cw->command.highlighted == HighlightAlways;
+  cw->command.highlighted = HighlightNone;
   if (XtIsRealized(w) &&
-      cbw->command.highlight_thickness > 0 &&
+      cw->command.highlight_thickness > 0 &&
       isHighlighted)
-    PaintCommandWidget(w, event);
+    Redisplay(w, event, NULL);
 }
 
 static void
 Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-  CommandWidget cbw = (CommandWidget)w;
+  CommandWidget cw = (CommandWidget)w;
 
   /* check to be sure state is still Set so that user can cancel
      the action (e.g. by moving outside the window, in the default
      bindings.
   */
-  if (cbw->command.set)
-    XtCallCallbackList(w, cbw->command.callbacks, (XtPointer) NULL);
+  if (cw->command.set)
+    XtCallCallbackList(w, cw->command.callbacks, (XtPointer) NULL);
 }
 
 /*
@@ -453,77 +448,113 @@ Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 *
 ************************/
 
-static void
-Redisplay(Widget w, XEvent *event, Region region)
-{
-  PaintCommandWidget(w, event);
-}
+// This duplicates/replaces code from Label Redisplay so that effects can be
+// applied in the right order.
+static void Redisplay(Widget w, XEvent *event, Region region) {
+  CommandWidget cw = (CommandWidget)w;
+  Display *display = XtDisplay(w);
+  Window window = XtWindow(w);
+  Dimension s = cw->threeD.shadow_width,
+           ht = cw->command.highlight_thickness;
+  const Boolean very_thick = (ht > Min(cw->core.width, cw->core.height)/2),
+                 sensitive = XtIsSensitive(w),
+                       set = cw->command.set;
 
-/*	Function Name: PaintCommandWidget
- *	Description: Paints the command widget.
- *	Arguments: w - the command widget.
- *	Returns: none
- */
-static void
-PaintCommandWidget(Widget w, XEvent *event)
-{
-  CommandWidget cbw = (CommandWidget) w;
-  CommandWidgetClass cwclass = (CommandWidgetClass) XtClass (w);
-  Dimension	s = cbw->threeD.shadow_width;
-  Boolean very_thick = cbw->command.highlight_thickness >
-    Min(cbw->core.width, cbw->core.height)/2;
+  // Clean slate
+  XClearWindow(display, window);
+  cw->label.xorSet = False;
 
-  // Clean slate.
-  XClearWindow(XtDisplay(w), XtWindow(w));
-  cbw->label.xorSet = False;
+  // Draw bitmaps
+  if (cw->label.pixmap == None) {
+    /* draw left bitmap */
+    if (cw->label.left_bitmap && cw->label.lbm_width && cw->label.lbm_height)
+      Xaw3dXftCopy(display, cw->label.left_bitmap, window, cw->label.normal_GC,
+		   cw->label.lbm_width, cw->label.lbm_height, cw->label.depth,
+		   cw->label.internal_width + cw->threeD.shadow_width,
+		   ((Position)cw->core.height -
+		    (Position)cw->label.lbm_height)/2);
+  } else // cw->label.pixmap != None
+    Xaw3dXftCopy(display, cw->label.pixmap, window, cw->label.normal_GC,
+		 cw->label.label_width, cw->label.label_height, cw->label.depth,
+		 cw->label.label_x, cw->label.label_y);
 
-  // The following line causes Label Redisplay.
-  (*SuperClass->core_class.expose) (w, event, NULL);
-
-  // Draw highlight rectangle on top of that.
-  if (cbw->command.highlight_thickness > 0) {
-    if (cbw->command.highlighted == HighlightWhenUnset && !cbw->command.set ||
-        cbw->command.highlighted == HighlightAlways) {
+  // Draw highlight rectangle
+  if (ht > 0) {
+    if (cw->command.highlighted == HighlightWhenUnset && !set ||
+        cw->command.highlighted == HighlightAlways) {
       GC gc;
-      if (cbw->command.highlight_dashed)
-	gc = cbw->command.hl_dashed_GC;
+      if (cw->command.highlight_dashed)
+	gc = cw->command.hl_dashed_GC;
       else
-	gc = cbw->command.hl_solid_GC;
+	gc = cw->command.hl_solid_GC;
       if (very_thick)
-	XFillRectangle(XtDisplay(w), XtWindow(w), gc,
-	  s, s, cbw->core.width - 2 * s, cbw->core.height - 2 * s);
+	XFillRectangle(display, window, gc,
+	  s, s, cw->core.width - 2*s, cw->core.height - 2*s);
       else {
 	/* wide lines are centered on the path, so indent it */
-	Position offset = cbw->command.highlight_thickness/2;
+	Position offset = ht/2;
 	// Rectangle line thickness is line_width of the GC
-	XDrawRectangle(XtDisplay(w),XtWindow(w), gc,
-	  s + offset, s + offset,
-	  cbw->core.width - cbw->command.highlight_thickness - 2 * s,
-	  cbw->core.height - cbw->command.highlight_thickness - 2 * s);
+	XDrawRectangle(display, window, gc, s + offset, s + offset,
+	  cw->core.width - ht - 2*s, cw->core.height - ht - 2*s);
       }
     }
   }
 
-  // Reapply xor if we are supposed to be set.  In the Xft case, the Label
-  // text is unfortunately being drawn twice if we are set.
-  if (cbw->command.set)
-    setEffect(w); // This takes care of the shadows.
-  else
-    (*cwclass->threeD_class.shadowdraw) (w, event, NULL, cbw->threeD.relief, !cbw->command.set);
+  // Apply reverse color to bg, bitmaps, and highlight rectangle
+  if (set) {
+    XFillRectangle(display, window, cw->command.xor_GC, s, s,
+		   cw->core.width - 2*s, cw->core.height - 2*s);
+    cw->label.xorSet = True;
+  }
+
+  // Draw label text
+  if (cw->label.pixmap == None && cw->label.label) {
+    GC gc;
+    XftColor *xfg, *xbg;
+    if (set) {
+      gc = cw->command.rev_GC;
+      xfg = &cw->label.xftbg;
+      xbg = &cw->label.xftfg;
+    } else {
+      gc = cw->label.normal_GC;
+      xfg = &cw->label.xftfg;
+      xbg = &cw->label.xftbg;
+    }
+    Xaw3dXftDrawAnyString(display, cw->label.visual, cw->core.colormap, window,
+      cw->label.font, labelFontSet(cw), cw->label.xftfont, True,
+      international(cw), gc, None, xfg, xbg, cw->label.label_x,
+      cw->label.label_y, cw->label.encoding, cw->label.label);
+  }
+
+  // Apply insensitive stipple
+  if (!sensitive) {
+    GC gc = (set ? cw->command.inverse_stipple_GC : cw->label.stipple_GC);
+    XFillRectangle(display, window, gc, s, s,
+		   cw->core.width - 2*s, cw->core.height - 2*s);
+  }
+
+  // Draw shadows if applicable
+  if (s > 0) {
+    CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
+    (*cwclass->threeD_class.shadowdraw) (w, event, NULL, cw->threeD.relief,
+					 !set);
+  }
 }
 
 static void
 Destroy(Widget w)
 {
-  CommandWidget cbw = (CommandWidget) w;
-  if (cbw->command.hl_solid_GC)
-    XtReleaseGC(w, cbw->command.hl_solid_GC);
-  if (cbw->command.hl_dashed_GC)
-    XtReleaseGC(w, cbw->command.hl_dashed_GC);
-  if (cbw->command.xor_GC)
-    XtReleaseGC(w, cbw->command.xor_GC);
-  if (cbw->command.inverse_stipple_GC)
-    XtReleaseGC(w, cbw->command.inverse_stipple_GC);
+  CommandWidget cw = (CommandWidget)w;
+  if (cw->command.rev_GC)
+    XtReleaseGC(w, cw->command.rev_GC);
+  if (cw->command.hl_solid_GC)
+    XtReleaseGC(w, cw->command.hl_solid_GC);
+  if (cw->command.hl_dashed_GC)
+    XtReleaseGC(w, cw->command.hl_dashed_GC);
+  if (cw->command.xor_GC)
+    XtReleaseGC(w, cw->command.xor_GC);
+  if (cw->command.inverse_stipple_GC)
+    XtReleaseGC(w, cw->command.inverse_stipple_GC);
 }
 
 /*
@@ -533,8 +564,8 @@ Destroy(Widget w)
 static Boolean
 SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-  CommandWidget oldcbw = (CommandWidget) current;
-  CommandWidget cbw = (CommandWidget) new;
+  CommandWidget oldcw = (CommandWidget) current;
+  CommandWidget cw = (CommandWidget) new;
   Boolean redisplay = False;
 
   // Label has already noticed if XtIsSensitive(current) !=
@@ -542,43 +573,43 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
   // insensitive.  XtIsSensitive returns False if core.sensitive and
   // core.ancestor_sensitive disagree, but ancestor_sensitive should not be
   // changing at the moment.
-  if (oldcbw->core.sensitive != cbw->core.sensitive && !cbw->core.sensitive) {
+  if (oldcw->core.sensitive != cw->core.sensitive && !cw->core.sensitive) {
     /* about to become insensitive */
-    cbw->command.set = False;
-    cbw->command.highlighted = HighlightNone;
+    cw->command.set = False;
+    cw->command.highlighted = HighlightNone;
     redisplay = True;
   }
 
   // These widths are messed with depending on shape (see Initialize).  For
   // now we pretend that the new shape is the same as the old shape.  If it
   // is not, things get fixed in the next block.
-  if (cbw->threeD.shadow_width != oldcbw->threeD.shadow_width) {
-    cbw->command.orig_shadow_width = cbw->threeD.shadow_width;
-    if (cbw->command.shape_style != XawShapeRectangle)
-      cbw->threeD.shadow_width = 0;
-    if (cbw->threeD.shadow_width != oldcbw->threeD.shadow_width)
+  if (cw->threeD.shadow_width != oldcw->threeD.shadow_width) {
+    cw->command.orig_shadow_width = cw->threeD.shadow_width;
+    if (cw->command.shape_style != XawShapeRectangle)
+      cw->threeD.shadow_width = 0;
+    if (cw->threeD.shadow_width != oldcw->threeD.shadow_width)
       redisplay = True;
   }
-  if (cbw->core.border_width != oldcbw->core.border_width) {
-    cbw->command.orig_border_width = cbw->core.border_width;
-    if (cbw->command.shape_style != XawShapeRectangle &&
-        cbw->core.border_width == 0)
-      cbw->core.border_width = 1;
-    if (cbw->core.border_width != oldcbw->core.border_width)
+  if (cw->core.border_width != oldcw->core.border_width) {
+    cw->command.orig_border_width = cw->core.border_width;
+    if (cw->command.shape_style != XawShapeRectangle &&
+        cw->core.border_width == 0)
+      cw->core.border_width = 1;
+    if (cw->core.border_width != oldcw->core.border_width)
       redisplay = True;
   }
-  if (cbw->command.highlight_thickness != oldcbw->command.highlight_thickness)
-    cbw->command.orig_highlight_thickness = cbw->command.highlight_thickness;
+  if (cw->command.highlight_thickness != oldcw->command.highlight_thickness)
+    cw->command.orig_highlight_thickness = cw->command.highlight_thickness;
 
   // Shape changes
   Boolean shape_changed = False;
-  if (oldcbw->command.shape_style != cbw->command.shape_style) {
+  if (oldcw->command.shape_style != cw->command.shape_style) {
     shape_changed = True;
-    if (XtIsRealized(new) && !ShapeButton(cbw, True)) {
+    if (XtIsRealized(new) && !ShapeButton(cw, True)) {
       // Requested shape change was rejected by XmuReshapeWidget.
       // ShapeButton sets shape_style to rectangle when it fails.
       // Just keep the old shape and act casual.
-      cbw->command.shape_style = oldcbw->command.shape_style;
+      cw->command.shape_style = oldcw->command.shape_style;
       shape_changed = False;
     }
     // If not realized, the shape is deemed changed; but ShapeButton could
@@ -586,26 +617,27 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
     // widths.
     if (shape_changed) {
       redisplay = True;
-      if (cbw->command.shape_style == XawShapeRectangle) {
-	cbw->threeD.shadow_width = cbw->command.orig_shadow_width;
-	cbw->core.border_width = cbw->command.orig_border_width;
-	if (cbw->command.orig_highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT)
-	  cbw->command.highlight_thickness = DEFAULT_HIGHLIGHT_THICKNESS;
+      if (cw->command.shape_style == XawShapeRectangle) {
+	cw->threeD.shadow_width = cw->command.orig_shadow_width;
+	cw->core.border_width = cw->command.orig_border_width;
+	if (cw->command.orig_highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT)
+	  cw->command.highlight_thickness = DEFAULT_HIGHLIGHT_THICKNESS;
       } else {
-	cbw->threeD.shadow_width = 0;
-	if (cbw->core.border_width == 0)
-	  cbw->core.border_width = 1;
-	if (cbw->command.orig_highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT)
-	  cbw->command.highlight_thickness = 0;
+	cw->threeD.shadow_width = 0;
+	if (cw->core.border_width == 0)
+	  cw->core.border_width = 1;
+	if (cw->command.orig_highlight_thickness == DEFAULT_SHAPE_HIGHLIGHT)
+	  cw->command.highlight_thickness = 0;
       }
     }
   }
 
   // Change our GCs if necessary.
-  if (oldcbw->label.foreground != cbw->label.foreground           ||
-      oldcbw->core.background_pixel != cbw->core.background_pixel ||
-      oldcbw->command.highlight_thickness != cbw->command.highlight_thickness) {
-    get_or_change_GCs(cbw);
+  if (oldcw->label.foreground != cw->label.foreground           ||
+      oldcw->core.background_pixel != cw->core.background_pixel ||
+      oldcw->label.font->fid != cw->label.font->fid ||
+      oldcw->command.highlight_thickness != cw->command.highlight_thickness) {
+    get_or_change_GCs(cw);
     redisplay = True;
   }
 
@@ -614,7 +646,7 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
   // guessing this is because Label's SetValues ran before we made the
   // change.  Calling Resize here might be a bad thing to do, but it fixes
   // the problem.
-  if (shape_changed && cbw->core.border_width != oldcbw->core.border_width)
+  if (shape_changed && cw->core.border_width != oldcw->core.border_width)
     Resize(new);
 
   // Unfortunately, changes to border_width can be rejected by the geometry
@@ -627,7 +659,7 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
 
     That fill with bg color clears the Xor state from Set/Unset.
   */
-  if (redisplay) cbw->label.xorSet = False;
+  if (redisplay) cw->label.xorSet = False;
 
   return (redisplay);
 }
@@ -642,22 +674,22 @@ ClassInitialize(void)
 
 
 static Boolean
-ShapeButton(CommandWidget cbw, Boolean checkRectangular)
+ShapeButton(CommandWidget cw, Boolean checkRectangular)
 {
     Dimension corner_size = 0;
 
-    if (cbw->command.shape_style == XawShapeRoundedRectangle) {
-	corner_size = (cbw->core.width < cbw->core.height) ? cbw->core.width
-	                                                   : cbw->core.height;
-	corner_size = (int) (corner_size * cbw->command.corner_round) / 100;
+    if (cw->command.shape_style == XawShapeRoundedRectangle) {
+	corner_size = (cw->core.width < cw->core.height) ? cw->core.width
+	                                                   : cw->core.height;
+	corner_size = (int) (corner_size * cw->command.corner_round) / 100;
     }
 
-    if (checkRectangular || cbw->command.shape_style != XawShapeRectangle) {
-	if (!XmuReshapeWidget((Widget) cbw, cbw->command.shape_style,
+    if (checkRectangular || cw->command.shape_style != XawShapeRectangle) {
+	if (!XmuReshapeWidget((Widget) cw, cw->command.shape_style,
 			      corner_size, corner_size)) {
 	    fprintf(stderr, "Command ShapeButton:  failed to reshape widget\n");
 	    // Assuming that it was rectangle to begin with?
-	    cbw->command.shape_style = XawShapeRectangle;
+	    cw->command.shape_style = XawShapeRectangle;
 	    return(False);
 	}
     }

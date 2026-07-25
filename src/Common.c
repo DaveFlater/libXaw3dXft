@@ -13,6 +13,7 @@ X11 license (as per the historical licenses that the package inherits)
 
 #include <assert.h>
 #include <limits.h>
+#include <X11/Shell.h>
 #include <X11/Xaw3dXft/Xaw3d.h>
 #include <X11/Xaw3dXft/CommonP.h>
 
@@ -23,6 +24,63 @@ X11 license (as per the historical licenses that the package inherits)
 #define XAW3DXFT_DEFAULTFONT "Liberation-9"
 
 static_assert(Got_XAW_defines);
+
+/*
+  We need the Visual that applies to our Object and the class and depth of
+  that visual.
+
+  The application can pass a non-default visual when it creates a Shell.
+  That visual gets inherited by everything below the Shell.  Thus, it is
+  unsafe to use DefaultVisualOfScreen and probably unsafe to use
+  DefaultDepthOfScreen.
+
+  If our Object is realized, we can use Xlib to get the answers:
+    Status XGetWindowAttributes(XtDisplayOfObject(object),
+                                XtWindowOfObject(object),
+                                &attributes);
+    *class = attributes.visual->class;
+    *depth = attributes.depth;
+  But our Object is not necessarily realized.
+
+  If our Object is a proper widget (meaning a subclass of Core), we can get
+  the depth from core.depth.  But our Object is not necessarily a widget.
+  AsciiSink, SmeBSB, and SmeThreeD are non-widget Objects with no Core part.
+
+  When a Shell is created with a non-default visual, the pointer to the
+  Visual is stored in the Shell's visual resource, but that is not even
+  copied into Core.  So we have to climb up to the Shell to see whether its
+  visual resource has a value.  If it doesn't, it's using the default visual.
+
+  The Visual struct itself contains a field for its class but not its depth.
+  We could call XGetVisualInfo using the visual ID, but we can avoid that by
+  getting the depth from the first widget we come to.
+*/
+void Xaw3dXftGetVisualInfo (Widget object, Visual **visual,
+			    int *class, Cardinal *depth) {
+  // Nobody calls this function wanting only depth.  If they do, there'll be
+  // some wasted work but no failure.
+  Widget loopw = object;
+  Visual *_visual = NULL;
+  if (depth) *depth = 0;
+  while (_visual == NULL && loopw != NULL) {
+    if (depth == NULL || *depth > 0)
+      XtVaGetValues(loopw, XtNvisual, (XtArgVal)(&_visual), NULL);
+    else
+      XtVaGetValues(loopw,
+		    XtNvisual, (XtArgVal)(&_visual),
+		    XtNdepth, (XtArgVal)depth, NULL);
+    loopw = XtParent(loopw);
+  }
+  if (depth) assert(*depth > 0);
+  if (_visual == NULL)
+    _visual = DefaultVisualOfScreen(XtScreenOfObject(object));
+  if (visual)
+    *visual = _visual;
+  if (class) {
+    *class = _visual->class;
+    assert(*class >= 0 && *class <= 5);
+  }
+}
 
 /*
   Calling XftFontOpen* repeatedly is *amazingly* slow.  This was hidden by
@@ -96,23 +154,20 @@ Pixel pixel, XftColor *result) {
   XftColorAllocValue(display, visual, cmap, &xre_color, result);
 }
 
-/* FIXME
-  We currently have three different stippling methods:
+/* Having retired stipplePixmap, we have two stippling methods remaining:
 
-  1. When the widgets draw with a stipple, they do this:
+  1. Draw everything with a stipple:
     v.font       = font->fid;
     v.fill_style = FillTiled;
     v.tile       = XmuCreateStippledPixmap(screen, fg, bg, depth);
     v.graphics_exposures = False;
 
-  2. stipplePixmap modifies a pixmap by adding an entry to the colorTable and
-  then changing half of the pixels to point to that.
+  2. Draw everything normally but then fill a rectangle with fill_style =
+  FillStippled.
 
-  3. drawOneXftLine fills a rectangle with fill_style = FillStippled.  While
-  method 1 uses a pixmap with specified fg and bg, this method uses a bitmap
-  as a stencil for the bg color being sprayed by the GC.
+  While method 1 uses a pixmap with specified fg and bg, method 2 uses a
+  bitmap as a stencil for the bg color being sprayed by the GC.
 */
-
 GC Xaw3dXftGetStippleGC (Widget w, Pixel bg) {
   static Boolean first = True;
   static Pixmap p;

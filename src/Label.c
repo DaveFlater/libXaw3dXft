@@ -44,6 +44,10 @@ WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
 ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
+
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+
 ******************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -218,37 +222,26 @@ static void SetTextWidthAndHeight(LabelWidget lw) {
       lw->label.label, &lw->label.label_width, &lw->label.label_height);
 }
 
-static void GetnormalGC (LabelWidget lw) {
-  lw->label.normal_GC = Xaw3dXftGetTextGC((Widget)lw, lw->label.foreground,
-					  lw->label.font, international(lw));
-}
+static void get_or_change_GCs (LabelWidget lw) {
+  const Pixel fg = lw->label.foreground, bg = lw->core.background_pixel;
 
-static void
-GetgrayGC(LabelWidget lw)
-{
-    XGCValues	values;
-    values.font	      = lw->label.font->fid;
-    values.fill_style = FillTiled;
-    values.tile       = XmuCreateStippledPixmap(XtScreen((Widget)lw),
-						lw->label.foreground,
-						lw->core.background_pixel,
-						lw->core.depth);
-    values.graphics_exposures = False;
+  // normal_GC
+  if (lw->label.normal_GC)
+    XtReleaseGC((Widget)lw, lw->label.normal_GC);
+  lw->label.normal_GC = Xaw3dXftGetTextGC((Widget)lw, fg, lw->label.font,
+					  international(lw));
 
-    lw->label.stipple = values.tile;
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        /* Since Xmb/wcDrawString eats the font, I must use XtAllocateGC. */
-        lw->label.gray_GC = XtAllocateGC((Widget)lw,  0,
-				(unsigned) GCTile | GCFillStyle |
-					   GCGraphicsExposures,
-				&values, GCFont, 0);
-    else
-#endif
-        lw->label.gray_GC = XtGetGC((Widget)lw,
-				(unsigned) GCFont | GCTile | GCFillStyle |
-					   GCGraphicsExposures,
-				&values);
+  // stipple_GC
+  if (lw->label.stipple_GC)
+    XtReleaseGC((Widget)lw, lw->label.stipple_GC);
+  lw->label.stipple_GC = Xaw3dXftGetStippleGC((Widget)lw, bg);
+
+  // XftColors
+  Display *display = XtDisplay(lw);
+  Visual *visual = VisualOf(lw);
+  Colormap cmap = lw->core.colormap;
+  Xaw3dXftGetXftColor(display, visual, cmap, fg, &lw->label.xftfg);
+  Xaw3dXftGetXftColor(display, visual, cmap, bg, &lw->label.xftbg);
 }
 
 // Given:    left_bitmap
@@ -272,6 +265,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     Xaw3dXftGetVisualInfo(new, &VisualOf(lw), NULL, NULL);
     lw->label.xorSet = False;
+    lw->label.normal_GC = lw->label.stipple_GC = NULL;
 
     if (lw->label.xftfontname)
 	lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
@@ -293,14 +287,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     else if (lw->label.label != NULL)
       lw->label.label = Xaw3dXftAnyStrdup(lw->label.encoding, lw->label.label);
 
-    GetnormalGC(lw);
-    GetgrayGC(lw);
-    lw->label.stipple_GC = Xaw3dXftGetStippleGC(new, lw->core.background_pixel);
-    Xaw3dXftGetXftColor(XtDisplay(lw), VisualOf(lw), lw->core.colormap,
-      lw->label.foreground, &lw->label.xftfg);
-    Xaw3dXftGetXftColor(XtDisplay(lw), VisualOf(lw), lw->core.colormap,
-      lw->core.background_pixel, &lw->label.xftbg);
-
+    get_or_change_GCs(lw);
     SetTextWidthAndHeight(lw);  /* label.label or label.pixmap */
 
     get_lbm_dimensions(lw);
@@ -319,149 +306,92 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     lw->label.label_x = lw->label.label_y = 0;
     (*XtClass(new)->core_class.resize) ((Widget)lw);
-
-    lw->label.stippled = lw->label.left_stippled = None;
 } /* Initialize */
 
 /*
  * Repaint the widget window
  */
 
-static void
-Redisplay(Widget gw, XEvent *event, Region region)
-{
-    LabelWidget w = (LabelWidget) gw;
-    LabelWidgetClass lwclass = (LabelWidgetClass) XtClass (gw);
-    Pixmap pm;
+static void Redisplay (Widget gw, XEvent *event, Region region) {
+  LabelWidget w = (LabelWidget)gw;
+  Display *display = XtDisplay(gw);
+  Window window = XtWindow(gw);
+  Dimension s = w->threeD.shadow_width;
 
-    /*
-     * Don't draw shadows if Command is going to redraw them.
-     * The shadow draw method is region aware, but since 99% of
-     * all labels don't have shadows, we'll check for a shadow
-     * before we incur the function call overhead.
-     */
-    if (!XtIsSubclass (gw, commandWidgetClass) && w->threeD.shadow_width > 0)
-	(*lwclass->threeD_class.shadowdraw) (gw, event, region,
-					     w->threeD.relief, True);
+  // Command should not be calling this anymore.
+  assert(!XtIsSubclass(gw, commandWidgetClass));
 
-    /*
-     * now we'll see if we need to draw the rest of the label
-     */
-    if (region != NULL) {
-	int x = w->label.label_x;
-	unsigned int width = w->label.label_width;
-	if (w->label.lbm_width) {
-	    if (w->label.label_x > (x = w->label.internal_width))
-		width += w->label.label_x - x;
-	}
-	if (XRectInRegion(region, x, w->label.label_y,
-			 width, w->label.label_height) == RectangleOut){
-	    return;
-	}
-    }
+  // Clean slate
+  XClearWindow(display, window);
+  w->label.xorSet = False;
 
-    GC gc;
-    if (XtIsSensitive(gw))
-      gc = w->label.normal_GC;
-    else
-      gc = w->label.gray_GC;
+  GC gc = w->label.normal_GC;
+  if (w->label.pixmap == None) {
+    /* draw left bitmap */
+    if (w->label.left_bitmap && w->label.lbm_width && w->label.lbm_height)
+      Xaw3dXftCopy(display, w->label.left_bitmap, window, gc,
+		   w->label.lbm_width, w->label.lbm_height, w->label.depth,
+		   w->label.internal_width + s,
+		   ((Position)w->core.height - (Position)w->label.lbm_height)/2);
+    /* draw label text */
+    if (w->label.label)
+      Xaw3dXftDrawAnyString(display, VisualOf(w), w->core.colormap, window,
+	w->label.font, labelFontSet(w), w->label.xftfont, True,
+	international(w), gc, None, &w->label.xftfg, &w->label.xftbg,
+        w->label.label_x, w->label.label_y, w->label.encoding,
+        w->label.label);
+  } else // w->label.pixmap != None
+    Xaw3dXftCopy(display, w->label.pixmap, window, gc,
+		 w->label.label_width, w->label.label_height, w->label.depth,
+		 w->label.label_x, w->label.label_y);
 
-    if (w->label.pixmap == None) {
-	/* draw left bitmap */
-	if (w->label.left_bitmap && w->label.lbm_width &&
-	    w->label.lbm_height) {
-	    pm = w->label.left_bitmap;
-#ifdef XAW_MULTIPLANE_PIXMAPS
-	    if (!XtIsSensitive(gw)) {
-		if (w->label.left_stippled == None)
-		    w->label.left_stippled = stipplePixmap(gw,
-				w->label.left_bitmap, w->core.colormap,
-				w->core.background_pixel, w->label.depth);
-		if (w->label.left_stippled != None)
-		    pm = w->label.left_stippled;
-	    }
-#endif
-	    Xaw3dXftCopy(XtDisplay(gw), pm, XtWindow(gw), gc,
-	      w->label.lbm_width, w->label.lbm_height, w->label.depth,
-	      w->label.internal_width + w->threeD.shadow_width,
-	      ((Position)w->core.height - (Position)w->label.lbm_height)/2);
-	}
+  // Apply insensitive stipple
+  if (!XtIsSensitive(gw))
+    XFillRectangle(display, window, w->label.stipple_GC, s, s,
+		   w->core.width - 2*s, w->core.height - 2*s);
 
-	/* draw label text */
-	if (w->label.label)
-	  Xaw3dXftDrawAnyString(XtDisplay(w), VisualOf(w),
-	    w->core.colormap, XtWindow(w), w->label.font, labelFontSet(w),
-	    w->label.xftfont, XtIsSensitive(gw), international(w), gc,
-	    w->label.stipple_GC, &w->label.xftfg, &w->label.xftbg,
-	    w->label.label_x, w->label.label_y, w->label.encoding,
-	    w->label.label);
-
-    } else { // w->label.pixmap != None
-	pm = w->label.pixmap;
-#ifdef XAW_MULTIPLANE_PIXMAPS
-	if (!XtIsSensitive(gw)) {
-	    if (w->label.stippled == None)
-		w->label.stippled = stipplePixmap(gw,
-				w->label.pixmap, w->core.colormap,
-				w->core.background_pixel, w->label.depth);
-	    if (w->label.stippled != None)
-		pm = w->label.stippled;
-	}
-#endif
-	Xaw3dXftCopy(XtDisplay(gw), pm, XtWindow(gw), gc,
-	  w->label.label_width, w->label.label_height, w->label.depth,
-	  w->label.label_x, w->label.label_y);
-    }
-
-    /*
-      Of unknown utility:
-      XSetRegion(XtDisplay(gw), gc, region);
-      XSetClipMask(XtDisplay(gw), gc, (Pixmap)None);
-    */
+  // Draw shadows if applicable
+  if (s > 0) {
+    LabelWidgetClass lwclass = (LabelWidgetClass)XtClass(gw);
+    (*lwclass->threeD_class.shadowdraw) (gw, event, region,
+					 w->threeD.relief, True);
+  }
 }
 
-static void
-_Reposition(LabelWidget lw, Dimension width, Dimension height,
-            Position *dx, Position *dy)
-{
-    Position newPos;
-    Position leftedge = (Position)(lw->label.internal_width +
-			           LEFT_OFFSET(lw) +
-                                   lw->threeD.shadow_width);
+// _Reposition is separate from Resize so that SetValues can keep using the
+// "current" width and height until a geometry change succeeds.
+static void _Reposition (LabelWidget lw, Dimension width, Dimension height) {
+  Position new_label_x;
+  Position leftedge = (Position)(lw->label.internal_width +
+				 LEFT_OFFSET(lw) +
+				 lw->threeD.shadow_width);
 
-    switch (lw->label.justify) {
-	case XtJustifyLeft:
-	    newPos = leftedge;
-	    break;
-	case XtJustifyRight:
-	    newPos = (Position)width -
-		     (Position)(lw->label.label_width +
-				lw->label.internal_width +
-				lw->threeD.shadow_width);
-	    break;
-	case XtJustifyCenter:
-	default:
-	    newPos = ((Position)width - (Position)lw->label.label_width) / 2;
-	    break;
-    }
+  switch (lw->label.justify) {
+  case XtJustifyLeft:
+    new_label_x = leftedge;
+    break;
+  case XtJustifyRight:
+    new_label_x = (Position)width -
+      (Position)(lw->label.label_width +
+		 lw->label.internal_width +
+		 lw->threeD.shadow_width);
+    break;
+  case XtJustifyCenter:
+  default:
+    new_label_x = ((Position)width - (Position)lw->label.label_width) / 2;
+    break;
+  }
 
-    if (newPos < leftedge)
-	newPos = leftedge;
-    *dx = newPos - lw->label.label_x;
-    lw->label.label_x = newPos;
-
-    *dy = (newPos = ((Position)height - (Position)lw->label.label_height) / 2)
-	  - lw->label.label_y;
-    lw->label.label_y = newPos;
+  if (new_label_x < leftedge)
+    new_label_x = leftedge;  // why clamp horizontally but not vertically?
+  lw->label.label_x = new_label_x;
+  lw->label.label_y = ((Position)height -
+		       (Position)lw->label.label_height) / 2;
 }
 
-static void
-Resize(Widget w)
-{
-    LabelWidget lw = (LabelWidget)w;
-    Position dx, dy;
-
-    _Reposition(lw, w->core.width, w->core.height, &dx, &dy);
+static void Resize (Widget w) {
+  LabelWidget lw = (LabelWidget)w;
+  _Reposition(lw, lw->core.width, lw->core.height);
 }
 
 /*
@@ -475,195 +405,160 @@ Resize(Widget w)
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-    LabelWidget curlw = (LabelWidget)current;
-    LabelWidget reqlw = (LabelWidget)request;
-    LabelWidget newlw = (LabelWidget)new;
-    Boolean was_resized = False, redisplay = False, checks[NUM_CHECKS];
+  LabelWidget curlw = (LabelWidget)current;
+  LabelWidget reqlw = (LabelWidget)request;
+  LabelWidget newlw = (LabelWidget)new;
+  Boolean was_resized = False, redisplay = False, checks[NUM_CHECKS];
 
-    // was_resized incurs a repaint but furthermore causes label position to
-    // be recalculated.  If redisplay is set but was_resized is not, you get
-    // repaint but not the recalculation.
+  // was_resized incurs a repaint but furthermore causes label position to
+  // be recalculated.  If redisplay is set but was_resized is not, you get
+  // repaint but not the recalculation.
 
-    // Flags to indicate when something appeared in the arglist regardless
-    // whether its value changed.
-    {
-      Cardinal c;
-      for (c = 0; c < NUM_CHECKS; c++)
-	checks[c] = False;
-      for (c = 0; c < *num_args; c++) {
-	if (streq(XtNwidth, args[c].name))
-	  checks[WIDTH] = True;
-	if (streq(XtNheight, args[c].name))
-	  checks[HEIGHT] = True;
-      }
+  // Flags to indicate when something appeared in the arglist regardless
+  // whether its value changed.
+  {
+    Cardinal c;
+    for (c = 0; c < NUM_CHECKS; c++)
+      checks[c] = False;
+    for (c = 0; c < *num_args; c++) {
+      if (streq(XtNwidth, args[c].name))
+	checks[WIDTH] = True;
+      if (streq(XtNheight, args[c].name))
+	checks[HEIGHT] = True;
     }
+  }
 
-    // Notice if the label text changed.
-    if (curlw->label.label != newlw->label.label) {
-        // As per Initialize, we always dup label.
-        if (curlw->label.label)
-	  free(curlw->label.label);
-	if (newlw->label.label == NULL && newlw->core.name != NULL)
-	  newlw->label.label = Xaw3dXftAnyStrdup(newlw->label.encoding, newlw->core.name);
-	else if (newlw->label.label != NULL)
-	  newlw->label.label = Xaw3dXftAnyStrdup(newlw->label.encoding, newlw->label.label);
-	was_resized = True;
-    }
-    // If *only* the encoding changed, we gain nothing by repeating the
-    // strdup, but it might display differently.
-    if (curlw->label.encoding != newlw->label.encoding)
+  // Notice if the label text changed.
+  if (curlw->label.label != newlw->label.label) {
+      // As per Initialize, we always dup label.
+      if (curlw->label.label)
+	free(curlw->label.label);
+      if (newlw->label.label == NULL && newlw->core.name != NULL)
+	newlw->label.label = Xaw3dXftAnyStrdup(newlw->label.encoding, newlw->core.name);
+      else if (newlw->label.label != NULL)
+	newlw->label.label = Xaw3dXftAnyStrdup(newlw->label.encoding, newlw->label.label);
       was_resized = True;
+  }
+  // If *only* the encoding changed, we gain nothing by repeating the
+  // strdup, but it might display differently.
+  if (curlw->label.encoding != newlw->label.encoding)
+    was_resized = True;
 
-    // Notice if the font changed.
-    if (curlw->label.xftfontname != newlw->label.xftfontname) {
-      if (newlw->label.xftfontname)
-	newlw->label.xftfont = Xaw3dXftGetFont(new, newlw->label.xftfontname);
-      else
-	newlw->label.xftfont = NULL;
-      was_resized = True;
-    }
-    if (curlw->label.font->fid != newlw->label.font->fid)
-      was_resized = True;
+  // Notice if the font changed.
+  if (curlw->label.xftfontname != newlw->label.xftfontname) {
+    if (newlw->label.xftfontname)
+      newlw->label.xftfont = Xaw3dXftGetFont(new, newlw->label.xftfontname);
+    else
+      newlw->label.xftfont = NULL;
+    was_resized = True;
+  }
+  if (curlw->label.font->fid != newlw->label.font->fid)
+    was_resized = True;
 #ifdef XAW_INTERNATIONALIZATION
-    if (curlw->simple.international != newlw->simple.international ||
-	newlw->simple.international &&
-	  curlw->label.fontset != newlw->label.fontset)
-      was_resized = True;
+  if (curlw->simple.international != newlw->simple.international ||
+      newlw->simple.international &&
+	curlw->label.fontset != newlw->label.fontset)
+    was_resized = True;
 #endif
 
-    // Notice if the pixmap changed.
-    if (curlw->label.pixmap != newlw->label.pixmap) {
-      newlw->label.stippled = None;
-      if (curlw->label.stippled != None)
-	XFreePixmap(XtDisplay(current), curlw->label.stippled);
-      was_resized = True;
+  // Notice if the pixmap changed.
+  if (curlw->label.pixmap != newlw->label.pixmap)
+    was_resized = True;
+
+  // If any of that happened, recalculate label dimensions.  (Does not
+  // depend on left_bitmap.)
+  if (was_resized)
+    SetTextWidthAndHeight(newlw);   /* label.label or label.pixmap */
+
+  // Notice other reasons to recalculate label position.
+  if (curlw->label.left_bitmap != newlw->label.left_bitmap ||
+    curlw->label.justify != newlw->label.justify ||
+    curlw->label.internal_width != newlw->label.internal_width ||
+    curlw->label.internal_height != newlw->label.internal_height ||
+    curlw->threeD.shadow_width != newlw->threeD.shadow_width)
+    was_resized = True;
+
+  /* recalculate the window size if something has changed. */
+  if (newlw->label.resize && was_resized) {
+    get_lbm_dimensions(newlw);
+    if (curlw->core.height == reqlw->core.height && !checks[HEIGHT])
+      newlw->core.height =
+	(newlw->label.lbm_height > newlw->label.label_height ?
+	 newlw->label.lbm_height : newlw->label.label_height) +
+	2 * newlw->label.internal_height +
+	2 * newlw->threeD.shadow_width;
+    if (curlw->core.width == reqlw->core.width && !checks[WIDTH])
+      newlw->core.width = newlw->label.label_width +
+	2 * newlw->label.internal_width +
+	2 * newlw->threeD.shadow_width +
+	LEFT_OFFSET(newlw); /* req's label.lbm_width */
+  }
+
+  /* enforce minimum dimensions */
+  if (newlw->label.resize) {
+    int i;
+    if (checks[HEIGHT]) {
+      if (newlw->label.label_height > newlw->label.lbm_height)
+	i = newlw->label.label_height
+	  + 2 * newlw->label.internal_height
+	  + 2 * newlw->threeD.shadow_width;
+      else
+	i = newlw->label.lbm_height
+	  + 2 * newlw->label.internal_height
+	  + 2 * newlw->threeD.shadow_width;
+      if (i > newlw->core.height)
+	newlw->core.height = i;
     }
-
-    // If any of that happened, recalculate label dimensions.  (Does not
-    // depend on left_bitmap.)
-    if (was_resized)
-      SetTextWidthAndHeight(newlw);   /* label.label or label.pixmap */
-
-    // Notice if the left pixmap changed.
-    if (curlw->label.left_bitmap != newlw->label.left_bitmap) {
-      newlw->label.left_stippled = None;
-      if (curlw->label.left_stippled != None)
-	XFreePixmap(XtDisplay(current), curlw->label.left_stippled);
-      was_resized = True;
+    if (checks[WIDTH]) {
+      i = newlw->label.label_width
+	+ 2 * newlw->label.internal_width
+	+ 2 * newlw->threeD.shadow_width
+	+ LEFT_OFFSET(newlw); /* req's label.lbm_width */
+      if (i > newlw->core.width)
+	newlw->core.width = i;
     }
+  }
 
-    // Notice other reasons to recalculate label position.
-    if (curlw->label.justify != newlw->label.justify ||
-      curlw->label.internal_width != newlw->label.internal_width ||
-      curlw->label.internal_height != newlw->label.internal_height ||
-      curlw->threeD.shadow_width != newlw->threeD.shadow_width)
-      was_resized = True;
+  // Notice if colors changed.  (GCs also need updating if plain old font
+  // changed.)
+  if (curlw->core.background_pixel != newlw->core.background_pixel ||
+	   curlw->label.foreground != newlw->label.foreground ||
+	    curlw->label.font->fid != newlw->label.font->fid) {
+    get_or_change_GCs(newlw);
+    redisplay = True;
+  }
 
-    /* recalculate the window size if something has changed. */
-    if (newlw->label.resize && was_resized) {
-      get_lbm_dimensions(newlw);
-      if (curlw->core.height == reqlw->core.height && !checks[HEIGHT])
-	newlw->core.height =
-	  (newlw->label.lbm_height > newlw->label.label_height ?
-	   newlw->label.lbm_height : newlw->label.label_height) +
-	  2 * newlw->label.internal_height +
-	  2 * newlw->threeD.shadow_width;
-      if (curlw->core.width == reqlw->core.width && !checks[WIDTH])
-	newlw->core.width = newlw->label.label_width +
-	  2 * newlw->label.internal_width +
-	  2 * newlw->threeD.shadow_width +
-	  LEFT_OFFSET(newlw); /* req's label.lbm_width */
-    }
+  // Notice if sensitive changed.
+  if (XtIsSensitive(current) != XtIsSensitive(new))
+    redisplay = True;
 
-    /* enforce minimum dimensions */
-    if (newlw->label.resize) {
-      int i;
-      if (checks[HEIGHT]) {
-	if (newlw->label.label_height > newlw->label.lbm_height)
-	  i = newlw->label.label_height
-	    + 2 * newlw->label.internal_height
-	    + 2 * newlw->threeD.shadow_width;
-	else
-	  i = newlw->label.lbm_height
-	    + 2 * newlw->label.internal_height
-	    + 2 * newlw->threeD.shadow_width;
-	if (i > newlw->core.height)
-	  newlw->core.height = i;
-      }
-      if (checks[WIDTH]) {
-	i = newlw->label.label_width
-	  + 2 * newlw->label.internal_width
-	  + 2 * newlw->threeD.shadow_width
-	  + LEFT_OFFSET(newlw); /* req's label.lbm_width */
-	if (i > newlw->core.width)
-	  newlw->core.width = i;
-      }
-    }
+  // Finally, act on was_resized and redisplay.
+  if (was_resized) {
+    redisplay = True;
+    /* Resize() will be called if geometry changes succeed */
+    _Reposition(newlw, curlw->core.width, curlw->core.height);
+  }
+  /*
+    "After calling all the set_values procedures, XtSetValues forces a
+    redisplay by calling XClearArea if any of the set_values procedures
+    returned True." - libXt docs, Widget State: The set_values Procedure
 
-    // Notice if colors changed.  (GCs also need updating if plain old font
-    // changed.)
-    if (curlw->core.background_pixel != newlw->core.background_pixel ||
-	     curlw->label.foreground != newlw->label.foreground ||
-              curlw->label.font->fid != newlw->label.font->fid) {
-        /* the fontset is not in the GC - no new GC if fontset changes */
-	XtReleaseGC(current, curlw->label.normal_GC);
-	XtReleaseGC(current, curlw->label.gray_GC);
-	XmuReleaseStippledPixmap(XtScreen(current), curlw->label.stipple);
-	GetnormalGC(newlw);
-	GetgrayGC(newlw);
-	if (curlw->label.foreground != newlw->label.foreground)
-	  Xaw3dXftGetXftColor(XtDisplay(newlw), VisualOf(newlw),
-	    newlw->core.colormap, newlw->label.foreground,
-	    &newlw->label.xftfg);
-	if (curlw->core.background_pixel != newlw->core.background_pixel) {
-	  Xaw3dXftGetXftColor(XtDisplay(newlw), VisualOf(newlw),
-	    newlw->core.colormap, newlw->core.background_pixel,
-	    &newlw->label.xftbg);
-	  XtReleaseGC(current, curlw->label.stipple_GC);
-	  newlw->label.stipple_GC = Xaw3dXftGetStippleGC(new,
-	    newlw->core.background_pixel);
-	}
-	redisplay = True;
-    }
-
-    // Notice if sensitive changed.
-    if (XtIsSensitive(current) != XtIsSensitive(new))
-      redisplay = True;
-
-    // Finally, act on was_resized and redisplay.
-    if (was_resized) {
-      redisplay = True;
-      Position dx, dy;
-      /* Resize() will be called if geometry changes succeed */
-      _Reposition(newlw, curlw->core.width, curlw->core.height, &dx, &dy);
-    }
-    /*
-      "After calling all the set_values procedures, XtSetValues forces a
-      redisplay by calling XClearArea if any of the set_values procedures
-      returned True." - libXt docs, Widget State: The set_values Procedure
-
-      That fill with bg color clears the Xor state from Set/Unset in Command.
-    */
-    if (redisplay) newlw->label.xorSet = False;
-    return redisplay;
+    That fill with bg color clears the Xor state from Set/Unset in Command.
+  */
+  if (redisplay) newlw->label.xorSet = False;
+  return redisplay;
 }
 
-static void
-Destroy(Widget w)
-{
-    LabelWidget lw = (LabelWidget)w;
+static void Destroy(Widget w) {
+  LabelWidget lw = (LabelWidget)w;
 
-    // As per Initialize, we always dup label.
-    free(lw->label.label);
-    // Xft fonts are cached; never call XftFontClose.
-    XtReleaseGC(w, lw->label.normal_GC );
-    XtReleaseGC(w, lw->label.gray_GC);
+  // As per Initialize, we always dup label.
+  free(lw->label.label);
+  if (lw->label.normal_GC)
+    XtReleaseGC(w, lw->label.normal_GC);
+  if (lw->label.stipple_GC)
     XtReleaseGC(w, lw->label.stipple_GC);
-    if (lw->label.stippled != None)
-	XFreePixmap(XtDisplay(w), lw->label.stippled);
-    if (lw->label.left_stippled != None)
-	XFreePixmap(XtDisplay(w), lw->label.left_stippled);
-    XmuReleaseStippledPixmap( XtScreen(w), lw->label.stipple );
+  // Xft fonts are cached; never call XftFontClose.
 }
 
 

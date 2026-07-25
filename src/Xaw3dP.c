@@ -7,7 +7,6 @@
 /*********************************************************************
 Copyright (C) 1992 Kaleb Keithley
 Copyright (C) 2000, 2003 David J. Hawkey Jr.
-© 2026 David Flater
 
                         All Rights Reserved
 
@@ -33,20 +32,13 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Shell.h>
-#include <X11/StringDefs.h>
-#include <X11/Xaw3dXft/Xaw3dP.h>
-
+#include <X11/Xlib.h>
+#include <X11/Xaw3dXft/Xaw3d.h>
 static_assert(Got_XAW_defines);
-#ifdef XAW_MULTIPLANE_PIXMAPS
-#include <stdio.h>
-#include <X11/xpm.h>
-#endif
 
 #ifdef XAW_GRAY_BLKWHT_STIPPLES
-unsigned long
-grayPixel(unsigned long p, Display *dpy, Screen *scn)
-{
+unsigned long grayPixel ([[maybe_unused]] unsigned long p, Display *dpy,
+			 Screen *scn) {
     static XColor Gray =
     {
 	0,		/* pixel */
@@ -66,209 +58,3 @@ grayPixel(unsigned long p, Display *dpy, Screen *scn)
     return Gray.pixel;
 }
 #endif
-
-#ifdef XAW_MULTIPLANE_PIXMAPS
-#define IS_EVEN(x)	(((x) % 2) == 0)
-#define IS_ODD(x)	(((x) % 2) == 1)
-
-Pixmap
-stipplePixmap(Widget w, Pixmap pm, Colormap cm, Pixel bg, unsigned int d)
-{
-    static Pixmap pixmap;
-    Display *dpy;
-    XpmImage image;
-    XpmAttributes attr;
-    XpmColor *src_table=NULL, *dst_table=NULL;
-    int i, j, index = -1;
-
-    if (pm == None)
-	return (None);
-    if (XtIsRealized(w) == False)
-	return (None);
-
-    dpy = XtDisplayOfObject(w);
-
-    attr.colormap = cm;
-    attr.closeness = 32768;	/* might help on 8-bpp displays? */
-    attr.valuemask = XpmColormap | XpmCloseness;
-
-    if (XpmCreateXpmImageFromPixmap(dpy, pm, None,
-				    &image, &attr) != XpmSuccess)
-	return (None);
-    if (image.height == 0 || image.width == 0)
-    {
-	XpmFreeXpmImage(&image);
-	return (None);
-    }
-
-    char dst_rgb[14];
-    if (d > 1)
-    {
-	XColor x_color;
-	XpmColor *dst_color;
-
-	/*
-	 * Multi-plane (XPM) pixmap. Don't bother scanning the color table
-	 * for the background color, it might not be there. Copy the color
-	 * table, add an entry for the background color, and set the index
-	 * to that.
-	 */
-
-	x_color.pixel = bg;
-	XQueryColor(dpy, cm, &x_color);
-	sprintf(dst_rgb, "#%04X%04X%04X",
-		x_color.red, x_color.green, x_color.blue);
-
-	dst_table = (XpmColor *) XtCalloc(sizeof(XpmColor),
-					  image.ncolors + 1);
-	memcpy(dst_table, image.colorTable, image.ncolors * sizeof(XpmColor));
-
-	dst_color = &dst_table[image.ncolors];
-	switch (w->core.depth)
-	{
-	    case 1:
-		dst_color->m_color = dst_rgb;
-		break;
-	    case 4:
-		dst_color->g4_color = dst_rgb;
-		break;
-	    case 6:
-		dst_color->g_color = dst_rgb;
-		break;
-	    case 8:
-	    default:
-		dst_color->c_color = dst_rgb;
-		break;
-	}
-	dst_color->string = "\x01";	/* ! */
-
-	src_table = image.colorTable;
-	image.colorTable = dst_table;
-
-	index = image.ncolors++;
-    }
-    else
-    {
-	XpmColor *src_color;
-	char *src_rgb;
-
-	/*
-	 * Single-plane (XBM) pixmap. Set the index to the white color.
-	 */
-
-	for (i = 0, src_color = image.colorTable; i < image.ncolors;
-		i++, src_color++)
-	{
-	    switch (w->core.depth)
-	    {
-		case 1:
-		    src_rgb = src_color->m_color;
-		    break;
-		case 4:
-		    src_rgb = src_color->g4_color;
-		    break;
-		case 6:
-		    src_rgb = src_color->g_color;
-		    break;
-		case 8:
-		default:
-		    src_rgb = src_color->c_color;
-		    break;
-	    }
-	    if (strcmp(src_rgb, "#000000000000") == 0)
-	    {
-		index = i;
-		break;
-	    }
-	}
-
-	if (index == -1)
-	{
-	    XpmFreeXpmImage(&image);
-	    return (None);
-	}
-    }
-
-    for (i = 0; i < image.height; i++)
-	for (j = 0; j < image.width; j++)
-	    if ((IS_ODD(i) && IS_EVEN(j)) || (IS_EVEN(i) && IS_ODD(j)))
-		image.data[(i * image.width) + j] = index;
-
-    attr.depth = d;
-    attr.valuemask |= XpmDepth;
-
-    i = XpmCreatePixmapFromXpmImage(dpy, pm, &image, &pixmap, NULL, &attr);
-
-    if (d > 1)
-    {
-	XtFree((void *)image.colorTable);	/* dst_table */
-	image.colorTable = src_table;
-	image.ncolors--;
-    }
-    XpmFreeXpmImage(&image);
-
-    return ((i == XpmSuccess) ? pixmap : None);
-}
-#endif
-
-
-/*
-  We need the Visual that applies to our Object and the class and depth of
-  that visual.
-
-  The application can pass a non-default visual when it creates a Shell.
-  That visual gets inherited by everything below the Shell.  Thus, it is
-  unsafe to use DefaultVisualOfScreen and probably unsafe to use
-  DefaultDepthOfScreen.
-
-  If our Object is realized, we can use Xlib to get the answers:
-    Status XGetWindowAttributes(XtDisplayOfObject(object),
-                                XtWindowOfObject(object),
-                                &attributes);
-    *class = attributes.visual->class;
-    *depth = attributes.depth;
-  But our Object is not necessarily realized.
-
-  If our Object is a proper widget (meaning a subclass of Core), we can get
-  the depth from core.depth.  But our Object is not necessarily a widget.
-  AsciiSink, SmeBSB, and SmeThreeD are non-widget Objects with no Core part.
-
-  When a Shell is created with a non-default visual, the pointer to the
-  Visual is stored in the Shell's visual resource, but that is not even
-  copied into Core.  So we have to climb up to the Shell to see whether its
-  visual resource has a value.  If it doesn't, it's using the default visual.
-
-  The Visual struct itself contains a field for its class but not its depth.
-  We could call XGetVisualInfo using the visual ID, but we can avoid that by
-  getting the depth from the first widget we come to.
-*/
-
-// Given a Widget or non-widget Object, get its visual and the class and
-// depth of its visual.  The visual, class, and depth arguments can be NULL
-// if their values are unwanted.
-void Xaw3dXftGetVisualInfo (Widget object, Visual **visual,
-			    int *class, Cardinal *depth) {
-  // Nobody calls this function wanting only depth.  If they do, there'll be
-  // some wasted work but no failure.
-  Widget loopw = object;
-  Visual *_visual = NULL;
-  if (depth) *depth = 0;
-  while (_visual == NULL && loopw != NULL) {
-    if (depth == NULL || *depth > 0)
-      XtVaGetValues(loopw, XtNvisual, (XtArgVal)(&_visual), NULL);
-    else
-      XtVaGetValues(loopw,
-		    XtNvisual, (XtArgVal)(&_visual),
-		    XtNdepth, (XtArgVal)depth, NULL);
-    loopw = XtParent(loopw);
-  }
-  if (depth) assert(*depth > 0);
-  if (_visual == NULL)
-    _visual = DefaultVisualOfScreen(XtScreenOfObject(object));
-  if (visual)
-    *visual = _visual;
-  if (class) {
-    *class = _visual->class;
-    assert(*class >= 0 && *class <= 5);
-  }
-}
