@@ -264,7 +264,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     LabelWidget lw = (LabelWidget) new;
 
     Xaw3dXftGetVisualInfo(new, &VisualOf(lw), NULL, NULL);
-    lw->label.xorSet = False;
     lw->label.normal_GC = lw->label.stipple_GC = NULL;
 
     if (lw->label.xftfontname)
@@ -323,7 +322,6 @@ static void Redisplay (Widget gw, XEvent *event, Region region) {
 
   // Clean slate
   XClearWindow(display, window);
-  w->label.xorSet = False;
 
   GC gc = w->label.normal_GC;
   if (w->label.pixmap == None) {
@@ -537,14 +535,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     /* Resize() will be called if geometry changes succeed */
     _Reposition(newlw, curlw->core.width, curlw->core.height);
   }
-  /*
-    "After calling all the set_values procedures, XtSetValues forces a
-    redisplay by calling XClearArea if any of the set_values procedures
-    returned True." - libXt docs, Widget State: The set_values Procedure
-
-    That fill with bg color clears the Xor state from Set/Unset in Command.
-  */
-  if (redisplay) newlw->label.xorSet = False;
   return redisplay;
 }
 

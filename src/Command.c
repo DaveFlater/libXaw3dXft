@@ -296,89 +296,46 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 *
 ***************************/
 
-static void
-Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
+/*
+  The HighlightWhenUnset protocol, which is used by everything except Toggle,
+  means that every set/unset comes with a highlight/unhighlight (unless
+  highlights are disabled).
+
+  Highlight/unhighlight currently require a redisplay.  Highlight could be
+  done with two extra GCs, but to avoid a redisplay on unhighlight, we would
+  need to stop allowing the highlight rectangle to overlap label contents.
+
+  If it's not worth implementing a fast path for highlight/unhighlight, it's
+  definitely not worth it for set/unset, which are complicated by the need to
+  redraw Xft text on a clean background.
+*/
+
+static void Set (Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cw = (CommandWidget)w;
-  if (cw->command.set)
-    return;
-  cw->command.set = True;
-  if (XtIsRealized(w)) {
-    // If highlight needs to be cleared or if we are somehow changing state
-    // while insensitive, we have to do a complete Redisplay.
-    if (cw->command.highlighted == HighlightWhenUnset &&
-	cw->command.highlight_thickness > 0 || !XtIsSensitive(w))
+  if (!cw->command.set) {
+    cw->command.set = True;
+    if (XtIsRealized(w))
       Redisplay(w, event, NULL);
-    else {
-      const Dimension s = cw->threeD.shadow_width;
-      // Flip the entire contents
-      if (!cw->label.xorSet) {
-	XFillRectangle(XtDisplay(w), XtWindow(w), cw->command.xor_GC,
-		       s, s, cw->core.width - 2*s, cw->core.height - 2*s);
-	cw->label.xorSet = True;
-      }
-      // Redraw anti-aliased text to fix edges.
-      if (cw->label.pixmap == None && cw->label.label != None &&
-	  cw->label.xftfont != None)
-	Xaw3dXftDrawAnyString(XtDisplay(w), cw->label.visual,
-	  cw->core.colormap, XtWindow(w), cw->label.font, labelFontSet(cw),
-	  cw->label.xftfont, international(cw), None, &cw->label.xftbg,
-	  &cw->label.xftfg, cw->label.label_x, cw->label.label_y,
-	  cw->label.encoding, cw->label.label);
-      // Flip the shadow
-      CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
-      (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cw->threeD.relief,
-					   !cw->command.set);
-    }
   }
-  // Else set but not realized
 }
 
-static void
-Unset(Widget w, XEvent *event, String *params, Cardinal *num_params)
+static void Unset (Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cw = (CommandWidget)w;
-  if (!cw->command.set)
-    return;
-  cw->command.set = False;
-  if (XtIsRealized(w)) {
-    // If highlight needs to be applied or if we are somehow changing state
-    // while insensitive, we have to do a complete Redisplay.
-    if (cw->command.highlighted == HighlightWhenUnset &&
-	cw->command.highlight_thickness > 0 || !XtIsSensitive(w))
+  if (cw->command.set) {
+    cw->command.set = False;
+    if (XtIsRealized(w))
       Redisplay(w, event, NULL);
-    else {
-      const Dimension s = cw->threeD.shadow_width;
-      // Flip the entire contents
-      if (cw->label.xorSet) {
-	XFillRectangle(XtDisplay(w), XtWindow(w), cw->command.xor_GC,
-		       s, s, cw->core.width - 2*s, cw->core.height - 2*s);
-	cw->label.xorSet = False;
-      }
-      // Redraw anti-aliased text to fix edges.
-      if (cw->label.pixmap == None && cw->label.label != None &&
-	  cw->label.xftfont != None)
-	Xaw3dXftDrawAnyString(XtDisplay(w), cw->label.visual,
-	  cw->core.colormap, XtWindow(w), cw->label.font, labelFontSet(cw),
-	  cw->label.xftfont, international(cw), None, &cw->label.xftfg,
-	  &cw->label.xftbg, cw->label.label_x, cw->label.label_y,
-	  cw->label.encoding, cw->label.label);
-      // Flip the shadow
-      CommandWidgetClass cwclass = (CommandWidgetClass)XtClass(w);
-      (*cwclass->threeD_class.shadowdraw) (w, NULL, NULL, cw->threeD.relief,
-	!cw->command.set);
-    }
   }
-  // Else unset but not realized
 }
 
 static void
 Reset(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   CommandWidget cw = (CommandWidget)w;
+  // This doesn't get called by Toggle.
   if (cw->command.set) {
-    // This doesn't get called by Toggle, so assume HighlightWhenUnset, and
-    // we don't have to clear the highlight.
     cw->command.highlighted = HighlightNone;
     Unset(w, event, params, num_params);
   } else
@@ -464,7 +421,6 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
 
   // Clean slate
   XClearWindow(display, window);
-  cw->label.xorSet = False;
 
   // Draw bitmaps
   if (cw->label.pixmap == None) {
@@ -503,11 +459,9 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
   }
 
   // Apply reverse color to bg, bitmaps, and highlight rectangle
-  if (set) {
+  if (set)
     XFillRectangle(display, window, cw->command.xor_GC, s, s,
 		   cw->core.width - 2*s, cw->core.height - 2*s);
-    cw->label.xorSet = True;
-  }
 
   // Draw label text
   if (cw->label.pixmap == None && cw->label.label) {
@@ -654,16 +608,7 @@ SetValues (Widget current, Widget request, Widget new, ArgList args, Cardinal *n
   // Unfortunately, changes to border_width can be rejected by the geometry
   // manager.  Any recovery has to be done in SetValuesAlmost.
 
-  /*
-    "After calling all the set_values procedures, XtSetValues forces a
-    redisplay by calling XClearArea if any of the set_values procedures
-    returned True." - libXt docs, Widget State: The set_values Procedure
-
-    That fill with bg color clears the Xor state from Set/Unset.
-  */
-  if (redisplay) cw->label.xorSet = False;
-
-  return (redisplay);
+  return redisplay;
 }
 
 static void

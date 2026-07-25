@@ -111,12 +111,6 @@ typedef struct {
     Visual      *visual;
     XftColor    xftfg;
     XftColor    xftbg;
-
-    // If Label's SetValues returns True, it clears this flag.  That lets
-    // Command know that its color changing state from Set got wiped out by
-    // XClearArea.
-    Boolean     xorSet;
-
 } LabelPart;
 
 
