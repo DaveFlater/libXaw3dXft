@@ -18,6 +18,8 @@ while some have not yet migrated.
 - [Run-time options](#runtimeopts)
 - [Non-options](#nonoptions)
 - [Version 1.x to 2.0 migration](#migration)
+- [Rationale for features removed in 2.0](#rationale)
+- [Oddities](#oddities)
 - [History](#history)
 - [To do](#todo)
 
@@ -780,28 +782,6 @@ resource is true
 Determines the behavior of a menu when it doesn't fit on the screen in a
 single column.  1 = multiple columns; 0 = single column with scroll arrows.
 
-### char no_hilit_reverse = 0
-
-The context-dependent effects of this confusing variable are shown in the
-following table.
-
-encoding | no_hilit_reverse | List item click | Menu item mouseover
-:---: | :---: | :--- | :---
-0         | 0 | Reverse fg/bg colors       | 3D effect
-0         | 1 | fg = bg; bg ^= hilit_color | Reverse fg/bg colors
--1, 8, 16 | 0 | Black outline              | 3D effect
--1, 8, 16 | 1 | bg ^= hilit_color          | fg and bg ^= hilit_color
-
-### char * hilit_color = NULL
-
-Applicable when:  no_hilit_reverse == 1
-
-Bitwise XOR value used to highlight list or menu items.  The string is passed
-to XAllocNamedColor, and the red, green, and blue fields of the resulting
-XColor are XORed with the respective fields of the color.  If hilit_color is
-null on first use, the value "#000000" is assigned, so no highlighting
-occurs.
-
 ### char text_bg_hilight = 0
 
 Applicable when:  encoding != 0
@@ -818,46 +798,6 @@ Applicable when:  encoding != 0 && text_bg_hilight == 1
 Bitwise XOR value applied to background colors to highlight selected text.
 The Pixel is interpreted as a 3-byte value, one byte per color:  0xRRGGBB.
 If left on the default value of -1, no highlighting occurs.
-
-### unsigned short insensitive_twist[4] = {0, 0, 0, 0}
-
-Applicable when:  encoding != 0
-
-Used to change the foreground color of the labels on "insensitive" widgets
-(see XtSetSensitive) to make it visually apparent that they aren't accepting
-mouse clicks or key presses.
-
-Element 0 is a control flag; elements 1–3 are 16-bit values applied to red,
-green, and blue respectively or only to alpha.
-
-It is intended that this compound value should be set up using the
-convenience function Xaw3dXftSetInsensitiveTwist(char *value), which is
-provided by a function pointer in [proc](#proc) and also declared in
-Xaw3dXftP.h.
-
-The following table shows the form of character string input to
-Xaw3dXftSetInsensitiveTwist and the corresponding control values in
-insensitive_twist.  RR, GG, BB, and AA indicate bytes in hexadecimal.
-
-char *value | insensitive_twist[0] | Function
-:---: | :---: | :---:
-"#RRGGBB"  | 0 | Assign value to color
-"\|RRGGBB" | 1 | Bitwise OR with color
-"&RRGGBB"  | 2 | Bitwise AND with color
-"^RRGGBB"  | 3 | Bitwise XOR with color
-"~AA"      | 4 | Assign value to alpha
-
-The default value therefore has the effect of setting the text color on
-insensitive widgets to black.
-
-If encoding is 0, the text on insensitive widgets is stippled (grayed out)
-and insensitive_twist has no effect.
-
-### char menu_spacing = 1
-
-The vertical pitch of menu items is padded by this number of pixels.
-Tip labels are padded by triple this length.
-0 is a perfectly good value.
 
 ### char show_tips = 1
 
@@ -977,6 +917,100 @@ TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
 included by Text.h.
 
 
+## <a name="rationale"> Rationale for features removed in 2.0
+
+### no_hilit_reverse extra highlighting behaviors
+
+In Xaw3dXft 1.x, the global variable no_hilit_reverse had the following
+context-dependent effects on List and SmeBSB:
+
+font system | no_hilit_reverse | List item click | Menu item mouseover
+:---: | :---: | :--- | :---
+core | 0 | Reverse fg/bg colors       | Shadows
+core | 1 | fg = bg; bg ^= hilit_color | Reverse fg/bg colors
+Xft  | 0 | Black outline              | Shadows
+Xft  | 1 | bg ^= hilit_color          | fg and bg ^= hilit_color
+
+It was not obvious which behaviors were intended.  I made an opinionated
+decision to reduce the options to Xaw-style reversal, Xaw3d-style shadows,
+and changing the background color only.
+
+### insensitive_twist
+
+The remarkably complex insensitive_twist feature of Xaw3dXft 1.x seemed in
+totality to be a poor substitute for the stippling that was done with core
+fonts.  Since stippling was successfully implemented for Xft text, there was
+no reason to keep insensitive_twist.
+
+### button_inverse
+
+In Xaw3dXft 1.x, the global variable button_inverse had the following
+effects:
+
+font system | button_reverse | Command button click
+:---: | :---: | :---
+core | 0 | Label text vanishes
+core | 1 | Reverse fg/bg colors
+Xft  | 0 | Nothing
+Xft  | 1 | Nothing
+
+In other words, it was a completely broken feature, so nothing was lost by
+deleting it.  The original Xaw-style color reversal now works for Xft.
+
+### menu_spacing
+
+The menu_spacing variable of Xaw3dXft 1.x did two different things.  First,
+the vertical pitch of menu items was padded by menu_spacing pixels.  That was
+redundant with and cumulative with the relative vertSpace adjustment already
+provided by Xaw.  Second, the line spacing of multi-line Tip text was padded
+by 3×menu_spacing pixels.  That was both unexpected and annoying.  If a line
+spacing adjustment is needed, it should be implemented in the standard way as
+a relative line spacing multiplier that is applicable to any multi-line text.
+It's not clear that it's needed.
+
+### proc structure
+
+The Xaw3dXftProc struct may have been inspired by the Xt idiom in which the
+equivalent of a C++ protected function is implemented by giving subclasses
+access to function pointers.  For functions in the global namespace that an
+application might use, it's just extra indirection.
+
+### Repeater flash
+
+The flash feature of the Repeater widget does not work in Xaw and has no
+reasonable implementation that works on a modern X server.  It needs
+immediate, synchronous updating of the display.
+
+
+## <a name="oddities"> Oddities
+
+The second X in Xaw3dXft is extra, but renaming the whole library at this
+point would only exacerbate the problem of losing people in the transition.
+
+Inherited from Xaw:  Label and SmeBSB have different options for pixmaps and
+text for no reason.  Label can have a left pixmap but not a right one.
+SmeBSB can have both left and right pixmaps but not a primary one that
+replaces the text.
+
+"Internationalized" text support in Xlib:
+
+- XCreateFontSet is frustratingly choosy about which fonts it will work with
+  and frequently fails for no apparent reason, even in cases where the plain
+  old XDrawString16 does quite well at covering the Basic Multilingual Plane.
+- The Xutf8\* functions fall through to the Xmb\* functions via some
+  obfuscated indirection and cannot perform as advertised unless the locale
+  codeset was already UTF-8.
+
+Xlib and libXt have global disagreements about the plain old data types of
+common parameters (like positions and dimensions) and about Bool/Boolean
+(neither of which is C99 stdbool.h let alone C23 bool).
+
+In Xt, there are Widgets that inherit from Core and there are non-widget
+Objects that don't.  Arbitrary bad things happen if you use widget functions
+on a non-widget Object, so to avoid confusion, both kinds are passed as type
+Widget.
+
+
 ## <a name="history"> History
 
 Kaleb Keithley originated libXaw3d in 1992 as a general replacement for the
@@ -1018,6 +1052,3 @@ The new repo is at
 ## <a name="todo"> To do
 
 For planned changes, see the [Issues tab](https://github.com/DaveFlater/libXaw3dXft/issues) of the GitHub repo.
-
-The second X is extra, but renaming the whole library at this point would
-only exacerbate the problem of losing people in the transition.
