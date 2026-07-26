@@ -525,8 +525,9 @@ changes in label parts and internal margins (subject to any constraints
 placed on the widgets).
 
 As in Xaw, Label will use its core name as the label text if XtNlabel is not
-supplied, but Xaw3dXft will still use encoding as the interpretation.  Since
-Xt treats core name as a regular C string, only 8bit and UTF8 can work.
+supplied.  In this case, encoding must be 8bit or UTF8:  the core name is
+handled by Xt as a regular C string, and 16-bit characters cannot get
+through.
 
 ### <a name="listwidget"> List
 
@@ -987,10 +988,16 @@ immediate, synchronous updating of the display.
 The second X in Xaw3dXft is extra, but renaming the whole library at this
 point would only exacerbate the problem of losing people in the transition.
 
-Inherited from Xaw:  Label and SmeBSB have different options for pixmaps and
-text for no reason.  Label can have a left pixmap but not a right one.
-SmeBSB can have both left and right pixmaps but not a primary one that
-replaces the text.
+Xaw oddities:
+
+- Label and SmeBSB have different options for pixmaps and text for no reason.
+  Label can have a left pixmap but not a right one.  SmeBSB can have both
+  left and right pixmaps but not a primary one that replaces the text.
+- The international resource and callbacks list that logically belong to
+  SmeBSB are instead placed in a vacuous superclass, Sme.  The SmeLine
+  subclass has no use for them.
+- Most widgets have pointerColor and pointerColorBackground resources that
+  they inherit from Simple, but these resources are completely unused.
 
 "Internationalized" text support in Xlib:
 
