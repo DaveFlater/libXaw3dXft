@@ -401,10 +401,10 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
       lw->list.xftfont = NULL;
 #ifdef XAW_INTERNATIONALIZATION
       if (lw->simple.international && !lw->list.fontset)
-	XtError("List initialized with international true but no fontset\n");
+	XtError("List initialized with international true but no fontset");
 #endif
     }
-    if (!lw->list.font) XtError("List initialized with no font\n");
+    if (!lw->list.font) XtError("List initialized with no font");
 
     /* record for posterity if we are free */
     lw->list.freedoms = (lw->core.width != 0) * WidthLock +

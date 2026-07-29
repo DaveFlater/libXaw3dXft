@@ -270,10 +270,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       lw->label.xftfont = NULL;
 #ifdef XAW_INTERNATIONALIZATION
       if (lw->simple.international && !lw->label.fontset)
-	XtError("Label initialized with international true but no fontset\n");
+	XtError("Label initialized with international true but no fontset");
 #endif
     }
-    if (!lw->label.font) XtError("Label initialized with no font\n");
+    if (!lw->label.font) XtError("Label initialized with no font");
 
     // Avoid surprises:  just always dup the string.
     if (lw->label.label == NULL && lw->core.name != NULL)

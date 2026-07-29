@@ -618,7 +618,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 	sink->ascii_sink.xftfont = Xaw3dXftGetFont(new, sink->ascii_sink.xftfontname);
     else {
 	sink->ascii_sink.xftfont = NULL;
-	if (!sink->ascii_sink.font) XtError("Aborting: no font found\n");
+	if (!sink->ascii_sink.font) XtError("Aborting: no font found");
     }
     GetGC(sink);
 }

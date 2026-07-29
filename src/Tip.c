@@ -271,12 +271,12 @@ XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
 	tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
     else {
 	tip->tip.xftfont = NULL;
-	if (!tip->tip.font) XtError("Aborting: no font found\n");
 #ifdef XAW_INTERNATIONALIZATION
 	if (tip->tip.international && !tip->tip.fontset)
-	    XtError("Aborting: no fontset found\n");
+	    XtError("Tip: no fontset found");
 #endif
     }
+    if (!tip->tip.font) XtError("Tip: no font found");
 }
 
 static void

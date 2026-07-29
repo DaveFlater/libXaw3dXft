@@ -471,10 +471,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     entry->sme_bsb.xftfont = NULL;
 #ifdef XAW_INTERNATIONALIZATION
     if (entry->sme.international && !entry->sme_bsb.fontset)
-      XtError("SmeBSB initialized with international true but no fontset\n");
+      XtError("SmeBSB initialized with international true but no fontset");
 #endif
   }
-  if (!entry->sme_bsb.font) XtError("SmeBSB initialized with no font\n");
+  if (!entry->sme_bsb.font) XtError("SmeBSB initialized with no font");
 
   // Avoid surprises:  just always dup the string.
   if (entry->sme_bsb.label == NULL && XtName(new) != NULL)

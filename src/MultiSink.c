@@ -536,7 +536,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     GetGC(sink);
 
     if (!(_Xaw3dXft->encoding || sink->multi_sink.fontset))
-	XtError("Aborting: no fontset found\n");
+	XtError("MultiSink: no fontset found");
 
     sink->multi_sink.insertCursorOn= CreateInsertCursor(XtScreenOfObject(new));
     sink->multi_sink.laststate = XawisOff;
