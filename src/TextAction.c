@@ -276,7 +276,7 @@ we are, and convert it.  I also warn the user that the other client is evil. */
           /* Notify the user on strerr and in the insertion :) */
           textprop.value = (unsigned char *) " >> ILLEGAL SELECTION << ";
           count = 1;
-          fprintf( stderr, "Xaw Text Widget: An attempt was made to insert an illegal selection.\n" );
+          XtWarning("Xaw Text Widget: An attempt was made to insert an illegal selection.");
 
           if ( XwcTextPropertyToTextList( d, &textprop, (wchar_t***) &wlist, &count )
 		!=  Success) return;

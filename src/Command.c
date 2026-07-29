@@ -54,7 +54,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include "config.h"
 #endif
 #include <assert.h>
-#include <stdio.h>
 
 /*
  * Command.c - Command button widget
@@ -638,7 +637,7 @@ ShapeButton(CommandWidget cw, Boolean checkRectangular)
     if (checkRectangular || cw->command.shape_style != XawShapeRectangle) {
 	if (!XmuReshapeWidget((Widget) cw, cw->command.shape_style,
 			      corner_size, corner_size)) {
-	    fprintf(stderr, "Command ShapeButton:  failed to reshape widget\n");
+	    XtWarning("Command ShapeButton:  failed to reshape widget");
 	    // Assuming that it was rectangle to begin with?
 	    cw->command.shape_style = XawShapeRectangle;
 	    return(False);
@@ -671,13 +670,13 @@ static void
 SetValuesAlmost (Widget old, Widget new, XtWidgetGeometry *request,
   XtWidgetGeometry *reply) {
   if (reply->request_mode == 0) {
-    fprintf(stderr, "Xaw3dXft Command widget:  geometry manager said no\n");
+    XtWarning("libXaw3dXft Command widget:  geometry manager said no");
     // Recovery steps?
   } else if (request->border_width != reply->border_width) {
-    fprintf(stderr, "Xaw3dXft Command widget:  geometry manager said almost, rejected change to border_width\n");
+    XtWarning("libXaw3dXft Command widget:  geometry manager said almost, rejected change to border_width");
     // Recovery steps?
   } else {
-    fprintf(stderr, "Xaw3dXft Command widget:  geometry manager said almost\n");
+    XtWarning("libXaw3dXft Command widget:  geometry manager said almost");
   }
   Resize(new);
   (*commandWidgetClass->core_class.superclass->core_class.set_values_almost)(old, new, request, reply);

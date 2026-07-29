@@ -70,7 +70,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Drawing.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
 
@@ -208,9 +207,9 @@ static void SetTextWidthAndHeight(LabelWidget lw) {
     if (Xaw3dXftGetDrawableDimensions(XtDisplay(lw), lw->label.pixmap,
     &lw->label.label_width, &lw->label.label_height, &lw->label.depth))
       return;
-    fprintf(stderr,
-"libXaw3dXft:  XGetGeometry failed in SetTextWidthAndHeight of Label.  There\n"
-"might be something wrong with the bitmap resource of a Label widget.\n");
+    XtWarning(
+"libXaw3dXft:  XGetGeometry failed in SetTextWidthAndHeight of Label.\n"
+"There might be something wrong with the bitmap resource of a Label widget.");
     // Then we just fall through and use the text dimensions‽
   }
 
@@ -252,9 +251,9 @@ static void get_lbm_dimensions (LabelWidget lw) {
     // label.depth is not core.depth
     if (!Xaw3dXftGetDrawableDimensions(XtDisplay(lw), lw->label.left_bitmap,
     &lw->label.lbm_width, &lw->label.lbm_height, &lw->label.depth))
-      fprintf(stderr,
-"libXaw3dXft:  XGetGeometry failed in get_lbm_dimensions of Label.  There\n"
-"might be something wrong with the leftBitmap resource of a Label widget.\n");
+      XtWarning(
+"libXaw3dXft:  XGetGeometry failed in get_lbm_dimensions of Label.\n"
+"There might be something wrong with the leftBitmap resource of a Label widget.");
 }
 
 static void

@@ -14,7 +14,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include "config.h"
 #endif
 #include <assert.h>
-#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -286,7 +285,7 @@ void Xaw3dXftDrawAnyStringLen (
     xftDraw = XftDrawCreate(display, window, visual, cmap);
     assert(xftDraw);
     if (clip && !XftDrawSetClipRectangles(xftDraw, 0, 0, clip, 1))
-      fprintf(stderr, "libXaw3dXft:  XftDrawSetClipRectangles failed\n");
+      XtWarning("libXaw3dXft:  XftDrawSetClipRectangles failed");
   } else
 #ifdef XAW_INTERNATIONALIZATION
   if (international) {
@@ -297,7 +296,7 @@ void Xaw3dXftDrawAnyStringLen (
     assert(font);
   if (clip && !xftFont &&
       !XSetClipRectangles(display, text_gc, 0, 0, clip, 1, YXBanded))
-    fprintf(stderr, "libXaw3dXft:  XSetClipRectangles failed\n");
+    XtWarning("libXaw3dXft:  XSetClipRectangles failed");
 
   // Begin line-breaking loop
   void *nl = nextnl(encoding, text);
@@ -347,7 +346,7 @@ void Xaw3dXftDrawAnyStringLen (
 #endif
     drawOneLine(display, window, font, text_gc, x, y, encoding, text, num_bytes);
   if (clip && !xftFont && !XSetClipMask(display, text_gc, None))
-    fprintf(stderr, "libXaw3dXft:  XSetClipMask failed\n");
+    XtWarning("libXaw3dXft:  XSetClipMask failed");
 }
 
 // Ibid. but using the null teminator to determine num_bytes

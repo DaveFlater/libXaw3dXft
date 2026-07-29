@@ -20,7 +20,6 @@ X11 license (as per the historical licenses that the package inherits)
 // FIXME lingering dependency on global struct for default font
 #include <X11/Xaw3dXft/Xaw3dXft.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <sysexits.h>
 #define XAW3DXFT_DEFAULTFONT "Liberation-9"
 
 static_assert(Got_XAW_defines);
@@ -122,8 +121,10 @@ static XftFont *findOrGetFont (Widget object, const char *name) {
     // XftFontOpen never returns null.  It just silently substitutes a
     // different font.  But if the impossible happens, this message will be
     // more helpful than a crash.
-    fprintf(stderr, "Xft font not found: %s\n", name);
-    exit(EX_UNAVAILABLE);
+    char buf[BUFSIZ];
+    (void)sprintf(buf, "Xft font not found: %s", name);
+    XtError(buf);
+    // That does exit(1); exit(EX_UNAVAILABLE) would be better
   }
   cacheNewFont(name, xftFont);
   return xftFont;
