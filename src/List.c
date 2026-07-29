@@ -183,6 +183,8 @@ ListClassRec listClassRec = {
     /* callback_private   	*/	NULL,
     /* tm_table		   	*/	defaultTranslations,
     /* query_geometry		*/      PreferredGeom,
+    /* display_accelerator	*/	XtInheritDisplayAccelerator,
+    /* extension		*/	NULL
   },
 /* Simple class fields initialization */
   {
@@ -898,7 +900,7 @@ static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
     ListWidget cl = (ListWidget) current;
-    ListWidget rl = (ListWidget) request;
+    // ListWidget rl = (ListWidget) request;
     ListWidget nl = (ListWidget) new;
     Boolean redraw = False;
 
@@ -944,8 +946,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 	(cl->list.column_space    != nl->list.column_space)    ||
 	(cl->list.row_space       != nl->list.row_space)       ||
 	(cl->list.default_cols    != nl->list.default_cols)    ||
-	(  (cl->list.force_cols   != nl->list.force_cols) &&
-	   (rl->list.force_cols   != nl->list.ncols) )         ||
+	(cl->list.force_cols      != nl->list.force_cols)      ||
 	(cl->list.vertical_cols   != nl->list.vertical_cols)   ||
 	(cl->list.longest         != nl->list.longest)         ||
 	(cl->list.nitems          != nl->list.nitems)          ||
