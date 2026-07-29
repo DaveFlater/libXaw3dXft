@@ -409,7 +409,7 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
   GetTextPosition(ent, &text_x, &text_y);
   Xaw3dXftDrawAnyString(display, visual, cmap, window, ent->sme_bsb.font,
     menuFontSet(ent), ent->sme_bsb.xftfont, menuIntl(ent), gc, xfg, text_x,
-    text_y, ent->sme_bsb.encoding, ent->sme_bsb.label);
+    text_y, NULL, ent->sme_bsb.encoding, ent->sme_bsb.label);
   if (ent->sme_bsb.underline >= 0) {
     Position x1, x2, y;
     if (Xaw3dXftLocateUnderline(display, ent->sme_bsb.font, menuFontSet(ent),
@@ -472,10 +472,9 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 #ifdef XAW_INTERNATIONALIZATION
     if (entry->sme.international && !entry->sme_bsb.fontset)
       XtError("SmeBSB initialized with international true but no fontset\n");
-    else
 #endif
-      if (!entry->sme_bsb.font) XtError("SmeBSB initialized with no font\n");
   }
+  if (!entry->sme_bsb.font) XtError("SmeBSB initialized with no font\n");
 
   // Avoid surprises:  just always dup the string.
   if (entry->sme_bsb.label == NULL && XtName(new) != NULL)

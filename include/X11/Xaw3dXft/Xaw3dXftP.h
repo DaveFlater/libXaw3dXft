@@ -50,8 +50,6 @@ extern "C" {
 
 extern Xaw3dXftData * _Xaw3dXft;
 
-extern void Xaw3dXftSetDefaultHilitColor(void);
-extern void Xaw3dXftSetHilitColor(char * value);
 extern void Xaw3dXftSetDefaultFontName(char *name);
 extern void Xaw3dXftSetInsensitiveTwist(char *value);
 

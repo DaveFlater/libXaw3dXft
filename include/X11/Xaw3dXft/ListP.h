@@ -70,17 +70,20 @@ extern ListClassRec listClassRec;
 static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
+    // The ints here want to be Cardinal or Dimension, but the types are
+    // kept consistent with Xaw.
     Pixel	foreground;
+    Pixel       highlight;      /* highlight background color */
     Dimension	internal_width, /* if not 3d, user sets directly. */
         	internal_height,
                 column_space,	/* half of *_space is add on top/bot/left of*/
                 row_space;	/* each item's text bounding box. half added to longest for right */
-    int         default_cols;
+    int         default_cols;   // Number of columns, Cardinal
     Boolean     force_cols,
                 paste,
                 vertical_cols;
-    int         longest;	/* in pixels */
-    int         nitems;		/* number of items in the list. */
+    int         longest;	/* in pixels, Dimension */
+    int         nitems;		/* number of items in the list, Cardinal */
     XFontStruct	*font;
 #ifdef XAW_INTERNATIONALIZATION
     XFontSet 	fontset;	/* Sheeran, Omron KK, 93/03/05 */
@@ -88,21 +91,26 @@ typedef struct {
     String *    list;		/* for i18n, always in multibyte format */
     XtCallbackList callback;
     char *	xftfontname;
+    unsigned char highlightStyle;
+    unsigned char encoding;
 
     /* private state */
-    int         is_highlighted,	/* set to the item currently highlighted. */
-                highlight,	/* set to the item that should be highlighted.*/
-                col_width,	/* width of each column. */
-                row_height,	/* height of each row. */
-                nrows,		/* number of rows in the list. */
+    GC normal_GC;               // fg, font
+    GC rev_GC;                  // foreground = bg, font
+    GC stipple_GC;              // FillStippled with bg
+    GC xor_fgbg_GC;             // function = GXxor by fg ^ bg
+    GC xor_bghl_GC;             // function = GXxor by bg ^ hl
+    XftColor xftfg;
+    XftColor xftbg;
+    XftColor xfthl;
+    Dimension   col_width,	/* width of each column. */
+                row_height;	/* height of each row. */
+    Cardinal    nrows,		/* number of rows in the list. */
                 ncols;		/* number of columns in the list. */
-    GC		normgc,		/* a couple of GC's. */
-                revgc,
-		hilitgc,
-                graygc;		/* used when inactive. */
+    int is_highlighted,	   /* index of the item currently highlighted or -1 */
+        want_highlighted;  /* item that should be highlighted or -1 */
 
     int         freedoms;       /* flags for resizing height and width */
-    void *      colorswitch;
     XftFont *	xftfont;
     Visual *    visual;
 } ListPart;

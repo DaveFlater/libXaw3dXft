@@ -16,7 +16,6 @@ while some have not yet migrated.
 - [Classes not present in Athena Widgets](#newclasses)
 - [Alterations to Athena Widgets classes](#alterations)
 - [Run-time options](#runtimeopts)
-- [Non-options](#nonoptions)
 - [Version 1.x to 2.0 migration](#migration)
 - [Rationale for features removed in 2.0](#rationale)
 - [Oddities](#oddities)
@@ -488,18 +487,20 @@ Name    | Class   | RepType | Default value
 highlightDashed | Boolean | Boolean | False
 
 When the mouse cursor is over a Command button, a line is drawn around the
-inside of the button's border.  True = dashed line; false = solid line.
-Width is specified by the highlightThickness resource.
+inside of the button's border.  The highlightDashed resource controls the
+line style used:  true = dashed line; false = solid line.  Width is specified
+by the highlightThickness resource.
 
 The highlight appears within the margin created by the internalHeight and
 internalWidth resources inherited from Label.  If highlightThickness exceeds
 internalHeight or internalWidth, the highlight and the label contents will
 draw over one another.
 
-Button presses are acknowledged with a color transformation that switches
-foreground and background colors on text labels.  Unlike Xaw, Xaw3dXft
-applies a transformation to pixmaps supplied on the bitmap and leftBitmap
-resources as well, but the results are colormap-dependent.
+Button presses are acknowledged with a color transformation that switches the
+foreground and background colors.  It is applied via an exclusive-or function
+of Pixel values.  The effect on pixmaps, including the background pixmap, is
+colormap-dependent but generally sufficient to show contrast with the unset
+state.
 
 When a Command button's shape is changed from the default rectangle, Xaw3dXft
 adjusts some dimensions automatically:
@@ -513,6 +514,9 @@ adjusts some dimensions automatically:
   invisible.)
 
 ### Label
+
+Resources related to fonts, encodings, and text rendering are as described
+under [Generalities](#generalities).  Multi-line text is allowed.
 
 The default size of Label widgets (which includes subclasses like Command
 buttons) has increased by 2×shadowWidth in both dimensions.
@@ -531,20 +535,30 @@ through.
 
 ### <a name="listwidget"> List
 
-Added resource:
+Added resources:
 
 Name        | Class       | RepType | Default value
 :---        | :---        | :---    | :---
-colorSwitch | ColorSwitch | Pointer | NULL
+encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit
+highlight | Background | Pixel | XtDefaultBackground
+highlightStyle | ListHighlightStyle | UnsignedChar | ListHighlightReverse
 
-The colorSwitch resource of the List widget appeared in Xaw3dXft version
-1.6.2c without documentation.  It can be set to a function pointer of type
-void (\*SwitchColorFunc) (Widget w, int n, int x, int y, Pixel \*p).  If such
-a function is provided, it is called with &text_fg_alternate_color as the
-last argument.  If xaw3dxft_data->encoding is nonzero, any value placed in
-text_fg_alternate_color is used in Xaw3dXftDrawString and then reset to -1.
-If encoding is 0, the text_fg_alternate_color value is discarded and reset to
--1 with no effect.
+Resources related to fonts, encodings, and text rendering are as described
+under [Generalities](#generalities).  Multi-line text is allowed.
+
+The values of the highlightStyle resource are as follows:
+
+    typedef enum {
+      ListHighlightReverse=0,    // Reverse foreground and background colors
+      ListHighlightBackground=1  // Paint background with highlight color
+    } ListHighlightStyle;
+
+The highlight resource gives the alternate background color that is used
+when highlightStyle is ListHighlightBackground.
+
+Reverse and background highlighting are applied via an exclusive-or function
+of Pixel values.  Their effect on a background pixmap is colormap-dependent
+but generally sufficient to show contrast with the unhighlighted state.
 
 ### Repeater
 
@@ -684,9 +698,8 @@ highlightStyle | MenuHighlightStyle | UnsignedChar | MenuHighlightReverse
 menuName  | MenuName  | String  | NULL
 underline | Underline | Int     | -1
 
-As incoming from Xaw, SmeBSB had no encoding resource and did not handle
-multi-line label text, so it was inconsistent with Label.  These
-inconsistencies have been removed.
+Resources related to fonts, encodings, and text rendering are as described
+under [Generalities](#generalities).  Multi-line text is allowed.
 
 The values of the highlightStyle resource are as follows:
 
@@ -698,6 +711,11 @@ The values of the highlightStyle resource are as follows:
 
 The highlight resource gives the alternate background color that is used
 when highlightStyle is MenuHighlightBackground.
+
+Reverse and background highlighting are applied via an exclusive-or function
+of Pixel values.  Their effect on pixmaps, including the background pixmap,
+is colormap-dependent but generally sufficient to show contrast with the
+unhighlighted state.
 
 The menuName resource is used to specify the name of a sub-menu.  The use of
 sub-menus was explained above under SimpleMenu [Sub-menus](#submenus).
@@ -759,7 +777,7 @@ the character encoding.
 |    0  | FreeType off; act like Xaw3d |
 |   -1  | UTF-8 |
 |    8  | 8-bit characters (Latin-1) |
-|   16  | 16-bit characters (UCS-2?) |
+|   16  | 16-bit characters (UCS-2) |
 
 ### char * default_fontname = NULL
 
@@ -831,8 +849,6 @@ These functions are also declared directly in Xaw3dXftP.h.
 
 Xaw3dXftProc | Xaw3dXftP.h | Function
 :--- | :--- | :---
-set_default_hilit_color | Xaw3dXftSetDefaultHilitColor | hilit_color = strdup("#000000")
-set_hilit_color         | Xaw3dXftSetHilitColor        | hilit_color = strdup(value) (after freeing any previous value)
 set_default_fontname    | Xaw3dXftSetDefaultFontName   | default_fontname = strdup(value) (after freeing any previous value)
 set_insensitive_twist   | Xaw3dXftSetInsensitiveTwist  | See insensitive_twist
 get_font                | Xaw3dXftGetFont              | Return XftFont *
@@ -844,23 +860,6 @@ handle_mousewheel       | Xaw3dXftHandleMouseWheel     | Scrollbar handler for m
 set_mousewheel_handler  | Xaw3dXftSetMouseWheelHandler | Add Xaw3dXftHandleMouseWheel as event handler
 set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | scroll_steps = value
 #endif | |
-
-
-## <a name="nonoptions"> Non-options
-
-Messing with the following fields of xaw3dxft_data will cause glitchy
-misbehavior.
-
-### char string_hilight = 0
-
-Internal state of libXaw3dXft that should not have been exposed to
-applications.
-
-### Pixel text_fg_alternate_color = -1
-
-Internal state of libXaw3dXft that should not have been exposed to
-applications.  See the colorSwitch resource of the [List widget](#listwidget)
-for its use.
 
 
 ## <a name="migration"> Version 1.x to 2.0 migration
@@ -916,6 +915,11 @@ widths were previously unaccounted for, causing display glitches.
 Applications that include Text.h might now need to add includes for
 TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
 included by Text.h.
+
+**Deleted colorSwitch**
+
+The colorSwitch resource of the List widget was weird, undocumented, and of
+no known use.
 
 
 ## <a name="rationale"> Rationale for features removed in 2.0
@@ -975,6 +979,19 @@ The Xaw3dXftProc struct may have been inspired by the Xt idiom in which the
 equivalent of a C++ protected function is implemented by giving subclasses
 access to function pointers.  For functions in the global namespace that an
 application might use, it's just extra indirection.
+
+### colorSwitch resource
+
+The colorSwitch resource of the List widget appeared in Xaw3dXft version
+1.6.2c.  When colorSwitch was set to a function pointer of type void
+(\*SwitchColorFunc) (Widget w, int n, int x, int y, Pixel \*p) and an Xft
+font was used, the function could choose the foreground text colors of list
+items as they were being redrawn.  There was no similar control for the
+background color.
+
+Although colorSwitch was accessible to applications, it was never mentioned
+in the README and had no convincing use case.  Perhaps it was a remnant of an
+abandoned approach to implementing highlighting.
 
 ### Repeater flash
 

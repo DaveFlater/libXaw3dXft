@@ -52,17 +52,19 @@ in this Software without prior written authorization from the X Consortium.
  borderColor	     BorderColor	Pixel		XtDefaultForeground
  borderWidth	     BorderWidth	Dimension	1
  callback            Callback           XtCallbackList  NULL       **6
- colorSwitch 	     ColorSwitch 	Pointer 	NULL
  columnSpacing       Spacing            Dimension       6
  cursor		     Cursor		Cursor		left_ptr
  cursorName	     Cursor		String		NULL
  defaultColumns      Columns            int             2          **5
  destroyCallback     Callback		Pointer		NULL
+ encoding	     Encoding		unsigned char	XawTextEncoding8bit
  font		     Font		XFontStruct*	XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  forceColumns        Columns            Boolean         False      **5
  foreground	     Foreground		Pixel		XtDefaultForeground
  height		     Height		Dimension	0          **1
+ highlight           Background         Pixel           XtDefaultBackground
+ highlightStyle      ListHighlightStyle unsigned char   ListHighlightReverse
  insensitiveBorder   Insensitive	Pixmap		Gray
  internalHeight	     Height		Dimension	2
  internalWidth	     Width		Dimension	4
@@ -113,24 +115,34 @@ in this Software without prior written authorization from the X Consortium.
 */
 
 
+typedef enum {
+  ListHighlightReverse=0,    // Reverse foreground and background colors
+  ListHighlightBackground=1  // Paint background with highlight color
+} ListHighlightStyle;
+
 /*
  * Value returned when there are no highlighted objects.
  */
-
 #define XAW_LIST_NONE -1
 
-#define XtCList "List"
-#define XtCSpacing "Spacing"
 #define XtCColumns "Columns"
+#define XtCList "List"
+#define XtCListHighlightStyle "ListHighlightStyle"
 #define XtCLongest "Longest"
 #define XtCNumberStrings "NumberStrings"
+#define XtCSpacing "Spacing"
 #define XtCXftFont "XftFont"
-#define XtCColorSwitch "ColorSwitch"
 
-#define XtNcursor "cursor"
+// XtNhighlight is in StringDefs.h
+#ifndef XtNhighlight
+#define XtNhighlight "highlight"
+#endif
+
 #define XtNcolumnSpacing "columnSpacing"
+#define XtNcursor "cursor"
 #define XtNdefaultColumns "defaultColumns"
 #define XtNforceColumns "forceColumns"
+#define XtNhighlightStyle "highlightStyle"
 #define XtNlist "list"
 #define XtNlongest "longest"
 #define XtNnumberStrings "numberStrings"
@@ -138,7 +150,6 @@ in this Software without prior written authorization from the X Consortium.
 #define XtNrowSpacing "rowSpacing"
 #define XtNverticalList "verticalList"
 #define XtNxftFont "xftFont"
-#define XtNcolorSwitch "colorSwitch"
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION

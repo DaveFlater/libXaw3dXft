@@ -34,20 +34,27 @@ in this Software without prior written authorization from the X Consortium.
  *                      MIT X Consortium
  */
 
+/*********************************************************************
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+*********************************************************************/
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xmu/Drawing.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/ListP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xmu/Drawing.h>
 
 /* These added so widget knows whether its height, width are user selected.
 I also added the freedoms member of the list widget part. */
@@ -82,14 +89,12 @@ static_assert(Got_XAW_defines);
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	offset(list.foreground), XtRString, XtDefaultForeground},
-    {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
+    {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),   // unused
        offset(simple.cursor), XtRString, "left_ptr"},
     {XtNfont,  XtCFont, XtRFontStruct, sizeof(XFontStruct *),
 	offset(list.font),XtRString, XtDefaultFont},
     {XtNxftFont,  XtCXftFont, XtRString, sizeof(String),
 	offset(list.xftfontname),XtRString, NULL},
-    {XtNcolorSwitch, XtCColorSwitch, XtRPointer, sizeof(void *),
-        offset(list.colorswitch), XtRImmediate, (XtPointer)NULL},
 #ifdef XAW_INTERNATIONALIZATION
     {XtNfontSet,  XtCFontSet, XtRFontSet, sizeof(XFontSet ),
 	offset(list.fontset),XtRString, XtDefaultFontSet},
@@ -118,6 +123,13 @@ static XtResource resources[] = {
 	offset(list.row_space), XtRImmediate, (XtPointer)2},
     {XtNcallback, XtCCallback, XtRCallback, sizeof(XtPointer),
         offset(list.callback), XtRCallback, NULL},
+    {XtNhighlight, XtCBackground, XtRPixel, sizeof(Pixel),
+        offset(list.highlight), XtRString, (XtPointer)XtDefaultBackground},
+    {XtNhighlightStyle, XtCListHighlightStyle, XtRUnsignedChar,
+        sizeof(unsigned char), offset(list.highlightStyle), XtRImmediate,
+        (XtPointer)ListHighlightReverse},
+    {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+        offset(list.encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit}
 };
 
 static void Initialize(Widget, Widget, ArgList, Cardinal *);
@@ -192,69 +204,60 @@ WidgetClass listWidgetClass = (WidgetClass)&listClassRec;
 
 #define VisualOf(w) (w->list.visual)
 
-static void
-GetGCs(Widget w)
-{
-    ListWidget lw = (ListWidget) w;
-    XGCValues values;
-    XtGCMask mask;
-    XColor color;
 
+static void get_or_change_GCs (ListWidget lw) {
+  const Pixel fg = lw->list.foreground,
+              bg = lw->core.background_pixel,
+              hl = lw->list.highlight;
 
-    values.foreground	= lw->list.foreground;
-    values.font		= lw->list.font->fid;
+  // normal_GC
+  if (lw->list.normal_GC)
+    XtReleaseGC((Widget)lw, lw->list.normal_GC);
+  lw->list.normal_GC = Xaw3dXftGetTextGC((Widget)lw, fg, lw->list.font,
+					 international(lw));
 
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        lw->list.normgc = XtAllocateGC( w, 0, (unsigned) GCForeground,
-				 &values, GCFont, 0 );
-    else
-#endif
-        lw->list.normgc = XtGetGC( w, (unsigned) GCForeground | GCFont,
-				 &values);
+  // rev_GC
+  if (lw->list.rev_GC)
+    XtReleaseGC((Widget)lw, lw->list.rev_GC);
+  lw->list.rev_GC = Xaw3dXftGetTextGC((Widget)lw, bg, lw->list.font,
+				      international(lw));
 
-    values.foreground	= lw->core.background_pixel;
+  // stipple_GC
+  if (lw->list.stipple_GC)
+    XtReleaseGC((Widget)lw, lw->list.stipple_GC);
+  lw->list.stipple_GC = Xaw3dXftGetStippleGC((Widget)lw, bg);
 
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        lw->list.revgc = XtAllocateGC( w, 0, (unsigned) GCForeground,
-				 &values, GCFont, 0 );
-    else
-#endif
-        lw->list.revgc = XtGetGC( w, (unsigned) GCForeground | GCFont,
-				 &values);
+  XGCValues values;
+  values.graphics_exposures = False;
 
-    values.tile       = XmuCreateStippledPixmap(XtScreen(w),
-						lw->list.foreground,
-						lw->core.background_pixel,
-						lw->core.depth);
-    values.fill_style = FillTiled;
+  // xor_fgbg_GC
+  values.foreground = fg ^ bg;
+  values.function = GXxor;
+  if (lw->list.xor_fgbg_GC)
+    XtReleaseGC((Widget)lw, lw->list.xor_fgbg_GC);
+  lw->list.xor_fgbg_GC = XtGetGC((Widget)lw,
+    GCForeground|GCFunction|GCGraphicsExposures, &values);
 
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        lw->list.graygc = XtAllocateGC( w, 0, (unsigned) GCTile | GCFillStyle,
-			      &values, GCFont, 0 );
-    else
-#endif
-        lw->list.graygc = XtGetGC( w, (unsigned) GCFont | GCTile | GCFillStyle,
-			      &values);
+  // xor_bghl_GC
+  values.foreground = bg ^ hl;
+  if (lw->list.xor_bghl_GC)
+    XtReleaseGC((Widget)lw, lw->list.xor_bghl_GC);
+  lw->list.xor_bghl_GC = XtGetGC((Widget)lw,
+    GCForeground|GCFunction|GCGraphicsExposures, &values);
 
-    if (_Xaw3dXft->no_hilit_reverse) {
-	if (!_Xaw3dXft->hilit_color) Xaw3dXftSetDefaultHilitColor();
-	XAllocNamedColor(XtDisplayOfObject(w), w->core.colormap,
-			 _Xaw3dXft->hilit_color, &color, &color);
-	values.foreground = color.pixel;
-	values.function = GXxor;
-	mask = GCForeground | GCFunction;
-	lw->list.hilitgc = XtGetGC(w, mask, &values);
-    }
+  // XftColors
+  Display *display = XtDisplay(lw);
+  Visual *visual = VisualOf(lw);
+  Colormap cmap = lw->core.colormap;
+  Xaw3dXftGetXftColor(display, visual, cmap, fg, &lw->list.xftfg);
+  Xaw3dXftGetXftColor(display, visual, cmap, bg, &lw->list.xftbg);
+  Xaw3dXftGetXftColor(display, visual, cmap, hl, &lw->list.xfthl);
 }
 
 
 /* CalculatedValues()
  *
- * does routine checks/computations that must be done after data changes
- * but won't hurt if accidentally called
+ * Routine checks/computations that must be done after data change.
  *
  * These calculations were needed in SetValues.  They were in ResetList.
  * ResetList called ChangeSize, which made an XtGeometryRequest.  You
@@ -264,8 +267,6 @@ GetGCs(Widget w)
 static void
 CalculatedValues(Widget w)
 {
-    int i, len;
-
     ListWidget lw = (ListWidget) w;
 
     /* If list is NULL then the list will just be the name of the widget. */
@@ -278,34 +279,28 @@ CalculatedValues(Widget w)
     /* Get number of items. */
 
     if (lw->list.nitems == 0)
-        for ( ; lw->list.list[lw->list.nitems] != NULL ; lw->list.nitems++);
+      for ( ; lw->list.list[lw->list.nitems] != NULL ; lw->list.nitems++);
 
-    /* Get column width. */
-
-    if ( LongestFree( lw ) )  {
-
-        lw->list.longest = 0; /* so it will accumulate real longest below */
-
-        for ( i = 0 ; i < lw->list.nitems; i++)  {
-	    if (_Xaw3dXft->encoding)
-	        len = Xaw3dXftTextWidth((Widget)lw, lw->list.xftfont,
-                          lw->list.list[i], strlen(lw->list.list[i]));
-	    else
-#ifdef XAW_INTERNATIONALIZATION
-            if ( lw->simple.international == True )
-	        len = XmbTextEscapement(lw->list.fontset, lw->list.list[i],
-			 			    strlen(lw->list.list[i]));
-            else
-#endif
-                len = XTextWidth(lw->list.font, lw->list.list[i],
-			 			    strlen(lw->list.list[i]));
-            if (len > lw->list.longest)
-                lw->list.longest = len;
-        }
+    /* Get row height and column width (expensive). */
+    Dimension max_width = 0, max_height = 0;
+    Display *display = XtDisplay(lw);
+    for (Cardinal i=0; i < lw->list.nitems; ++i) {
+      Dimension width, height;
+      String s = lw->list.list[i];
+      if (s) {
+	Xaw3dXftSizeAnyString(display, lw->list.font, listFontSet(lw),
+          lw->list.xftfont, international(lw), lw->list.encoding, s, &width,
+	  &height);
+	if (width  > max_width)  max_width  = width;
+	if (height > max_height) max_height = height;
+      }
     }
-
+    lw->list.row_height = max_height + lw->list.row_space;
+    if (LongestFree(lw))
+      lw->list.longest = max_width;
     lw->list.col_width = lw->list.longest + lw->list.column_space;
 }
+
 
 /*	Function Name: ResetList
  *	Description: Resets the new list when important things change.
@@ -326,6 +321,7 @@ ResetList(Widget w, Boolean changex, Boolean changey)
     if( Layout( w, changex, changey, &width, &height ) )
       ChangeSize( w, width, height );
 }
+
 
 /*	Function Name: ChangeSize.
  *	Description: Laysout the widget.
@@ -375,6 +371,7 @@ ChangeSize(Widget w, Dimension width, Dimension height)
     }
 }
 
+
 /*	Function Name: Initialize
  *	Description: Function that initializes the widget instance.
  *	Arguments: junk - NOT USED.
@@ -387,50 +384,38 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
 {
     ListWidget lw = (ListWidget) new;
 
-/*
- * Initialize all private resources.
- */
+    /*
+     * Initialize all private resources.
+     */
     Xaw3dXftGetVisualInfo(new, &VisualOf(lw), NULL, NULL);
+    lw->list.normal_GC =
+      lw->list.rev_GC =
+      lw->list.stipple_GC =
+      lw->list.xor_fgbg_GC =
+      lw->list.xor_bghl_GC =
+      NULL;
+
+    if (lw->list.xftfontname)
+      lw->list.xftfont = Xaw3dXftGetFont(new, lw->list.xftfontname);
+    else {
+      lw->list.xftfont = NULL;
+#ifdef XAW_INTERNATIONALIZATION
+      if (lw->simple.international && !lw->list.fontset)
+	XtError("List initialized with international true but no fontset\n");
+#endif
+    }
+    if (!lw->list.font) XtError("List initialized with no font\n");
 
     /* record for posterity if we are free */
     lw->list.freedoms = (lw->core.width != 0) * WidthLock +
                         (lw->core.height != 0) * HeightLock +
                         (lw->list.longest != 0) * LongestLock;
 
-    if (_Xaw3dXft->encoding)
-	lw->list.xftfont = Xaw3dXftGetFont(new, lw->list.xftfontname);
-    else {
-	lw->list.xftfont = NULL;
-	if (!lw->list.font) XtError("Aborting: no font found\n");
-#ifdef XAW_INTERNATIONALIZATION
-	if (lw->simple.international && !lw->list.fontset)
-	  XtError("Aborting: no fontset found\n");
-#endif
-    }
-    GetGCs(new);
-
-    /* Set row height. based on font or fontset */
-
-    if (_Xaw3dXft->encoding)
-        lw->list.row_height = lw->list.xftfont->height
-	                + lw->list.row_space;
-    else
-#ifdef XAW_INTERNATIONALIZATION
-    if (lw->simple.international == True )
-        lw->list.row_height =
-                     XExtentsOfFontSet(lw->list.fontset)->max_ink_extent.height
-                        + lw->list.row_space;
-    else
-#endif
-        lw->list.row_height = lw->list.font->max_bounds.ascent
-			+ lw->list.font->max_bounds.descent
-			+ lw->list.row_space;
-
+    get_or_change_GCs(lw);
     ResetList( new, WidthFree( lw ), HeightFree( lw ) );
+    lw->list.want_highlighted = lw->list.is_highlighted = NO_HIGHLIGHT;
+}
 
-    lw->list.highlight = lw->list.is_highlighted = NO_HIGHLIGHT;
-
-} /* Initialize */
 
 /*	Function Name: CvtToItem
  *	Description: Converts Xcoord to item number of item containing that
@@ -473,9 +458,10 @@ CvtToItem(Widget w, int xloc, int yloc, int *item)
     if (one < 0) one = 0;
     if (another < 0) another = 0;
     *item = one + another;
-    if (*item >= lw->list.nitems) return(OUT_OF_RANGE);
-    return(ret_val);
+    if (*item >= lw->list.nitems) return OUT_OF_RANGE;
+    return ret_val;
 }
+
 
 /*	Function Name: FindCornerItems.
  *	Description: Find the corners of the rectangle in item space.
@@ -497,6 +483,7 @@ FindCornerItems(Widget w, XEvent *event, int *ul_ret, int *lr_ret)
     yloc += event->xexpose.height;
     CvtToItem(w, xloc, yloc, lr_ret);
 }
+
 
 /*	Function Name: ItemInRectangle
  *	Description: returns TRUE if the item passed is in the given rectangle.
@@ -527,192 +514,117 @@ ItemInRectangle(Widget w, int ul, int lr, int item)
 }
 
 
-/* HighlightBackground()
- *
- * Paints the color of the background for the given item.  It performs
- * clipping to the interior of internal_width/height by hand, as its a
- * simple calculation and probably much faster than using Xlib and a clip mask.
- *
- *  x, y - ul corner of the area item occupies.
- *  gc - the gc to use to paint this rectangle */
-
-static void
-HighlightBackground(Widget w, int x, int y, GC gc)
-{
-    ListWidget lw = (ListWidget) w;
-
-    /* easy to clip the rectangle by hand and probably a lot faster than Xlib */
-
-    Dimension width               = lw->list.col_width;
-    Dimension height              = lw->list.row_height;
-    Dimension frame_limited_width = w->core.width - lw->list.internal_width - x;
-    Dimension frame_limited_height= w->core.height- lw->list.internal_height- y;
-
-    /* Clip the rectangle width and height to the edge of the drawable area */
-
-    if  ( width > frame_limited_width )
-        width = frame_limited_width;
-    if  ( height> frame_limited_height)
-        height = frame_limited_height;
-
-    /* Clip the rectangle x and y to the edge of the drawable area */
-
-    if ( x < lw->list.internal_width ) {
-        width = width - ( lw->list.internal_width - x );
-        x = lw->list.internal_width;
-    }
-    if ( y < lw->list.internal_height) {
-        height = height - ( lw->list.internal_height - x );
-        y = lw->list.internal_height;
-    }
-
-    if (_Xaw3dXft->string_hilight)
-        XClearArea(XtDisplay(w), XtWindow(w), x, y, width, height, False);
-    XFillRectangle( XtDisplay( w ), XtWindow( w ), gc, x, y,
-		    width, height );
-}
-
-
-/* ClipToShadowInteriorAndLongest()
- *
- * Converts the passed gc so that any drawing done with that GC will not
- * write in the empty margin (specified by internal_width/height) (which also
- * prevents erasing the shadow.  It also clips against the value longest.
- * If the user doesn't set longest, this has no effect (as longest is the
- * maximum of all item lengths).  If the user does specify, say, 80 pixel
- * columns, though, this prevents items from overwriting other items. */
-
-static void
-ClipToShadowInteriorAndLongest(ListWidget lw, GC *gc_p, Dimension x)
-{
-    XRectangle rect;
-
-    rect.x = x;
-    rect.y = lw->list.internal_height;
-    rect.height = lw->core.height - lw->list.internal_height * 2;
-    rect.width = lw->core.width - lw->list.internal_width - x;
-    if ( rect.width > lw->list.longest )
-        rect.width = lw->list.longest;
-
-    XSetClipRectangles( XtDisplay((Widget)lw),*gc_p,0,0,&rect,1,YXBanded );
-}
-
-
 /*  PaintItemName()
  *
- *  paints the name of the item in the appropriate location.
+ *  Paints the text of the item in the appropriate location.
  *  w - the list widget.
- *  item - the item to draw.
+ *  item - index of the item to draw.
  *
  *  NOTE: no action taken on an unrealized widget. */
 
-typedef void (*SwitchColorFunc) (Widget w, int n, int x, int y, Pixel *p);
+// Set, Unset, XawListHighlight, and XawListUnhighlight all ultimately come
+// here to do the drawing.
+static void PaintItemName (Widget w, int item) {
+  ListWidget lw = (ListWidget)w;
 
-static void
-PaintItemName(Widget w, int item)
-{
-    Pixel (* proc(Widget w, char *str, int n, int x, int y));
-    char * str;
+  if (!XtIsRealized(w)) return;
+
+  // From ListP.h:
+  // is_highlighted:  index of the item currently highlighted or -1
+  // want_highlighted:  index of the item that should be highlighted or -1
+  const Boolean sensitive = XtIsSensitive(w),
+                shouldHighlight = (sensitive &&
+				   item == lw->list.want_highlighted);
+
+  // If the List is insensitive, nothing should be highlighted.  It's not our
+  // job to unhighlight something when a List becomes insensitive in
+  // SetValues.
+  assert(sensitive || lw->list.is_highlighted == NO_HIGHLIGHT);
+
+  // It's not our job to clear any conflicting highlight first.
+  assert(!shouldHighlight ||
+	 lw->list.is_highlighted == item ||
+	 lw->list.is_highlighted == NO_HIGHLIGHT);
+
+  // We're going to make the -is- agree with the -ought-.
+  if (shouldHighlight)
+    lw->list.is_highlighted = item;
+  else if (lw->list.is_highlighted == item)
+    lw->list.is_highlighted = NO_HIGHLIGHT;
+
+  // Bottom right corner of the drawable area
+  const Position max_x = lw->core.width - lw->list.internal_width - 1,
+                 max_y = lw->core.height - lw->list.internal_height - 1;
+
+  // Outer upper left corner of cell that includes the cell margin
+  Position x, y;
+  if (lw->list.vertical_cols) {
+    x = lw->list.col_width * (item / lw->list.nrows)
+      + lw->list.internal_width;
+    y = lw->list.row_height * (item % lw->list.nrows)
+      + lw->list.internal_height;
+  } else {
+    x = lw->list.col_width * (item % lw->list.ncols)
+      + lw->list.internal_width;
+    y = lw->list.row_height * (item / lw->list.ncols)
+      + lw->list.internal_height;
+  }
+  if (x > max_x || y > max_y) return;
+
+  // Cell width and height include column_space and row_space.  The rectangle
+  // being painted includes half of those margins on all sides.
+  Dimension cell_width = lw->list.col_width,
+            cell_height = lw->list.row_height;
+  if (x + cell_width - 1  > max_x) cell_width  = max_x - x + 1;
+  if (y + cell_height - 1 > max_y) cell_height = max_y - y + 1;
+
+  Display *display = XtDisplay(w);
+  Window window = XtWindow(w);
+
+  // Possibly restore a background pixmap before mangling it.
+  XClearArea(display, window, x, y, cell_width, cell_height, False);
+  if (shouldHighlight) {
+    GC gc = (lw->list.highlightStyle == ListHighlightReverse ?
+	     lw->list.xor_fgbg_GC : lw->list.xor_bghl_GC);
+    XFillRectangle(display, window, gc, x, y, cell_width, cell_height);
+  }
+
+  // Inner upper left corner of cell that excludes the cell margin
+  const Position text_x = x + lw->list.column_space / 2,
+                 text_y = y + lw->list.row_space    / 2;
+  if (text_x > max_x || text_y > max_y ||
+      lw->list.column_space >= cell_width ||
+      lw->list.row_space >= cell_height) return;
+
+  // Draw the string
+  String s = lw->list.list[item];
+  if (s) {
     GC gc;
-    int x, y, str_y;
-    ListWidget lw = (ListWidget) w;
-#ifdef XAW_INTERNATIONALIZATION
-    XFontSetExtents *ext  = XExtentsOfFontSet(lw->list.fontset);
-#endif
-
-    if (!XtIsRealized(w)) return; /* Just in case... */
-
-    if (lw->list.vertical_cols) {
-	x = lw->list.col_width * (item / lw->list.nrows)
-	  + lw->list.internal_width;
-        y = lw->list.row_height * (item % lw->list.nrows)
-	  + lw->list.internal_height;
+    XftColor *xfg;
+    if (shouldHighlight && lw->list.highlightStyle == ListHighlightReverse) {
+      gc = lw->list.rev_GC;
+      xfg = &lw->list.xftbg;
+    } else {
+      gc = lw->list.normal_GC;
+      xfg = &lw->list.xftfg;
     }
-    else {
-        x = lw->list.col_width * (item % lw->list.ncols)
-	  + lw->list.internal_width;
-        y = lw->list.row_height * (item / lw->list.ncols)
-	  + lw->list.internal_height;
-    }
+    Dimension text_width = cell_width - lw->list.column_space,
+              text_height = cell_height - lw->list.row_space;
+    XRectangle clip = (XRectangle){text_x, text_y, text_width, text_height};
+    Xaw3dXftDrawAnyString(display, VisualOf(lw), lw->core.colormap, window,
+      lw->list.font, listFontSet(lw), lw->list.xftfont, international(lw), gc,
+      xfg, text_x, text_y, &clip, lw->list.encoding, s);
+  }
 
-    if (_Xaw3dXft->encoding)
-        str_y = y + lw->list.xftfont->ascent;
-    else
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        str_y = y + abs(ext->max_ink_extent.y);
-    else
-#endif
-        str_y = y + lw->list.font->max_bounds.ascent;
-
-    if (item == lw->list.is_highlighted) {
-        if (item == lw->list.highlight) {
-            gc = lw->list.revgc;
-            if (_Xaw3dXft->no_hilit_reverse) {
-		_Xaw3dXft->string_hilight = 1;
-		HighlightBackground(w, x, y, lw->list.hilitgc);
-	    } else
-		HighlightBackground(w, x, y, lw->list.normgc);
-	}
-        else {
-	    if (XtIsSensitive(w))
-	        gc = lw->list.normgc;
-	    else
-	        gc = lw->list.graygc;
-	    HighlightBackground(w, x, y, lw->list.revgc);
-	    lw->list.is_highlighted = NO_HIGHLIGHT;
-        }
-    }
-    else {
-        if (item == lw->list.highlight) {
-            gc = lw->list.revgc;
-            if (_Xaw3dXft->no_hilit_reverse) {
-		_Xaw3dXft->string_hilight = 1;
-		HighlightBackground(w, x, y, lw->list.hilitgc);
-	    } else
-		HighlightBackground(w, x, y, lw->list.normgc);
-	    lw->list.is_highlighted = item;
-	}
-	else {
-	    if (XtIsSensitive(w))
-	        gc = lw->list.normgc;
-	    else
-	        gc = lw->list.graygc;
-	}
-    }
-
-    /* List's overall width contains the same number of inter-column
-    column_space's as columns.  There should thus be a half
-    column_width margin on each side of each column.
-    The row case is symmetric. */
-
-    x     += lw->list.column_space / 2;
-    str_y += lw->list.row_space    / 2;
-
-    str =  lw->list.list[item];	/* draw it */
-
-    ClipToShadowInteriorAndLongest( lw, &gc, x );
-
-    if (lw->list.colorswitch)
-        ((SwitchColorFunc)lw->list.colorswitch)
-	   (w, item, x, str_y, &_Xaw3dXft->text_fg_alternate_color);
-
-    if (_Xaw3dXft->encoding) {
-        Xaw3dXftDrawString(VisualOf(lw), w, lw->list.xftfont,
-			   x, str_y, str, strlen( str ) );
-        _Xaw3dXft->string_hilight = 0;
-    } else
-#ifdef XAW_INTERNATIONALIZATION
-    if ( lw->simple.international == True )
-        XmbDrawString( XtDisplay( w ), XtWindow( w ), lw->list.fontset,
-		  gc, x, str_y, str, strlen( str ) );
-    else
-#endif
-        XDrawString( XtDisplay( w ), XtWindow( w ),
-		  gc, x, str_y, str, strlen( str ) );
-
-    _Xaw3dXft->text_fg_alternate_color = -1;
-    XSetClipMask( XtDisplay( w ), gc, None );
+  // Apply insensitive stipple
+  // It would make more sense to do the whole list at once rather than every
+  // cell separately, but Redisplay makes that difficult.  This has the weird
+  // effect that the background pixmap won't be stippled for any extra space
+  // within the List that is not assigned to a cell.  Might also get
+  // visible anomalies at cell boundaries if the size is an odd number.
+  if (!sensitive)
+    XFillRectangle(display, window, lw->list.stipple_GC, x, y, cell_width,
+		   cell_height);
 }
 
 
@@ -773,9 +685,9 @@ PreferredGeom(Widget w, XtWidgetGeometry *intended, XtWidgetGeometry *requested)
 
     requested->request_mode = 0;
 
-/*
- * We only care about our height and width.
- */
+    /*
+     * We only care about our height and width.
+     */
 
     if ( !width_req && !height_req)
       return(XtGeometryYes);
@@ -807,7 +719,7 @@ Resize(Widget w)
 
     if (Layout(w, FALSE, FALSE, &width, &height))
 	XtAppWarning(XtWidgetToApplicationContext(w),
-	   "List Widget: Size changed when it shouldn't have when resising.");
+	   "List Widget: Size changed when it shouldn't have when resizing.");
 }
 
 
@@ -829,10 +741,10 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
     ListWidget lw = (ListWidget) w;
     Boolean change = FALSE;
 
-/*
- * If force columns is set then always use number of columns specified
- * by default_cols.
- */
+    /*
+     * If force columns is set then always use number of columns specified
+     * by default_cols.
+     */
 
     if (lw->list.force_cols) {
         lw->list.ncols = lw->list.default_cols;
@@ -857,11 +769,11 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
 	return(change);
     }
 
-/*
- * If both width and height are free to change the use default_cols
- * to determine the number columns and set new width and height to
- * just fit the window.
- */
+    /*
+     * If both width and height are free to change the use default_cols
+     * to determine the number columns and set new width and height to
+     * just fit the window.
+     */
 
     if (xfree && yfree) {
         lw->list.ncols = lw->list.default_cols;
@@ -873,11 +785,11 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
                 + 2 * lw->list.internal_height;
 	change = TRUE;
     }
-/*
- * If the width is fixed then use it to determine the number of columns.
- * If the height is free to move (width still fixed) then resize the height
- * of the widget to fit the current list exactly.
- */
+    /*
+     * If the width is fixed then use it to determine the number of columns.
+     * If the height is free to move (width still fixed) then resize the height
+     * of the widget to fit the current list exactly.
+     */
     else if (!xfree) {
         lw->list.ncols = ( (int)(*width - 2 * lw->list.internal_width)
 	                    / (int)lw->list.col_width);
@@ -889,11 +801,11 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
 	    change = TRUE;
 	}
     }
-/*
- * The last case is xfree and !yfree we use the height to determine
- * the number of rows and then set the width to just fit the resulting
- * number of columns.
- */
+    /*
+     * The last case is xfree and !yfree we use the height to determine
+     * the number of rows and then set the width to just fit the resulting
+     * number of columns.
+     */
     else if (!yfree) {		/* xfree must be TRUE. */
         lw->list.nrows = (int)(*height - 2 * lw->list.internal_height)
 	                 / (int)lw->list.row_height;
@@ -903,7 +815,7 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
 	       + 2 * lw->list.internal_width;
 	change = TRUE;
     }
-    return(change);
+    return change;
 }
 
 
@@ -917,30 +829,30 @@ static void
 Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
     ListWidget lw = ( ListWidget ) w;
-    int item, item_len;
+    int item;
     XawListReturnStruct ret_value;
 
-/*
- * Find item and if out of range then unhighlight and return.
- *
- * If the current item is unhighlighted then the user has aborted the
- * notify, so unhighlight and return.
- */
+    /*
+     * Find item and if out of range then unhighlight and return.
+     *
+     * If the current item is unhighlighted then the user has aborted the
+     * notify, so unhighlight and return.
+     */
 
     if ( ((CvtToItem(w, event->xbutton.x, event->xbutton.y, &item))
-	  == OUT_OF_RANGE) || (lw->list.highlight != item) ) {
+	  == OUT_OF_RANGE) || (lw->list.want_highlighted != item) ) {
         XawListUnhighlight(w);
         return;
     }
 
-    item_len = strlen(lw->list.list[item]);
+    /* If XtNpasteBuffer is set then put item in cut buffer */
+    if (lw->list.paste)
+        XStoreBytes(XtDisplay(w), lw->list.list[item],
+		    Xaw3dXftAnyStrlen(lw->list.encoding, lw->list.list[item]));
 
-    if ( lw->list.paste )	/* if XtNpasteBuffer set then paste it. */
-        XStoreBytes(XtDisplay(w), lw->list.list[item], item_len);
-
-/*
- * Call Callback function.
- */
+    /*
+     * Call Callback function.
+     */
 
     ret_value.string = lw->list.list[item];
     ret_value.list_index = item;
@@ -977,6 +889,7 @@ Set(Widget w, XEvent *event, String *params, Cardinal *num_params)
     XawListHighlight(w, item);	                /* highlighted then do it. */
 }
 
+
 /*
  * Set specified arguments into widget
  */
@@ -987,10 +900,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     ListWidget cl = (ListWidget) current;
     ListWidget rl = (ListWidget) request;
     ListWidget nl = (ListWidget) new;
-    Boolean redraw = FALSE;
-#ifdef XAW_INTERNATIONALIZATION
-    XFontSetExtents *ext = XExtentsOfFontSet(nl->list.fontset);
-#endif
+    Boolean redraw = False;
 
     /* If the request height/width is different, lock it.  Unless its 0. If */
     /* neither new nor 0, leave it as it was.  Not in R5. */
@@ -1010,50 +920,23 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
         nl->list.freedoms &= ~LongestLock;
 
     /* _DONT_ check for fontset here - it's not in GC.*/
-
     if (  (cl->list.foreground       != nl->list.foreground)       ||
+	  (cl->list.highlight        != nl->list.highlight)        ||
 	  (cl->core.background_pixel != nl->core.background_pixel) ||
-	  (cl->list.font             != nl->list.font)                ) {
-	XGCValues values;
-	XGetGCValues(XtDisplay(current), cl->list.graygc, GCTile, &values);
-	XmuReleaseStippledPixmap(XtScreen(current), values.tile);
-	XtReleaseGC(current, cl->list.graygc);
-	XtReleaseGC(current, cl->list.revgc);
-	XtReleaseGC(current, cl->list.normgc);
-        GetGCs(new);
-        redraw = TRUE;
+	  (cl->list.font->fid        != nl->list.font->fid) ) {
+      get_or_change_GCs(nl);
+      redraw = True;
     }
 
-    if ( cl->list.font != nl->list.font ) {
-#ifdef XAW_INTERNATIONALIZATION
-        if ( cl->simple.international == False )
-#endif
-            nl->list.row_height = nl->list.font->max_bounds.ascent
-			        + nl->list.font->max_bounds.descent
-			        + nl->list.row_space;
-    }
-#ifdef XAW_INTERNATIONALIZATION
-    else if ( ( cl->list.fontset != nl->list.fontset ) &&
-				( cl->simple.international == True ) )
-        nl->list.row_height = ext->max_ink_extent.height + nl->list.row_space;
-
-    /* ...If the above two font(set) change checkers above both failed, check
-    if row_space was altered.  If one of the above passed, row_height will
-    already have been re-calculated. */
-
-    else
-#endif
-    if ( cl->list.row_space != nl->list.row_space ) {
-#ifdef XAW_INTERNATIONALIZATION
-        if (cl->simple.international == True )
-            nl->list.row_height = ext->max_ink_extent.height + nl->list.row_space;
-        else
-#endif
-            nl->list.row_height = nl->list.font->max_bounds.ascent
-			        + nl->list.font->max_bounds.descent
-			        + nl->list.row_space;
+    // Notice if the Xft font changed (redraw/relayout is below)
+    if (cl->list.xftfontname != nl->list.xftfontname) {
+      if (nl->list.xftfontname)
+	nl->list.xftfont = Xaw3dXftGetFont(new, nl->list.xftfontname);
+      else
+	nl->list.xftfont = NULL;
     }
 
+    // Catchall for reasons to relayout
     if ((cl->core.width           != nl->core.width)           ||
 	(cl->core.height          != nl->core.height)          ||
 	(cl->list.internal_width  != nl->list.internal_width)  ||
@@ -1066,48 +949,49 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 	(cl->list.vertical_cols   != nl->list.vertical_cols)   ||
 	(cl->list.longest         != nl->list.longest)         ||
 	(cl->list.nitems          != nl->list.nitems)          ||
-	(cl->list.font            != nl->list.font)            ||
-   /* Equiv. fontsets might have different values, but the same fonts, so the
-   next comparison is sloppy but not dangerous.  */
+	(cl->list.font->fid       != nl->list.font->fid)       ||
 #ifdef XAW_INTERNATIONALIZATION
 	(cl->list.fontset         != nl->list.fontset)         ||
+	(cl->simple.international != nl->simple.international) ||
 #endif
+	(cl->list.xftfont         != nl->list.xftfont)         ||
 	(cl->list.list            != nl->list.list)          )   {
-
         CalculatedValues( new );
         Layout( new, WidthFree( nl ), HeightFree( nl ),
 			 &nl->core.width, &nl->core.height );
-        redraw = TRUE;
+        redraw = True;
     }
 
-    if (cl->list.list != nl->list.list)
-	nl->list.is_highlighted = nl->list.highlight = NO_HIGHLIGHT;
+    if (cl->list.list != nl->list.list || !XtIsSensitive(new))
+      nl->list.is_highlighted = nl->list.want_highlighted = NO_HIGHLIGHT;
 
-    if ((cl->core.sensitive != nl->core.sensitive) ||
-	(cl->core.ancestor_sensitive != nl->core.ancestor_sensitive)) {
-        nl->list.highlight = NO_HIGHLIGHT;
-	redraw = TRUE;
-    }
+    if (cl->core.sensitive != nl->core.sensitive)
+      redraw = True;
 
     if (!XtIsRealized(current))
-      return(FALSE);
+      return False;
 
-    return(redraw);
+    return redraw;
 }
+
 
 static void
 Destroy(Widget w)
 {
-    ListWidget lw = (ListWidget) w;
-    XGCValues values;
-
-    XGetGCValues(XtDisplay(w), lw->list.graygc, GCTile, &values);
-    XmuReleaseStippledPixmap(XtScreen(w), values.tile);
-    XtReleaseGC(w, lw->list.graygc);
-    XtReleaseGC(w, lw->list.revgc);
-    XtReleaseGC(w, lw->list.normgc);
-    // Xft fonts are cached; never call XftFontClose.
+  ListWidget lw = (ListWidget) w;
+  if (lw->list.normal_GC)
+    XtReleaseGC(w, lw->list.normal_GC);
+  if (lw->list.rev_GC)
+    XtReleaseGC(w, lw->list.rev_GC);
+  if (lw->list.stipple_GC)
+    XtReleaseGC(w, lw->list.stipple_GC);
+  if (lw->list.xor_fgbg_GC)
+    XtReleaseGC(w, lw->list.xor_fgbg_GC);
+  if (lw->list.xor_bghl_GC)
+    XtReleaseGC(w, lw->list.xor_bghl_GC);
+  // Xft fonts are cached; never call XftFontClose.
 }
+
 
 /* Exported Functions */
 
@@ -1139,15 +1023,15 @@ XawListChange(Widget w, char ** list, int nitems, int longest,
 
     lw->list.list = (String *) list;
 
+    // You should have used Cardinal
     if ( nitems <= 0 ) nitems = 0;
     lw->list.nitems = nitems;
     if ( longest <= 0 ) longest = 0;
 
-    /* If the user passes 0 meaning "calculate it", it must be free */
     if ( longest != 0 )
-        lw->list.freedoms |= LongestLock;
-    else /* the user's word is god. */
-        lw->list.freedoms &= ~LongestLock;
+      lw->list.freedoms |= LongestLock;  // User-specified = locked
+    else
+      lw->list.freedoms &= ~LongestLock; // Calculated = free
 
     if ( resize_it )
         lw->list.freedoms &= ~WidthLock & ~HeightLock;
@@ -1161,10 +1045,11 @@ XawListChange(Widget w, char ** list, int nitems, int longest,
 		&new_width, &new_height ) )
         ChangeSize( w, new_width, new_height );
 
-    lw->list.is_highlighted = lw->list.highlight = NO_HIGHLIGHT;
+    lw->list.is_highlighted = lw->list.want_highlighted = NO_HIGHLIGHT;
     if ( XtIsRealized( w ) )
       Redisplay( w, (XEvent *)NULL, (Region)NULL );
 }
+
 
 /*	Function Name: XawListUnhighlight
  *	Description: unlights the current highlighted element.
@@ -1177,10 +1062,11 @@ XawListUnhighlight(Widget w)
 {
     ListWidget lw = ( ListWidget ) w;
 
-    lw->list.highlight = NO_HIGHLIGHT;
+    lw->list.want_highlighted = NO_HIGHLIGHT;
     if (lw->list.is_highlighted != NO_HIGHLIGHT)
         PaintItemName(w, lw->list.is_highlighted); /* unhighlight this one. */
 }
+
 
 /*	Function Name: XawListHighlight
  *	Description: Highlights the given item.
@@ -1195,12 +1081,13 @@ XawListHighlight(Widget w, int item)
     ListWidget lw = ( ListWidget ) w;
 
     if (XtIsSensitive(w)) {
-        lw->list.highlight = item;
+        lw->list.want_highlighted = item;
         if (lw->list.is_highlighted != NO_HIGHLIGHT)
             PaintItemName(w, lw->list.is_highlighted);  /* Unhighlight. */
 	PaintItemName(w, item); /* HIGHLIGHT this one. */
     }
 }
+
 
 /*	Function Name: XawListShowCurrent
  *	Description: returns the currently highlighted object.
@@ -1208,18 +1095,18 @@ XawListHighlight(Widget w, int item)
  *	Returns: the info about the currently highlighted object.
  */
 
-XawListReturnStruct *
-XawListShowCurrent(Widget w)
-{
+XawListReturnStruct *XawListShowCurrent(Widget w) {
+    // encoding-agnostic empty string
+    static char noneString[] = {'\0', '\0'};
     ListWidget lw = ( ListWidget ) w;
     XawListReturnStruct * ret_val;
 
     ret_val = (XawListReturnStruct *)
 	          XtMalloc (sizeof (XawListReturnStruct));/* SPARE MALLOC OK */
 
-    ret_val->list_index = lw->list.highlight;
+    ret_val->list_index = lw->list.want_highlighted;
     if (ret_val->list_index == XAW_LIST_NONE)
-      ret_val->string = "";
+      ret_val->string = noneString;
     else
       ret_val->string = lw->list.list[ ret_val->list_index ];
 

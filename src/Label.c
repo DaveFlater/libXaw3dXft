@@ -266,16 +266,15 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     lw->label.normal_GC = lw->label.stipple_GC = NULL;
 
     if (lw->label.xftfontname)
-	lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
+      lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
     else {
-	lw->label.xftfont = NULL;
+      lw->label.xftfont = NULL;
 #ifdef XAW_INTERNATIONALIZATION
-	if (lw->simple.international && !lw->label.fontset)
-	  XtError("Label initialized with international true but no fontset\n");
-	else
+      if (lw->simple.international && !lw->label.fontset)
+	XtError("Label initialized with international true but no fontset\n");
 #endif
-	if (!lw->label.font) XtError("Label initialized with no font\n");
     }
+    if (!lw->label.font) XtError("Label initialized with no font\n");
 
     // Avoid surprises:  just always dup the string.
     if (lw->label.label == NULL && lw->core.name != NULL)
@@ -334,8 +333,8 @@ static void Redisplay (Widget gw, XEvent *event, Region region) {
     if (w->label.label)
       Xaw3dXftDrawAnyString(display, VisualOf(w), w->core.colormap, window,
 	w->label.font, labelFontSet(w), w->label.xftfont, international(w), gc,
-	&w->label.xftfg, w->label.label_x, w->label.label_y, w->label.encoding,
-	w->label.label);
+	&w->label.xftfg, w->label.label_x, w->label.label_y, NULL,
+	w->label.encoding, w->label.label);
   } else // w->label.pixmap != None
     Xaw3dXftCopy(display, w->label.pixmap, window, gc,
 		 w->label.label_width, w->label.label_height, w->label.depth,

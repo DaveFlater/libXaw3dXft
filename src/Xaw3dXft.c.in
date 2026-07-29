@@ -76,18 +76,6 @@ typedef unsigned long Pixel;
 
 Xaw3dXftData * _Xaw3dXft;
 
-void Xaw3dXftSetDefaultHilitColor(void)
-{
-    _Xaw3dXft->hilit_color = strdup("#000000");
-}
-
-void Xaw3dXftSetHilitColor(char * value)
-{
-    if (_Xaw3dXft->hilit_color)
-        free(_Xaw3dXft->hilit_color);
-    _Xaw3dXft->hilit_color = strdup(value);
-}
-
 void Xaw3dXftSetDefaultFontName(char *name)
 {
     if (_Xaw3dXft->default_fontname)
@@ -174,9 +162,7 @@ AdjustBackground(Display *dpy, Window win, Colormap cmap, Widget widget,
 	GC gc = XtGetGC(widget, GCForeground, &values);
         XFillRectangle(dpy, win, gc, x, y, w, h);
         XtReleaseGC(widget, gc);
-    // string_hilight is a similar covert signal from List to let us know
-    // when we should not clear the area.
-    } else if (!_Xaw3dXft->string_hilight)
+    } else
         XClearArea(dpy, win, x, y, w, h, False);
 }
 
@@ -194,11 +180,7 @@ Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y,
     // white with black on a deep colormap.  But this whole function is going
     // away.
     Pixel fg = ULONG_MAX;
-    if (_Xaw3dXft->text_fg_alternate_color != -1) {
-        fg = _Xaw3dXft->text_fg_alternate_color;
-        XtVaGetValues(w, XtNcolormap, &cmap, NULL);
-    } else
-        XtVaGetValues(w, XtNforeground, &fg, XtNcolormap, &cmap, NULL);
+    XtVaGetValues(w, XtNforeground, &fg, XtNcolormap, &cmap, NULL);
     if (cmap==None) {
         // Colormap comes from Core.  Non-widget Object SmeBSB has its own
         // foreground resource, but not colormap.  SmeBSB itself uses
@@ -376,26 +358,20 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft = (Xaw3dXftData *) XtMalloc(sizeof(Xaw3dXftData));
     sprintf(str, "mem:%lu",  (unsigned long) _Xaw3dXft);
     _Xaw3dXft->encoding  = 0;
-    _Xaw3dXft->string_hilight  = 0;
     _Xaw3dXft->text_bg_hilight  = 0;
     _Xaw3dXft->menu_spacing  = 1;
     _Xaw3dXft->show_tips  = 1;
     _Xaw3dXft->tip_do_grab  = 1;
-    _Xaw3dXft->no_hilit_reverse  = 0;
     _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
     _Xaw3dXft->text_sb_right = 0;
     memset(_Xaw3dXft->insensitive_twist, 0, 4*sizeof(unsigned short));
     _Xaw3dXft->text_bg_hilight_color  = -1;
-    _Xaw3dXft->text_fg_alternate_color  = -1;
-    _Xaw3dXft->hilit_color  = NULL;
     _Xaw3dXft->default_fontname  = NULL;
     _Xaw3dXft->default_font  = NULL;
 
     proc = (Xaw3dXftProc *) XtMalloc(sizeof(Xaw3dXftProc));
     _Xaw3dXft->proc = proc;
-    proc->set_default_hilit_color = Xaw3dXftSetDefaultHilitColor;
-    proc->set_hilit_color = Xaw3dXftSetHilitColor;
     proc->set_default_fontname = Xaw3dXftSetDefaultFontName;
     proc->set_insensitive_twist = Xaw3dXftSetInsensitiveTwist;
     proc->get_font = Xaw3dXftGetFont;

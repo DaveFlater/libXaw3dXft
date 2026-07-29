@@ -44,17 +44,19 @@ X11 license (as per the historical licenses that the package inherits)
 // Certain widget resources disappear entirely if XAW_INTERNATIONALIZATION is
 // disabled.  Callers should use these macros in the parameter lists to avoid
 // adding ifdefs.  Note that the typedef for XFontSet goes away if
-// XAW_INTERNATIONALIZATION is disabled.  That's why fontSet is void*.
+// XAW_INTERNATIONALIZATION is disabled.  That's why fontSet is void* below.
 static_assert(Got_XAW_defines);
 #ifdef XAW_INTERNATIONALIZATION
 #define international(w) w->simple.international
 #define menuIntl(w)      w->sme.international
 #define labelFontSet(w)  w->label.fontset
+#define listFontSet(w)   w->list.fontset
 #define menuFontSet(w)   w->sme_bsb.fontset
 #else
 #define international(w) False
 #define menuIntl(w)      False
 #define labelFontSet(w)  NULL
+#define listFontSet(w)   NULL
 #define menuFontSet(w)   NULL
 #endif
 
@@ -94,7 +96,15 @@ extern void Xaw3dXftDrawAnyStringLen (
   // cases.
   GC text_gc, XftColor *fg,
 
+  // Upper left corner
   Position x, Position y,
+
+  // Optional clipping area (pass NULL if unwanted).  For font or fontSet,
+  // text_gc will be altered with XSetClipRectangles and then put back with
+  // XSetClipMask to None.  In code as incoming (Xaw List.c), this was done
+  // to ostensibly non-modifiable GCs without ill effects, and we continue
+  // that practice.
+  XRectangle *clip,
 
   // A string in the specified encoding
   XawTextEncoding encoding,
@@ -108,7 +118,9 @@ extern void Xaw3dXftDrawAnyStringLen (
 extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
   Colormap cmap, Window window, XFontStruct *font, void *fontSet,
   XftFont *xftFont, Boolean international, GC text_gc, XftColor *fg,
-  Position x, Position y, XawTextEncoding encoding, void *text);
+  Position x, Position y, XRectangle *clip, XawTextEncoding encoding,
+  void *text);
+
 
 // Genericized TextWidth/TextHeight with specified length (num_bytes)
 extern void Xaw3dXftSizeAnyStringLen (
@@ -139,6 +151,9 @@ extern void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
 
 // Strdup for any encoding
 extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text);
+
+// Return number of bytes in any string, not counting null terminator
+Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text);
 
 // Find the coordinates to underline one character in supplied text.  Returns
 // True if coordinates are valid, False if cannot comply.  For international

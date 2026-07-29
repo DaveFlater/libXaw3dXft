@@ -46,8 +46,16 @@ Next release, v2.0  Dave Flater
   TextSrc.h, TextSink.h, AsciiSrc.h, and/or AsciiSink.h, which are no longer
   included by Text.h.
 
+  - Deleted colorSwitch.
+  The colorSwitch resource of the List widget was weird, undocumented, and
+  of no known use.
+
   Other noteworthy changes:
   - Fixed many display glitches.
+  - Removed the global switch between the core font system and Xft.  Some
+    widgets can use FreeType while others use the original X11 core font
+    system, and UTF-8 is always accepted.
+  - Handled multi-line text consistently.
   - Enabled all four configure options by default and put their macros in
     Xaw3d.h.
   - Added version identification mechanisms (see README for details).

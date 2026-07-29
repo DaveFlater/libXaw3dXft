@@ -482,8 +482,8 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
     }
     Xaw3dXftDrawAnyString(display, cw->label.visual, cw->core.colormap, window,
       cw->label.font, labelFontSet(cw), cw->label.xftfont, international(cw),
-      gc, xfg, cw->label.label_x, cw->label.label_y, cw->label.encoding,
-      cw->label.label);
+      gc, xfg, cw->label.label_x, cw->label.label_y, NULL,
+      cw->label.encoding, cw->label.label);
   }
 
   // Apply insensitive stipple

@@ -109,7 +109,7 @@ static XChar2b *fromutf8 (char *text, Cardinal *num_bytes) {
 }
 
 // Return number of bytes in any string, not counting null terminator
-static Cardinal AnyStrlen (XawTextEncoding encoding, void *text) {
+Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text) {
   assert(text);
   if (some16(encoding)) {
     XChar2b *s = text;
@@ -126,7 +126,7 @@ static Cardinal AnyStrlen (XawTextEncoding encoding, void *text) {
 void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
   assert(text);
   if (some16(encoding)) {
-    Cardinal nbytes = AnyStrlen(encoding, text) + 2;
+    Cardinal nbytes = Xaw3dXftAnyStrlen(encoding, text) + 2;
     XChar2b *s = malloc(nbytes);
     assert(s);
     return memcpy(s, text, nbytes);
@@ -261,6 +261,7 @@ void Xaw3dXftDrawAnyStringLen (
   Boolean international,
   GC text_gc, XftColor *fg,
   Position x, Position y,
+  XRectangle *clip,
   XawTextEncoding encoding,
   void *text,
   Cardinal num_bytes
@@ -281,9 +282,12 @@ void Xaw3dXftDrawAnyStringLen (
 #endif
 
   // Pre-loop switch
-  if (xftFont)
+  if (xftFont) {
     xftDraw = XftDrawCreate(display, window, visual, cmap);
-  else
+    assert(xftDraw);
+    if (clip && !XftDrawSetClipRectangles(xftDraw, 0, 0, clip, 1))
+      fprintf(stderr, "libXaw3dXft:  XftDrawSetClipRectangles failed\n");
+  } else
 #ifdef XAW_INTERNATIONALIZATION
   if (international) {
     assert(fontSet);
@@ -291,6 +295,9 @@ void Xaw3dXftDrawAnyStringLen (
   } else
 #endif
     assert(font);
+  if (clip && !xftFont &&
+      !XSetClipRectangles(display, text_gc, 0, 0, clip, 1, YXBanded))
+    fprintf(stderr, "libXaw3dXft:  XSetClipRectangles failed\n");
 
   // Begin line-breaking loop
   void *nl = nextnl(encoding, text);
@@ -339,16 +346,18 @@ void Xaw3dXftDrawAnyStringLen (
   else
 #endif
     drawOneLine(display, window, font, text_gc, x, y, encoding, text, num_bytes);
+  if (clip && !xftFont && !XSetClipMask(display, text_gc, None))
+    fprintf(stderr, "libXaw3dXft:  XSetClipMask failed\n");
 }
 
 // Ibid. but using the null teminator to determine num_bytes
 void Xaw3dXftDrawAnyString (Display *display, Visual *visual, Colormap cmap,
 Window window, XFontStruct *font, void *fontSet, XftFont *xftFont,
 Boolean international, GC text_gc, XftColor *fg, Position x, Position y,
-XawTextEncoding encoding, void *text) {
+XRectangle *clip, XawTextEncoding encoding, void *text) {
   Xaw3dXftDrawAnyStringLen(display, visual, cmap, window, font, fontSet,
-    xftFont, international, text_gc, fg, x, y, encoding, text,
-    AnyStrlen(encoding, text));
+    xftFont, international, text_gc, fg, x, y, clip, encoding, text,
+    Xaw3dXftAnyStrlen(encoding, text));
 }
 
 // Xaw3dXftSizeAnyString component for a single line with Xft font
@@ -497,7 +506,7 @@ void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font, void *fontSet,
 XftFont *xftFont, Boolean international, XawTextEncoding encoding, void *text,
 Dimension *width, Dimension *height) {
   Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
-    encoding, text, AnyStrlen(encoding, text), width, height);
+    encoding, text, Xaw3dXftAnyStrlen(encoding, text), width, height);
 }
 
 // Find the bytes corresponding to the start of a character and the start of
@@ -508,7 +517,7 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
 			   Cardinal *b1, Cardinal *b2) {
   if (character_index < 0) return False;
   assert(b1 && b2);
-  const Cardinal l = AnyStrlen(encoding, text);
+  const Cardinal l = Xaw3dXftAnyStrlen(encoding, text);
   switch (encoding) {
   case XawTextEncoding8bit:
     if (character_index < l) {
@@ -556,7 +565,7 @@ Boolean Xaw3dXftLocateUnderline (
 
 #ifdef XAW_INTERNATIONALIZATION
   if (international) {
-    Cardinal l = AnyStrlen(encoding, text);
+    Cardinal l = Xaw3dXftAnyStrlen(encoding, text);
     XRectangle ink[l], logical[l];
     int nchars;
     // Behavior is undefined for a multiline string.
