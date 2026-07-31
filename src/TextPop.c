@@ -1273,8 +1273,7 @@ CreateDialog(Widget parent, String ptr, String name,
 			       (ArgList)NULL, ZERO);
   XtManageChild (form);
   (*func) (form, ptr, parent);
-  popup = None;
-  return(popup);
+  return popup;
 }
 
 /*	Function Name: GetShell
