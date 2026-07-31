@@ -67,7 +67,6 @@ static_assert(Got_XAW_defines);
 extern void _XawTextInsertFileAction(Widget, XEvent *, String *, Cardinal *);
 extern void _XawTextInsertFile(Widget, XEvent *, String *, Cardinal *);
 extern void _XawTextSearch(Widget, XEvent *, String *, Cardinal *);
-extern void _XawTextSearch(Widget, XEvent *, String *, Cardinal *);
 extern void _XawTextDoSearchAction(Widget, XEvent *, String *, Cardinal *);
 extern void _XawTextDoReplaceAction(Widget, XEvent *, String *, Cardinal *);
 extern void _XawTextSetField(Widget, XEvent *, String *, Cardinal *);
