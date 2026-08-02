@@ -1807,11 +1807,7 @@ XawPanedGetMinMax(Widget widget, int *min, int *max)
 
 void
 XawPanedSetRefigureMode(Widget w,
-#if NeedWidePrototypes
-			int mode)
-#else
 			Boolean mode)
-#endif
 {
     ((PanedWidget) w)->paned.refiguremode = mode;
     RefigureLocationsAndCommit( w );
@@ -1838,11 +1834,7 @@ XawPanedGetNumSub(Widget w)
 
 void
 XawPanedAllowResize(Widget widget,
-#if NeedWidePrototypes
-		    int allow_resize)
-#else
 		    Boolean allow_resize)
-#endif
 {
     PaneInfo(widget)->allow_resize = allow_resize;
 }

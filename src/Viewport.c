@@ -1114,11 +1114,7 @@ PreferredGeometry(Widget w, XtWidgetGeometry *constraints, XtWidgetGeometry *rep
 
 void
 XawViewportSetLocation (Widget gw,
-#if NeedWidePrototypes
-			double xoff, double yoff)
-#else
 			float xoff, float yoff)
-#endif
 {
     ViewportWidget w = (ViewportWidget) gw;
     Widget child = w->viewport.child;
@@ -1143,11 +1139,7 @@ XawViewportSetLocation (Widget gw,
 
 void
 XawViewportSetCoordinates (Widget gw,
-#if NeedWidePrototypes
-			   int x, int y)
-#else
 			   Position x, Position y)
-#endif
 {
     ViewportWidget w = (ViewportWidget) gw;
     Widget child = w->viewport.child;

@@ -442,17 +442,9 @@ GetCursorBounds(Widget w, XRectangle * rect)
 
 void
 XawTextSinkDisplayText(Widget w,
-#if NeedWidePrototypes
-		       /* Position */ int x, /* Position */ int y,
-#else
 		       Position x, Position y,
-#endif
 		       XawTextPosition pos1, XawTextPosition pos2,
-#if NeedWidePrototypes
-		       /* Boolean */ int highlight)
-#else
 		       Boolean highlight)
-#endif
 {
   TextSinkObjectClass class = (TextSinkObjectClass) w->core.widget_class;
 
@@ -472,11 +464,7 @@ XawTextSinkDisplayText(Widget w,
 
 void
 XawTextSinkInsertCursor(Widget w,
-#if NeedWidePrototypes
-			int x, int y, int state)
-#else
 			Position x, Position y, XawTextInsertState state)
-#endif
 {
   TextSinkObjectClass class = (TextSinkObjectClass) w->core.widget_class;
 
@@ -497,12 +485,8 @@ XawTextSinkInsertCursor(Widget w,
 
 void
 XawTextSinkClearToBackground (Widget w,
-#if NeedWidePrototypes
-			      int x, int y, int width, int height)
-#else
 			      Position x, Position y,
 			      Dimension width, Dimension height)
-#endif
 {
   TextSinkObjectClass class = (TextSinkObjectClass) w->core.widget_class;
 
@@ -525,11 +509,7 @@ XawTextSinkClearToBackground (Widget w,
 void
 XawTextSinkFindPosition(Widget w, XawTextPosition fromPos, int fromx,
 			int width,
-#if NeedWidePrototypes
-			/* Boolean */ int stopAtWordBreak,
-#else
 			Boolean stopAtWordBreak,
-#endif
 			XawTextPosition *resPos, int *resWidth, int *resHeight)
 {
   TextSinkObjectClass class = (TextSinkObjectClass) w->core.widget_class;
@@ -591,11 +571,7 @@ XawTextSinkResolve(Widget w, XawTextPosition pos, int fromx, int width,
 
 int
 XawTextSinkMaxLines(Widget w,
-#if NeedWidePrototypes
-		    /* Dimension */ int height)
-#else
 		    Dimension height)
-#endif
 {
   TextSinkObjectClass class = (TextSinkObjectClass) w->core.widget_class;
 

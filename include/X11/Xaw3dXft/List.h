@@ -202,11 +202,7 @@ extern void XawListChange(
     char**		/* list */,
     int			/* nitems */,
     int			/* longest */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* resize */
-#else
     Boolean		/* resize */
-#endif
 );
 
 /*	Function Name: XawListUnhighlight

@@ -785,11 +785,7 @@ PreferredGeometry(Widget widget, XtWidgetGeometry *request, XtWidgetGeometry *re
 
 void
 XawFormDoLayout(Widget _fw,
-#if NeedWidePrototypes
-		int doit)
-#else
 		Boolean doit)
-#endif
 {
     Widget *childP;
     FormWidget fw = (FormWidget)_fw;

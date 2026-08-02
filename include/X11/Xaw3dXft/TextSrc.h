@@ -142,19 +142,10 @@ extern int XawTextSourceReplace (
 extern XawTextPosition XawTextSourceScan(
     Widget		/* w */,
     XawTextPosition	/* position */,
-#if NeedWidePrototypes
-    /* XawTextScanType */ int		/* type */,
-    /* XawTextScanDirection */ int	/* dir */,
-#else
     XawTextScanType	/* type */,
     XawTextScanDirection /* dir */,
-#endif
     int			/* count */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* include */
-#else
     Boolean		/* include */
-#endif
 );
 
 /*	Function Name: XawTextSourceSearch
@@ -170,11 +161,7 @@ extern XawTextPosition XawTextSourceScan(
 extern XawTextPosition XawTextSourceSearch(
     Widget		/* w */,
     XawTextPosition	/* position */,
-#if NeedWidePrototypes
-    /* XawTextScanDirection */ int	/* dir */,
-#else
     XawTextScanDirection /* dir */,
-#endif
     XawTextBlock*	/* text */
 );
 

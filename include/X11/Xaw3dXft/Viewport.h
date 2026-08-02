@@ -105,24 +105,14 @@ _XFUNCPROTOBEGIN
 
 extern void XawViewportSetLocation (
     Widget		/* gw */,
-#if NeedWidePrototypes
-    /* float */ double	/* xoff */,
-    /* float */ double	/* yoff */
-#else
     float		/* xoff */,
     float		/* yoff */
-#endif
 );
 
 extern void XawViewportSetCoordinates (
     Widget		/* gw */,
-#if NeedWidePrototypes
-    /* Position */ int	/* x */,
-    /* Position */ int	/* y */
-#else
     Position		/* x */,
     Position		/* y */
-#endif
 );
 
 _XFUNCPROTOEND

@@ -151,11 +151,7 @@ _XFUNCPROTOBEGIN
 
 extern void XawFormDoLayout(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* do_layout */
-#else
     Boolean		/* do_layout */
-#endif
 );
 
 _XFUNCPROTOEND

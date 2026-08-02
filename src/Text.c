@@ -3356,11 +3356,7 @@ XawTextGetSink(Widget w)
 
 void
 XawTextDisplayCaret (Widget w,
-#if NeedWidePrototypes
-		    /* Boolean */ int display_caret)
-#else
 		    Boolean display_caret)
-#endif
 {
   TextWidget ctx = (TextWidget) w;
 
@@ -3387,11 +3383,7 @@ XawTextDisplayCaret (Widget w,
 
 XawTextPosition
 XawTextSearch(Widget w,
-#if NeedWidePrototypes
-	    /* XawTextScanDirection */ int dir,
-#else
 	    XawTextScanDirection dir,
-#endif
 	    XawTextBlock *text)
 {
   TextWidget ctx = (TextWidget) w;

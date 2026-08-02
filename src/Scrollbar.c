@@ -1130,11 +1130,7 @@ NotifyThumb (Widget w, XEvent *event, String *params, Cardinal *num_params)
 
 /* Set the scroll bar to the given location. */
 void XawScrollbarSetThumb (Widget w,
-#if NeedWidePrototypes
-			double top, double shown)
-#else
 			float top, float shown)
-#endif
 {
     ScrollbarWidget sbw = (ScrollbarWidget) w;
 

@@ -203,11 +203,7 @@ extern void XawPanedGetMinMax(
 
 extern void XawPanedSetRefigureMode(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* mode */
-#else
     Boolean		/* mode */
-#endif
 );
 
 /*	Function Name: XawPanedGetNumSub
@@ -229,11 +225,7 @@ extern int XawPanedGetNumSub(
 
 extern void XawPanedAllowResize(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* allow_resize */
-#else
     Boolean		/* allow_resize */
-#endif
 );
 
 _XFUNCPROTOEND

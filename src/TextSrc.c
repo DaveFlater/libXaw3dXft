@@ -389,17 +389,9 @@ XawTextSourceReplace (Widget w, XawTextPosition startPos,
 
 XawTextPosition
 XawTextSourceScan(Widget w, XawTextPosition position,
-#if NeedWidePrototypes
-		  int type, int dir,
-#else
 		  XawTextScanType type, XawTextScanDirection dir,
-#endif
 		  int count,
-#if NeedWidePrototypes
-		  int include)
-#else
 		  Boolean include)
-#endif
 {
   TextSrcObjectClass class = (TextSrcObjectClass) w->core.widget_class;
 
@@ -423,11 +415,7 @@ XawTextSourceScan(Widget w, XawTextPosition position,
 
 XawTextPosition
 XawTextSourceSearch(Widget w, XawTextPosition position,
-#if NeedWidePrototypes
-		    int dir,
-#else
 		    XawTextScanDirection dir,
-#endif
 		    XawTextBlock *text)
 {
   TextSrcObjectClass class = (TextSrcObjectClass) w->core.widget_class;

@@ -1012,11 +1012,7 @@ Destroy(Widget w)
 
 void
 XawListChange(Widget w, char ** list, int nitems, int longest,
-#if NeedWidePrototypes
-	      int resize_it)
-#else
 	      Boolean resize_it)
-#endif
 {
     ListWidget lw = (ListWidget) w;
     Dimension new_width = w->core.width;

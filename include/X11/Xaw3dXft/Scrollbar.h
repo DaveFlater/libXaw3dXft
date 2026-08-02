@@ -138,13 +138,8 @@ _XFUNCPROTOBEGIN
 
 extern void XawScrollbarSetThumb(
     Widget		/* scrollbar */,
-#if NeedWidePrototypes
-    /* float */ double	/* top */,
-    /* float */	double	/* shown */
-#else
     float		/* top */,
     float		/* shown */
-#endif
 );
 
 static_assert(Got_XAW_defines);

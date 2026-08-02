@@ -98,20 +98,11 @@ _XFUNCPROTOBEGIN
 
 extern void XawTextSinkDisplayText(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Position */ int	/* x */,
-    /* Position	*/ int	/* y */,
-#else
     Position		/* x */,
     Position		/* y */,
-#endif
     XawTextPosition	/* pos1 */,
     XawTextPosition	/* pos2 */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* highlight */
-#else
     Boolean		/* highlight */
-#endif
 );
 
 /*	Function Name: XawTextSinkInsertCursor
@@ -127,15 +118,9 @@ extern void XawTextSinkDisplayText(
 
 extern void XawTextSinkInsertCursor(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Position */ int	/* x */,
-    /* Position	*/ int	/* y */,
-    /* XawTextInsertState */ int /* state */
-#else
     Position		/* x */,
     Position		/* y */,
     XawTextInsertState	/* state */
-#endif
 );
 
 /*	Function Name: XawTextSinkClearToBackground
@@ -151,17 +136,10 @@ extern void XawTextSinkInsertCursor(
 
 extern void XawTextSinkClearToBackground(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Position */ int	/* x */,
-    /* Position */ int	/* y */,
-    /* Dimension */ int	/* width */,
-    /* Dimension */ int	/* height */
-#else
     Position		/* x */,
     Position		/* y */,
     Dimension		/* width */,
     Dimension		/* height */
-#endif
 );
 
 /*	Function Name: XawTextSinkFindPosition
@@ -182,11 +160,7 @@ extern void XawTextSinkFindPosition(
     XawTextPosition	/* fromPos */,
     int			/* fromX */,
     int			/* width */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* stopAtWordBreak */,
-#else
     Boolean		/* stopAtWordBreak */,
-#endif
     XawTextPosition*	/* pos_return */,
     int*		/* width_return */,
     int*		/* height_return */
@@ -242,11 +216,7 @@ extern void XawTextSinkResolve(
 
 extern int XawTextSinkMaxLines(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Dimension */ int	/* height */
-#else
     Dimension		/* height */
-#endif
 );
 
 /*	Function Name: XawTextSinkMaxHeight

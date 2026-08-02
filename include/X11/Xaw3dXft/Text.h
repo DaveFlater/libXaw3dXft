@@ -246,24 +246,15 @@ extern Widget XawTextGetSink(
 
 extern XawTextPosition XawTextSearch(
     Widget			/* w */,
-#if NeedWidePrototypes
-    /* XawTextScanDirection */ int /* dir */,
-#else
     XawTextScanDirection	/* dir */,
-#endif
     XawTextBlock*		/* text */
 );
 
 extern void XawTextDisplayCaret(
     Widget		/* w */,
-#if NeedWidePrototypes
-    /* Boolean */ int	/* visible */
-#else
     Boolean		/* visible */
-#endif
 );
 
 _XFUNCPROTOEND
 
 #endif /* _XawText_h */
-/* DON'T ADD STUFF AFTER THIS #endif */
