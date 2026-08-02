@@ -129,11 +129,7 @@ typedef struct _AsciiSrcPart {
   Boolean use_string_in_place;	/* Use the string passed in place. */
   int     ascii_length;		/* length field for ascii string emulation. */
 
-#ifdef ASCII_DISK
-  String filename;		/* name of file for Compatibility. */
-#endif /* ASCII_DISK */
-
-/* Private data. */
+  /* Private data. */
 
   Boolean	is_tempfile;	  /* Is this a temporary file? */
   Boolean       changes;	  /* Has this file been edited? */

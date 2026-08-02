@@ -53,10 +53,6 @@ static_assert(Got_XAW_defines);
 #endif
 
 
-#if (defined(ASCII_STRING) || defined(ASCII_DISK))
-#  include <X11/Xaw3dXft/AsciiText.h> /* for Widget Classes. */
-#endif
-
 #ifdef O_CLOEXEC
 #define FOPEN_CLOEXEC "e"
 #else
@@ -90,12 +86,7 @@ static XtResource resources[] = {
     {XtNuseStringInPlace, XtCUseStringInPlace, XtRBoolean, sizeof (Boolean),
        offset(use_string_in_place), XtRImmediate, (XtPointer) FALSE},
     {XtNlength, XtCLength, XtRInt, sizeof (int),
-       offset(ascii_length), XtRInt, (XtPointer) &magic_value},
-
-#ifdef ASCII_DISK
-    {XtNfile, XtCFile, XtRString, sizeof (String),
-       offset(filename), XtRString, NULL},
-#endif /* ASCII_DISK */
+       offset(ascii_length), XtRInt, (XtPointer) &magic_value}
 };
 #undef offset
 
@@ -217,21 +208,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  */
 
   src->text_src.text_format = XawFmt8Bit;	/* data format. */
-
-#ifdef ASCII_DISK
-  if (XtIsSubclass(XtParent(new), asciiDiskWidgetClass)) {
-    src->ascii_src.type = XawAsciiFile;
-    src->ascii_src.string = src->ascii_src.filename;
-  }
-#endif
-
-#ifdef ASCII_STRING
-  if (XtIsSubclass(XtParent(new), asciiStringWidgetClass)) {
-    src->ascii_src.use_string_in_place = TRUE;
-    src->ascii_src.type = XawAsciiString;
-  }
-#endif
-
   src->ascii_src.changes = FALSE;
   src->ascii_src.allocated_string = FALSE;
 
@@ -1289,86 +1265,3 @@ CvtStringToAsciiType(XrmValuePtr args, Cardinal * num_args, XrmValuePtr fromVal,
   toVal->size = 0;
   toVal->addr = NULL;
 }
-
-#if (defined(ASCII_STRING) || defined(ASCII_DISK))
-#  include <X11/Xaw3dXft/Cardinals.h>
-#endif
-
-#ifdef ASCII_STRING
-/************************************************************
- *
- * Compatibility functions.
- *
- ************************************************************/
-
-/*	Function Name: AsciiStringSourceCreate
- *	Description: Creates a string source.
- *	Arguments: parent - the widget that will own this source.
- *                 args, num_args - the argument list.
- *	Returns: a pointer to the new text source.
- */
-
-Widget
-XawStringSourceCreate(Widget parent, ArgList args, Cardinal num_args)
-{
-  XawTextSource src;
-  ArgList ascii_args;
-  Arg temp[2];
-
-  XtSetArg(temp[0], XtNtype, XawAsciiString);
-  XtSetArg(temp[1], XtNuseStringInPlace, TRUE);
-  ascii_args = XtMergeArgLists(temp, TWO, args, num_args);
-
-  src = XtCreateWidget("genericAsciiString", asciiSrcObjectClass, parent,
-		       ascii_args, num_args + TWO);
-  XtFree((char *)ascii_args);
-  return(src);
-}
-
-/*
- * This is hacked up to try to emulate old functionality, it
- * may not work, as I have not old code to test it on.
- *
- * Chris D. Peterson  8/31/89.
- */
-
-void
-XawTextSetLastPos (Widget w, XawTextPosition lastPos)
-{
-  AsciiSrcObject src = (AsciiSrcObject) XawTextGetSource(w);
-
-  src->ascii_src.piece_size = lastPos;
-}
-#endif /* ASCII_STRING */
-
-#ifdef ASCII_DISK
-/*	Function Name: AsciiDiskSourceCreate
- *	Description: Creates a disk source.
- *	Arguments: parent - the widget that will own this source.
- *                 args, num_args - the argument list.
- *	Returns: a pointer to the new text source.
- */
-
-Widget
-XawDiskSourceCreate(Widget parent, ArgList args, Cardinal num_args)
-{
-  XawTextSource src;
-  ArgList ascii_args;
-  Arg temp[1];
-  int i;
-
-  XtSetArg(temp[0], XtNtype, XawAsciiFile);
-  ascii_args = XtMergeArgLists(temp, ONE, args, num_args);
-  num_args++;
-
-  for (i = 0; i < num_args; i++)
-    if (streq(ascii_args[i].name, XtNfile) ||
-	          streq(ascii_args[i].name, XtCFile))
-      ascii_args[i].name = XtNstring;
-
-  src = XtCreateWidget("genericAsciiDisk", asciiSrcObjectClass, parent,
-		       ascii_args, num_args);
-  XtFree((char *)ascii_args);
-  return(src);
-}
-#endif /* ASCII_DISK */

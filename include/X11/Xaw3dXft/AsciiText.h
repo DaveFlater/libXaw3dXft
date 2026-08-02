@@ -137,18 +137,4 @@ typedef struct _AsciiRec	        *AsciiWidget;
 
 extern WidgetClass asciiTextWidgetClass;
 
-/************************************************************
- *
- * Disk and String Emulation Info.
- *
- ************************************************************/
-
-#ifdef ASCII_STRING
-extern WidgetClass asciiStringWidgetClass;
-#endif
-
-#ifdef ASCII_DISK
-extern WidgetClass asciiDiskWidgetClass;
-#endif
-
 #endif /* _AsciiText_h */
