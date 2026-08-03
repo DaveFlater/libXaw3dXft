@@ -141,10 +141,10 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
   if (some16(encoding)) {
     XChar2b *s = text;
     while (s->byte1 != 0 || s->byte2 != 0) {
-      if (encoding == XawTextEncodingChar2b &&
-	    s->byte1 == 0 && s->byte2 == '\n' ||
-	  encoding == XawTextEncoding16bit &&
-	    s->byte2 == 0 && s->byte1 == '\n')
+      if ((encoding == XawTextEncodingChar2b || isBigEndian) &&
+	     s->byte1 == 0 && s->byte2 == '\n' ||
+	  encoding == XawTextEncoding16bit && !isBigEndian &&
+	     s->byte2 == 0 && s->byte1 == '\n')
 	return s;
       ++s;
     }
