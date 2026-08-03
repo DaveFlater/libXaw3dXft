@@ -184,7 +184,8 @@ ClassPartInitialize(WidgetClass wc)
  *                 pos - position of the text to retrieve.
  * RETURNED        text - text block that will contain returned text.
  *                 length - maximum number of characters to read.
- *	Returns: The number of characters read into the buffer.
+ *	Returns: text position immediately after the characters read from the
+ *               text buffer
  */
 
 static XawTextPosition
