@@ -23,6 +23,10 @@ Except as contained in this notice, the name of the X Consortium shall not be
 used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the X Consortium.
 
+
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+
 */
 
 /*
@@ -45,6 +49,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/StringDefs.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/TextSinkP.h>
 #include <X11/Xaw3dXft/TextP.h>
 
@@ -217,6 +222,17 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   sink->text_sink.tab_count = 0; /* Initialize the tab stops. */
   sink->text_sink.tabs = NULL;
   sink->text_sink.char_tabs = NULL;
+
+  if (sink->text_sink.xftfontname)
+    sink->text_sink.xftfont = Xaw3dXftGetFont(new, sink->text_sink.xftfontname);
+  else {
+    sink->text_sink.xftfont = NULL;
+#ifdef XAW_INTERNATIONALIZATION
+    if (sink->text_sink.international && !sink->text_sink.fontset)
+      XtError("TextSink initialized with international true but no fontset");
+#endif
+  }
+  if (!sink->text_sink.font) XtError("TextSink initialized with no font");
 }
 
 /*	Function Name: Destroy
@@ -249,6 +265,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   TextSinkObject w = (TextSinkObject) new;
   TextSinkObject old_w = (TextSinkObject) current;
 
+  // FIXME SetValues is missing everything
   if (w->text_sink.foreground != old_w->text_sink.foreground)
      ((TextWidget)XtParent(new))->text.redisplay_needed = True;
 

@@ -600,12 +600,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     sink->ascii_sink.insertCursorOn= CreateInsertCursor(XtScreenOfObject(new));
     sink->ascii_sink.laststate = XawisOff;
     sink->ascii_sink.cursor_x = sink->ascii_sink.cursor_y = 0;
-    if (_Xaw3dXft->encoding)
-	sink->text_sink.xftfont = Xaw3dXftGetFont(new, sink->text_sink.xftfontname);
-    else {
-	sink->text_sink.xftfont = NULL;
-	if (!sink->text_sink.font) XtError("Aborting: no font found");
-    }
     GetGC(sink);
 }
 
