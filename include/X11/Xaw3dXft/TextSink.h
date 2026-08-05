@@ -59,22 +59,30 @@ SOFTWARE.
 
 /* Resources:
 
- Name                Class             RepType          Default Value
- ----                -----             -------          -------------
- background          Background        Pixel            XtDefaultBackground
- displayNonprinting  Output            Boolean          True
- echo                Output            Boolean          True
- encoding            Encoding          unsigned char    XawTextEncoding8bit
- font                Font              XFontStruct*     XtDefaultFont
- fontSet             FontSet           XFontSet         XtDefaultFontSet
- foreground          Foreground        Pixel            XtDefaultForeground
- international       International     Boolean          False
- xftFont             XftFont           String           NULL
+ Name                Class               RepType        Default Value
+ ----                -----               -------        -------------
+ background          Background          Pixel          XtDefaultBackground
+ displayNonprinting  Output              Boolean        True
+ echo                Output              Boolean        True
+ encoding            Encoding            unsigned char  XawTextEncoding8bit
+ font                Font                XFontStruct*   XtDefaultFont
+ fontSet             FontSet             XFontSet       XtDefaultFontSet
+ foreground          Foreground          Pixel          XtDefaultForeground
+ highlight           Background          Pixel          XtDefaultBackground
+ highlightStyle      TextHighlightStyle  unsigned char  TextHighlightReverse
+ international       International       Boolean        False
+ xftFont             XftFont             String         NULL
 
 */
 
+typedef enum {
+  TextHighlightReverse=0,    // Reverse foreground and background colors
+  TextHighlightBackground=1  // Paint background with highlight color
+} TextHighlightStyle;
+
 #define XtCOutput "Output"
 #define XtCXftFont "XftFont"
+#define XtCTextHighlightStyle "TextHighlightStyle"
 #ifndef XtCFontSet
 #define XtCFontSet "FontSet"
 #endif
@@ -82,8 +90,14 @@ SOFTWARE.
 #define XtNdisplayNonprinting "displayNonprinting"
 #define XtNecho "echo"
 #define XtNxftFont "xftFont"
+#define XtNhighlightStyle "highlightStyle"
 #ifndef XtNfontSet
 #define XtNfontSet "fontSet"
+#endif
+
+// XtNhighlight is in StringDefs.h
+#ifndef XtNhighlight
+#define XtNhighlight "highlight"
 #endif
 
 static_assert(Got_XAW_defines);

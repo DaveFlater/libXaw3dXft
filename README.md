@@ -462,20 +462,37 @@ layout | Layout  | Layout  | NULL
 Notable differences between the classes that exist in Xaw R6.3 and their
 analogs in Xaw3dXft are detailed in the following subsections.
 
-### Added FreeType font resources
+### AsciiText
 
-Widgets that have font and fontSet resources in Xaw and Xaw3d (Label, List,
-SmeBSB, Text \*, Tip, and their subclasses) get an additional resource in
-Xaw3dXft:
+From the set of widget classes that work together under the heading of "Text
+Widgets," the one that an application creates is AsciiText.  Despite the
+name, it is not limited to the ASCII character repertoire.
+
+Added resources:
 
 Name    | Class   | RepType | Default value
 :---    | :----   | :---    | :---
-xftFont | XftFont | String  | NULL
+encoding           | Encoding           | unsigned char | XawTextEncoding8bit
+highlight          | Background         | Pixel         | XtDefaultBackground
+highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
+xftFont            | XftFont            | String        | NULL
 
-Usage was described in the [Generalities](#resources) section above.
+Resources related to fonts, encodings, and text rendering are as described
+under [Generalities](#generalities).  Multi-line text is allowed.
 
-\* Font resources for the complex of Text, AsciiText, TextSink, AsciiSink,
-and MultiSink are split up among the classes.
+The values of the highlightStyle resource are as follows:
+
+    typedef enum {
+      TextHighlightReverse=0,    // Reverse foreground and background colors
+      TextHighlightBackground=1  // Paint background with highlight color
+    } TextHighlightStyle;
+
+The highlight resource gives the alternate background color that is used
+when highlightStyle is TextHighlightBackground.
+
+Reverse and background highlighting are applied via an exclusive-or function
+of Pixel values.  Their effect on a background pixmap is colormap-dependent
+but generally sufficient to show contrast with the unhighlighted state.
 
 
 ### Command
@@ -515,6 +532,12 @@ adjusts some dimensions automatically:
 
 ### Label
 
+Added resource:
+
+Name    | Class   | RepType | Default value
+:---    | :----   | :---    | :---
+xftFont | XftFont | String  | NULL
+
 Resources related to fonts, encodings, and text rendering are as described
 under [Generalities](#generalities).  Multi-line text is allowed.
 
@@ -542,6 +565,7 @@ Name        | Class       | RepType | Default value
 encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit
 highlight | Background | Pixel | XtDefaultBackground
 highlightStyle | ListHighlightStyle | UnsignedChar | ListHighlightReverse
+xftFont | XftFont | String  | NULL
 
 Resources related to fonts, encodings, and text rendering are as described
 under [Generalities](#generalities).  Multi-line text is allowed.
@@ -697,6 +721,7 @@ highlight | Background | Pixel | XtDefaultBackground
 highlightStyle | MenuHighlightStyle | UnsignedChar | MenuHighlightReverse
 menuName  | MenuName  | String  | NULL
 underline | Underline | Int     | -1
+xftFont | XftFont | String  | NULL
 
 Resources related to fonts, encodings, and text rendering are as described
 under [Generalities](#generalities).  Multi-line text is allowed.

@@ -127,6 +127,7 @@ typedef struct {
     /* resources */
     Pixel foreground;		/* Foreground color. */
     Pixel background;		/* Background color. */
+    Pixel highlight;            /* highlight background color */
     Boolean echo;
     Boolean display_nonprinting;
     XFontStruct *font;
@@ -136,6 +137,7 @@ typedef struct {
 #endif
     char *xftfontname;
     unsigned char encoding;
+    unsigned char highlightStyle;
 
     /* private state. */
     Position *tabs;		/* The tab stops as pixel values. */
