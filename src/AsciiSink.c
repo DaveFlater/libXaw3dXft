@@ -85,20 +85,6 @@ static void FindDistance(Widget, XawTextPosition, int, XawTextPosition, int *,
 static void Resolve(Widget, XawTextPosition, int, int, XawTextPosition *);
 static void GetCursorBounds(Widget, XRectangle *);
 
-#define offset(field) XtOffsetOf(AsciiSinkRec, ascii_sink.field)
-
-static XtResource resources[] = {
-    {XtNfont, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
-	offset(font), XtRString, XtDefaultFont},
-    {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
-	offset(xftfontname), XtRString, NULL},
-    {XtNecho, XtCOutput, XtRBoolean, sizeof(Boolean),
-	offset(echo), XtRImmediate, (XtPointer) True},
-    {XtNdisplayNonprinting, XtCOutput, XtRBoolean, sizeof(Boolean),
-	offset(display_nonprinting), XtRImmediate, (XtPointer) True},
-};
-#undef offset
-
 #define SuperClass		(&textSinkClassRec)
 AsciiSinkClassRec asciiSinkClassRec = {
   {
@@ -114,8 +100,8 @@ AsciiSinkClassRec asciiSinkClassRec = {
     /* obj1		  	*/	NULL,
     /* obj2		  	*/	NULL,
     /* obj3		  	*/	0,
-    /* resources	  	*/	resources,
-    /* num_resources	  	*/	XtNumber(resources),
+    /* resources	  	*/	NULL,
+    /* num_resources	  	*/	0,
     /* xrm_class	  	*/	NULLQUARK,
     /* obj4		  	*/	FALSE,
     /* obj5		  	*/	FALSE,
@@ -192,7 +178,7 @@ CharWidth (Widget w, int x, unsigned char *c, int *l)
     }
 
     if ( (nonPrinting = (*c < (unsigned char) XawSP)) ) {
-	if (sink->ascii_sink.display_nonprinting)
+	if (sink->text_sink.display_nonprinting)
 	    *c += '@';
 	else {
 	    *c = XawSP;
@@ -203,7 +189,7 @@ CharWidth (Widget w, int x, unsigned char *c, int *l)
     if (l) *l = 1;
 
     if (_Xaw3dXft->encoding) {
-        xftfont = sink->ascii_sink.xftfont;
+        xftfont = sink->text_sink.xftfont;
         if (_Xaw3dXft->encoding == -1) {
             /* Dealing with Unicode string */
             if (*c<0x80) {
@@ -238,7 +224,7 @@ CharWidth (Widget w, int x, unsigned char *c, int *l)
                 (FcChar16*)c, 2, (XGlyphInfo*)&extents);
         width = extents.xOff;
     } else {
-        font = sink->ascii_sink.font;
+        font = sink->text_sink.font;
         if (font->per_char &&
 	       (*c >= font->min_char_or_byte2 && *c <= font->max_char_or_byte2))
 	    width = font->per_char[*c - font->min_char_or_byte2].width;
@@ -277,7 +263,7 @@ PaintText(Widget w, GC gc, Position x, Position y, unsigned char * buf, int len)
     max_x = (Position) ctx->core.width;
 
     if (_Xaw3dXft->encoding) {
-	width = Xaw3dXftTextWidth(w, sink->ascii_sink.xftfont,
+	width = Xaw3dXftTextWidth(w, sink->text_sink.xftfont,
 		(char *) buf, len);
 	/* Don't draw if we can't see it. */
 	if (((int) width) <= -x)
@@ -286,23 +272,23 @@ PaintText(Widget w, GC gc, Position x, Position y, unsigned char * buf, int len)
             _Xaw3dXft->text_bg_hilight = -_Xaw3dXft->text_bg_hilight;
 	}
 	Xaw3dXftDrawString(VisualOf(sink), (Widget)ctx,
-			   sink->ascii_sink.xftfont,
+			   sink->text_sink.xftfont,
                            (int) x, (int) y, (char *) buf, len);
         if (gc == sink->ascii_sink.invgc) {
 	    _Xaw3dXft->text_bg_hilight = -_Xaw3dXft->text_bg_hilight;
 	}
-	height = sink->ascii_sink.xftfont->height;
-	ascent = sink->ascii_sink.xftfont->ascent;
+	height = sink->text_sink.xftfont->height;
+	ascent = sink->text_sink.xftfont->ascent;
     } else {
-        width = XTextWidth(sink->ascii_sink.font, (char *) buf, len);
+        width = XTextWidth(sink->text_sink.font, (char *) buf, len);
 	/* Don't draw if we can't see it. */
 	if (((int) width) <= -x)
 	    return(width);
 	XDrawImageString(XtDisplay(ctx), XtWindow(ctx), gc,
 		         (int) x, (int) y, (char *) buf, len);
-	height = sink->ascii_sink.font->ascent +
-    		 sink->ascii_sink.font->descent;
-	ascent = sink->ascii_sink.font->ascent;
+	height = sink->text_sink.font->ascent +
+	         sink->text_sink.font->descent;
+	ascent = sink->text_sink.font->ascent;
     }
 
     if ( (((Position) width + x) > max_x) && (ctx->text.margin.right != 0) ) {
@@ -338,15 +324,15 @@ DisplayText(Widget w, Position x, Position y, XawTextPosition pos1,
     GC gc = highlight ? sink->ascii_sink.invgc : sink->ascii_sink.normgc;
     GC invgc = highlight ? sink->ascii_sink.normgc : sink->ascii_sink.invgc;
 
-    if (!sink->ascii_sink.echo) return;
+    if (!sink->text_sink.echo) return;
 
     if (_Xaw3dXft->encoding) {
-	height = sink->ascii_sink.xftfont->height;
-	ascent =  sink->ascii_sink.xftfont->ascent;
+	height = sink->text_sink.xftfont->height;
+	ascent =  sink->text_sink.xftfont->ascent;
     } else {
-        height = sink->ascii_sink.font->ascent +
-		 sink->ascii_sink.font->descent;
-	ascent =  sink->ascii_sink.font->ascent;
+        height = sink->text_sink.font->ascent +
+		 sink->text_sink.font->descent;
+	ascent =  sink->text_sink.font->ascent;
     }
 
     y += ascent;
@@ -379,7 +365,7 @@ DisplayText(Widget w, Position x, Position y, XawTextPosition pos1,
 		j = -1;
 	    }
 	    else if ( buf[j] < (unsigned char) ' ' ) {
-	        if (sink->ascii_sink.display_nonprinting) {
+	        if (sink->text_sink.display_nonprinting) {
 		    buf[j + 1] = buf[j] + '@';
 		    buf[j] = '^';
 		    j++;
@@ -486,8 +472,8 @@ FindDistance (Widget w,
     }
     *resPos = index;
     *resHeight = (_Xaw3dXft->encoding)?
-        sink->ascii_sink.xftfont->height :
-	sink->ascii_sink.font->ascent + sink->ascii_sink.font->descent;
+        sink->text_sink.xftfont->height :
+	sink->text_sink.font->ascent + sink->text_sink.font->descent;
 }
 
 
@@ -548,8 +534,8 @@ FindPosition(Widget w,
     if (index == lastPos && (c==NULL || *c != XawLF))
 	index = lastPos + 1;
     *resPos = index;
-    *resHeight = (_Xaw3dXft->encoding)? sink->ascii_sink.xftfont->height :
-	sink->ascii_sink.font->ascent +sink->ascii_sink.font->descent;
+    *resHeight = (_Xaw3dXft->encoding)? sink->text_sink.xftfont->height :
+	sink->text_sink.font->ascent +sink->text_sink.font->descent;
 }
 
 static void
@@ -570,8 +556,8 @@ GetGC(AsciiSinkObject sink)
 			  GCGraphicsExposures | GCForeground | GCBackground );
     XGCValues values;
 
-    if (sink->ascii_sink.font)
-        values.font = sink->ascii_sink.font->fid;
+    if (sink->text_sink.font)
+        values.font = sink->text_sink.font->fid;
     else
         values.font = 0;
     values.graphics_exposures = (Bool) FALSE;
@@ -615,10 +601,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     sink->ascii_sink.laststate = XawisOff;
     sink->ascii_sink.cursor_x = sink->ascii_sink.cursor_y = 0;
     if (_Xaw3dXft->encoding)
-	sink->ascii_sink.xftfont = Xaw3dXftGetFont(new, sink->ascii_sink.xftfontname);
+	sink->text_sink.xftfont = Xaw3dXftGetFont(new, sink->text_sink.xftfontname);
     else {
-	sink->ascii_sink.xftfont = NULL;
-	if (!sink->ascii_sink.font) XtError("Aborting: no font found");
+	sink->text_sink.xftfont = NULL;
+	if (!sink->text_sink.font) XtError("Aborting: no font found");
     }
     GetGC(sink);
 }
@@ -656,7 +642,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     AsciiSinkObject w = (AsciiSinkObject) new;
     AsciiSinkObject old_w = (AsciiSinkObject) current;
 
-    if (w->ascii_sink.font != old_w->ascii_sink.font
+    if (w->text_sink.font != old_w->text_sink.font
 	|| w->text_sink.background != old_w->text_sink.background
 	|| w->text_sink.foreground != old_w->text_sink.foreground) {
 	XtReleaseGC((Widget)w, w->ascii_sink.normgc);
@@ -665,9 +651,9 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 	GetGC(w);
 	((TextWidget)XtParent(new))->text.redisplay_needed = True;
     } else {
-	if ( (w->ascii_sink.echo != old_w->ascii_sink.echo) ||
-	     (w->ascii_sink.display_nonprinting !=
-                                     old_w->ascii_sink.display_nonprinting) )
+	if ( (w->text_sink.echo != old_w->text_sink.echo) ||
+	     (w->text_sink.display_nonprinting !=
+                                     old_w->text_sink.display_nonprinting) )
 	    ((TextWidget)XtParent(new))->text.redisplay_needed = True;
     }
 
@@ -688,8 +674,8 @@ MaxLines(Widget w, Dimension height)
   AsciiSinkObject sink = (AsciiSinkObject) w;
   int font_height;
 
-  font_height = (_Xaw3dXft->encoding)? sink->ascii_sink.xftfont->height:
-                sink->ascii_sink.font->ascent + sink->ascii_sink.font->descent;
+  font_height = (_Xaw3dXft->encoding)? sink->text_sink.xftfont->height:
+                sink->text_sink.font->ascent + sink->text_sink.font->descent;
   return( ((int) height) / font_height );
 }
 
@@ -707,8 +693,8 @@ MaxHeight(Widget w, int lines)
   AsciiSinkObject sink = (AsciiSinkObject) w;
   int font_height;
 
-  font_height = (_Xaw3dXft->encoding)? sink->ascii_sink.xftfont->height:
-                sink->ascii_sink.font->ascent + sink->ascii_sink.font->descent;
+  font_height = (_Xaw3dXft->encoding)? sink->text_sink.xftfont->height:
+                sink->text_sink.font->ascent + sink->text_sink.font->descent;
 
   return(lines * font_height);
 }
@@ -736,10 +722,10 @@ SetTabs(Widget w, int tab_count, short *tabs)
  */
 
   if (_Xaw3dXft->encoding) {
-      xftfont = sink->ascii_sink.xftfont;
+      xftfont = sink->text_sink.xftfont;
       figure_width = xftfont->max_advance_width;
   } else {
-      font = sink->ascii_sink.font;
+      font = sink->text_sink.font;
       XA_FIGURE_WIDTH = XInternAtom(XtDisplayOfObject(w), "FIGURE_WIDTH", FALSE);
       if ( (XA_FIGURE_WIDTH != None) &&
           ( (!XGetFontProperty(font, XA_FIGURE_WIDTH, &figure_width)) ||

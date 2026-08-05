@@ -86,18 +86,11 @@ extern AsciiSinkClassRec asciiSinkClassRec;
 
 /* New fields for the AsciiSink object record */
 typedef struct {
-    /* public resources */
-    XFontStruct *font;          /* Font to draw in. */
-    Boolean echo;
-    Boolean display_nonprinting;
-    char *xftfontname;
-
     /* private state */
     GC normgc, invgc, xorgc;
     Pixmap insertCursorOn;
     XawTextInsertState laststate;
     short cursor_x, cursor_y;	/* Cursor Location. */
-    XftFont *xftfont;
     Visual *visual;
 } AsciiSinkPart;
 

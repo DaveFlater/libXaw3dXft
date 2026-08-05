@@ -59,12 +59,42 @@ SOFTWARE.
 
 /* Resources:
 
- Name		     Class           RepType		Default Value
- ----		     -----	     -------		-------------
- foreground          Foreground      Pixel              XtDefaultForeground
- background          Background      Pixel              XtDefaultBackground
+ Name                Class             RepType          Default Value
+ ----                -----             -------          -------------
+ background          Background        Pixel            XtDefaultBackground
+ displayNonprinting  Output            Boolean          True
+ echo                Output            Boolean          True
+ encoding            Encoding          unsigned char    XawTextEncoding8bit
+ font                Font              XFontStruct*     XtDefaultFont
+ fontSet             FontSet           XFontSet         XtDefaultFontSet
+ foreground          Foreground        Pixel            XtDefaultForeground
+ international       International     Boolean          False
+ xftFont             XftFont           String           NULL
 
 */
+
+#define XtCOutput "Output"
+#define XtCXftFont "XftFont"
+#ifndef XtCFontSet
+#define XtCFontSet "FontSet"
+#endif
+
+#define XtNdisplayNonprinting "displayNonprinting"
+#define XtNecho "echo"
+#define XtNxftFont "xftFont"
+#ifndef XtNfontSet
+#define XtNfontSet "fontSet"
+#endif
+
+static_assert(Got_XAW_defines);
+#ifdef XAW_INTERNATIONALIZATION
+#ifndef XtCInternational
+#define XtCInternational "International"
+#endif
+#ifndef XtNinternational
+#define XtNinternational "international"
+#endif
+#endif
 
 /* Class record constants */
 

@@ -122,15 +122,26 @@ typedef struct _TextSinkClassRec {
 extern TextSinkClassRec textSinkClassRec;
 
 /* New fields for the TextSink object record */
+static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     Pixel foreground;		/* Foreground color. */
     Pixel background;		/* Background color. */
+    Boolean echo;
+    Boolean display_nonprinting;
+    XFontStruct *font;
+#ifdef XAW_INTERNATIONALIZATION
+    XFontSet fontset;
+    Boolean international;
+#endif
+    char *xftfontname;
+    unsigned char encoding;
 
     /* private state. */
     Position *tabs;		/* The tab stops as pixel values. */
     short    *char_tabs;	/* The tabs stops as character values. */
     int      tab_count;		/* number of items in tabs */
+    XftFont  *xftfont;
 
 } TextSinkPart;
 

@@ -105,7 +105,7 @@ static_assert(Got_XAW_defines);
  foreground	     Foreground		Pixel		  Black
  height		     Height		Dimension	  font height
  insertPosition	     TextPosition	int		  0
- international	     International	Boolean		  false
+ international	     International	Boolean		  False
  leftMargin	     Margin		Position	  2
  mappedWhenManaged   MappedWhenManaged	Boolean		  True
  resize		     Resize		XawTextResizeMode XawtextResizeNever

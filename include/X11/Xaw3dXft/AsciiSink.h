@@ -57,24 +57,6 @@ SOFTWARE.
 
 #include <X11/Xaw3dXft/TextSink.h>
 
-/* Resources:
-
- Name		     Class		RepType		Default Value
- ----		     -----		-------		-------------
- echo                Output             Boolean         True
- font		     Font		XFontStruct*	XtDefaultFont
- displayNonprinting  Output             Boolean         True
- xftFont             XftFont            String          NULL
-
-*/
-
-#define XtCOutput "Output"
-#define XtCXftFont "XftFont"
-
-#define XtNdisplayNonprinting "displayNonprinting"
-#define XtNecho "echo"
-#define XtNxftFont "xftFont"
-
 /* Class record constants */
 
 extern WidgetClass asciiSinkObjectClass;

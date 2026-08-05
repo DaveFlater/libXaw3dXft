@@ -44,6 +44,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/TextSinkP.h>
 #include <X11/Xaw3dXft/TextP.h>
 
@@ -78,6 +79,22 @@ static XtResource resources[] = {
      offset(foreground), XtRString, XtDefaultForeground},
   {XtNbackground, XtCBackground, XtRPixel, sizeof (Pixel),
      offset(background), XtRString, XtDefaultBackground},
+  {XtNecho, XtCOutput, XtRBoolean, sizeof(Boolean),
+     offset(echo), XtRImmediate, (XtPointer) True},
+  {XtNdisplayNonprinting, XtCOutput, XtRBoolean, sizeof(Boolean),
+     offset(display_nonprinting), XtRImmediate, (XtPointer) True},
+  {XtNfont, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
+     offset(font), XtRString, XtDefaultFont},
+#ifdef XAW_INTERNATIONALIZATION
+  {XtNfontSet, XtCFontSet, XtRFontSet, sizeof (XFontSet),
+     offset(fontset), XtRString, XtDefaultFontSet},
+  {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
+     offset(international), XtRImmediate, (XtPointer) FALSE},
+#endif
+  {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
+     offset(xftfontname), XtRString, NULL},
+  {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+     offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit}
 };
 #undef offset
 

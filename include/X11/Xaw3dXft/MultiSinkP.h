@@ -110,16 +110,11 @@ extern MultiSinkClassRec multiSinkClassRec;
 
 /* New fields for the MultiSink object record */
 typedef struct {
-    /* public resources */
-    Boolean echo;
-    Boolean display_nonprinting;
-
     /* private state */
     GC normgc, invgc, xorgc;
     Pixmap insertCursorOn;
     XawTextInsertState laststate;
     short cursor_x, cursor_y;	/* Cursor Location. */
-    XFontSet fontset; /* font set to draw */
 } MultiSinkPart;
 
 /****************************************************************

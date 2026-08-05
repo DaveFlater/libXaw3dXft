@@ -841,7 +841,7 @@ _XawTextGetSTRING(TextWidget ctx, XawTextPosition left, XawTextPosition right)
      n = wcslen(ws);
      for (j = 0, i = 0; j < n; j++) {
          wc = ws[j];
-         if (XwcTextEscapement (sink->multi_sink.fontset, &wc, 1) ||
+         if (XwcTextEscapement (sink->text_sink.fontset, &wc, 1) ||
             (wc == _Xaw_atowc(XawTAB)) || (wc == _Xaw_atowc(XawLF)) || (wc == _Xaw_atowc(XawESC)))
             ws[i++] = wc;
      }

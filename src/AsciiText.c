@@ -197,7 +197,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     sink = (MultiSinkObject)w->text.sink;
     _XawImRegister( new );
-    XtSetArg (list[ac], XtNfontSet, sink->multi_sink.fontset); ac++;
+    XtSetArg (list[ac], XtNfontSet, sink->text_sink.fontset); ac++;
     XtSetArg (list[ac], XtNinsertPosition, w->text.insertPos); ac++;
     XtSetArg (list[ac], XtNforeground, sink->text_sink.foreground); ac++;
     XtSetArg (list[ac], XtNbackground, sink->text_sink.background); ac++;
