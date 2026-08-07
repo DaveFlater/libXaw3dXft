@@ -32,6 +32,11 @@ static_assert(sizeof(FcChar16) == 2);
 #define isBigEndian 0
 #endif
 
+// Newline (LF) or NUL size
+#define nlsize(e) ( \
+  e == XawTextEncoding8bit || e == XawTextEncodingUTF8 ? 1 : \
+    (e == XawTextEncodingChar2b || e == XawTextEncodingUCS2 ? 2 : 4))
+
 // Convert between the two 16-bit representations.  Result will be
 // null-terminated.  Caller is responsible for freeing the returned string.
 static void *convert16 (void *text, Cardinal num_bytes) {
@@ -51,14 +56,13 @@ static void *convert16 (void *text, Cardinal num_bytes) {
   return t;
 }
 
-// Reduce UTF-8 to Char2b for the old X11 core fonts system without involving
-// locales, XmbDrawString, or iconv.  num_bytes is updated as applicable.
-// Caller is responsible for freeing the returned string.
+// Reduce UTF-8 to Char2b.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
 static XChar2b *fromutf8 (char *text, Cardinal *num_bytes) {
   assert(text);
   assert(num_bytes);
-  const uint8_t *textp = (uint8_t *)text; // signed char is objectively evil
-  const uint16_t bogusChar = '?';         // ditto
+  const uint8_t *textp = (uint8_t *)text;
+  const uint16_t bogusChar = '?';
   Cardinal nb = *num_bytes;
   size_t l = strlen(text);
   if (nb < l) l = nb;
@@ -110,47 +114,92 @@ static XChar2b *fromutf8 (char *text, Cardinal *num_bytes) {
 // Return number of bytes in any string, not counting null terminator
 Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text) {
   assert(text);
-  if (some16(encoding)) {
-    XChar2b *s = text;
-    Cardinal l = 0;
-    while (s->byte1 != 0 || s->byte2 != 0) {
-      ++l;
-      ++s;
-    }
-    return 2*l;
+  if (encoding == XawTextEncodingChar2b || encoding == XawTextEncodingUCS2) {
+    uint16_t *s = text;
+    while (*s != 0) ++s;
+    return (Cardinal)((uint8_t *)s - (uint8_t *)text);
+  }
+  if (encoding == XawTextEncodingUTF32) {
+    uint32_t *s = text;
+    while (*s != 0) ++s;
+    return (Cardinal)((uint8_t *)s - (uint8_t *)text);
   }
   return strlen(text);
 }
 
+// Reduce UTF-32 to Char2b.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static XChar2b *fromutf32 (void *text, Cardinal *num_bytes) {
+  assert(text);
+  assert(num_bytes);
+  assert(*num_bytes % 4 == 0);
+  const uint32_t *textp = (uint32_t *)text;
+  const uint16_t bogusChar = '?';
+  const Cardinal num_chars = *num_bytes / 4;
+  Cardinal l = Xaw3dXftAnyStrlen(XawTextEncodingUTF32, text) / 4;
+  if (num_chars < l) l = num_chars;
+  uint16_t *new = calloc(l+1, sizeof(uint16_t));
+  assert(new);
+  for (Cardinal i=0; i<l; ++i)
+    new[i] = (textp[i] < 0x10000 ? textp[i] : bogusChar);
+  new[l] = 0;
+  XChar2b *s = (XChar2b *)new;
+  #if !isBigEndian
+    for (Cardinal i=0; i<l; ++i)
+      s[i] = (XChar2b){s[i].byte2, s[i].byte1};
+  #endif
+  *num_bytes = l*2;
+  return s;
+}
+
 void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
   assert(text);
-  if (some16(encoding)) {
-    Cardinal nbytes = Xaw3dXftAnyStrlen(encoding, text) + 2;
-    XChar2b *s = malloc(nbytes);
-    assert(s);
-    return memcpy(s, text, nbytes);
-  }
-  return strdup(text);
+  const Cardinal nbytes = Xaw3dXftAnyStrlen(encoding, text) + nlsize(encoding);
+  void *s = malloc(nbytes);
+  assert(s);
+  return memcpy(s, text, nbytes);
 }
 
 // Generalized strchr(s, '\n')
-// For 16-bit encodings, the returned pointer points to the first byte of
+// For multibyte encodings, the returned pointer points to the first byte of
 // the newline.
 static void *nextnl (XawTextEncoding encoding, void *text) {
   assert(text);
-  if (some16(encoding)) {
-    XChar2b *s = text;
-    while (s->byte1 != 0 || s->byte2 != 0) {
-      if ((encoding == XawTextEncodingChar2b || isBigEndian) &&
-	     s->byte1 == 0 && s->byte2 == '\n' ||
-	  encoding == XawTextEncoding16bit && !isBigEndian &&
-	     s->byte2 == 0 && s->byte1 == '\n')
-	return s;
-      ++s;
+  switch (encoding) {
+  case XawTextEncoding8bit:
+  case XawTextEncodingUTF8:
+    return strchr(text, '\n');
+  case XawTextEncodingChar2b:
+    {
+      XChar2b *s = text;
+      while (s->byte1 != 0 || s->byte2 != 0) {
+	if (s->byte1 == 0 && s->byte2 == '\n')
+	  return s;
+	++s;
+      }
     }
-    return NULL;
+    break;
+  case XawTextEncodingUCS2:
+    {
+      uint16_t *s = text;
+      while (*s) {
+	if (*s == '\n')
+	  return s;
+	++s;
+      }
+    }
+    break;
+  case XawTextEncodingUTF32:
+    {
+      uint32_t *s = text;
+      while (*s) {
+	if (*s == '\n')
+	  return s;
+	++s;
+      }
+    }
   }
-  return strchr(text, '\n');
+  return NULL;
 }
 
 // Xaw3dXftDrawAnyString component for a single line with Xft font
@@ -174,11 +223,14 @@ static void drawOneXftLine (
       XftDrawString16(xftDraw, fg, xftFont, x, yadj, cvt16, num_bytes/2);
       free(cvt16);
       break;
-    case XawTextEncoding16bit:
-      XftDrawString16(xftDraw, fg, xftFont, x, yadj, text, num_bytes/2);
-      break;
     case XawTextEncodingUTF8:
       XftDrawStringUtf8(xftDraw, fg, xftFont, x, yadj, text, num_bytes);
+      break;
+    case XawTextEncodingUCS2:
+      XftDrawString16(xftDraw, fg, xftFont, x, yadj, text, num_bytes/2);
+      break;
+    case XawTextEncodingUTF32:
+      XftDrawString32(xftDraw, fg, xftFont, x, yadj, text, num_bytes/4);
     }
   }
 }
@@ -194,11 +246,8 @@ static void drawOneXmbLine (
   Cardinal num_bytes,
   XFontSetExtents *extents
 ) {
-  /*
-     X(mb,utf8)DrawImageString fill the background and apply the insensitive
-     stipple.  X(mb,utf8)DrawString apply the insensitive stipple but do not
-     fill the background.  Their parameters are the same.
-  */
+  // X(mb,utf8)DrawImageString will fill the background and apply a stipple.
+  // X(mb,utf8)DrawString will apply a stipple but won't fill the background.
   if (num_bytes) {
     /*
        There doesn't appear to be an answer that makes this agree with
@@ -230,9 +279,8 @@ static void drawOneLine (
   void *text,
   Cardinal num_bytes
 ) {
-  // XDrawImageString[16] fill the background but do not apply the
-  // insensitive stipple.  XDrawString[16] apply the insensitive stipple but
-  // do not fill the background.  Their parameters are the same.
+  // XDrawImageString[16] will fill the background but won't apply a stipple.
+  // XDrawString[16] will apply a stipple but won't fill the background.
   if (num_bytes) {
     XChar2b *cvt16 = NULL;
     Position yadj = y + font->max_bounds.ascent;
@@ -243,11 +291,14 @@ static void drawOneLine (
     case XawTextEncodingChar2b:
       XDrawString16(display, window, gc, x, yadj, text, num_bytes/2);
       return;
-    case XawTextEncoding16bit:
-      cvt16 = convert16(text, num_bytes);
-      break;
     case XawTextEncodingUTF8:
       cvt16 = fromutf8(text, &num_bytes);
+      break;
+    case XawTextEncodingUCS2:
+      cvt16 = convert16(text, num_bytes);
+      break;
+    case XawTextEncodingUTF32:
+      cvt16 = fromutf32(text, &num_bytes);
     }
     XDrawString16(display, window, gc, x, yadj, cvt16, num_bytes/2);
     free(cvt16);
@@ -373,11 +424,14 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
     XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
     free(cvt16);
     break;
-  case XawTextEncoding16bit:
-    XftTextExtents16(display, xftFont, text, num_bytes/2, &extents);
-    break;
   case XawTextEncodingUTF8:
     XftTextExtentsUtf8(display, xftFont, text, num_bytes, &extents);
+    break;
+  case XawTextEncodingUCS2:
+    XftTextExtents16(display, xftFont, text, num_bytes/2, &extents);
+    break;
+  case XawTextEncodingUTF32:
+    XftTextExtents32(display, xftFont, text, num_bytes/4, &extents);
   }
   return extents.xOff;
 }
@@ -402,15 +456,18 @@ static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
     return XTextWidth(font, text, num_bytes);
   case XawTextEncodingChar2b:
     return XTextWidth16(font, text, num_bytes/2);
-  case XawTextEncoding16bit:
-    cvt16 = convert16(text, num_bytes);
-    break;
   case XawTextEncodingUTF8:
     cvt16 = fromutf8(text, &num_bytes);
+    break;
+  case XawTextEncodingUCS2:
+    cvt16 = convert16(text, num_bytes);
+    break;
+  case XawTextEncodingUTF32:
+    cvt16 = fromutf32(text, &num_bytes);
   }
-  Dimension temp = XTextWidth16(font, cvt16, num_bytes/2);
+  Dimension width = XTextWidth16(font, cvt16, num_bytes/2);
   free(cvt16);
-  return temp;
+  return width;
 }
 
 // Genericized TextWidth/TextHeight
@@ -526,12 +583,24 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
     }
     break;
   case XawTextEncodingChar2b:
-  case XawTextEncoding16bit:
-    Cardinal byte_index = character_index*2;
-    if (byte_index < l) {
-      *b1 = byte_index;
-      *b2 = byte_index+2;
-      return True;
+  case XawTextEncodingUCS2:
+    {
+      Cardinal byte_index = character_index*2;
+      if (byte_index < l) {
+	*b1 = byte_index;
+	*b2 = byte_index+2;
+	return True;
+      }
+    }
+    break;
+  case XawTextEncodingUTF32:
+    {
+      Cardinal byte_index = character_index*4;
+      if (byte_index < l) {
+	*b1 = byte_index;
+	*b2 = byte_index+4;
+	return True;
+      }
     }
     break;
   case XawTextEncodingUTF8:
