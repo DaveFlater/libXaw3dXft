@@ -212,9 +212,9 @@ rendering quality is limited by the core X11 fonts system.
 
 When a plain old X font is used, Xaw3dXft calls the Xlib function XDrawString
 or XDrawString16 to render text.  XDrawString and XDrawString16 are fixed on
-ISO 8859-1 and Char2b encodings respectively.  If a UTF-8 encoded string is
-provided, Xaw3dXft translates it to Char2b, and characters outside of the
-[Basic Multilingual
+the 8bit and Char2b encodings respectively.  If another encoding is provided,
+Xaw3dXft translates it to Char2b, and characters outside of the [Basic
+Multilingual
 Plane](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane)
 are replaced with ?.
 
@@ -243,8 +243,8 @@ FreeType is an improved font rendering system that circumvents the
 limitations of the original core X11 fonts system.  Newer fonts can be scaled
 and rendered at higher quality, and anti-aliasing is supported.
 
-When a FreeType font is used, Xaw3dXft calls the libXft function
-XftDrawString8, XftDrawString16, or XftDrawStringUtf8 to render text.
+Xft accepts the 8bit, UTF8, UCS2, and UTF32 encodings.  If a Char2b string is
+provided, Xaw3dXft translates it to UCS2.
 
 ### <a name="resources"> Resources
 
