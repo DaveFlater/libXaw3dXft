@@ -156,9 +156,7 @@ extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text);
 Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text);
 
 // Find the coordinates to underline one character in supplied text.  Returns
-// True if coordinates are valid, False if cannot comply.  For international
-// multibyte strings using fontSet, the indicated character must be in the
-// first line of text.
+// True if coordinates are valid, False if cannot comply.
 extern Boolean Xaw3dXftLocateUnderline (
   // Similar to Xaw3dXftSizeAnyString
   Display *display,

@@ -18,6 +18,8 @@ X11 license (as per the historical licenses that the package inherits)
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
+#include <uchar.h>
+#include <wchar.h>
 #include <X11/Xaw3dXft/AnyStringP.h>
 
 static_assert(Got_XAW_defines);
@@ -32,10 +34,68 @@ static_assert(sizeof(FcChar16) == 2);
 #define isBigEndian 0
 #endif
 
+/*
+  mb and wc are a pain.  They are supported mainly because font sets require
+  them.
+
+  The font set functions Xutf8TextEscapement and Xutf8Draw[Image]String are
+  implemented using a translation to mb (see _Xutf8DefaultDrawString in
+  libx11/modules/om/generic/omDefault.c).  They fail if the locale's codeset
+  doesn't support the Unicode character repertoire and are useless for
+  circumventing the locale dependency.
+
+  In general, mb/wc codepoints are implementation-defined except that we seem
+  to know that 0 means NUL.
+  https://en.cppreference.com/c/string/multibyte
+  "A null-terminated multibyte string (NTMBS), or "multibyte string", is a
+  sequence of nonzero bytes followed by a byte with value zero (the
+  terminating null character)."
+
+  Xaw code assumes that the codepoints of LF, HT, and SPACE are the same
+  (there is lots of _Xaw_atowc(XawLF), etc., where _Xaw_atowc just does
+  mbtowc on the ASCII char).  Most codesets do in fact preserve ASCII, but
+  this isn't guaranteed; e.g., En_US.IBM-1047 is EBCDIC.
+  https://www.ibm.com/docs/en/zos/3.2.0?topic=functions-setlocale-set-locale
+
+  mb supports shift states.
+  https://en.cppreference.com/c/string/multibyte
+  "In some multibyte encodings, any given multibyte character sequence may
+  represent different characters depending on the previous byte sequences,
+  known as "shift sequences".  Such encodings are known as state-dependent:
+  knowledge of the current shift state is required to interpret each
+  character."
+
+  As of C23, there is no direct conversion between wc and UTF-anything.  You
+  have to convert wc to mb first.  Coming in C29:
+  https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm
+  https://en.cppreference.com/c/header/stdmchar
+  Not yet supported in GCC as of 2026-08-08:
+  https://gcc.gnu.org/projects/c-status.html
+  Maybe could get the codeset and run it through iconv?
+
+  Xaw implemented _XawTextWCToMB and _XawTextMBToWC using the esoteric Xlib
+  functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
+  XwcTextPropertyToTextList.  These conversions can be done more obviously
+  using C library functions.
+
+  There should probably be a fast path to skip all conversions when mb ==
+  UTF-8 and wc == UTF-32 (if it can be determined that this is the case).
+*/
+
 // Newline (LF) or NUL size
-#define nlsize(e) ( \
-  e == XawTextEncoding8bit || e == XawTextEncodingUTF8 ? 1 : \
-    (e == XawTextEncodingChar2b || e == XawTextEncodingUCS2 ? 2 : 4))
+static Cardinal nlsize (XawTextEncoding encoding) {
+  switch (encoding) {
+  case XawTextEncodingChar2b:
+  case XawTextEncodingUCS2:
+    return 2;
+  case XawTextEncodingUTF32:
+    return 4;
+  case XawTextEncodingwc:
+    return sizeof(wchar_t);
+  }
+  // 8bit, UTF8, mb (could do size = c16rtomb(s, u'\n', &state))
+  return 1;
+}
 
 // Convert between the two 16-bit representations.  Result will be
 // null-terminated.  Caller is responsible for freeing the returned string.
@@ -58,7 +118,7 @@ static void *convert16 (void *text, Cardinal num_bytes) {
 
 // Reduce UTF-8 to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *fromutf8 (char *text, Cardinal *num_bytes) {
+static XChar2b *utf8tochar2b (char *text, Cardinal *num_bytes) {
   assert(text);
   assert(num_bytes);
   const uint8_t *textp = (uint8_t *)text;
@@ -114,22 +174,34 @@ static XChar2b *fromutf8 (char *text, Cardinal *num_bytes) {
 // Return number of bytes in any string, not counting null terminator
 Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text) {
   assert(text);
-  if (encoding == XawTextEncodingChar2b || encoding == XawTextEncodingUCS2) {
-    uint16_t *s = text;
-    while (*s != 0) ++s;
-    return (Cardinal)((uint8_t *)s - (uint8_t *)text);
+  switch (encoding) {
+  case XawTextEncodingChar2b:
+  case XawTextEncodingUCS2:
+    {
+      uint16_t *s = text;
+      while (*s) ++s;
+      return (Cardinal)((uint8_t *)s - (uint8_t *)text);
+    }
+  case XawTextEncodingUTF32:
+    {
+      uint32_t *s = text;
+      while (*s) ++s;
+      return (Cardinal)((uint8_t *)s - (uint8_t *)text);
+    }
+  case XawTextEncodingwc:
+    {
+      wchar_t *s = text;
+      while (*s) ++s;
+      return (Cardinal)((uint8_t *)s - (uint8_t *)text);
+    }
   }
-  if (encoding == XawTextEncodingUTF32) {
-    uint32_t *s = text;
-    while (*s != 0) ++s;
-    return (Cardinal)((uint8_t *)s - (uint8_t *)text);
-  }
+  // 8bit, UTF8, mb
   return strlen(text);
 }
 
 // Reduce UTF-32 to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *fromutf32 (void *text, Cardinal *num_bytes) {
+static XChar2b *utf32tochar2b (void *text, Cardinal *num_bytes) {
   assert(text);
   assert(num_bytes);
   assert(*num_bytes % 4 == 0);
@@ -152,6 +224,119 @@ static XChar2b *fromutf32 (void *text, Cardinal *num_bytes) {
   return s;
 }
 
+// Convert mb to UTF32.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+// Ref:  https://en.cppreference.com/c/string/multibyte/mbrtoc32
+static char32_t *mbtoutf32 (void *text, Cardinal *num_bytes) {
+  assert(text);
+  assert(num_bytes);
+  const char32_t bogusChar = '?';
+  char32_t *new = calloc(*num_bytes + 1, sizeof(char32_t));
+  assert(new);
+  char32_t *p_out = new;
+  char *p_in = text;
+  char *end = text + *num_bytes;
+  mbstate_t state = {0};
+  Boolean done = False;
+  while (!done && p_in < end) {
+    size_t rc = mbrtoc32(p_out, p_in, end - p_in, &state);
+    switch (rc) {
+    case 0:
+      // The character converted and stored was the NUL character.
+      done = True;
+      break;
+    case -1:
+      // Encoding error, nothing written to p_out, state is undefined.  Don't
+      // know whether this is recoverable, but try.
+      ++p_in;
+      *p_out++ = bogusChar;
+      state = (mbstate_t){0};
+      break;
+    case -2:
+      // The next n bytes constitute an incomplete, but so far valid,
+      // multibyte character.  Nothing written to p_out.  This means that we
+      // have one broken character but we are done.
+      *p_out++ = bogusChar;
+      done = True;
+      break;
+    case -3:
+      // The next char32_t from a multi-char32_t character has now been
+      // written.  No bytes are processed from the input in this case.  Don't
+      // know what the use case for this is.
+      ++p_out;
+      break;
+    default:
+      // It read rc bytes and stored one char32.
+      p_in += rc;
+      ++p_out;
+    }
+  }
+  *p_out = 0;
+  *num_bytes = (p_out - new) * sizeof(char32_t);
+  return new;
+}
+
+// Convert wc to mb.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+// Cf. _XawTextWCToMB in TextSrc.c.
+// The name wctomb is already taken by libc.
+static char *Xaw3dXft_wctomb (void *text, Cardinal *num_bytes) {
+  assert(text);
+  assert(num_bytes);
+  Cardinal num_wc = *num_bytes / sizeof(wchar_t);
+  assert(num_wc);
+  // wcsnrtombs does the whole string at once but makes it difficult to
+  // work around invalid characters.
+  // size_t l = wcsnrtombs(NULL, &src, num_wc, 0, &state);
+  char *new = malloc((num_wc + 1) * MB_CUR_MAX);
+  assert(new);
+  const wchar_t *src = text;
+  char *s = new;
+  mbstate_t state = {0};
+  for (Cardinal i=0; i<num_wc; ++i) {
+    size_t ret = wcrtomb(s, src[i], &state);
+    if (ret == -1)
+      *s++ = '?';
+    else
+      s += ret;
+  }
+  *s = 0;
+  *num_bytes = s - new;
+  return new;
+}
+
+// Here come the multi-stage conversion functions.
+
+// Convert wc to UTF32.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char32_t *wctoutf32 (void *text, Cardinal *num_bytes) {
+  // Get rid of this conversion to mb after stdmchar gets implemented.
+  char *mb = Xaw3dXft_wctomb(text, num_bytes);
+  char32_t *utf32 = mbtoutf32(mb, num_bytes);
+  free(mb);
+  return utf32;
+}
+
+// Convert mb to Char2b.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+// Note:  mbrtoc16 implements UTF-16 with surrogate pairs, which we don't
+// want.  utf32tochar2b will instead put '?' for characters that don't fit.
+static XChar2b *mbtochar2b (char *text, Cardinal *num_bytes) {
+  char32_t *utf32 = mbtoutf32(text, num_bytes);
+  XChar2b *c2b = utf32tochar2b(utf32, num_bytes);
+  free(utf32);
+  return c2b;
+}
+
+// Convert wc to Char2b.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static XChar2b *wctochar2b (char *text, Cardinal *num_bytes) {
+  char32_t *utf32 = wctoutf32(text, num_bytes);
+  XChar2b *c2b = utf32tochar2b(utf32, num_bytes);
+  free(utf32);
+  return c2b;
+}
+
 void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
   assert(text);
   const Cardinal nbytes = Xaw3dXftAnyStrlen(encoding, text) + nlsize(encoding);
@@ -161,14 +346,16 @@ void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
 }
 
 // Generalized strchr(s, '\n')
-// For multibyte encodings, the returned pointer points to the first byte of
-// the newline.
+// The returned pointer points to the first or only byte of the newline.
 static void *nextnl (XawTextEncoding encoding, void *text) {
   assert(text);
   switch (encoding) {
   case XawTextEncoding8bit:
   case XawTextEncodingUTF8:
+  case XawTextEncodingmb:
     return strchr(text, '\n');
+  case XawTextEncodingwc:
+    return wcschr(text, L'\n');
   case XawTextEncodingChar2b:
     {
       XChar2b *s = text;
@@ -218,11 +405,6 @@ static void drawOneXftLine (
     case XawTextEncoding8bit:
       XftDrawString8(xftDraw, fg, xftFont, x, yadj, text, num_bytes);
       break;
-    case XawTextEncodingChar2b:
-      FcChar16 *cvt16 = convert16(text, num_bytes);
-      XftDrawString16(xftDraw, fg, xftFont, x, yadj, cvt16, num_bytes/2);
-      free(cvt16);
-      break;
     case XawTextEncodingUTF8:
       XftDrawStringUtf8(xftDraw, fg, xftFont, x, yadj, text, num_bytes);
       break;
@@ -231,6 +413,27 @@ static void drawOneXftLine (
       break;
     case XawTextEncodingUTF32:
       XftDrawString32(xftDraw, fg, xftFont, x, yadj, text, num_bytes/4);
+      break;
+    case XawTextEncodingChar2b:
+      {
+	FcChar16 *cvt16 = convert16(text, num_bytes);
+	XftDrawString16(xftDraw, fg, xftFont, x, yadj, cvt16, num_bytes/2);
+	free(cvt16);
+      }
+      break;
+    case XawTextEncodingmb:
+      {
+	char32_t *cvt32 = mbtoutf32(text, &num_bytes);
+	XftDrawString32(xftDraw, fg, xftFont, x, yadj, cvt32, num_bytes/4);
+	free(cvt32);
+      }
+      break;
+    case XawTextEncodingwc:
+      {
+	char32_t *cvt32 = wctoutf32(text, &num_bytes);
+	XftDrawString32(xftDraw, fg, xftFont, x, yadj, cvt32, num_bytes/4);
+	free(cvt32);
+      }
     }
   }
 }
@@ -242,12 +445,14 @@ static void drawOneXmbLine (
   XFontSet fontSet,
   GC gc,
   Position x, Position y,
+  XawTextEncoding encoding,
   void *text,
   Cardinal num_bytes,
   XFontSetExtents *extents
 ) {
-  // X(mb,utf8)DrawImageString will fill the background and apply a stipple.
-  // X(mb,utf8)DrawString will apply a stipple but won't fill the background.
+  // Xutf8Draw[Image]String are useless.
+  // X(mb,wc)DrawImageString will fill the background and apply a stipple.
+  // X(mb,wc)DrawString will apply a stipple but won't fill the background.
   if (num_bytes) {
     /*
        There doesn't appear to be an answer that makes this agree with
@@ -255,16 +460,17 @@ static void drawOneXmbLine (
        max_logical_extent.y is smaller than font->max_bounds.ascent.
     */
     Position yadj = y - extents->max_logical_extent.y; // y is negative
-    /*
-       Xutf8DrawString malfunctions when a non-UTF8 codeset is set in the
-       locale.  It's a function pointer.  As far as I can guess, the
-       implementation is _Xutf8DefaultDrawString in
-       libx11/modules/om/generic/omDefault.c.  That does utf8_to_mbs and
-       calls _XmbDefaultDrawString on the result.  Unconditionally calling
-       XmbDrawString regardless of the encoding resource is no more broken
-       and is easier to explain than calling Xutf8DrawString sometimes.
-    */
-    XmbDrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
+    switch (encoding) {
+    case XawTextEncodingwc:
+      XwcDrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
+      break;
+    case XawTextEncodingmb:
+    case XawTextEncoding8bit: // FIXME temporary mb 8bit compatibility patch
+      XmbDrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
+      break;
+    default:
+      XtError("libXaw3dXft:  unsupported encoding in drawOneXmbLine");
+    }
   }
 }
 #endif
@@ -292,13 +498,19 @@ static void drawOneLine (
       XDrawString16(display, window, gc, x, yadj, text, num_bytes/2);
       return;
     case XawTextEncodingUTF8:
-      cvt16 = fromutf8(text, &num_bytes);
+      cvt16 = utf8tochar2b(text, &num_bytes);
       break;
     case XawTextEncodingUCS2:
       cvt16 = convert16(text, num_bytes);
       break;
     case XawTextEncodingUTF32:
-      cvt16 = fromutf32(text, &num_bytes);
+      cvt16 = utf32tochar2b(text, &num_bytes);
+      break;
+    case XawTextEncodingwc:
+      cvt16 = wctochar2b(text, &num_bytes);
+      break;
+    case XawTextEncodingmb:
+      cvt16 = mbtochar2b(text, &num_bytes);
     }
     XDrawString16(display, window, gc, x, yadj, cvt16, num_bytes/2);
     free(cvt16);
@@ -320,8 +532,7 @@ void Xaw3dXftDrawAnyStringLen (
   assert(xftFont && fg || text_gc);
 
   // The Boolean international resource is from Xaw.  The docs say:  when
-  // true, use fontSet; when false, use font.  When true, encoding is from
-  // locale.
+  // true, use fontSet; when false, use font.
 
   // The line-breaking logic is hairy, so do that just once and switch the
   // font systems three times (pre-loop, in-loop, post-loop).  The logic is
@@ -363,8 +574,8 @@ void Xaw3dXftDrawAnyStringLen (
     } else
 #ifdef XAW_INTERNATIONALIZATION
     if (international) {
-      drawOneXmbLine(display, window, fontSet, text_gc, x, y, text, line_bytes,
-		     extents);
+      drawOneXmbLine(display, window, fontSet, text_gc, x, y, encoding, text,
+	             line_bytes, extents);
       y += extents->max_logical_extent.height;
     } else
 #endif
@@ -391,8 +602,8 @@ void Xaw3dXftDrawAnyStringLen (
   } else
 #ifdef XAW_INTERNATIONALIZATION
   if (international)
-    drawOneXmbLine(display, window, fontSet, text_gc, x, y, text, num_bytes,
-		   extents);
+    drawOneXmbLine(display, window, fontSet, text_gc, x, y, encoding, text,
+                   num_bytes, extents);
   else
 #endif
     drawOneLine(display, window, font, text_gc, x, y, encoding, text, num_bytes);
@@ -419,11 +630,6 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
   case XawTextEncoding8bit:
     XftTextExtents8(display, xftFont, text, num_bytes, &extents);
     break;
-  case XawTextEncodingChar2b:
-    FcChar16 *cvt16 = convert16(text, num_bytes);
-    XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
-    free(cvt16);
-    break;
   case XawTextEncodingUTF8:
     XftTextExtentsUtf8(display, xftFont, text, num_bytes, &extents);
     break;
@@ -432,17 +638,45 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
     break;
   case XawTextEncodingUTF32:
     XftTextExtents32(display, xftFont, text, num_bytes/4, &extents);
+    break;
+  case XawTextEncodingChar2b:
+    {
+      FcChar16 *cvt16 = convert16(text, num_bytes);
+      XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
+      free(cvt16);
+    }
+    break;
+  case XawTextEncodingmb:
+    {
+      char32_t *cvt32 = mbtoutf32(text, &num_bytes);
+      XftTextExtents32(display, xftFont, cvt32, num_bytes/4, &extents);
+      free(cvt32);
+    }
+    break;
+  case XawTextEncodingwc:
+    {
+      char32_t *cvt32 = wctoutf32(text, &num_bytes);
+      XftTextExtents32(display, xftFont, cvt32, num_bytes/4, &extents);
+      free(cvt32);
+    }
   }
   return extents.xOff;
 }
 
 #ifdef XAW_INTERNATIONALIZATION
 // Xaw3dXftSizeAnyString component for a single line with an XFontSet
-static Dimension sizeOneXmbLine (void *fontSet, void *text, Cardinal num_bytes)
-{
+static Dimension sizeOneXmbLine (void *fontSet, XawTextEncoding encoding,
+void *text, Cardinal num_bytes) {
   if (num_bytes == 0) return 0;
-  // See comments in drawOneXmbLine.  We're not using Xutf8TextEscapement.
-  return XmbTextEscapement(fontSet, text, num_bytes);
+  // Xutf8TextEscapement is useless
+  switch (encoding) {
+  case XawTextEncodingwc:
+    return XwcTextEscapement(fontSet, text, num_bytes);
+  case XawTextEncodingmb:
+  case XawTextEncoding8bit: // FIXME temporary mb 8bit compatibility patch
+    return XmbTextEscapement(fontSet, text, num_bytes);
+  }
+  XtError("libXaw3dXft:  unsupported encoding in sizeOneXmbLine");
 }
 #endif
 
@@ -457,13 +691,19 @@ static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
   case XawTextEncodingChar2b:
     return XTextWidth16(font, text, num_bytes/2);
   case XawTextEncodingUTF8:
-    cvt16 = fromutf8(text, &num_bytes);
+    cvt16 = utf8tochar2b(text, &num_bytes);
     break;
   case XawTextEncodingUCS2:
     cvt16 = convert16(text, num_bytes);
     break;
   case XawTextEncodingUTF32:
-    cvt16 = fromutf32(text, &num_bytes);
+    cvt16 = utf32tochar2b(text, &num_bytes);
+    break;
+  case XawTextEncodingwc:
+    cvt16 = wctochar2b(text, &num_bytes);
+    break;
+  case XawTextEncodingmb:
+    cvt16 = mbtochar2b(text, &num_bytes);
   }
   Dimension width = XTextWidth16(font, cvt16, num_bytes/2);
   free(cvt16);
@@ -514,7 +754,7 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
     } else
 #ifdef XAW_INTERNATIONALIZATION
     if (international) {
-      wline = sizeOneXmbLine(fontSet, text, line_bytes);
+      wline = sizeOneXmbLine(fontSet, encoding, text, line_bytes);
       h += extents->max_logical_extent.height;
     } else
 #endif
@@ -542,7 +782,7 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
     } else
 #ifdef XAW_INTERNATIONALIZATION
     if (international) {
-      wline = sizeOneXmbLine(fontSet, text, num_bytes);
+      wline = sizeOneXmbLine(fontSet, encoding, text, num_bytes);
       h += extents->max_logical_extent.height;
     } else
 #endif
@@ -566,14 +806,15 @@ Dimension *width, Dimension *height) {
 }
 
 // Find the bytes corresponding to the start of a character and the start of
-// the next character.  Not applicable to mb strings (international).
-// Returns True if results are valid, False if cannot comply.
+// the next character.  Returns True if results are valid, False if cannot
+// comply.
 static Boolean locateChar (XawTextEncoding encoding, void *text,
 			   int character_index,
 			   Cardinal *b1, Cardinal *b2) {
   if (character_index < 0) return False;
-  assert(b1 && b2);
+  assert(b1 && b2 && text);
   const Cardinal l = Xaw3dXftAnyStrlen(encoding, text);
+  if (l == 0) return False;
   switch (encoding) {
   case XawTextEncoding8bit:
     if (character_index < l) {
@@ -603,18 +844,54 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
       }
     }
     break;
-  case XawTextEncodingUTF8:
-    Cardinal charsFound = 0, i = 0;
-    uint8_t *c = text;
-    while (i < l) {
-      if ((c[i] & 0xc0) != 0x80 && charsFound++ == character_index) break;
-      ++i;
+  case XawTextEncodingwc:
+    {
+      Cardinal byte_index = character_index*sizeof(wchar_t);
+      if (byte_index < l) {
+	*b1 = byte_index;
+	*b2 = byte_index+sizeof(wchar_t);
+	return True;
+      }
     }
-    if (i < l) {
-      *b1 = i++;
-      while ((c[i] & 0xc0) == 0x80 && i < l) ++i;
-      *b2 = i;
-      return True;
+    break;
+  case XawTextEncodingUTF8:
+    {
+      Cardinal charsFound = 0, i = 0;
+      uint8_t *c = text;
+      while (i < l) {
+	if ((c[i] & 0xc0) != 0x80 && charsFound++ == character_index) break;
+	++i;
+      }
+      if (i < l) {
+	*b1 = i++;
+	while ((c[i] & 0xc0) == 0x80 && i < l) ++i;
+	*b2 = i;
+	return True;
+      }
+    }
+    break;
+  case XawTextEncodingmb:
+    {
+      Cardinal charsFound = 0, i = 0;
+      char *c = text;
+      mbstate_t mb = {0};
+      size_t ret = 0;
+      while (i < l) {
+	ret = mbrlen(c+i, l-i, &mb);
+	switch (ret) {
+	case 0:  // found NUL
+	case -1: // encoding error
+	case -2: // truncated mb character
+	  return False;
+	}
+	if (charsFound++ == character_index) break;
+	i += ret;
+      }
+      if (i < l) {
+	*b1 = i;
+	*b2 = i + ret;
+	return True;
+      }
     }
   }
   return False;
@@ -631,7 +908,7 @@ Boolean Xaw3dXftLocateUnderline (
   if (character_index < 0) return False;
   assert(x1 && x2 && y);
 
-#ifdef XAW_INTERNATIONALIZATION
+#if 0
   if (international) {
     Cardinal l = Xaw3dXftAnyStrlen(encoding, text);
     XRectangle ink[l], logical[l];
@@ -649,11 +926,31 @@ Boolean Xaw3dXftLocateUnderline (
   }
 #endif
 
+  // FIXME temporary mb 8bit compatibility patch
+  if (international && encoding == XawTextEncoding8bit)
+    encoding = XawTextEncodingmb;
+
   Cardinal b1, b2;
   if (locateChar(encoding, text, character_index, &b1, &b2)) {
     assert(b2 > b1);
 
-    // Get us on the right line
+    Cardinal lineHeight;
+    Position baseline; // relative to the bottom of the drawing
+    if (xftFont) {
+      lineHeight = xftFont->height;
+      baseline = xftFont->descent - 1;
+    } else if (international) {
+      assert(fontSet);
+      XFontSetExtents *extents = XExtentsOfFontSet(fontSet);
+      lineHeight = extents->max_logical_extent.height;
+      baseline = lineHeight + extents->max_logical_extent.y; // y is negative
+    } else {
+      assert(font);
+      lineHeight = font->max_bounds.ascent + font->max_bounds.descent;
+      baseline = font->max_bounds.descent;
+    }
+
+    // Get down to the right line
     Cardinal linesSkipped = 0;
     void *line = text, *nl = nextnl(encoding, line);
     while (nl && text + b2 > nl) {
@@ -662,18 +959,13 @@ Boolean Xaw3dXftLocateUnderline (
       line = nl + nlsize(encoding);
       nl = nextnl(encoding, line);
     }
-    *y = linesSkipped * (xftFont ? xftFont->height :
-                         font->max_bounds.ascent + font->max_bounds.descent);
+    *y = linesSkipped * lineHeight;
     const Cardinal bytesSkipped = line - text;
     assert(bytesSkipped <= b1);
     b1 -= bytesSkipped;
     b2 -= bytesSkipped;
 
-    // Guess where the baseline is relative to the bottom of the drawing
-    // (Font sets not handled here)
-    Position baseline = (xftFont ?
-                         xftFont->descent - 1 : font->max_bounds.descent);
-
+    // Get the location on that line
     Dimension w2, h2;
     Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
                              encoding, line, b2, &w2, &h2);

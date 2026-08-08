@@ -195,11 +195,18 @@ file:
       XawTextEncodingChar2b = 1, // XChar2b, UCS-2BE (UCS-2 big-endian)
       XawTextEncodingUTF8   = 2, // char, char8_t, FcChar8, UTF-8
       XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 (not UTF-16)
-      XawTextEncodingUTF32  = 4  // char32_t, FcChar32, UTF-32, UCS-4
+      XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
+      XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset
+      XawTextEncodingwc     = 6  // wchar_t, wide string, locale's codeset
     } XawTextEncoding;
 
-The "multibyte character strings" that are expected by XmbDrawString when a
-font set is used are a special case (see [X font sets](#fontset) below).
+Narrow multibyte strings ("mb") and wide strings ("wc") are interpreted
+according to the locale's codeset; e.g., UTF-8 from en_US.UTF-8 or ISO 8859
+part 7 from el_GR.ISO8859-7.  The application must call
+[setlocale](https://en.cppreference.com/c/locale/setlocale) to activate a
+locale other than the default "C" locale, which allows only ASCII characters.
+The application should also call XSupportsLocale() to verify that X supports
+it and XSetLocaleModifiers("") to initialize.
 
 ### <a name="fontsys"> Font systems
 
@@ -228,11 +235,11 @@ that support different pieces of it.  However, the rendering is done by the
 same core X11 fonts system, UTF-8 is sometimes translated incorrectly, and
 the results of merging fonts with different characteristics can be ugly.
 
-When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString to
-render text.  XmbDrawString expects the string to conform to the codeset that
-is specified in the
-[locale](https://en.wikipedia.org/wiki/Locale_(computer_software)) (e.g.,
-UTF-8 from en_US.UTF-8 or ISO 8859 part 7 from el_GR.ISO8859-7).
+When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString or
+XwcDrawString to render text.  XmbDrawString and XwcDrawString are fixed on
+the mb and wc encodings respectively.  If another encoding is provided,
+Xaw3dXft translates it to wc, and characters that do not exist in the
+locale's codeset are replaced with ?.
 
 Support for this functionality is included or excluded by the
 --enable-internationalization configure option.
@@ -243,8 +250,8 @@ FreeType is an improved font rendering system that circumvents the
 limitations of the original core X11 fonts system.  Newer fonts can be scaled
 and rendered at higher quality, and anti-aliasing is supported.
 
-Xft accepts the 8bit, UTF8, UCS2, and UTF32 encodings.  If a Char2b string is
-provided, Xaw3dXft translates it to UCS2.
+libXft supports the 8bit, UTF8, UCS2, and UTF32 encodings.  If another
+encoding is provided, Xaw3dXft translates it to UCS2 or UTF32.
 
 ### <a name="resources"> Resources
 
@@ -254,6 +261,7 @@ following resources related to fonts and encodings:
 Name          | Class         | RepType      | Default value
 :---          | :----         | :---         | :---
 encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit
+              |               |              | (XawTextEncodingmb if international)
 font          | Font          | XFontStruct* | XtDefaultFont
 fontSet       | FontSet       | XFontSet     | XtDefaultFontSet
 international | International | Boolean      | False
@@ -278,13 +286,6 @@ that are known to Fontconfig.
 
 If a named xftFont fails to load, another font will be substituted without
 warning.  🤷
-
-The interpretation of the text string is fully specified by encoding when
-font or xftFont is used.  When a font set is used, encoding only determines
-how Xaw3dXft will find terminating nulls and newlines in the string.  Any
-locale codeset that preserves single-byte ASCII should work with
-XawTextEncoding8bit.  Any codeset that neither preserves single-byte ASCII
-nor is UCS-2 compatible is unsupported.
 
 To make Xaw3dXft default to using 16 point Libertinus Serif font and UTF-8
 encoding for everything, you would put the following in your .Xresources file
@@ -747,9 +748,8 @@ The menuName resource is used to specify the name of a sub-menu.  The use of
 sub-menus was explained above under SimpleMenu [Sub-menus](#submenus).
 
 The underline resource is used to specify a character to underline in the
-label.  The integer value is the index of the character.  For multi-line
-labels, it need not be in the first line unless international is true.  A
-value less than zero inhibits underlining.
+label.  The integer value is the index of the character.  A value less than
+zero inhibits underlining.
 
 Being a non-widget Object, SmeBSB does not have a window of its own, so the
 borderWidth resource that it inherits from Rectangle is inoperative.
@@ -1041,6 +1041,10 @@ Xaw oddities:
   subclass has no use for them.
 - Most widgets have pointerColor and pointerColorBackground resources that
   they inherit from Simple, but these resources are completely unused.
+- Xaw implemented conversions between mb and wc using the esoteric Xlib
+  functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
+  XwcTextPropertyToTextList.  These conversions can be done more obviously
+  using C library functions.
 
 "Internationalized" text support in Xlib:
 
@@ -1048,8 +1052,9 @@ Xaw oddities:
   and frequently fails for no apparent reason, even in cases where the plain
   old XDrawString16 does quite well at covering the Basic Multilingual Plane.
 - The Xutf8\* functions fall through to the Xmb\* functions via some
-  obfuscated indirection and cannot perform as advertised unless the locale
-  codeset was already UTF-8.
+  obfuscated indirection.  They fail if the locale's codeset doesn't support
+  the Unicode character repertoire and are useless for circumventing the
+  locale dependency.
 
 Xlib and libXt have global disagreements about the plain old data types of
 common parameters (like positions and dimensions) and about Bool/Boolean
