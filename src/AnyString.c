@@ -462,7 +462,8 @@ static void drawOneXmbLine (
     Position yadj = y - extents->max_logical_extent.y; // y is negative
     switch (encoding) {
     case XawTextEncodingwc:
-      XwcDrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
+      XwcDrawString(display, window, fontSet, gc, x, yadj, text,
+	num_bytes/sizeof(wchar_t));
       break;
     case XawTextEncodingmb:
     case XawTextEncoding8bit: // FIXME temporary mb 8bit compatibility patch
@@ -671,7 +672,7 @@ void *text, Cardinal num_bytes) {
   // Xutf8TextEscapement is useless
   switch (encoding) {
   case XawTextEncodingwc:
-    return XwcTextEscapement(fontSet, text, num_bytes);
+    return XwcTextEscapement(fontSet, text, num_bytes/sizeof(wchar_t));
   case XawTextEncodingmb:
   case XawTextEncoding8bit: // FIXME temporary mb 8bit compatibility patch
     return XmbTextEscapement(fontSet, text, num_bytes);
