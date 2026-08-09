@@ -90,12 +90,10 @@ static XtResource resources[] = {
      offset(display_nonprinting), XtRImmediate, (XtPointer) True},
   {XtNfont, XtCFont, XtRFontStruct, sizeof (XFontStruct *),
      offset(font), XtRString, XtDefaultFont},
-#ifdef XAW_INTERNATIONALIZATION
   {XtNfontSet, XtCFontSet, XtRFontSet, sizeof (XFontSet),
      offset(fontset), XtRString, XtDefaultFontSet},
   {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
      offset(international), XtRImmediate, (XtPointer) FALSE},
-#endif
   {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
      offset(xftfontname), XtRString, NULL},
   {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
@@ -232,10 +230,8 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     sink->text_sink.xftfont = Xaw3dXftGetFont(new, sink->text_sink.xftfontname);
   else {
     sink->text_sink.xftfont = NULL;
-#ifdef XAW_INTERNATIONALIZATION
     if (sink->text_sink.international && !sink->text_sink.fontset)
       XtError("TextSink initialized with international true but no fontset");
-#endif
   }
   if (!sink->text_sink.font) XtError("TextSink initialized with no font");
 }

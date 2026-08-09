@@ -10,18 +10,6 @@ lib_LTLIBRARIES = libXaw3dXft.la
 libXaw3dXft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
 docdir = $(datarootdir)/doc/libXaw3dXft
 
-if XAW_INTERNATIONALIZATION
-I18N_SRCS = src/MultiSrc.c src/MultiSink.c src/XawIm.c src/XawI18n.c \
-  src/XawI18n.h
-I18N_HDRS = \
-  include/X11/Xaw3dXft/MultiSrc.h \
-  include/X11/Xaw3dXft/MultiSrcP.h \
-  include/X11/Xaw3dXft/MultiSink.h \
-  include/X11/Xaw3dXft/MultiSinkP.h \
-  include/X11/Xaw3dXft/VendorEP.h \
-  include/X11/Xaw3dXft/XawImP.h
-endif
-
 libXaw3dXft_la_SOURCES = \
   src/AllWidgets.c \
   src/AnyString.c \
@@ -35,10 +23,12 @@ libXaw3dXft_la_SOURCES = \
   src/Form.c \
   src/Grip.c \
   src/Label.c \
-  src/Layout.c \
   src/LayYY.h \
+  src/Layout.c \
   src/List.c \
   src/MenuButton.c \
+  src/MultiSink.c \
+  src/MultiSrc.c \
   src/Paned.c \
   src/Panner.c \
   src/Porthole.c \
@@ -46,13 +36,13 @@ libXaw3dXft_la_SOURCES = \
   src/Scrollbar.c \
   src/Simple.c \
   src/SimpleMenu.c \
-  src/SmeBSB.c \
   src/Sme.c \
+  src/SmeBSB.c \
   src/SmeLine.c \
   src/SmeThreeD.c \
   src/StripChart.c \
-  src/TextAction.c \
   src/Text.c \
+  src/TextAction.c \
   src/TextPop.c \
   src/TextSink.c \
   src/TextSrc.c \
@@ -64,10 +54,12 @@ libXaw3dXft_la_SOURCES = \
   src/Vendor.c \
   src/Viewport.c \
   src/Xaw3d.c \
+  src/XawI18n.c \
+  src/XawI18n.h \
+  src/XawIm.c \
   src/XawInit.c \
   src/laygram.y \
-  src/laylex.l \
-  $(I18N_SRCS)
+  src/laylex.l
 nodist_libXaw3dXft_la_SOURCES = src/Xaw3dXft.c config.h
 
 xaw3dincludedir=$(includedir)/X11/Xaw3dXft
@@ -99,8 +91,12 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/LayoutP.h \
   include/X11/Xaw3dXft/List.h \
   include/X11/Xaw3dXft/ListP.h \
-  include/X11/Xaw3dXft/MenuButton.h \
   include/X11/Xaw3dXft/MenuButtoP.h \
+  include/X11/Xaw3dXft/MenuButton.h \
+  include/X11/Xaw3dXft/MultiSink.h \
+  include/X11/Xaw3dXft/MultiSinkP.h \
+  include/X11/Xaw3dXft/MultiSrc.h \
+  include/X11/Xaw3dXft/MultiSrcP.h \
   include/X11/Xaw3dXft/Paned.h \
   include/X11/Xaw3dXft/PanedP.h \
   include/X11/Xaw3dXft/Panner.h \
@@ -116,9 +112,9 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/SimpleMenP.h \
   include/X11/Xaw3dXft/SimpleMenu.h \
   include/X11/Xaw3dXft/SimpleP.h \
+  include/X11/Xaw3dXft/Sme.h \
   include/X11/Xaw3dXft/SmeBSB.h \
   include/X11/Xaw3dXft/SmeBSBP.h \
-  include/X11/Xaw3dXft/Sme.h \
   include/X11/Xaw3dXft/SmeLine.h \
   include/X11/Xaw3dXft/SmeLineP.h \
   include/X11/Xaw3dXft/SmeP.h \
@@ -140,12 +136,13 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/ToggleP.h \
   include/X11/Xaw3dXft/Tree.h \
   include/X11/Xaw3dXft/TreeP.h \
+  include/X11/Xaw3dXft/VendorEP.h \
   include/X11/Xaw3dXft/Viewport.h \
   include/X11/Xaw3dXft/ViewportP.h \
   include/X11/Xaw3dXft/Xaw3dP.h \
   include/X11/Xaw3dXft/Xaw3dXftP.h \
-  include/X11/Xaw3dXft/XawInit.h \
-  $(I18N_HDRS)
+  include/X11/Xaw3dXft/XawImP.h \
+  include/X11/Xaw3dXft/XawInit.h
 nodist_xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/Xaw3dXft.h \
   include/X11/Xaw3dXft/Xaw3d.h

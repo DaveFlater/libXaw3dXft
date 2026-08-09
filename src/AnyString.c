@@ -22,7 +22,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <wchar.h>
 #include <X11/Xaw3dXft/AnyStringP.h>
 
-static_assert(Got_XAW_defines);
 static_assert(sizeof(XChar2b) == 2);
 static_assert(sizeof(FcChar16) == 2);
 
@@ -438,7 +437,6 @@ static void drawOneXftLine (
   }
 }
 
-#ifdef XAW_INTERNATIONALIZATION
 // Xaw3dXftDrawAnyString component for a single line with an XFontSet
 static void drawOneXmbLine (
   Display *display, Window window,
@@ -474,7 +472,6 @@ static void drawOneXmbLine (
     }
   }
 }
-#endif
 
 // Xaw3dXftDrawAnyString component for a single line with plain old X font
 static void drawOneLine (
@@ -520,7 +517,7 @@ static void drawOneLine (
 
 void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
-  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
   GC text_gc, XftColor *fg,
   Position x, Position y,
@@ -539,9 +536,7 @@ void Xaw3dXftDrawAnyStringLen (
   // font systems three times (pre-loop, in-loop, post-loop).  The logic is
   // still duplicated in Xaw3dXftSizeAnyStringLen.
   XftDraw *xftDraw = NULL;
-#ifdef XAW_INTERNATIONALIZATION
   XFontSetExtents *extents = NULL;
-#endif
 
   // Pre-loop switch
   if (xftFont) {
@@ -549,13 +544,10 @@ void Xaw3dXftDrawAnyStringLen (
     assert(xftDraw);
     if (clip && !XftDrawSetClipRectangles(xftDraw, 0, 0, clip, 1))
       XtWarning("libXaw3dXft:  XftDrawSetClipRectangles failed");
-  } else
-#ifdef XAW_INTERNATIONALIZATION
-  if (international) {
+  } else if (international) {
     assert(fontSet);
     extents = XExtentsOfFontSet(fontSet);
   } else
-#endif
     assert(font);
   if (clip && !xftFont &&
       !XSetClipRectangles(display, text_gc, 0, 0, clip, 1, YXBanded))
@@ -572,15 +564,11 @@ void Xaw3dXftDrawAnyStringLen (
     if (xftFont) {
       drawOneXftLine(xftFont, fg, x, y, encoding, text, line_bytes, xftDraw);
       y += xftFont->height;
-    } else
-#ifdef XAW_INTERNATIONALIZATION
-    if (international) {
+    } else if (international) {
       drawOneXmbLine(display, window, fontSet, text_gc, x, y, encoding, text,
 	             line_bytes, extents);
       y += extents->max_logical_extent.height;
-    } else
-#endif
-    {
+    } else {
       drawOneLine(display, window, font, text_gc, x, y, encoding, text,
 		  line_bytes);
       y += font->max_bounds.ascent + font->max_bounds.descent;
@@ -600,13 +588,10 @@ void Xaw3dXftDrawAnyStringLen (
   if (xftFont) {
     drawOneXftLine(xftFont, fg, x, y, encoding, text, num_bytes, xftDraw);
     XftDrawDestroy(xftDraw);
-  } else
-#ifdef XAW_INTERNATIONALIZATION
-  if (international)
+  } else if (international)
     drawOneXmbLine(display, window, fontSet, text_gc, x, y, encoding, text,
                    num_bytes, extents);
   else
-#endif
     drawOneLine(display, window, font, text_gc, x, y, encoding, text, num_bytes);
   if (clip && !xftFont && !XSetClipMask(display, text_gc, None))
     XtWarning("libXaw3dXft:  XSetClipMask failed");
@@ -614,7 +599,7 @@ void Xaw3dXftDrawAnyStringLen (
 
 // Ibid. but using the null teminator to determine num_bytes
 void Xaw3dXftDrawAnyString (Display *display, Visual *visual, Colormap cmap,
-Window window, XFontStruct *font, void *fontSet, XftFont *xftFont,
+Window window, XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
 Boolean international, GC text_gc, XftColor *fg, Position x, Position y,
 XRectangle *clip, XawTextEncoding encoding, void *text) {
   Xaw3dXftDrawAnyStringLen(display, visual, cmap, window, font, fontSet,
@@ -664,9 +649,8 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
   return extents.xOff;
 }
 
-#ifdef XAW_INTERNATIONALIZATION
 // Xaw3dXftSizeAnyString component for a single line with an XFontSet
-static Dimension sizeOneXmbLine (void *fontSet, XawTextEncoding encoding,
+static Dimension sizeOneXmbLine (XFontSet fontSet, XawTextEncoding encoding,
 void *text, Cardinal num_bytes) {
   if (num_bytes == 0) return 0;
   // Xutf8TextEscapement is useless
@@ -679,7 +663,6 @@ void *text, Cardinal num_bytes) {
   }
   XtError("libXaw3dXft:  unsupported encoding in sizeOneXmbLine");
 }
-#endif
 
 // Xaw3dXftSizeAnyString component for a single line with plain old X font
 static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
@@ -713,7 +696,7 @@ static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
 
 // Genericized TextWidth/TextHeight
 void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
-  void *fontSet, XftFont *xftFont, Boolean international,
+  XFontSet fontSet, XftFont *xftFont, Boolean international,
   XawTextEncoding encoding, void *text, Cardinal num_bytes, Dimension *width,
   Dimension *height) {
   if (width == NULL && height == NULL) return;
@@ -724,21 +707,16 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
   }
 
   // Line-breaking duplicated from Xaw3dXftDrawAnyStringLen
-#ifdef XAW_INTERNATIONALIZATION
   XFontSetExtents *extents = NULL;
-#endif
   Dimension w=0, wline=0, h=0;
 
   // Pre-loop switch
   if (xftFont)
     ;
-  else
-#ifdef XAW_INTERNATIONALIZATION
-  if (international) {
+  else if (international) {
     assert(fontSet);
     extents = XExtentsOfFontSet(fontSet);
   } else
-#endif
     assert(font);
 
   // Begin line-breaking loop
@@ -752,14 +730,10 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
     if (xftFont) {
       wline = sizeOneXftLine(display, xftFont, encoding, text, line_bytes);
       h += xftFont->height;
-    } else
-#ifdef XAW_INTERNATIONALIZATION
-    if (international) {
+    } else if (international) {
       wline = sizeOneXmbLine(fontSet, encoding, text, line_bytes);
       h += extents->max_logical_extent.height;
-    } else
-#endif
-    {
+    } else {
       wline = sizeOneLine(font, encoding, text, line_bytes);
       h += font->max_bounds.ascent + font->max_bounds.descent;
     }
@@ -780,14 +754,10 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
     if (xftFont) {
       wline = sizeOneXftLine(display, xftFont, encoding, text, num_bytes);
       h += xftFont->height;
-    } else
-#ifdef XAW_INTERNATIONALIZATION
-    if (international) {
+    } else if (international) {
       wline = sizeOneXmbLine(fontSet, encoding, text, num_bytes);
       h += extents->max_logical_extent.height;
-    } else
-#endif
-    {
+    } else {
       wline = sizeOneLine(font, encoding, text, num_bytes);
       h += font->max_bounds.ascent + font->max_bounds.descent;
     }
@@ -799,9 +769,9 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
 }
 
 // Ibid. but using the null teminator to determine num_bytes
-void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font, void *fontSet,
-XftFont *xftFont, Boolean international, XawTextEncoding encoding, void *text,
-Dimension *width, Dimension *height) {
+void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
+XFontSet fontSet, XftFont *xftFont, Boolean international,
+XawTextEncoding encoding, void *text, Dimension *width, Dimension *height) {
   Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
     encoding, text, Xaw3dXftAnyStrlen(encoding, text), width, height);
 }
@@ -900,7 +870,7 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
 
 Boolean Xaw3dXftLocateUnderline (
   Display *display,
-  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
   XawTextEncoding encoding,
   void *text,

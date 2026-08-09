@@ -39,15 +39,6 @@ AC_CHECK_HEADERS([wctype.h wchar.h widec.h])
 AC_CHECK_FUNCS([iswspace])
 AC_TYPE_INTPTR_T
 
-AC_ARG_ENABLE([internationalization],
-  AS_HELP_STRING([--enable-internationalization], [enable utf8 strings (default: yes)]),
-  [],
-  [enable_internationalization=yes])
-AS_IF([test "x$enable_internationalization" != xno],
-  [AS_VAR_SET([MACRO_INTERNATIONALIZATION], ["#define XAW_INTERNATIONALIZATION 1"])],
-  [AS_VAR_SET([MACRO_INTERNATIONALIZATION], ["#undef XAW_INTERNATIONALIZATION"])])
-AM_CONDITIONAL(XAW_INTERNATIONALIZATION, [test "x$enable_internationalization" != xno])
-
 AC_ARG_ENABLE([multiplane-bitmaps],
   [AS_HELP_STRING([--enable-multiplane-bitmaps], [enable XPM support (default: yes)])],
   [],
@@ -86,7 +77,6 @@ AC_SUBST([LIBXAW3DXFT_VERSION_MINOR_FUNNAME],
 AC_SUBST([LIBXAW3DXFT_VERSION_PATCH_FUNNAME],
   m4_format('libXaw3dXft_version_patch_%s', LVT_VERSION_PATCH))
 
-AC_SUBST([MACRO_INTERNATIONALIZATION])
 AC_SUBST([MACRO_MULTIPLANE_PIXMAPS])
 AC_SUBST([MACRO_ARROW_SCROLLBARS])
 AC_SUBST([MACRO_GRAY_BLKWHT_STIPPLES])

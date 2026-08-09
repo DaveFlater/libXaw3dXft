@@ -45,14 +45,11 @@ typedef struct _TipClassRec {
 
 extern TipClassRec tipClassRec;
 
-static_assert(Got_XAW_defines);
 typedef struct _TipPart {
     /* resources */
     Pixel foreground;
     XFontStruct	*font;
-#ifdef XAW_INTERNATIONALIZATION
     XFontSet fontset;
-#endif
     Dimension internal_width;
     Dimension internal_height;
     String label;
@@ -63,9 +60,7 @@ typedef struct _TipPart {
     /* private */
     GC gc;
     XtIntervalId timer;
-#ifdef XAW_INTERNATIONALIZATION
     Boolean international;
-#endif
     unsigned char encoding;
     XftFont *xftfont;
     Visual *visual;

@@ -122,7 +122,6 @@ typedef struct _TextSinkClassRec {
 extern TextSinkClassRec textSinkClassRec;
 
 /* New fields for the TextSink object record */
-static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     Pixel foreground;		/* Foreground color. */
@@ -131,10 +130,8 @@ typedef struct {
     Boolean echo;
     Boolean display_nonprinting;
     XFontStruct *font;
-#ifdef XAW_INTERNATIONALIZATION
     XFontSet fontset;
     Boolean international;
-#endif
     char *xftfontname;
     unsigned char encoding;
     unsigned char highlightStyle;

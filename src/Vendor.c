@@ -74,20 +74,15 @@ SOFTWARE.
 #include <X11/Xmu/Editres.h>
 
 static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xmu/ExtAgent.h>
-#endif
 #ifdef XAW_MULTIPLANE_PIXMAPS
 #include <X11/xpm.h>
 #include <X11/Xmu/Drawing.h>
 #endif
 
 /* The following two headers are for the input method. */
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/VendorEP.h>
 #include <X11/Xaw3dXft/XawImP.h>
-#endif
-
 
 static XtResource resources[] = {
   {XtNinput, XtCInput, XtRBool, sizeof(Bool),
@@ -107,10 +102,8 @@ static Boolean XawVendorShellSetValues(Widget, Widget, Widget, ArgList, Cardinal
 static void Realize(Widget, Mask *, XSetWindowAttributes *);
 static void ChangeManaged(Widget);
 static XtGeometryResult GeometryManager(Widget, XtWidgetGeometry *, XtWidgetGeometry *);
-#ifdef XAW_INTERNATIONALIZATION
 static void XawVendorShellClassPartInit(WidgetClass);
 void XawVendorShellExtResize(Widget);
-#endif
 void XawVendorStructureNotifyHandler(Widget, XtPointer, XEvent*, Boolean*);
 
 
@@ -141,7 +134,6 @@ DllMain(unsigned long mod_handle, unsigned long flag, void *routine)
 
 #endif
 
-#ifdef XAW_INTERNATIONALIZATION
 static CompositeClassExtensionRec vendorCompositeExt = {
     /* next_extension     */	NULL,
     /* record_type        */    NULLQUARK,
@@ -150,7 +142,6 @@ static CompositeClassExtensionRec vendorCompositeExt = {
     /* accepts_objects    */    TRUE,
     /* allows_change_managed_set */ FALSE
 };
-#endif
 
 #define SuperClass (&wmShellClassRec)
 #if defined(__APPLE__)
@@ -162,11 +153,7 @@ externaldef(vendorshellclassrec) VendorShellClassRec vendorShellClassRec = {
     /* class_name	  */	"VendorShell",
     /* size		  */	sizeof(VendorShellRec),
     /* class_initialize	  */	XawVendorShellClassInitialize,
-#ifdef XAW_INTERNATIONALIZATION
     /* class_part_init	  */	XawVendorShellClassPartInit,
-#else
-    /* class_part_init	  */	NULL,
-#endif
     /* Class init'ed ?	  */	FALSE,
     /* initialize         */	XawVendorShellInitialize,
     /* initialize_hook	  */	NULL,
@@ -181,11 +168,7 @@ externaldef(vendorshellclassrec) VendorShellClassRec vendorShellClassRec = {
     /* compress_enterleave*/	FALSE,
     /* visible_interest	  */	FALSE,
     /* destroy		  */	NULL,
-#ifdef XAW_INTERNATIONALIZATION
     /* resize		  */	XawVendorShellExtResize,
-#else
-    /* resize		  */	XtInheritResize,
-#endif
     /* expose		  */	NULL,
     /* set_values	  */	XawVendorShellSetValues,
     /* set_values_hook	  */	NULL,
@@ -203,11 +186,7 @@ externaldef(vendorshellclassrec) VendorShellClassRec vendorShellClassRec = {
     /* change_managed	  */	ChangeManaged,
     /* insert_child	  */	XtInheritInsertChild,
     /* delete_child	  */	XtInheritDeleteChild,
-#ifdef XAW_INTERNATIONALIZATION
     /* extension	  */	(XtPointer) &vendorCompositeExt
-#else
-    /* extension	  */	NULL
-#endif
   },{
     /* extension	  */	NULL
   },{
@@ -223,7 +202,6 @@ __attribute__((weak))
 externaldef(vendorshellwidgetclass) WidgetClass vendorShellWidgetClass =
 	(WidgetClass) (&vendorShellClassRec);
 
-#ifdef XAW_INTERNATIONALIZATION
 /***************************************************************************
  *
  * The following section is for the Vendor shell Extension class record
@@ -292,7 +270,6 @@ externaldef(vendorshellextclassrec) XawVendorShellExtClassRec
 
 externaldef(xawvendorshellwidgetclass) WidgetClass
      xawvendorShellExtWidgetClass = (WidgetClass) (&xawvendorShellExtClassRec);
-#endif
 
 
 static Boolean
@@ -437,7 +414,6 @@ XawVendorShellClassInitialize(void)
 			NULL, 0, XtCacheNone, NULL);
 }
 
-#ifdef XAW_INTERNATIONALIZATION
 static void
 XawVendorShellClassPartInit(WidgetClass class)
 {
@@ -461,7 +437,6 @@ XawVendorShellClassPartInit(WidgetClass class)
 	}
     }
 }
-#endif
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 /* shared libraries on these platforms have the wrong semantics */
@@ -480,11 +455,9 @@ static void
 XawVendorShellInitialize(Widget req, Widget new, ArgList args, Cardinal *num_args)
 {
     XtAddEventHandler(new, (EventMask) 0, TRUE, _XEditResCheckMessages, NULL);
-#ifdef XAW_INTERNATIONALIZATION
     XtAddEventHandler(new, (EventMask) 0, TRUE, XmuRegisterExternalAgent, NULL);
     XtCreateWidget("shellext", xawvendorShellExtWidgetClass,
 		   new, args, *num_args);
-#endif
 }
 
 static Boolean
@@ -501,13 +474,10 @@ Realize(Widget wid, Mask *vmask, XSetWindowAttributes *attr)
 	/* Make my superclass do all the dirty work */
 
 	(*super->core_class.realize) (wid, vmask, attr);
-#ifdef XAW_INTERNATIONALIZATION
 	_XawImRealize(wid);
-#endif
 }
 
 
-#ifdef XAW_INTERNATIONALIZATION
 static void
 XawVendorShellExtClassInitialize(void)
 {
@@ -556,7 +526,6 @@ XawVendorStructureNotifyHandler(Widget w, XtPointer closure _X_UNUSED, XEvent *e
 {
     XawVendorShellExtResize(w);
 }
-#endif
 
 static XtGeometryResult
 GeometryManager(Widget wid, XtWidgetGeometry *request, XtWidgetGeometry *reply)
@@ -578,10 +547,7 @@ GeometryManager(Widget wid, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 	}
 	if (request->request_mode & CWHeight) {
 	    my_request.height = request->height
-#ifdef XAW_INTERNATIONALIZATION
-			      + _XawImGetImAreaHeight( wid )
-#endif
-			      ;
+	      + _XawImGetImAreaHeight( wid );
 	    my_request.request_mode |= CWHeight;
 	}
 	if (request->request_mode & CWBorderWidth) {
@@ -604,9 +570,7 @@ GeometryManager(Widget wid, XtWidgetGeometry *request, XtWidgetGeometry *reply)
 	    if (request->request_mode & CWBorderWidth) {
 		wid->core.x = wid->core.y = -request->border_width;
 	    }
-#ifdef XAW_INTERNATIONALIZATION
 	    _XawImCallVendorShellExtResize(wid);
-#endif
 	    return XtGeometryYes;
 	} else return XtGeometryNo;
 }

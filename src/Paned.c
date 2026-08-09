@@ -73,10 +73,7 @@ SOFTWARE.
 #include <ctype.h>
 
 /* I don't know why Paned.c calls _XawImCallVendorShellExtResize, but... */
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/XawImP.h>
-#endif
 
 typedef enum {UpLeftPane = 'U', LowRightPane = 'L',
 	      ThisBorderOnly = 'T', AnyPane = 'A' } Direction;
@@ -321,9 +318,7 @@ AdjustPanedSize(PanedWidget pw, Dimension off_size, XtGeometryResult * result_re
       request.request_mode |= XtCWQueryOnly;
 
       *result_ret = XtMakeGeometryRequest( (Widget) pw, &request, &reply );
-#ifdef XAW_INTERNATIONALIZATION
       _XawImCallVendorShellExtResize( (Widget) pw );
-#endif
 
       if ( (newsize == old_size) || (*result_ret == XtGeometryNo) ) {
 	  *on_size_ret = old_size;

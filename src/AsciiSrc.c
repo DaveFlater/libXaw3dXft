@@ -46,12 +46,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/AsciiSrcP.h>
 #include <X11/Xmu/Misc.h>
 #include <X11/Xmu/CharSet.h>
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/MultiSrcP.h>
-#endif
-
 
 #ifdef O_CLOEXEC
 #define FOPEN_CLOEXEC "e"
@@ -706,20 +701,13 @@ XawAsciiSourceFreeString(Widget w)
 
   /* If the src is really a multi, call the multi routine.*/
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( XtIsSubclass( w, multiSrcObjectClass ) ) {
       _XawMultiSourceFreeString( w );
       return;
   }
-  else
-#endif
-  if ( !XtIsSubclass( w, asciiSrcObjectClass ) ) {
+  else if ( !XtIsSubclass( w, asciiSrcObjectClass ) ) {
       XtErrorMsg("bad argument", "asciiSource", "XawError",
-#ifdef XAW_INTERNATIONALIZATION
             "XawAsciiSourceFreeString's parameter must be an asciiSrc or multiSrc.",
-#else
-            "XawAsciiSourceFreeString's parameter must be an asciiSrc.",
-#endif
 	     NULL, NULL);
   }
 
@@ -743,18 +731,11 @@ XawAsciiSave(Widget w)
 
   /* If the src is really a multi, call the multi save. */
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( XtIsSubclass( w, multiSrcObjectClass ) )
       return( _XawMultiSave( w ) );
-  else
-#endif
-  if ( !XtIsSubclass( w, asciiSrcObjectClass ) ) {
+  else if ( !XtIsSubclass( w, asciiSrcObjectClass ) ) {
       	XtErrorMsg("bad argument", "asciiSource", "XawError",
-#ifdef XAW_INTERNATIONALIZATION
 		"XawAsciiSave's parameter must be an asciiSrc or multiSrc.",
-#else
-		"XawAsciiSave's parameter must be an asciiSrc.",
-#endif
 		   NULL, NULL);
   }
 
@@ -808,18 +789,11 @@ XawAsciiSaveAsFile(Widget w, _Xconst char* name)
 
   /* If the src is really a multi, call the multi save. - */
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( XtIsSubclass( w, multiSrcObjectClass ) )
       return( _XawMultiSaveAsFile( w, name ) );
-  else
-#endif
-  if ( !XtIsSubclass( w, asciiSrcObjectClass ) ) {
+  else if ( !XtIsSubclass( w, asciiSrcObjectClass ) ) {
       	XtErrorMsg("bad argument", "asciiSource", "XawError",
-#ifdef XAW_INTERNATIONALIZATION
 		"XawAsciiSaveAsFile's 1st parameter must be an asciiSrc or multiSrc.",
-#else
-		"XawAsciiSaveAsFile's 1st parameter must be an asciiSrc.",
-#endif
 		   NULL, NULL);
   }
 
@@ -839,20 +813,14 @@ XawAsciiSaveAsFile(Widget w, _Xconst char* name)
 Boolean
 XawAsciiSourceChanged(Widget w)
 {
-#ifdef XAW_INTERNATIONALIZATION
   if ( XtIsSubclass( w, multiSrcObjectClass ) )
       return( ( (MultiSrcObject) w )->multi_src.changes );
-#endif
 
   if ( XtIsSubclass( w, asciiSrcObjectClass ) )
       return( ( (AsciiSrcObject) w)->ascii_src.changes );
 
   XtErrorMsg("bad argument", "asciiSource", "XawError",
-#ifdef XAW_INTERNATIONALIZATION
 		"XawAsciiSourceChanged parameter must be an asciiSrc or multiSrc.",
-#else
-		"XawAsciiSourceChanged parameter must be an asciiSrc.",
-#endif
 		   NULL, NULL);
 
   return( True ); /* for gcc -Wall */

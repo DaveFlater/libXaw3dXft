@@ -85,7 +85,6 @@ X11 license (as per the historical licenses that the package inherits)
 /* Private Data */
 
 #define offset(field) XtOffsetOf(LabelRec, field)
-static_assert(Got_XAW_defines);
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	offset(label.foreground), XtRString, XtDefaultForeground},
@@ -93,10 +92,8 @@ static XtResource resources[] = {
 	offset(label.font),XtRString, XtDefaultFont},
     {XtNxftFont,  XtCXftFont, XtRString, sizeof(String),
 	offset(label.xftfontname),XtRString, NULL},
-#ifdef XAW_INTERNATIONALIZATION
     {XtNfontSet,  XtCFontSet, XtRFontSet, sizeof(XFontSet ),
         offset(label.fontset),XtRString, XtDefaultFontSet},
-#endif
     {XtNlabel,  XtCLabel, XtRString, sizeof(String),
 	offset(label.label), XtRString, NULL},
     {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
@@ -216,8 +213,8 @@ static void SetTextWidthAndHeight(LabelWidget lw) {
   if (lw->label.label == NULL)
     lw->label.label_height = lw->label.label_width = 0;
   else
-    Xaw3dXftSizeAnyString(XtDisplay(lw), lw->label.font, labelFontSet(lw),
-      lw->label.xftfont, international(lw), lw->label.encoding,
+    Xaw3dXftSizeAnyString(XtDisplay(lw), lw->label.font, lw->label.fontset,
+      lw->label.xftfont, lw->simple.international, lw->label.encoding,
       lw->label.label, &lw->label.label_width, &lw->label.label_height);
 }
 
@@ -228,7 +225,7 @@ static void get_or_change_GCs (LabelWidget lw) {
   if (lw->label.normal_GC)
     XtReleaseGC((Widget)lw, lw->label.normal_GC);
   lw->label.normal_GC = Xaw3dXftGetTextGC((Widget)lw, fg, lw->label.font,
-					  international(lw));
+					  lw->simple.international);
 
   // stipple_GC
   if (lw->label.stipple_GC)
@@ -268,10 +265,8 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
     else {
       lw->label.xftfont = NULL;
-#ifdef XAW_INTERNATIONALIZATION
       if (lw->simple.international && !lw->label.fontset)
 	XtError("Label initialized with international true but no fontset");
-#endif
     }
     if (!lw->label.font) XtError("Label initialized with no font");
 
@@ -331,9 +326,9 @@ static void Redisplay (Widget gw, XEvent *event, Region region) {
     /* draw label text */
     if (w->label.label)
       Xaw3dXftDrawAnyString(display, VisualOf(w), w->core.colormap, window,
-	w->label.font, labelFontSet(w), w->label.xftfont, international(w), gc,
-	&w->label.xftfg, w->label.label_x, w->label.label_y, NULL,
-	w->label.encoding, w->label.label);
+	w->label.font, w->label.fontset, w->label.xftfont,
+	w->simple.international, gc, &w->label.xftfg, w->label.label_x,
+	w->label.label_y, NULL, w->label.encoding, w->label.label);
   } else // w->label.pixmap != None
     Xaw3dXftCopy(display, w->label.pixmap, window, gc,
 		 w->label.label_width, w->label.label_height, w->label.depth,
@@ -448,12 +443,10 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   }
   if (curlw->label.font->fid != newlw->label.font->fid)
     was_resized = True;
-#ifdef XAW_INTERNATIONALIZATION
   if (curlw->simple.international != newlw->simple.international ||
       newlw->simple.international &&
 	curlw->label.fontset != newlw->label.fontset)
     was_resized = True;
-#endif
 
   // Notice if the pixmap changed.
   if (curlw->label.pixmap != newlw->label.pixmap)

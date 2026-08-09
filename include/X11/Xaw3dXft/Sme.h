@@ -40,7 +40,6 @@ in this Software without prior written authorization from the X Consortium.
 #define _Sme_h
 
 #include <X11/RectObj.h>
-#include <X11/Xaw3dXft/Xaw3d.h>
 
 /****************************************************************
  *
@@ -62,14 +61,11 @@ in this Software without prior written authorization from the X Consortium.
 
 */
 
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #ifndef XtCInternational
 #define XtCInternational	"International"
 #endif
 #ifndef XtNinternational
 #define XtNinternational	"international"
-#endif
 #endif
 
 typedef struct _SmeClassRec*	SmeObjectClass;

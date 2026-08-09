@@ -14,15 +14,12 @@ X11 license (as per the historical licenses that the package inherits)
 #include <assert.h>
 #include <limits.h>
 #include <X11/Shell.h>
-#include <X11/Xaw3dXft/Xaw3d.h>
 #include <X11/Xaw3dXft/CommonP.h>
 
 // FIXME lingering dependency on global struct for default font
 #include <X11/Xaw3dXft/Xaw3dXft.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #define XAW3DXFT_DEFAULTFONT "Liberation-9"
-
-static_assert(Got_XAW_defines);
 
 /*
   We need the Visual that applies to our Object and the class and depth of
@@ -195,12 +192,10 @@ GC Xaw3dXftGetTextGC (Widget w, Pixel fg, XFontStruct *font,
   XGCValues v;
   v.foreground = fg;
   v.graphics_exposures = False;
-#ifdef XAW_INTERNATIONALIZATION
   if (international)
     /* Since Xmb/wcDrawString eats the font, I must use XtAllocateGC. */
     // That means:  Xmb/wcDrawString does XSetFont on the GC.
     return XtAllocateGC(w, 0, GCForeground|GCGraphicsExposures, &v, GCFont, 0);
-#endif
   assert(font);
   v.font = font->fid;
   return XtGetGC(w, GCForeground|GCFont|GCGraphicsExposures, &v);

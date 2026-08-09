@@ -106,7 +106,6 @@ static void TipPosition(XawTipInfo *);
  * Initialization
  */
 #define offset(field) XtOffsetOf(TipRec, tip.field)
-static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
     offset(foreground), XtRString, XtDefaultForeground},
@@ -114,10 +113,8 @@ static XtResource resources[] = {
     offset(font), XtRString, XtDefaultFont},
   {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
     offset(xftfontname), XtRString, NULL},
-#ifdef XAW_INTERNATIONALIZATION
   {XtNfontSet, XtCFontSet, XtRFontSet, sizeof(XFontSet),
     offset(fontset), XtRString, XtDefaultFontSet},
-#endif
   {XtNlabel, XtCLabel, XtRString, sizeof(String),
     offset(label), XtRString, NULL},
   {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
@@ -271,10 +268,8 @@ XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
 	tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
     else {
 	tip->tip.xftfont = NULL;
-#ifdef XAW_INTERNATIONALIZATION
 	if (tip->tip.international && !tip->tip.fontset)
 	    XtError("Tip: no fontset found");
-#endif
     }
     if (!tip->tip.font) XtError("Tip: no font found");
 }
@@ -375,7 +370,6 @@ XawTipExpose(Widget w, XEvent *event, Region region)
 	tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing :
 	tip->tip.font->max_bounds.ascent );
 
-#ifdef XAW_INTERNATIONALIZATION
     if (tip->tip.international == True && !_Xaw3dXft->encoding) {
 	Position ksy = tip->tip.internal_height;
 	XFontSetExtents *ext = XExtentsOfFontSet(tip->tip.fontset);
@@ -394,9 +388,7 @@ XawTipExpose(Widget w, XEvent *event, Region region)
 	    XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset, gc,
 			  tip->tip.internal_width, ksy, label, len);
     }
-    else
-#endif
-    if (_Xaw3dXft->encoding) {
+    else if (_Xaw3dXft->encoding) {
 	while ((nl = strchr(label, '\n')) != NULL) {
 	    Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
 		tip->tip.internal_width+3, y,
@@ -491,9 +483,7 @@ TipLayout(XawTipInfo *info)
 	}
 	else
 	    width = Xaw3dXftTextWidth((Widget)info->tip, xftfont, label, strlen(label));
-    } else
-#ifdef XAW_INTERNATIONALIZATION
-    if (info->tip->tip.international == True && !_Xaw3dXft->encoding) {
+    } else if (info->tip->tip.international == True && !_Xaw3dXft->encoding) {
 	XFontSet fset = info->tip->tip.fontset;
 	XFontSetExtents *ext = XExtentsOfFontSet(fset);
 
@@ -518,7 +508,6 @@ TipLayout(XawTipInfo *info)
 	    width = XmbTextEscapement(fset, label, strlen(label));
     }
     else
-#endif
     {
 	height = font->max_bounds.ascent + font->max_bounds.descent;
 	if ((nl = strchr(label, '\n')) != NULL) {
@@ -687,13 +676,9 @@ TipTimeoutCallback(XtPointer closure, XtIntervalId *id)
     info->tip->tip.encoding = 0;
     info->tip->tip.timer = 0;
     XtSetArg(args[0], XtNencoding, &info->tip->tip.encoding);
-#ifdef XAW_INTERNATIONALIZATION
     info->tip->tip.international = False;
     XtSetArg(args[1], XtNinternational, &info->tip->tip.international);
     XtGetValues(winfo->widget, args, 2);
-#else
-    XtGetValues(winfo->widget, args, 1);
-#endif
 
     TipLayout(info);
     TipPosition(info);

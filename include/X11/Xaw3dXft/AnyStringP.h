@@ -14,7 +14,6 @@ X11 license (as per the historical licenses that the package inherits)
 
 #include <X11/Intrinsic.h>
 #include <X11/Xft/Xft.h>
-#include <X11/Xaw3dXft/Xaw3d.h>
 #include <X11/Xaw3dXft/Encoding.h>
 
 /*
@@ -41,26 +40,6 @@ X11 license (as per the historical licenses that the package inherits)
 */
 
 
-// Certain widget resources disappear entirely if XAW_INTERNATIONALIZATION is
-// disabled.  Callers should use these macros in the parameter lists to avoid
-// adding ifdefs.  Note that the typedef for XFontSet goes away if
-// XAW_INTERNATIONALIZATION is disabled.  That's why fontSet is void* below.
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
-#define international(w) w->simple.international
-#define menuIntl(w)      w->sme.international
-#define labelFontSet(w)  w->label.fontset
-#define listFontSet(w)   w->list.fontset
-#define menuFontSet(w)   w->sme_bsb.fontset
-#else
-#define international(w) False
-#define menuIntl(w)      False
-#define labelFontSet(w)  NULL
-#define listFontSet(w)   NULL
-#define menuFontSet(w)   NULL
-#endif
-
-
 /*
   The Xft tutorial warns:  "Note that drawing the same string multiple times
   in the same place will generate the wrong result with AA text."
@@ -77,9 +56,9 @@ extern void Xaw3dXftDrawAnyStringLen (
   Display *display, Visual *visual, Colormap cmap, Window window,
 
   // One of the following will apply.
-  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
 
-  // Pass international(widget) or menuIntl(widget)
+  // Pass international resource of widget.
   Boolean international,
 
   // If xftFont is not null:
@@ -116,7 +95,7 @@ extern void Xaw3dXftDrawAnyStringLen (
 
 // Ibid. but using the null teminator to determine num_bytes
 extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
-  Colormap cmap, Window window, XFontStruct *font, void *fontSet,
+  Colormap cmap, Window window, XFontStruct *font, XFontSet fontSet,
   XftFont *xftFont, Boolean international, GC text_gc, XftColor *fg,
   Position x, Position y, XRectangle *clip, XawTextEncoding encoding,
   void *text);
@@ -127,9 +106,9 @@ extern void Xaw3dXftSizeAnyStringLen (
   Display *display,
 
   // One of the following will apply.
-  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
 
-  // Pass international(widget) or menuIntl(widget)
+  // Pass international resource of widget.
   Boolean international,
 
   // A string in the specified encoding
@@ -145,7 +124,7 @@ extern void Xaw3dXftSizeAnyStringLen (
 
 // Ibid. but using the null teminator to determine num_bytes
 extern void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
-  void *fontSet, XftFont *xftFont, Boolean international,
+  XFontSet fontSet, XftFont *xftFont, Boolean international,
   XawTextEncoding encoding, void *text, Dimension *width, Dimension *height);
 
 
@@ -160,7 +139,7 @@ Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text);
 extern Boolean Xaw3dXftLocateUnderline (
   // Similar to Xaw3dXftSizeAnyString
   Display *display,
-  XFontStruct *font, void *fontSet, XftFont *xftFont,
+  XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
   XawTextEncoding encoding,
   void *text,

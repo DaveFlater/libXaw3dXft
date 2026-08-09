@@ -202,7 +202,7 @@ static void get_or_change_GCs (CommandWidget cw) {
   if (cw->command.rev_GC)
     XtReleaseGC((Widget)cw, cw->command.rev_GC);
   cw->command.rev_GC = Xaw3dXftGetTextGC((Widget)cw, bg, cw->label.font,
-					  international(cw));
+					  cw->simple.international);
 
   // inverse_stipple_GC
   if (cw->command.inverse_stipple_GC)
@@ -480,9 +480,9 @@ static void Redisplay(Widget w, XEvent *event, Region region) {
       xfg = &cw->label.xftfg;
     }
     Xaw3dXftDrawAnyString(display, cw->label.visual, cw->core.colormap, window,
-      cw->label.font, labelFontSet(cw), cw->label.xftfont, international(cw),
-      gc, xfg, cw->label.label_x, cw->label.label_y, NULL,
-      cw->label.encoding, cw->label.label);
+      cw->label.font, cw->label.fontset, cw->label.xftfont,
+      cw->simple.international, gc, xfg, cw->label.label_x, cw->label.label_y,
+      NULL, cw->label.encoding, cw->label.label);
   }
 
   // Apply insensitive stipple

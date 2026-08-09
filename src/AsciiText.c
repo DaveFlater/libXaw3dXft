@@ -78,13 +78,9 @@ SOFTWARE.
 #include <X11/Xaw3dXft/AsciiSrc.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/MultiSrc.h>
 #include <X11/Xaw3dXft/MultiSinkP.h>
 #include <X11/Xaw3dXft/XawImP.h>
-#endif
 
 #define TAB_COUNT 32
 
@@ -144,10 +140,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   AsciiWidget w = (AsciiWidget) new;
   int i;
   int tabs[TAB_COUNT], tab;
-
-#ifdef XAW_INTERNATIONALIZATION
   MultiSinkObject sink;
-#endif
 
   /* superclass Initialize can't set the following,
    * as it didn't know the source or sink when it was called */
@@ -158,7 +151,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   /* This is the main change for internationalization.  */
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( w->simple.international == True && _Xaw3dXft->encoding == 0) { /* The multi* are international. */
 
       w->text.source = XtCreateWidget( "textSource", multiSrcObjectClass,
@@ -167,7 +159,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 				new, args, *num_args );
   }
   else
-#endif
   {
 
       w->text.source = XtCreateWidget( "textSource", asciiSrcObjectClass,
@@ -190,7 +181,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   /* If we are using a MultiSink we need to tell the input method stuff. */
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( w->simple.international == True && _Xaw3dXft->encoding == 0) {
     Arg list[4];
     Cardinal ac = 0;
@@ -203,7 +193,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     XtSetArg (list[ac], XtNbackground, sink->text_sink.background); ac++;
     _XawImSetValues(new, list, ac);
   }
-#endif
 }
 
 static void
@@ -211,10 +200,8 @@ Destroy(Widget w)
 {
     /* Disconnect input method */
 
-#ifdef XAW_INTERNATIONALIZATION
     if ( ((AsciiWidget)w)->simple.international == True && _Xaw3dXft->encoding == 0)
         _XawImUnregister( w );
-#endif
 
     if (w == XtParent(((AsciiWidget)w)->text.source))
 	XtDestroyWidget( ((AsciiWidget)w)->text.source );

@@ -113,15 +113,8 @@ typedef enum {
 #define XtNunderline "underline"
 #define XtNxftFont "xftFont"
 #define XtNhighlightStyle "highlightStyle"
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #ifndef XtNfontSet
 #define XtNfontSet		"fontSet"
-#endif
-#ifndef XtCFontSet
-#define XtCFontSet		"FontSet"
-#endif
 #endif
 
 #define XtCLeftBitmap "LeftBitmap"
@@ -132,5 +125,8 @@ static_assert(Got_XAW_defines);
 #define XtCUnderline "Underline"
 #define XtCXftFont "XftFont"
 #define XtCMenuHighlightStyle "MenuHighlightStyle"
+#ifndef XtCFontSet
+#define XtCFontSet		"FontSet"
+#endif
 
 #endif /* _SmeBSB_h */

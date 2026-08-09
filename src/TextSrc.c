@@ -48,10 +48,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/CharSet.h>
 
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include "XawI18n.h"
-#endif
 #include <stdio.h>
 #include <ctype.h>
 
@@ -496,7 +493,6 @@ _XawTextFormat(TextWidget tw)
   return (((TextSrcObject)(tw->text.source))->textSrc.text_format);
 }
 
-#ifdef XAW_INTERNATIONALIZATION
 /* _XawTextWCToMB():
  *   convert the wchar string to external encoding.
  *   The caller is responsible for freeing both the source and ret string.
@@ -576,4 +572,3 @@ _XawTextMBToWC(Display *d, char *str, int *len_in_out)
     return(wstr);
   }
 }
-#endif

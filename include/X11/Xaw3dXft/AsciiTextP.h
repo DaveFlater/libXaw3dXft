@@ -72,11 +72,7 @@ SOFTWARE.
 #include <X11/Xaw3dXft/TextP.h>
 #include <X11/Xaw3dXft/AsciiText.h>
 #include <X11/Xaw3dXft/AsciiSrc.h>
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/MultiSrc.h>
-#endif
 
 typedef struct {int empty;} AsciiClassPart;
 

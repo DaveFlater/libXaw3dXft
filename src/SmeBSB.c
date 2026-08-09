@@ -64,7 +64,6 @@ X11 license (as per the historical licenses that the package inherits)
 
 #define offset(field) XtOffsetOf(SmeBSBRec, sme_bsb.field)
 
-static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNlabel,  XtCLabel, XtRString, sizeof(String),
      offset(label), XtRString, NULL},
@@ -93,10 +92,8 @@ static XtResource resources[] = {
      offset(font), XtRString, (XtPointer)XtDefaultFont},
   {XtNxftFont,  XtCXftFont, XtRString, sizeof(String),
      offset(xftfontname), XtRString, NULL},
-#ifdef XAW_INTERNATIONALIZATION
   {XtNfontSet,  XtCFontSet, XtRFontSet, sizeof(XFontSet),
      offset(fontset), XtRString, (XtPointer)XtDefaultFontSet},
-#endif
   {XtNmenuName, XtCMenuName, XtRString, sizeof(String),
      offset(menu_name), XtRImmediate, NULL},
   {XtNunderline,  XtCIndex, XtRInt, sizeof(int),
@@ -187,13 +184,13 @@ static void get_or_change_GCs (SmeBSBObject ent) {
   if (ent->sme_bsb.normal_GC)
     XtReleaseGC((Widget)ent, ent->sme_bsb.normal_GC);
   ent->sme_bsb.normal_GC = Xaw3dXftGetTextGC((Widget)ent, fg, ent->sme_bsb.font,
-					     menuIntl(ent));
+					     ent->sme.international);
 
   // rev_GC
   if (ent->sme_bsb.rev_GC)
     XtReleaseGC((Widget)ent, ent->sme_bsb.rev_GC);
   ent->sme_bsb.rev_GC = Xaw3dXftGetTextGC((Widget)ent, bg, ent->sme_bsb.font,
-					  menuIntl(ent));
+					  ent->sme.international);
 
   // stipple_GC
   if (ent->sme_bsb.stipple_GC)
@@ -236,8 +233,8 @@ static void GetTextDimensions (SmeBSBObject ent) {
   if (ent->sme_bsb.label == NULL)
     ent->sme_bsb.label_height = ent->sme_bsb.label_width = 0;
   else
-    Xaw3dXftSizeAnyString(display, ent->sme_bsb.font, menuFontSet(ent),
-			  ent->sme_bsb.xftfont, menuIntl(ent),
+    Xaw3dXftSizeAnyString(display, ent->sme_bsb.font, ent->sme_bsb.fontset,
+			  ent->sme_bsb.xftfont, ent->sme.international,
 			  ent->sme_bsb.encoding, ent->sme_bsb.label,
 			  &ent->sme_bsb.label_width,
 			  &ent->sme_bsb.label_height);
@@ -408,12 +405,12 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
   Position text_x, text_y;
   GetTextPosition(ent, &text_x, &text_y);
   Xaw3dXftDrawAnyString(display, visual, cmap, window, ent->sme_bsb.font,
-    menuFontSet(ent), ent->sme_bsb.xftfont, menuIntl(ent), gc, xfg, text_x,
-    text_y, NULL, ent->sme_bsb.encoding, ent->sme_bsb.label);
+    ent->sme_bsb.fontset, ent->sme_bsb.xftfont, ent->sme.international, gc, xfg,
+    text_x, text_y, NULL, ent->sme_bsb.encoding, ent->sme_bsb.label);
   if (ent->sme_bsb.underline >= 0) {
     Position x1, x2, y;
-    if (Xaw3dXftLocateUnderline(display, ent->sme_bsb.font, menuFontSet(ent),
-        ent->sme_bsb.xftfont, menuIntl(ent), ent->sme_bsb.encoding,
+    if (Xaw3dXftLocateUnderline(display, ent->sme_bsb.font, ent->sme_bsb.fontset,
+        ent->sme_bsb.xftfont, ent->sme.international, ent->sme_bsb.encoding,
 	ent->sme_bsb.label, ent->sme_bsb.underline, &x1, &x2, &y)) {
       x1 += text_x;
       x2 += text_x;
@@ -469,10 +466,8 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     entry->sme_bsb.xftfont = Xaw3dXftGetFont(new, entry->sme_bsb.xftfontname);
   else {
     entry->sme_bsb.xftfont = NULL;
-#ifdef XAW_INTERNATIONALIZATION
     if (entry->sme.international && !entry->sme_bsb.fontset)
       XtError("SmeBSB initialized with international true but no fontset");
-#endif
   }
   if (!entry->sme_bsb.font) XtError("SmeBSB initialized with no font");
 
@@ -604,9 +599,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   // The default lazy policy is to recalculate everything and repaint.
   // rectangle.sensitive:  ancestor_sensitive can't change here.
   if (cur_ent->sme_bsb.underline != new_ent->sme_bsb.underline ||
-#ifdef XAW_INTERNATIONALIZATION
       cur_ent->sme.international != new_ent->sme.international ||
-#endif
       cur_ent->rectangle.sensitive != new_ent->rectangle.sensitive ||
       cur_ent->sme_bsb.left_margin != new_ent->sme_bsb.left_margin ||
       cur_ent->sme_bsb.right_margin != new_ent->sme_bsb.right_margin ||
@@ -616,11 +609,9 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     ret_val = True;
 
   // Changes to fontset are irrelevant unless international is true.
-#ifdef XAW_INTERNATIONALIZATION
   if (cur_ent->sme_bsb.fontset != new_ent->sme_bsb.fontset &&
       new_ent->sme.international)
     ret_val = True;
-#endif
 
   // Notice if the label text changed.
   if (cur_ent->sme_bsb.label != new_ent->sme_bsb.label) {

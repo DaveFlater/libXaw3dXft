@@ -41,15 +41,10 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/TextSink.h>
 
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/MultiSrcP.h>
 #include <X11/Xaw3dXft/XawImP.h>
-#endif
 #include <X11/Xfuncs.h>
-#ifdef XAW_INTERNATIONALIZATION
 #include "XawI18n.h"
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -98,7 +93,6 @@ static void GetSelection(Widget, Time, String *, Cardinal);
 static void KillSelection(TextWidget, XEvent *);
 void _XawTextZapSelection(TextWidget, XEvent *, Boolean);
 
-#ifdef XAW_INTERNATIONALIZATION
 static void
 ParameterError(Widget w, String param)
 {
@@ -113,7 +107,6 @@ ParameterError(Widget w, String param)
 	params, &num_params);
     XBell( XtDisplay( w ), 50 );
 }
-#endif
 
 static void
 StartAction(TextWidget ctx, XEvent *event)
@@ -186,7 +179,6 @@ struct _SelectionList {
     Atom selection;	/* selection atom when asking XA_COMPOUND_TEXT */
 };
 
-#ifdef XAW_INTERNATIONALIZATION
 static int
 ProbablyMB(char *s)
 {
@@ -206,7 +198,6 @@ ProbablyMB(char *s)
     }
     return( has_hi_bit );
 }
-#endif
 
 static void
 _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
@@ -241,7 +232,6 @@ and if it is we can only assume the sending client is using the same locale as
 we are, and convert it.  I also warn the user that the other client is evil. */
 
   StartAction( ctx, (XEvent*) NULL );
-#ifdef XAW_INTERNATIONALIZATION
   if (_XawTextFormat(ctx) == XawFmtWide) {
       XTextProperty textprop;
       Display *d = XtDisplay((Widget)ctx);
@@ -288,7 +278,6 @@ we are, and convert it.  I also warn the user that the other client is evil. */
       XtFree((XtPointer)wlist);
       text.format = XawFmtWide;
   } else
-#endif
       text.format = XawFmt8Bit;
   text.ptr = (char*)value;
   text.firstPos = 0;
@@ -636,11 +625,9 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
       *target == XA_TEXT(d) ||
       *target == XA_COMPOUND_TEXT(d)) {
 	if (*target == XA_TEXT(d)) {
-#ifdef XAW_INTERNATIONALIZATION
 	    if (_XawTextFormat(ctx) == XawFmtWide)
 		*type = XA_COMPOUND_TEXT(d);
 	    else
-#endif
 		*type = XA_STRING;
 	} else {
 	    *type = *target;
@@ -654,7 +641,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 	 */
 	if (!salt) {
 	    *value = (char *)_XawTextGetSTRING(ctx, s->left, s->right);
-#ifdef XAW_INTERNATIONALIZATION
 	    if (_XawTextFormat(ctx) == XawFmtWide) {
 		XTextProperty textprop;
 		if (XwcTextListToTextProperty(d, (wchar_t**)value, 1,
@@ -666,9 +652,7 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 		XtFree(*value);
 		*value = (XtPointer)textprop.value;
 		*length = textprop.nitems;
-	    } else
-#endif
-	    {
+	    } else {
 		*length = strlen(*value);
 	    }
 	} else {
@@ -676,7 +660,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 	    strcpy (*value, salt->contents);
 	    *length = salt->length;
 	}
-#ifdef XAW_INTERNATIONALIZATION
 	if (_XawTextFormat(ctx) == XawFmtWide && *type == XA_STRING) {
 	    XTextProperty textprop;
 	    wchar_t** wlist;
@@ -700,7 +683,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 	    *length = textprop.nitems;
 	    XwcFreeStringList( (wchar_t**) wlist );
 	}
-#endif
 	*format = 8;
 	return True;
   }
@@ -828,7 +810,6 @@ _DeleteOrKill(TextWidget ctx, XawTextPosition from, XawTextPosition to, Boolean	
     salt->s.left = from;
     salt->s.right = to;
     salt->contents = (char *)_XawTextGetSTRING(ctx, from, to);
-#ifdef XAW_INTERNATIONALIZATION
     if (_XawTextFormat(ctx) == XawFmtWide) {
 	XTextProperty textprop;
 	if (XwcTextListToTextProperty(XtDisplay((Widget)ctx),
@@ -842,7 +823,6 @@ _DeleteOrKill(TextWidget ctx, XawTextPosition from, XawTextPosition to, Boolean	
 	salt->contents = (char *)textprop.value;
 	salt->length = textprop.nitems;
     } else
-#endif
        salt->length = strlen (salt->contents);
     salt->next = ctx->text.salt2;
     ctx->text.salt2 = salt;
@@ -1056,7 +1036,6 @@ InsertNewLineAndBackupInternal(TextWidget ctx)
   text.length = ctx->text.mult;
   text.firstPos = 0;
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( text.format == XawFmtWide ) {
       wchar_t* wptr;
       text.ptr =  XtMalloc(sizeof(wchar_t) * ctx->text.mult);
@@ -1065,7 +1044,6 @@ InsertNewLineAndBackupInternal(TextWidget ctx)
           wptr[count] = _Xaw_atowc(XawLF);
   }
   else
-#endif
   {
       text.ptr = XtMalloc(sizeof(char) * ctx->text.mult);
       for (count = 0; count < ctx->text.mult; count++ )
@@ -1129,7 +1107,6 @@ InsertNewLineAndIndent(Widget w, XEvent *event, String *p, Cardinal *n)
   text.format = _XawTextFormat(ctx);
   text.firstPos = 0;
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( text.format == XawFmtWide ) {
      wchar_t* ptr;
      text.ptr = XtMalloc( ( 2 + wcslen((wchar_t*)line_to_ip) ) * sizeof(wchar_t) );
@@ -1144,9 +1121,7 @@ InsertNewLineAndIndent(Widget w, XEvent *event, String *p, Cardinal *n)
      *ptr = (wchar_t)0;
      text.length = wcslen((wchar_t*)text.ptr);
 
-  } else
-#endif
-  {
+  } else {
      char *ptr;
      length = strlen(line_to_ip);
      /* The current line + \0 and LF will be copied to this
@@ -1302,9 +1277,7 @@ TextFocusIn (Widget w, XEvent *event, String *p, Cardinal *n)
   TextWidget ctx = (TextWidget) w;
 
   /* Let the input method know focus has arrived. */
-#ifdef XAW_INTERNATIONALIZATION
   _XawImSetFocusValues (w, NULL, 0);
-#endif
   if ( event->xfocus.detail == NotifyPointer ) return;
 
   ctx->text.hasfocus = TRUE;
@@ -1316,9 +1289,7 @@ TextFocusOut(Widget w, XEvent *event, String *p, Cardinal *n)
   TextWidget ctx = (TextWidget) w;
 
   /* Let the input method know focus has left.*/
-#ifdef XAW_INTERNATIONALIZATION
   _XawImUnsetFocus(w);
-#endif
   if ( event->xfocus.detail == NotifyPointer ) return;
   ctx->text.hasfocus = FALSE;
 }
@@ -1326,27 +1297,23 @@ TextFocusOut(Widget w, XEvent *event, String *p, Cardinal *n)
 static void
 TextEnterWindow(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-#ifdef XAW_INTERNATIONALIZATION
   TextWidget ctx = (TextWidget) w;
 
   if ((event->xcrossing.detail != NotifyInferior) && event->xcrossing.focus &&
       !ctx->text.hasfocus) {
 	_XawImSetFocusValues(w, NULL, 0);
   }
-#endif
 }
 
 static void
 TextLeaveWindow(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
-#ifdef XAW_INTERNATIONALIZATION
   TextWidget ctx = (TextWidget) w;
 
   if ((event->xcrossing.detail != NotifyInferior) && event->xcrossing.focus &&
       !ctx->text.hasfocus) {
 	_XawImUnsetFocus(w);
   }
-#endif
 }
 
 /*	Function Name: AutoFill
@@ -1381,14 +1348,12 @@ AutoFill(TextWidget ctx)
     return;
 
   text.format = XawFmt8Bit;
-#ifdef XAW_INTERNATIONALIZATION
   if (_XawTextFormat(ctx) == XawFmtWide) {
     text.format = XawFmtWide;
     text.ptr =  (char *)XtMalloc(sizeof(wchar_t) * 2);
     ((wchar_t*)text.ptr)[0] = _Xaw_atowc(XawLF);
     ((wchar_t*)text.ptr)[1] = 0;
   } else
-#endif
     text.ptr = "\n";
   text.length = 1;
   text.firstPos = 0;
@@ -1410,19 +1375,16 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
   if (_Xaw3dXft->encoding == -1)
       text.length = Xutf8LookupString (ctx->text.xic, (XKeyEvent*)event, strbuf, BUFSIZ, &keysym, &status);
   else
-#ifdef XAW_INTERNATIONALIZATION
   if (XtIsSubclass (ctx->text.source, (WidgetClass) multiSrcObjectClass))
     text.length = _XawImWcLookupString (w, &event->xkey,
 		(wchar_t*) strbuf, BUFSIZ, &keysym);
   else
-#endif
     text.length = XLookupString ((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, NULL);
 
   if (text.length == 0)
       return;
 
   text.format = _XawTextFormat( ctx );
-#ifdef XAW_INTERNATIONALIZATION
   if ( text.format == XawFmtWide ) {
       text.ptr = ptr = XtMalloc(sizeof(wchar_t) * text.length * ctx->text.mult );
       for (count = 0; count < ctx->text.mult; count++ ) {
@@ -1430,9 +1392,7 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
           ptr += sizeof(wchar_t) * text.length;
       }
 
-  } else
-#endif
-  { /* == XawFmt8Bit */
+  } else { /* == XawFmt8Bit */
       text.ptr = ptr = XtMalloc( sizeof(char) * text.length * ctx->text.mult );
       for ( count = 0; count < ctx->text.mult; count++ ) {
           strncpy( ptr, strbuf, text.length );
@@ -1556,9 +1516,7 @@ static void
 InsertString(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
   TextWidget ctx = (TextWidget) w;
-#ifdef XAW_INTERNATIONALIZATION
   XtAppContext app_con = XtWidgetToApplicationContext(w);
-#endif
   XawTextBlock text;
   int	   i;
 
@@ -1572,7 +1530,6 @@ InsertString(Widget w, XEvent *event, String *params, Cardinal *num_params)
 
       if ( text.length == 0 ) continue;
 
-#ifdef XAW_INTERNATIONALIZATION
       if ( _XawTextFormat( ctx ) == XawFmtWide ) { /* convert to WC */
 
           int temp_len;
@@ -1600,7 +1557,6 @@ InsertString(Widget w, XEvent *event, String *params, Cardinal *num_params)
               continue;
           }
       } /* convert to WC */
-#endif
 
       if ( _XawTextReplace( ctx, ctx->text.insertPos,
 			    ctx->text.insertPos, &text ) ) {
@@ -1718,7 +1674,6 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
   text.format = _XawTextFormat(ctx);
   if ( text.format == XawFmt8Bit )
       text.ptr= "  ";
-#ifdef XAW_INTERNATIONALIZATION
   else {
       static wchar_t wc_two_spaces[ 3 ];
       wc_two_spaces[0] = _Xaw_atowc(XawSP);
@@ -1726,7 +1681,6 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
       wc_two_spaces[2] = 0;
       text.ptr = (char*) wc_two_spaces;
   }
-#endif
 
   /* Strip out CR's. */
 
@@ -1760,12 +1714,10 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
 
       text.length = 1;
       buf = _XawTextGetText(ctx, periodPos, next_word);
-#ifdef XAW_INTERNATIONALIZATION
       if (text.format == XawFmtWide) {
         if ( (periodPos < endPos) && (((wchar_t*)buf)[0] == _Xaw_atowc('.')))
           text.length++;
       } else
-#endif
         if ( (periodPos < endPos) && (buf[0] == '.') )
 	  text.length++;	/* Put in two spaces. */
 
@@ -1774,13 +1726,11 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
        */
 
       for (i = 1 ; i < len; i++)
-#ifdef XAW_INTERNATIONALIZATION
         if (text.format ==  XawFmtWide) {
           if ( !iswspace(((wchar_t*)buf)[i]) || ((periodPos + i) >= to) ) {
              break;
           }
         } else
-#endif
 	  if ( !isspace(buf[i]) || ((periodPos + i) >= to) ) {
 	      break;
 	  }
@@ -1816,14 +1766,12 @@ InsertNewCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
 
   if ( text.format == XawFmt8Bit )
       text.ptr = "\n";
-#ifdef XAW_INTERNATIONALIZATION
   else {
       static wchar_t wide_CR[ 2 ];
       wide_CR[0] = _Xaw_atowc(XawLF);
       wide_CR[1] = 0;
       text.ptr = (char*) wide_CR;
   }
-#endif
 
   startPos = from;
   /* CONSTCOND */
@@ -1845,12 +1793,10 @@ InsertNewCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
       len = (int) (space - eol);
       buf = _XawTextGetText(ctx, eol, space);
       for ( i = 0 ; i < len ; i++)
-#ifdef XAW_INTERNATIONALIZATION
       if (text.format == XawFmtWide) {
           if (!iswspace(((wchar_t*)buf)[i]))
               break;
       } else
-#endif
           if (!isspace(buf[i]))
               break;
 
@@ -1955,7 +1901,6 @@ TransposeCharacters(Widget w, XEvent *event, String *params, Cardinal *num_param
 
   /* Retrieve text and swap the characters. */
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( text.format == XawFmtWide) {
       wchar_t wc;
       wchar_t* wbuf;
@@ -1968,9 +1913,7 @@ TransposeCharacters(Widget w, XEvent *event, String *params, Cardinal *num_param
       wbuf[ i-1 ] = wc;
       buf = (char*) wbuf; /* so that it gets assigned and freed */
 
-  } else
-#endif
-  { /* thus text.format == XawFmt8Bit */
+  } else { /* thus text.format == XawFmt8Bit */
       char c;
       buf = _XawTextGetText( ctx, start, end );
       text.length = strlen( buf );
@@ -2020,13 +1963,11 @@ NoOp(Widget w, XEvent *event, String *params, Cardinal *num_params)
  * was started up before an IM was started up.
  */
 
-#ifdef XAW_INTERNATIONALIZATION
 static void
 Reconnect(Widget w, XEvent *event, String *params, Cardinal *num_params)
 {
     _XawImReconnect( w );
 }
-#endif
 
 
 XtActionsRec _XawTextActionsTable[] = {
@@ -2113,9 +2054,7 @@ XtActionsRec _XawTextActionsTable[] = {
   {"PopdownSearchAction",       _XawTextPopdownSearchAction},
 
 /* Reconnect to Input Method */
-#ifdef XAW_INTERNATIONALIZATION
   {"reconnect-im",       Reconnect} /* Li Yuhong, Omron KK, 1991 */
-#endif
 };
 
 Cardinal _XawTextActionsTableCount = XtNumber(_XawTextActionsTable);

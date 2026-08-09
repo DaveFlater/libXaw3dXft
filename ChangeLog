@@ -20,6 +20,9 @@ Next release, v2.0  Dave Flater
       hook creates a symbolic link from the old name.
     - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
+  - Deleted the --enable-internationalization configure option.
+  It is now permanently enabled.
+
   - Retired global struct Xaw3dXftData.
   border_hack:  deleted (necessary workaround always on)
   button_dashed:  use Command.highlightDashed resource
@@ -60,7 +63,6 @@ Next release, v2.0  Dave Flater
     Xaw3d.h.
   - Added version identification mechanisms (see README for details).
   - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
-  - Fixed FTB on --disable-internationalization.
   - Ignored beNiceToColormap when it only makes things look worse.
   - Expanded the documentation.
 

@@ -73,14 +73,11 @@ extern WidgetClass tipWidgetClass;
 #define XtNtip "tip"
 #define XtNxftFont "xftFont"
 
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #ifndef XtNfontSet
 #define XtNfontSet "fontSet"
 #endif
 #ifndef XtCFontSet
 #define XtCFontSet "FontSet"
-#endif
 #endif
 
 #define XtCTimeout "Timeout"

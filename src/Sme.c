@@ -45,14 +45,11 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/Cardinals.h>
 
 #define offset(field) XtOffsetOf(SmeRec, sme.field)
-static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNcallback, XtCCallback, XtRCallback, sizeof(XtPointer),
      offset(callbacks), XtRCallback, (XtPointer)NULL},
-#ifdef XAW_INTERNATIONALIZATION
   {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
      offset(international), XtRImmediate, (XtPointer) FALSE},
-#endif
 };
 #undef offset
 

@@ -56,16 +56,9 @@ Then proceed as for building a release.
 
 ## <a name="configopt"> Configure options
 
-Effective in version 2.0, all four of these options are enabled by default.
-For version 1.6.4 and prior versions, only internationalization was enabled
-by default.
-
-### --enable-internationalization
-
-Enables/disables internationalization features as used with Athena widgets
-(locales, wide characters, UTF-8 strings, font sets, input/output methods).
-Much of the affected code is bypassed when FreeType fonts are used, but there
-is no reason to disable this.
+Effective in version 2.0, the three options below are enabled by default, and
+the option to disable internationalization has been removed.  For version
+1.6.4 and prior versions, only internationalization was enabled by default.
 
 ### --enable-multiplane-bitmaps
 
@@ -240,9 +233,6 @@ XwcDrawString to render text.  XmbDrawString and XwcDrawString are fixed on
 the mb and wc encodings respectively.  If another encoding is provided,
 Xaw3dXft translates it to wc, and characters that do not exist in the
 locale's codeset are replaced with ?.
-
-Support for this functionality is included or excluded by the
---enable-internationalization configure option.
 
 #### FreeType
 
@@ -910,6 +900,10 @@ xaw3d.pc respectively.
 - The include path changes from X11/Xaw3dxft to X11/Xaw3dXft.  An install
   hook creates a symbolic link from the old name.
 - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
+
+**Deleted the --enable-internationalization configure option**
+
+It is now permanently enabled.
 
 **Retired global struct Xaw3dXftData**
 

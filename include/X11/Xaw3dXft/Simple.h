@@ -50,7 +50,6 @@ SOFTWARE.
 #define _Simple_h
 
 #include <X11/Xmu/Converters.h>
-#include <X11/Xaw3dXft/Xaw3d.h>
 
 /****************************************************************
  *
@@ -83,17 +82,13 @@ SOFTWARE.
 #define XtNcursor "cursor"
 #define XtNcursorName "cursorName"
 #define XtNinsensitiveBorder "insensitiveBorder"
-
-#define XtCInsensitive "Insensitive"
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
-#ifndef XtCInternational
-#define XtCInternational "International"
-#endif
 #ifndef XtNinternational
 #define XtNinternational "international"
 #endif
+
+#define XtCInsensitive "Insensitive"
+#ifndef XtCInternational
+#define XtCInternational "International"
 #endif
 
 typedef struct _SimpleClassRec	*SimpleWidgetClass;

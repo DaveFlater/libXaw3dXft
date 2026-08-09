@@ -85,7 +85,6 @@ static char defaultTranslations[] =
 
 #define offset(field) XtOffsetOf(ListRec, field)
 
-static_assert(Got_XAW_defines);
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	offset(list.foreground), XtRString, XtDefaultForeground},
@@ -95,10 +94,8 @@ static XtResource resources[] = {
 	offset(list.font),XtRString, XtDefaultFont},
     {XtNxftFont,  XtCXftFont, XtRString, sizeof(String),
 	offset(list.xftfontname),XtRString, NULL},
-#ifdef XAW_INTERNATIONALIZATION
     {XtNfontSet,  XtCFontSet, XtRFontSet, sizeof(XFontSet ),
 	offset(list.fontset),XtRString, XtDefaultFontSet},
-#endif
     {XtNlist, XtCList, XtRPointer, sizeof(char **),
        offset(list.list), XtRString, NULL},
     {XtNdefaultColumns, XtCColumns, XtRInt,  sizeof(int),
@@ -216,13 +213,13 @@ static void get_or_change_GCs (ListWidget lw) {
   if (lw->list.normal_GC)
     XtReleaseGC((Widget)lw, lw->list.normal_GC);
   lw->list.normal_GC = Xaw3dXftGetTextGC((Widget)lw, fg, lw->list.font,
-					 international(lw));
+					 lw->simple.international);
 
   // rev_GC
   if (lw->list.rev_GC)
     XtReleaseGC((Widget)lw, lw->list.rev_GC);
   lw->list.rev_GC = Xaw3dXftGetTextGC((Widget)lw, bg, lw->list.font,
-				      international(lw));
+				      lw->simple.international);
 
   // stipple_GC
   if (lw->list.stipple_GC)
@@ -290,8 +287,8 @@ CalculatedValues(Widget w)
       Dimension width, height;
       String s = lw->list.list[i];
       if (s) {
-	Xaw3dXftSizeAnyString(display, lw->list.font, listFontSet(lw),
-          lw->list.xftfont, international(lw), lw->list.encoding, s, &width,
+	Xaw3dXftSizeAnyString(display, lw->list.font, lw->list.fontset,
+          lw->list.xftfont, lw->simple.international, lw->list.encoding, s, &width,
 	  &height);
 	if (width  > max_width)  max_width  = width;
 	if (height > max_height) max_height = height;
@@ -401,10 +398,8 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
       lw->list.xftfont = Xaw3dXftGetFont(new, lw->list.xftfontname);
     else {
       lw->list.xftfont = NULL;
-#ifdef XAW_INTERNATIONALIZATION
       if (lw->simple.international && !lw->list.fontset)
 	XtError("List initialized with international true but no fontset");
-#endif
     }
     if (!lw->list.font) XtError("List initialized with no font");
 
@@ -614,8 +609,9 @@ static void PaintItemName (Widget w, int item) {
               text_height = cell_height - lw->list.row_space;
     XRectangle clip = (XRectangle){text_x, text_y, text_width, text_height};
     Xaw3dXftDrawAnyString(display, VisualOf(lw), lw->core.colormap, window,
-      lw->list.font, listFontSet(lw), lw->list.xftfont, international(lw), gc,
-      xfg, text_x, text_y, &clip, lw->list.encoding, s);
+      lw->list.font, lw->list.fontset, lw->list.xftfont,
+      lw->simple.international, gc, xfg, text_x, text_y, &clip,
+      lw->list.encoding, s);
   }
 
   // Apply insensitive stipple
@@ -951,10 +947,8 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 	(cl->list.longest         != nl->list.longest)         ||
 	(cl->list.nitems          != nl->list.nitems)          ||
 	(cl->list.font->fid       != nl->list.font->fid)       ||
-#ifdef XAW_INTERNATIONALIZATION
 	(cl->list.fontset         != nl->list.fontset)         ||
 	(cl->simple.international != nl->simple.international) ||
-#endif
 	(cl->list.xftfont         != nl->list.xftfont)         ||
 	(cl->list.list            != nl->list.list)          )   {
         CalculatedValues( new );

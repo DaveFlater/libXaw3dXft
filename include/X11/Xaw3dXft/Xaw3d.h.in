@@ -13,11 +13,10 @@ X11 license (as per the historical licenses that the package inherits)
 #define _Xaw3d_h
 
 /*
-  --enable-internationalization
-  Enables/disables internationalization features as used with Athena widgets
-  (locales, wide characters, UTF-8 strings, font sets, input/output methods).
+  Internationalization is now permanently enabled.  Define the macro for
+  applications that may look for it.
 */
-@MACRO_INTERNATIONALIZATION@
+#define XAW_INTERNATIONALIZATION 1
 
 /*
   --enable-multiplane-bitmaps
@@ -40,8 +39,8 @@ X11 license (as per the historical licenses that the package inherits)
 @MACRO_GRAY_BLKWHT_STIPPLES@
 
 /*
-  Since all four macros being undefined represents a valid configuration, use
-  static_assert(Got_XAW_defines) to verify that the configuration was loaded.  
+  Use static_assert(Got_XAW_defines) to verify that the configuration was
+  loaded.
 */
 #define Got_XAW_defines 1
 

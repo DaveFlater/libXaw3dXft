@@ -103,18 +103,14 @@ SOFTWARE.
 
 #define XtNleftBitmap "leftBitmap"
 #define XtNxftFont "xftFont"
-
-#define XtCLeftBitmap "LeftBitmap"
-#define XtCXftFont "XftFont"
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #ifndef XtNfontSet
 #define XtNfontSet "fontSet"
 #endif
+
+#define XtCLeftBitmap "LeftBitmap"
+#define XtCXftFont "XftFont"
 #ifndef XtCFontSet
 #define XtCFontSet "FontSet"
-#endif
 #endif
 
 #ifndef _XtStringDefs_h_

@@ -56,10 +56,7 @@ SOFTWARE.
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include "XawI18n.h"
-#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,10 +72,8 @@ static_assert(Got_XAW_defines);
 #include <X11/Xaw3dXft/TextSrc.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
-#ifdef XAW_INTERNATIONALIZATION
 #include <X11/Xaw3dXft/MultiSinkP.h>
 #include <X11/Xaw3dXft/XawImP.h>
-#endif
 #include <X11/Xaw3dXft/ThreeDP.h>
 #include <X11/Xfuncs.h>
 #include <ctype.h>		/* for isprint() */
@@ -89,9 +84,7 @@ static_assert(Got_XAW_defines);
 
 unsigned long FMT8BIT = 0L;
 unsigned long XawFmt8Bit = 0L;
-#ifdef XAW_INTERNATIONALIZATION
 unsigned long XawFmtWide = 0L;
-#endif
 
 #define SinkClearToBG          XawTextSinkClearToBackground
 
@@ -346,10 +339,8 @@ ClassInitialize(void)
 
   if (!XawFmt8Bit)
     FMT8BIT = XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
-#ifdef XAW_INTERNATIONALIZATION
   if (!XawFmtWide)
     XawFmtWide = XrmPermStringToQuark("FMTWIDE");
-#endif
 
   XawInitializeWidgetSet();
 
@@ -740,14 +731,12 @@ InsertCursor (Widget w, XawTextInsertState state)
 
   /* Keep Input Method up to speed  */
 
-#ifdef XAW_INTERNATIONALIZATION
   if ( ctx->simple.international ) {
     Arg list[1];
 
     XtSetArg (list[0], XtNinsertPosition, ctx->text.insertPos);
     _XawImSetValues (w, list, 1);
   }
-#endif
 }
 
 /*
@@ -797,10 +786,8 @@ _XawTextGetText(TextWidget ctx, XawTextPosition left, XawTextPosition right)
 
   if (_XawTextFormat(ctx) == XawFmt8Bit)
       bytes = sizeof(unsigned char);
-#ifdef XAW_INTERNATIONALIZATION
   else if (_XawTextFormat(ctx) == XawFmtWide)
       bytes = sizeof(wchar_t);
-#endif
   else /* if there is another format, add here */
       bytes = 1;
 
@@ -833,7 +820,6 @@ _XawTextGetSTRING(TextWidget ctx, XawTextPosition left, XawTextPosition right)
   long i, j, n;
 
   /* allow ESC in accordance with ICCCM */
-#ifdef XAW_INTERNATIONALIZATION
   if (_XawTextFormat(ctx) == XawFmtWide) {
      MultiSinkObject sink = (MultiSinkObject) ctx->text.sink;
      wchar_t *ws, wc;
@@ -847,9 +833,7 @@ _XawTextGetSTRING(TextWidget ctx, XawTextPosition left, XawTextPosition right)
      }
      ws[i] = (wchar_t)0;
      return (char *)ws;
-  } else
-#endif
-  {
+  } else {
      s = (unsigned char *)_XawTextGetText(ctx, left, right);
      /* only HT and NL control chars are allowed, strip out others */
      n = strlen((char *)s);
@@ -1295,9 +1279,7 @@ _XawTextVScroll(TextWidget ctx, int n)
       DisplayTextWindow((Widget)ctx);
   }
   XtSetArg (list[0], XtNinsertPosition, ctx->text.lt.top+ctx->text.lt.lines);
-#ifdef XAW_INTERNATIONALIZATION
   _XawImSetValues ((Widget) ctx, list, 1);
-#endif
 
   _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
 		0, 0, ctx->core.width, ctx->core.height,
@@ -1460,6 +1442,7 @@ UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
  * positive, move up; otherwise, move down.
  */
 
+static_assert(Got_XAW_defines);
 static void
 VScroll(Widget w, XtPointer closure, XtPointer callData)
 {
@@ -1609,11 +1592,9 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
       *target == XA_TEXT(d) ||
       *target == XA_COMPOUND_TEXT(d)) {
 	if (*target == XA_TEXT(d)) {
-#ifdef XAW_INTERNATIONALIZATION
 	    if (_XawTextFormat(ctx) == XawFmtWide)
 		*type = XA_COMPOUND_TEXT(d);
 	    else
-#endif
 		*type = XA_STRING;
 	} else {
 	    *type = *target;
@@ -1627,7 +1608,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 	 */
 	if (!salt) {
 	    *value = _XawTextGetSTRING(ctx, s->left, s->right);
-#ifdef XAW_INTERNATIONALIZATION
 	    if (_XawTextFormat(ctx) == XawFmtWide) {
 		XTextProperty textprop;
 		if (XwcTextListToTextProperty(d, (wchar_t **)value, 1,
@@ -1639,9 +1619,7 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 		XtFree(*value);
 		*value = (XtPointer)textprop.value;
 		*length = textprop.nitems;
-	    } else
-#endif
-	    {
+	    } else {
 		*length = strlen(*value);
 	    }
 	} else {
@@ -1649,7 +1627,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 	    strcpy (*value, salt->contents);
 	    *length = salt->length;
 	}
-#ifdef XAW_INTERNATIONALIZATION
 	if (_XawTextFormat(ctx) == XawFmtWide && *type == XA_STRING) {
 	    XTextProperty textprop;
 	    wchar_t **wlist;
@@ -1673,7 +1650,6 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 	    *length = textprop.nitems;
 	    XwcFreeStringList( (wchar_t**) wlist );
 	}
-#endif
 	*format = 8;
 	return True;
   }
@@ -1855,7 +1831,6 @@ _XawTextSaltAwaySelection(TextWidget ctx, Atom *selections, int num_atoms)
     salt->s.right = ctx->text.s.right;
     salt->s.type = ctx->text.s.type;
     salt->contents = _XawTextGetSTRING(ctx, ctx->text.s.left, ctx->text.s.right);
-#ifdef XAW_INTERNATIONALIZATION
     if (_XawTextFormat(ctx) == XawFmtWide) {
 	XTextProperty textprop;
 	if (XwcTextListToTextProperty(XtDisplay((Widget)ctx),
@@ -1869,7 +1844,6 @@ _XawTextSaltAwaySelection(TextWidget ctx, Atom *selections, int num_atoms)
 	salt->contents = (char *)textprop.value;
 	salt->length = textprop.nitems;
     } else
-#endif
        salt->length = strlen (salt->contents);
     salt->next = ctx->text.salt;
     ctx->text.salt = salt;
@@ -1930,7 +1904,6 @@ _SetSelection(TextWidget ctx, XawTextPosition left, XawTextPosition right,
 
 	tptr= ptr= (unsigned char *) _XawTextGetSTRING(ctx, ctx->text.s.left,
 						       ctx->text.s.right);
-#ifdef XAW_INTERNATIONALIZATION
 	if (_XawTextFormat(ctx) == XawFmtWide) {
 	   /*
 	    * Only XA_STRING(Latin 1) is allowed in CUT_BUFFER,
@@ -1945,7 +1918,6 @@ _SetSelection(TextWidget ctx, XawTextPosition left, XawTextPosition right,
 	    XtFree((char *)ptr);
 	    tptr = ptr = textprop.value;
         }
-#endif
 	if (buffer == 0) {
 	  _CreateCutBuffers(XtDisplay(w));
 	  XRotateBuffers(XtDisplay(w), 1);

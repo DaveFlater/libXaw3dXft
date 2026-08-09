@@ -65,7 +65,6 @@ typedef struct _SimpleClassRec {
 
 extern SimpleClassRec simpleClassRec;
 
-static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     Cursor	cursor;
@@ -73,9 +72,7 @@ typedef struct {
     String      cursor_name;	/* cursor specified by name. */
 
     Pixel       pointer_fg, pointer_bg;	/* Pointer colors. */
-#ifdef XAW_INTERNATIONALIZATION
     Boolean     international;
-#endif
     /* private state */
 } SimplePart;
 

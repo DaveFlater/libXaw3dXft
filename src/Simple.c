@@ -59,7 +59,6 @@ SOFTWARE.
 
 #define offset(field) XtOffsetOf(SimpleRec, simple.field)
 
-static_assert(Got_XAW_defines);
 static XtResource resources[] = {
   {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
      offset(cursor), XtRImmediate, (XtPointer) None},
@@ -71,10 +70,8 @@ static XtResource resources[] = {
      offset(pointer_bg), XtRString, XtDefaultBackground},
   {XtNcursorName, XtCCursor, XtRString, sizeof(String),
      offset(cursor_name), XtRString, NULL},
-#ifdef XAW_INTERNATIONALIZATION
   {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
      offset(international), XtRImmediate, (XtPointer) FALSE},
-#endif
 #undef offset
 };
 
@@ -243,9 +240,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     Boolean new_cursor = FALSE;
 
     /* this disables user changes after creation*/
-#ifdef XAW_INTERNATIONALIZATION
     s_new->simple.international = s_old->simple.international;
-#endif
 
     if ( XtIsSensitive(current) != XtIsSensitive(new) )
 	(*((SimpleWidgetClass)XtClass(new))->

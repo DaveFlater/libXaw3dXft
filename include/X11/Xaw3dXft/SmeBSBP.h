@@ -65,7 +65,6 @@ typedef struct _SmeBSBClassRec {
 extern SmeBSBClassRec smeBSBClassRec;
 
 /* New fields for the Sme Object record */
-static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     String label;		/* The entry label. */
@@ -76,9 +75,7 @@ typedef struct {
     Pixel foreground;		/* foreground color. */
     Pixel highlight;            /* highlight background color */
     XFontStruct * font;		/* The font to show label in. */
-#ifdef XAW_INTERNATIONALIZATION
     XFontSet fontset;		/* or fontset */
-#endif
     XtJustify justify;		/* Justification for the label. */
     int underline;		/* index of letter to underline in label. */
     char *xftfontname;

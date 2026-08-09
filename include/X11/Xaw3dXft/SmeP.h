@@ -70,13 +70,10 @@ typedef struct _SmeClassRec {
 extern SmeClassRec smeClassRec;
 
 /* New fields for the Sme widget record */
-static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     XtCallbackList callbacks;	/* The callback list */
-#ifdef XAW_INTERNATIONALIZATION
     Boolean     international;
-#endif
 } SmePart;
 
 /****************************************************************

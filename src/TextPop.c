@@ -62,10 +62,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xmu/CharSet.h>
 
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #include "XawI18n.h"
-#endif
 #include <stdint.h>
 #include <stdio.h>
 #include <X11/Xos.h>		/* for O_RDONLY */
@@ -517,15 +514,12 @@ _XawTextSearch(Widget w, XEvent *event, String *params, Cardinal *num_params)
 
   if (*num_params == 2 )
       ptr = params[1];
-  else
-#ifdef XAW_INTERNATIONALIZATION
-      if (_XawTextFormat(ctx) == XawFmtWide) {
-          /*This just does the equivalent of ptr = ""L, a waste because params[1] isn't W aligned.*/
-          ptr = (char *)XtMalloc(sizeof(wchar_t));
-          *((wchar_t*)ptr) = (wchar_t)0;
-      } else
-#endif
-          ptr = "";
+  else if (_XawTextFormat(ctx) == XawFmtWide) {
+      /*This just does the equivalent of ptr = ""L, a waste because params[1] isn't W aligned.*/
+      ptr = (char *)XtMalloc(sizeof(wchar_t));
+      *((wchar_t*)ptr) = (wchar_t)0;
+  } else
+      ptr = "";
 
   switch(params[0][0]) {
   case 'b':			/* Left. */
@@ -801,11 +795,9 @@ DoSearch(struct SearchAndReplace * search)
 
   text.ptr = GetStringRaw(search->search_text);
   text.format = _XawTextFormat(ctx);
-#ifdef XAW_INTERNATIONALIZATION
   if (text.format == XawFmtWide)
       text.length = wcslen((wchar_t*)text.ptr);
   else
-#endif
       text.length = strlen(text.ptr);
   text.firstPos = 0;
 
@@ -922,22 +914,18 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
 
   find.ptr = GetStringRaw( search->search_text);
   find.format = _XawTextFormat(ctx);
-#ifdef XAW_INTERNATIONALIZATION
   if (find.format == XawFmtWide)
       find.length = wcslen((wchar_t*)find.ptr);
   else
-#endif
       find.length = strlen(find.ptr);
   find.firstPos = 0;
 
   replace.ptr = GetStringRaw(search->rep_text);
   replace.firstPos = 0;
   replace.format = _XawTextFormat(ctx);
-#ifdef XAW_INTERNATIONALIZATION
   if (replace.format == XawFmtWide)
       replace.length = wcslen((wchar_t*)replace.ptr);
   else
-#endif
       replace.length = strlen(replace.ptr);
 
   dir = (XawTextScanDirection)(intptr_t) ((XPointer)XawToggleGetCurrent(search->left_toggle) -

@@ -67,7 +67,6 @@ typedef struct _ListClassRec {
 extern ListClassRec listClassRec;
 
 /* New fields for the List widget record */
-static_assert(Got_XAW_defines);
 typedef struct {
     /* resources */
     // The ints here want to be Cardinal or Dimension, but the types are
@@ -85,9 +84,7 @@ typedef struct {
     int         longest;	/* in pixels, Dimension */
     int         nitems;		/* number of items in the list, Cardinal */
     XFontStruct	*font;
-#ifdef XAW_INTERNATIONALIZATION
     XFontSet 	fontset;	/* Sheeran, Omron KK, 93/03/05 */
-#endif
     String *    list;		/* for i18n, always in multibyte format */
     XtCallbackList callback;
     char *	xftfontname;

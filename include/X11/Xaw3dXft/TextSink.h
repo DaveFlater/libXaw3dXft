@@ -86,6 +86,9 @@ typedef enum {
 #ifndef XtCFontSet
 #define XtCFontSet "FontSet"
 #endif
+#ifndef XtCInternational
+#define XtCInternational "International"
+#endif
 
 #define XtNdisplayNonprinting "displayNonprinting"
 #define XtNecho "echo"
@@ -94,20 +97,13 @@ typedef enum {
 #ifndef XtNfontSet
 #define XtNfontSet "fontSet"
 #endif
+#ifndef XtNinternational
+#define XtNinternational "international"
+#endif
 
 // XtNhighlight is in StringDefs.h
 #ifndef XtNhighlight
 #define XtNhighlight "highlight"
-#endif
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
-#ifndef XtCInternational
-#define XtCInternational "International"
-#endif
-#ifndef XtNinternational
-#define XtNinternational "international"
-#endif
 #endif
 
 /* Class record constants */

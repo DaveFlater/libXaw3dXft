@@ -132,6 +132,9 @@ typedef enum {
 #define XtCNumberStrings "NumberStrings"
 #define XtCSpacing "Spacing"
 #define XtCXftFont "XftFont"
+#ifndef XtCFontSet
+#define XtCFontSet "FontSet"
+#endif
 
 // XtNhighlight is in StringDefs.h
 #ifndef XtNhighlight
@@ -150,15 +153,8 @@ typedef enum {
 #define XtNrowSpacing "rowSpacing"
 #define XtNverticalList "verticalList"
 #define XtNxftFont "xftFont"
-
-static_assert(Got_XAW_defines);
-#ifdef XAW_INTERNATIONALIZATION
 #ifndef XtNfontSet
 #define XtNfontSet "fontSet"
-#endif
-#ifndef XtCFontSet
-#define XtCFontSet "FontSet"
-#endif
 #endif
 
 /* Class record constants */
