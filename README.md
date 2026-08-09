@@ -250,11 +250,15 @@ following resources related to fonts and encodings:
 
 Name          | Class         | RepType      | Default value
 :---          | :----         | :---         | :---
-encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
-font          | Font          | XFontStruct* | XtDefaultFont
+encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international) \*
+font          | Font          | XFontStruct\* | XtDefaultFont
 fontSet       | FontSet       | XFontSet     | XtDefaultFontSet
 international | International | Boolean      | False
 xftFont       | XftFont       | String       | NULL
+
+\* To be precise, encoding defaults to XawTextEncodingmb only when
+international is True *and* xftFont is NULL.  The international resource is
+not used if xftFont is provided.
 
 The font system that Xaw3dXft will use to render the text is decided as
 follows:
