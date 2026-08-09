@@ -56,6 +56,7 @@ in this Software without prior written authorization from the X Consortium.
  callback            Callback           Callback        NULL
  destroyCallback     Callback		Pointer		NULL
  encoding	     Encoding		unsigned char	XawTextEncoding8bit
+                                      if international, XawTextEncodingmb
  font                Font               XFontStruct *   XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground          Foreground         Pixel           XtDefaultForeground

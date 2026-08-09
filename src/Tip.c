@@ -264,6 +264,7 @@ XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
     tip->tip.gc = XtAllocateGC(w, 0, GCForeground | GCBackground | GCFont |
 			       GCGraphicsExposures, &values, GCFont, 0);
 
+    // FIXME upgrade as per Label.c
     if (_Xaw3dXft->encoding)
 	tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
     else {

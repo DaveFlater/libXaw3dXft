@@ -410,7 +410,7 @@ Core:
 Name           | Class        | RepType      | Default value
 :---           | :----        | :---         | :---
 backingStore   | BackingStore | BackingStore | Always + WhenMapped + NotUseful
-encoding       | Encoding     | UnsignedChar | XawTextEncoding8bit
+encoding       | Encoding     | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
 font           | Font         | XFontStruct* | XtDefaultFont
 fontSet        | FontSet      | XFontSet     | XtDefaultFontSet
 foreground     | Foreground   | Pixel        | XtDefaultForeground
@@ -463,7 +463,7 @@ Added resources:
 
 Name    | Class   | RepType | Default value
 :---    | :----   | :---    | :---
-encoding           | Encoding           | unsigned char | XawTextEncoding8bit
+encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingmb if international)
 highlight          | Background         | Pixel         | XtDefaultBackground
 highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
 xftFont            | XftFont            | String        | NULL
@@ -543,9 +543,8 @@ changes in label parts and internal margins (subject to any constraints
 placed on the widgets).
 
 As in Xaw, Label will use its core name as the label text if XtNlabel is not
-supplied.  In this case, encoding must be 8bit or UTF8:  the core name is
-handled by Xt as a regular C string, and 16-bit characters cannot get
-through.
+supplied.  In this case, the encoding must be 8bit, UTF8, or mb because the
+core name is handled by Xt as a regular C string.
 
 ### <a name="listwidget"> List
 
@@ -553,7 +552,7 @@ Added resources:
 
 Name        | Class       | RepType | Default value
 :---        | :---        | :---    | :---
-encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit
+encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
 highlight | Background | Pixel | XtDefaultBackground
 highlightStyle | ListHighlightStyle | UnsignedChar | ListHighlightReverse
 xftFont | XftFont | String  | NULL
@@ -707,7 +706,7 @@ Added resources:
 
 Name      | Class     | RepType | Default value
 :---      | :---      | :---    | :---
-encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit
+encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
 highlight | Background | Pixel | XtDefaultBackground
 highlightStyle | MenuHighlightStyle | UnsignedChar | MenuHighlightReverse
 menuName  | MenuName  | String  | NULL

@@ -49,6 +49,7 @@
   borderWidth	    BorderWidth		Dimension	1
   destroyCallback   Callback		XtCallbackList	NULL
   encoding          Encoding 	        UnsignedChar 	XawTextEncoding8bit
+                                      if international, XawTextEncodingmb
   font		    Font		XFontStruct*	XtDefaultFont
   fontSet           FontSet             XFontSet        XtDefaultFontSet
   foreground	    Foreground		Pixel		XtDefaultForeground

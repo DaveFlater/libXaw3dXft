@@ -13,8 +13,10 @@ X11 license (as per the historical licenses that the package inherits)
 
 #include <assert.h>
 #include <limits.h>
+#include <string.h>
 #include <X11/Shell.h>
 #include <X11/Xaw3dXft/CommonP.h>
+#include <X11/Xaw3dXft/Encoding.h>
 
 // FIXME lingering dependency on global struct for default font
 #include <X11/Xaw3dXft/Xaw3dXft.h>
@@ -232,4 +234,11 @@ Position dest_y) {
     XCopyPlane(display, src, dest, gc, 0, 0, width, height, dest_x, dest_y, 1);
   else
     XCopyArea(display, src, dest, gc, 0, 0, width, height, dest_x, dest_y);
+}
+
+Boolean Xaw3dXftSpecifiedEncoding (ArgList args, Cardinal num_args) {
+  for (Cardinal c=0; c<num_args; ++c)
+    if (!strcmp(args[c].name, XtNencoding))
+      return True;
+  return False;
 }

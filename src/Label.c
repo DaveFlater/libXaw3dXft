@@ -265,9 +265,16 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
     else {
       lw->label.xftfont = NULL;
-      if (lw->simple.international && !lw->label.fontset)
-	XtError("Label initialized with international true but no fontset");
+      // Maintain Xaw compatibility by changing the default encoding when a
+      // font set is going to be used, but allow a specified encoding to
+      // override it.
+      if (lw->simple.international &&
+	lw->label.encoding == XawTextEncoding8bit &&
+	!Xaw3dXftSpecifiedEncoding(args, *num_args))
+	lw->label.encoding = XawTextEncodingmb;
     }
+    if (lw->simple.international && !lw->label.fontset)
+      XtError("Label initialized with international true but no fontset");
     if (!lw->label.font) XtError("Label initialized with no font");
 
     // Avoid surprises:  just always dup the string.

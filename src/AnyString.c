@@ -464,7 +464,6 @@ static void drawOneXmbLine (
 	num_bytes/sizeof(wchar_t));
       break;
     case XawTextEncodingmb:
-    case XawTextEncoding8bit: // FIXME temporary mb 8bit compatibility patch
       XmbDrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
       break;
     default:
@@ -658,7 +657,6 @@ void *text, Cardinal num_bytes) {
   case XawTextEncodingwc:
     return XwcTextEscapement(fontSet, text, num_bytes/sizeof(wchar_t));
   case XawTextEncodingmb:
-  case XawTextEncoding8bit: // FIXME temporary mb 8bit compatibility patch
     return XmbTextEscapement(fontSet, text, num_bytes);
   }
   XtError("libXaw3dXft:  unsupported encoding in sizeOneXmbLine");
@@ -896,10 +894,6 @@ Boolean Xaw3dXftLocateUnderline (
     return False;
   }
 #endif
-
-  // FIXME temporary mb 8bit compatibility patch
-  if (international && encoding == XawTextEncoding8bit)
-    encoding = XawTextEncodingmb;
 
   Cardinal b1, b2;
   if (locateChar(encoding, text, character_index, &b1, &b2)) {

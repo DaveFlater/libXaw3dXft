@@ -58,3 +58,6 @@ extern Status Xaw3dXftGetDrawableDimensions (Display *display, Drawable d,
 extern void Xaw3dXftCopy (Display *display, Drawable src, Drawable dest,
   GC gc, Dimension width, Dimension height, Cardinal depth, Position dest_x,
   Position dest_y);
+
+// Return True if encoding is among the arguments.
+extern Boolean Xaw3dXftSpecifiedEncoding (ArgList args, Cardinal num_args);
