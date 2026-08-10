@@ -60,7 +60,7 @@ typedef enum {
   XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 (not UTF-16)
   XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
   XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset
-  XawTextEncodingwc     = 6  // wchar_t, wide string, locale's codeset
+  XawTextEncodingwc     = 6  // wchar_t, wide string, implementation-defined
 } XawTextEncoding;
 
 #define XtNencoding "encoding"

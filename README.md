@@ -190,16 +190,23 @@ file:
       XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 (not UTF-16)
       XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
       XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset
-      XawTextEncodingwc     = 6  // wchar_t, wide string, locale's codeset
+      XawTextEncodingwc     = 6  // wchar_t, wide string, implementation-defined
     } XawTextEncoding;
 
-Narrow multibyte strings ("mb") and wide strings ("wc") are interpreted
-according to the locale's codeset; e.g., UTF-8 from en_US.UTF-8 or ISO 8859
-part 7 from el_GR.ISO8859-7.  The application must call
-[setlocale](https://en.cppreference.com/c/locale/setlocale) to activate a
-locale other than the default "C" locale, which allows only ASCII characters.
-The application should also call XSupportsLocale() to verify that X supports
-it and XSetLocaleModifiers("") to initialize.
+### <a name="locales"> Locales
+
+Narrow multibyte strings ("mb") are interpreted according to the locale's
+codeset; e.g., UTF-8 from en_US.UTF-8 or ISO 8859 part 7 from
+el_GR.ISO8859-7.
+
+Rendering using [font sets](#fontset) (described below) is limited to the
+character repertoire of the active locale regardless of the encoding used.
+
+Every application starts in the default "C" locale, which allows only ASCII
+characters.  To activate another locale, the application must call
+[setlocale](https://en.cppreference.com/c/locale/setlocale).  It should also
+call XSupportsLocale() to verify that X supports it and
+XSetLocaleModifiers("") to initialize Xlib's state.
 
 ### <a name="fontsys"> Font systems
 
@@ -225,14 +232,21 @@ when a character is missing from the first font on the list, the server goes
 down the list until a font containing the needed character is found.  In this
 way, a wide character repertoire can be cobbled together from several fonts
 that support different pieces of it.  However, the rendering is done by the
-same core X11 fonts system, UTF-8 is sometimes translated incorrectly, and
-the results of merging fonts with different characteristics can be ugly.
+same core X11 fonts system, and the results of merging fonts with different
+characteristics can be ugly.
 
-When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString or
-XwcDrawString to render text.  XmbDrawString and XwcDrawString are fixed on
-the mb and wc encodings respectively.  If another encoding is provided,
-Xaw3dXft translates it to wc, and characters that do not exist in the
-locale's codeset are replaced with ?.
+When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString,
+XwcDrawString, or Xutf8DrawString to render text.  The latter two functions,
+unfortunately, convert the input to mb; thus, *all rendering using font sets
+is limited to the character repertoire of the locale*.  Characters that do
+not exist in the locale's codeset are silently dropped.  For best results,
+[set a UTF-8 locale](#locales).
+
+Having done that, these functions still mangle some characters that are
+rendered correctly by XDrawString16.
+
+If 8bit, Char2b, UCS2, or UTF32 is provided, Xaw3dXft translates it to wc,
+which is then reduced to mb by Xlib.
 
 #### FreeType
 
@@ -240,8 +254,9 @@ FreeType is an improved font rendering system that circumvents the
 limitations of the original core X11 fonts system.  Newer fonts can be scaled
 and rendered at higher quality, and anti-aliasing is supported.
 
-libXft supports the 8bit, UTF8, UCS2, and UTF32 encodings.  If another
-encoding is provided, Xaw3dXft translates it to UCS2 or UTF32.
+libXft supports the 8bit, UTF8, UCS2, and UTF32 encodings.  If Char2b is
+provided, Xaw3dXft translates it to UCS2.  If any other encoding is provided,
+Xaw3dXft translates it to UTF32.
 
 ### <a name="resources"> Resources
 
@@ -1047,10 +1062,11 @@ Xaw oddities:
 - XCreateFontSet is frustratingly choosy about which fonts it will work with
   and frequently fails for no apparent reason, even in cases where the plain
   old XDrawString16 does quite well at covering the Basic Multilingual Plane.
-- The Xutf8\* functions fall through to the Xmb\* functions via some
-  obfuscated indirection.  They fail if the locale's codeset doesn't support
-  the Unicode character repertoire and are useless for circumventing the
-  locale dependency.
+- The font set functions Xutf8TextEscapement, Xutf8Draw[Image]String, and the
+  corresponding Xwc\* functions are all implemented using a translation to mb
+  (see libx11/modules/om/generic/omDefault.c).  They fail if the locale's
+  codeset doesn't support the Unicode character repertoire and are useless
+  for circumventing the locale dependency.
 
 Xlib and libXt have global disagreements about the plain old data types of
 common parameters (like positions and dimensions) and about Bool/Boolean
