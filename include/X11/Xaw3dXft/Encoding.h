@@ -47,10 +47,9 @@ X11 license (as per the historical licenses that the package inherits)
 
   "Locale's codeset:"
   The codeset from the currently active C locale; e.g., UTF-8 from
-  en_US.UTF-8 or ISO 8859-7 from el_GR.ISO8859-7.  The application must call
-  setlocale; otherwise, you get the standard default "C" locale with the
-  minimal ASCII codeset.  The application should also call XSupportsLocale()
-  to verify that X supports it and XSetLocaleModifiers("") to initialize.
+  en_US.UTF-8, ISO 8859-7 from el_GR.ISO8859-7, or ASCII from the default "C"
+  locale.  See https://github.com/DaveFlater/libXaw3dXft#locales for more
+  information.
 */
 
 typedef enum {

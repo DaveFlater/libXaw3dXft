@@ -196,8 +196,8 @@ file:
 ### <a name="locales"> Locales
 
 Narrow multibyte strings ("mb") are interpreted according to the locale's
-codeset; e.g., UTF-8 from en_US.UTF-8 or ISO 8859 part 7 from
-el_GR.ISO8859-7.
+codeset; e.g., UTF-8 from en_US.UTF-8, ISO 8859 part 7 from el_GR.ISO8859-7,
+or ASCII from the default "C" locale.
 
 Rendering using [font sets](#fontset) (described below) is limited to the
 character repertoire of the active locale regardless of the encoding used.
@@ -207,6 +207,14 @@ characters.  To activate another locale, the application must call
 [setlocale](https://en.cppreference.com/c/locale/setlocale).  It should also
 call XSupportsLocale() to verify that X supports it and
 XSetLocaleModifiers("") to initialize Xlib's state.
+
+Rather than calling those functions directly, an application may use [Xt's
+language
+infrastructure](https://xorg.freedesktop.org/archive/X11R7.7/doc/libXt/intrinsics.html#Establishing_the_Locale).
+If the application calls `XtSetLanguageProc(NULL, NULL, NULL)` before
+XtToolkitInitialize(), Xt will automatically activate the locale specified by
+(1) the -xnllanguage command line switch, (2) the xnlLanguage resource, or
+(3) the LANG environment variable.
 
 ### <a name="fontsys"> Font systems
 
