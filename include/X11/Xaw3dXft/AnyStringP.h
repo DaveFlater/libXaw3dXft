@@ -41,6 +41,17 @@ X11 license (as per the historical licenses that the package inherits)
 
 
 /*
+             *** RULES ***
+  1.  All strings MUST be NUL-terminated.
+  2.  The value of num_bytes MUST NOT exceed the number of bytes preceding
+      the NUL.
+  3.  The first num_bytes bytes of the string MUST contain a whole number of
+      characters, i.e., MUST NOT end in the middle of a multibyte character.
+  Violating these rules invokes undefined behavior.
+*/
+
+
+/*
   The Xft tutorial warns:  "Note that drawing the same string multiple times
   in the same place will generate the wrong result with AA text."
 
@@ -87,7 +98,7 @@ extern void Xaw3dXftDrawAnyStringLen (
 
   // A string in the specified encoding
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
 
   // Number of bytes (not characters) to draw from text
   Cardinal num_bytes
@@ -98,7 +109,7 @@ extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
   Colormap cmap, Window window, XFontStruct *font, XFontSet fontSet,
   XftFont *xftFont, Boolean international, GC text_gc, XftColor *fg,
   Position x, Position y, XRectangle *clip, XawTextEncoding encoding,
-  void *text);
+  const void *text);
 
 
 // Genericized TextWidth/TextHeight with specified length (num_bytes)
@@ -113,7 +124,7 @@ extern void Xaw3dXftSizeAnyStringLen (
 
   // A string in the specified encoding
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
 
   // Number of bytes (not characters) to draw from text
   Cardinal num_bytes,
@@ -125,14 +136,15 @@ extern void Xaw3dXftSizeAnyStringLen (
 // Ibid. but using the null teminator to determine num_bytes
 extern void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
   XFontSet fontSet, XftFont *xftFont, Boolean international,
-  XawTextEncoding encoding, void *text, Dimension *width, Dimension *height);
+  XawTextEncoding encoding, const void *text, Dimension *width,
+  Dimension *height);
 
 
 // Strdup for any encoding
-extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text);
+extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text);
 
 // Return number of bytes in any string, not counting null terminator
-Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text);
+Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text);
 
 // Find the coordinates to underline one character in supplied text.  Returns
 // True if coordinates are valid, False if cannot comply.
@@ -142,7 +154,7 @@ extern Boolean Xaw3dXftLocateUnderline (
   XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
   int character_index, // characters, not bytes
   // Results out
   Position *x1, Position *x2, Position *y);

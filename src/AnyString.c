@@ -14,6 +14,7 @@ X11 license (as per the historical licenses that the package inherits)
 #include "config.h"
 #endif
 #include <assert.h>
+#include <byteswap.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -92,40 +93,57 @@ static Cardinal nlsize (XawTextEncoding encoding) {
     return 4;
   case XawTextEncodingwc:
     return sizeof(wchar_t);
+  default: // 8bit, UTF8, mb (could do size = c16rtomb(s, u'\n', &state))
+    return 1;
   }
-  // 8bit, UTF8, mb (could do size = c16rtomb(s, u'\n', &state))
-  return 1;
 }
 
 // Convert between the two 16-bit representations.  Result will be
 // null-terminated.  Caller is responsible for freeing the returned string.
-static void *convert16 (void *text, Cardinal num_bytes) {
-  XChar2b *s = text, *t = malloc(num_bytes+2);
+static void *convert16 (const void *text, Cardinal num_bytes) {
+  assert(text);
+  assert(num_bytes % 2 == 0); // RULE 3
+  const uint16_t *s = text;
+  uint16_t *t = malloc(num_bytes+2);
   assert(t);
   const Cardinal num_chars = num_bytes/2;
   for (Cardinal i=0; i<num_chars; ++i) {
+    assert(s[i]); // RULE 2
     #if isBigEndian
       t[i] = s[i];
     #else
-      t[i] = (XChar2b){s[i].byte2, s[i].byte1};
+      t[i] = bswap_16(s[i]);
     #endif
-    if (t[i].byte1 == 0 && t[i].byte2 == 0)
-      break;
   }
-  t[num_chars] = (XChar2b){0,0};
+  t[num_chars] = 0;
   return t;
+}
+
+// Convert IN PLACE between the two 16-bit representations.
+static void inplacecvt16 (void *text, Cardinal num_bytes) {
+  assert(text);
+  assert(num_bytes % 2 == 0); // RULE 3
+#if !isBigEndian
+  uint16_t *s = text;
+  const Cardinal num_chars = num_bytes/2;
+  for (Cardinal i=0; i<num_chars; ++i) {
+    assert(s[i]); // RULE 2
+    s[i] = bswap_16(s[i]);
+  }
+#endif
 }
 
 // Reduce UTF-8 to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *UTF8toChar2b (char *text, Cardinal *num_bytes) {
+static XChar2b *UTF8toChar2b (const char *text, Cardinal *num_bytes) {
   assert(text);
   assert(num_bytes);
   const uint8_t *textp = (uint8_t *)text;
   const uint16_t bogusChar = '?';
   Cardinal nb = *num_bytes;
   size_t l = strlen(text);
-  if (nb < l) l = nb;
+  assert(nb <= l); // RULE 2
+  l = nb;
   uint16_t *new = calloc(l+1, sizeof(uint16_t));
   assert(new);
   uint8_t *oldp = (uint8_t *)text;
@@ -162,80 +180,70 @@ static XChar2b *UTF8toChar2b (char *text, Cardinal *num_bytes) {
   }
   *newp = 0;
   *num_bytes = (newp - new) * 2;
-  XChar2b *s = (XChar2b *)new;
-  #if !isBigEndian
-    const Cardinal num_chars = newp - new;
-    for (Cardinal i=0; i<num_chars; ++i)
-      s[i] = (XChar2b){s[i].byte2, s[i].byte1};
-  #endif
-  return s;
+  inplacecvt16(new, *num_bytes);
+  return (XChar2b *)new;
 }
 
 // Return number of bytes in any string, not counting null terminator
-Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, void *text) {
+Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text) {
   assert(text);
   switch (encoding) {
   case XawTextEncodingChar2b:
   case XawTextEncodingUCS2:
     {
-      uint16_t *s = text;
+      const uint16_t *s = text;
       while (*s) ++s;
       return (Cardinal)((uint8_t *)s - (uint8_t *)text);
     }
   case XawTextEncodingUTF32:
     {
-      uint32_t *s = text;
+      const uint32_t *s = text;
       while (*s) ++s;
       return (Cardinal)((uint8_t *)s - (uint8_t *)text);
     }
   case XawTextEncodingwc:
     {
-      wchar_t *s = text;
+      const wchar_t *s = text;
       while (*s) ++s;
       return (Cardinal)((uint8_t *)s - (uint8_t *)text);
     }
+  default: // 8bit, UTF8, mb
+    return strlen(text);
   }
-  // 8bit, UTF8, mb
-  return strlen(text);
 }
 
 // Reduce UTF-32 to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *UTF32toChar2b (void *text, Cardinal *num_bytes) {
-  assert(text);
-  assert(num_bytes);
-  assert(*num_bytes % 4 == 0);
+static XChar2b *UTF32toChar2b (const void *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
   const uint32_t *textp = (uint32_t *)text;
   const uint16_t bogusChar = '?';
-  const Cardinal num_chars = *num_bytes / 4;
-  Cardinal l = Xaw3dXftAnyStrlen(XawTextEncodingUTF32, text) / 4;
-  if (num_chars < l) l = num_chars;
+  const Cardinal bytelen = Xaw3dXftAnyStrlen(XawTextEncodingUTF32, text),
+                      nb = *num_bytes;
+  assert(nb <= bytelen); // RULE 2
+  assert(nb % 4 == 0);   // RULE 3
+  const Cardinal l = nb / 4;
   uint16_t *new = calloc(l+1, sizeof(uint16_t));
   assert(new);
   for (Cardinal i=0; i<l; ++i)
     new[i] = (textp[i] < 0x10000 ? textp[i] : bogusChar);
   new[l] = 0;
-  XChar2b *s = (XChar2b *)new;
-  #if !isBigEndian
-    for (Cardinal i=0; i<l; ++i)
-      s[i] = (XChar2b){s[i].byte2, s[i].byte1};
-  #endif
   *num_bytes = l*2;
-  return s;
+  inplacecvt16(new, *num_bytes);
+  return (XChar2b *)new;
 }
 
 // Convert mb to UTF32.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
 // Based on https://en.cppreference.com/c/string/multibyte/mbrtoc32
-static char32_t *mbtoUTF32 (void *text, Cardinal *num_bytes) {
-  assert(text);
-  assert(num_bytes);
+static char32_t *mbtoUTF32 (const void *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
   const char32_t bogusChar = '?';
   char32_t *new = calloc(*num_bytes + 1, sizeof(char32_t));
   assert(new);
   char32_t *p_out = new;
-  char *p_in = text;
-  char *end = text + *num_bytes;
+  const char *p_in = text,
+              *end = text + *num_bytes;
   mbstate_t state = {0};
   Boolean done = False;
   while (!done && p_in < end) {
@@ -255,7 +263,7 @@ static char32_t *mbtoUTF32 (void *text, Cardinal *num_bytes) {
     case -2:
       // The next n bytes constitute an incomplete, but so far valid,
       // multibyte character.  Nothing written to p_out.  This means that we
-      // have one broken character but we are done.
+      // have one broken character but we are done.  Rule 3 not enforced.
       *p_out++ = bogusChar;
       done = True;
       break;
@@ -278,37 +286,6 @@ static char32_t *mbtoUTF32 (void *text, Cardinal *num_bytes) {
   return new;
 }
 
-#if 0
-// Convert wc to mb.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-// Cf. _XawTextWCToMB in TextSrc.c.
-// The name wctomb is already taken by libc.
-static char *Xaw3dXft_wctomb (void *text, Cardinal *num_bytes) {
-  assert(text);
-  assert(num_bytes);
-  Cardinal num_wc = *num_bytes / sizeof(wchar_t);
-  assert(num_wc);
-  // wcsnrtombs does the whole string at once but makes it difficult to
-  // work around invalid characters.
-  // size_t l = wcsnrtombs(NULL, &src, num_wc, 0, &state);
-  char *new = malloc((num_wc + 1) * MB_CUR_MAX);
-  assert(new);
-  const wchar_t *src = text;
-  char *s = new;
-  mbstate_t state = {0};
-  for (Cardinal i=0; i<num_wc; ++i) {
-    size_t ret = wcrtomb(s, src[i], &state);
-    if (ret == -1)
-      *s++ = '?';
-    else
-      s += ret;
-  }
-  *s = 0;
-  *num_bytes = s - new;
-  return new;
-}
-#endif
-
 // ----- Begin unsafe conversions -----
 
 // The following conversions are relying on the unsafe assumption that the
@@ -318,37 +295,32 @@ static_assert(sizeof(wchar_t) == sizeof(char32_t));
 
 // Convert wc to UTF32.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char32_t *wctoUTF32 (void *text, Cardinal *num_bytes) {
+static char32_t *wctoUTF32 (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  #if 0
-  // Under default conditions, this discards all characters except ASCII.
-  // Unacceptable.
-  char *mb = Xaw3dXft_wctomb(text, num_bytes);
-  char32_t *utf32 = mbtoUTF32(mb, num_bytes);
-  free(mb);
-  #endif
-  // Ignoring num_bytes
+  // Ignoring num_bytes, Rule 2 not enforced
   return (char32_t *)Xaw3dXftAnyStrdup(XawTextEncodingwc, text);
 }
 
 // Convert UTF32 to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *UTF32towc (void *text, Cardinal *num_bytes) {
+static wchar_t *UTF32towc (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  // Ignoring num_bytes
+  // Ignoring num_bytes, Rule 2 not enforced
   return (wchar_t *)Xaw3dXftAnyStrdup(XawTextEncodingUTF32, text);
 }
 
 // Convert 8bit to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *_8bittowc (void *text, Cardinal *num_bytes) {
+static wchar_t *_8bittowc (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const Cardinal l = *num_bytes;
   wchar_t *new = calloc(l+1, sizeof(wchar_t));
   assert(new);
   uint8_t *src = (uint8_t *)text;
-  for (Cardinal i=0; i<l; ++i)
-    if (!(new[i] = src[i])) break;
+  for (Cardinal i=0; i<l; ++i) {
+    assert(src[i]); // RULE 2
+    new[i] = src[i];
+  }
   new[l] = 0;
   *num_bytes = l * sizeof(wchar_t);
   return new;
@@ -356,14 +328,17 @@ static wchar_t *_8bittowc (void *text, Cardinal *num_bytes) {
 
 // Convert UCS2 to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *UCS2towc (void *text, Cardinal *num_bytes) {
+static wchar_t *UCS2towc (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
+  assert(*num_bytes % 2 == 0); // RULE 3
   const Cardinal l = *num_bytes / 2;
   wchar_t *new = calloc(l+1, sizeof(wchar_t));
   assert(new);
   uint16_t *src = (uint16_t *)text;
-  for (Cardinal i=0; i<l; ++i)
-    if (!(new[i] = src[i])) break;
+  for (Cardinal i=0; i<l; ++i) {
+    assert(src[i]); // RULE 2
+    new[i] = src[i];
+  }
   new[l] = 0;
   *num_bytes = l * sizeof(wchar_t);
   return new;
@@ -373,7 +348,7 @@ static wchar_t *UCS2towc (void *text, Cardinal *num_bytes) {
 
 // Convert Char2b to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *Char2btowc (void *text, Cardinal *num_bytes) {
+static wchar_t *Char2btowc (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   void *ucs2 = convert16(text, *num_bytes);
   wchar_t *ret = UCS2towc(ucs2, num_bytes);
@@ -385,7 +360,7 @@ static wchar_t *Char2btowc (void *text, Cardinal *num_bytes) {
 // responsible for freeing the returned string.
 // Note:  mbrtoc16 implements UTF-16 with surrogate pairs, which we don't
 // want.  UTF32toChar2b will instead put '?' for characters that don't fit.
-static XChar2b *mbtoChar2b (char *text, Cardinal *num_bytes) {
+static XChar2b *mbtoChar2b (const char *text, Cardinal *num_bytes) {
   char32_t *utf32 = mbtoUTF32(text, num_bytes);
   XChar2b *c2b = UTF32toChar2b(utf32, num_bytes);
   free(utf32);
@@ -394,14 +369,14 @@ static XChar2b *mbtoChar2b (char *text, Cardinal *num_bytes) {
 
 // Convert wc to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *wctoChar2b (char *text, Cardinal *num_bytes) {
+static XChar2b *wctoChar2b (const char *text, Cardinal *num_bytes) {
   char32_t *utf32 = wctoUTF32(text, num_bytes);
   XChar2b *c2b = UTF32toChar2b(utf32, num_bytes);
   free(utf32);
   return c2b;
 }
 
-void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
+void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text) {
   assert(text);
   const Cardinal nbytes = Xaw3dXftAnyStrlen(encoding, text) + nlsize(encoding);
   void *s = malloc(nbytes);
@@ -411,7 +386,7 @@ void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, void *text) {
 
 // Generalized strchr(s, '\n')
 // The returned pointer points to the first or only byte of the newline.
-static void *nextnl (XawTextEncoding encoding, void *text) {
+static const void *nextnl (XawTextEncoding encoding, const void *text) {
   assert(text);
   switch (encoding) {
   case XawTextEncoding8bit:
@@ -422,7 +397,7 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
     return wcschr(text, L'\n');
   case XawTextEncodingChar2b:
     {
-      XChar2b *s = text;
+      const XChar2b *s = text;
       while (s->byte1 != 0 || s->byte2 != 0) {
 	if (s->byte1 == 0 && s->byte2 == '\n')
 	  return s;
@@ -432,7 +407,7 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
     break;
   case XawTextEncodingUCS2:
     {
-      uint16_t *s = text;
+      const uint16_t *s = text;
       while (*s) {
 	if (*s == '\n')
 	  return s;
@@ -442,7 +417,7 @@ static void *nextnl (XawTextEncoding encoding, void *text) {
     break;
   case XawTextEncodingUTF32:
     {
-      uint32_t *s = text;
+      const uint32_t *s = text;
       while (*s) {
 	if (*s == '\n')
 	  return s;
@@ -459,7 +434,7 @@ static void drawOneXftLine (
   XftColor *fg,
   Position x, Position y,
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
   Cardinal num_bytes,
   XftDraw *xftDraw
 ) {
@@ -509,7 +484,7 @@ static void drawOneXmbLine (
   GC gc,
   Position x, Position y,
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
   Cardinal num_bytes,
   XFontSetExtents *extents
 ) {
@@ -559,7 +534,7 @@ static void drawOneLine (
   GC gc,
   Position x, Position y,
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
   Cardinal num_bytes
 ) {
   // XDrawImageString[16] will fill the background but won't apply a stipple.
@@ -602,7 +577,7 @@ void Xaw3dXftDrawAnyStringLen (
   Position x, Position y,
   XRectangle *clip,
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
   Cardinal num_bytes
 ) {
   if (num_bytes == 0) return;
@@ -633,7 +608,7 @@ void Xaw3dXftDrawAnyStringLen (
     XtWarning("libXaw3dXft:  XSetClipRectangles failed");
 
   // Begin line-breaking loop
-  void *nl = nextnl(encoding, text);
+  const void *nl = nextnl(encoding, text);
   while (nl != NULL && num_bytes > 0) {
     Cardinal line_bytes = nl - text;
     if (line_bytes > num_bytes)
@@ -680,7 +655,7 @@ void Xaw3dXftDrawAnyStringLen (
 void Xaw3dXftDrawAnyString (Display *display, Visual *visual, Colormap cmap,
 Window window, XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
 Boolean international, GC text_gc, XftColor *fg, Position x, Position y,
-XRectangle *clip, XawTextEncoding encoding, void *text) {
+XRectangle *clip, XawTextEncoding encoding, const void *text) {
   Xaw3dXftDrawAnyStringLen(display, visual, cmap, window, font, fontSet,
     xftFont, international, text_gc, fg, x, y, clip, encoding, text,
     Xaw3dXftAnyStrlen(encoding, text));
@@ -688,7 +663,7 @@ XRectangle *clip, XawTextEncoding encoding, void *text) {
 
 // Xaw3dXftSizeAnyString component for a single line with Xft font
 static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
-  XawTextEncoding encoding, void *text, Cardinal num_bytes) {
+  XawTextEncoding encoding, const void *text, Cardinal num_bytes) {
   if (num_bytes == 0) return 0;
   XGlyphInfo extents;
   switch (encoding) {
@@ -730,7 +705,7 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
 
 // Xaw3dXftSizeAnyString component for a single line with an XFontSet
 static Dimension sizeOneXmbLine (XFontSet fontSet, XawTextEncoding encoding,
-void *text, Cardinal num_bytes) {
+const void *text, Cardinal num_bytes) {
   if (num_bytes == 0) return 0;
   wchar_t *cvtwc = NULL;
   switch (encoding) {
@@ -760,7 +735,7 @@ void *text, Cardinal num_bytes) {
 
 // Xaw3dXftSizeAnyString component for a single line with plain old X font
 static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
-  void *text, Cardinal num_bytes) {
+const void *text, Cardinal num_bytes) {
   if (num_bytes == 0) return 0;
   XChar2b *cvt16 = NULL;
   switch (encoding) {
@@ -790,9 +765,9 @@ static Dimension sizeOneLine (XFontStruct *font, XawTextEncoding encoding,
 
 // Genericized TextWidth/TextHeight
 void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
-  XFontSet fontSet, XftFont *xftFont, Boolean international,
-  XawTextEncoding encoding, void *text, Cardinal num_bytes, Dimension *width,
-  Dimension *height) {
+XFontSet fontSet, XftFont *xftFont, Boolean international,
+XawTextEncoding encoding, const void *text, Cardinal num_bytes,
+Dimension *width, Dimension *height) {
   if (width == NULL && height == NULL) return;
   if (num_bytes == 0) {
     if (width) *width = 0;
@@ -814,7 +789,7 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
     assert(font);
 
   // Begin line-breaking loop
-  void *nl = nextnl(encoding, text);
+  const void *nl = nextnl(encoding, text);
   while (nl != NULL && num_bytes > 0) {
     Cardinal line_bytes = nl - text;
     if (line_bytes > num_bytes)
@@ -865,7 +840,8 @@ void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
 // Ibid. but using the null teminator to determine num_bytes
 void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
 XFontSet fontSet, XftFont *xftFont, Boolean international,
-XawTextEncoding encoding, void *text, Dimension *width, Dimension *height) {
+XawTextEncoding encoding, const void *text, Dimension *width,
+Dimension *height) {
   Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
     encoding, text, Xaw3dXftAnyStrlen(encoding, text), width, height);
 }
@@ -873,7 +849,7 @@ XawTextEncoding encoding, void *text, Dimension *width, Dimension *height) {
 // Find the bytes corresponding to the start of a character and the start of
 // the next character.  Returns True if results are valid, False if cannot
 // comply.
-static Boolean locateChar (XawTextEncoding encoding, void *text,
+static Boolean locateChar (XawTextEncoding encoding, const void *text,
 			   int character_index,
 			   Cardinal *b1, Cardinal *b2) {
   if (character_index < 0) return False;
@@ -922,7 +898,7 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
   case XawTextEncodingUTF8:
     {
       Cardinal charsFound = 0, i = 0;
-      uint8_t *c = text;
+      const uint8_t *c = text;
       while (i < l) {
 	if ((c[i] & 0xc0) != 0x80 && charsFound++ == character_index) break;
 	++i;
@@ -938,7 +914,7 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
   case XawTextEncodingmb:
     {
       Cardinal charsFound = 0, i = 0;
-      char *c = text;
+      const char *c = text;
       mbstate_t mb = {0};
       size_t ret = 0;
       while (i < l) {
@@ -962,34 +938,18 @@ static Boolean locateChar (XawTextEncoding encoding, void *text,
   return False;
 }
 
+// Font sets offer X(mb,wc,utf8)TextPerCharExtents.  Nice as that is, it
+// doesn't handle line breaks, and the metrics are even more inconsistent.
 Boolean Xaw3dXftLocateUnderline (
   Display *display,
   XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
   XawTextEncoding encoding,
-  void *text,
+  const void *text,
   int character_index, // characters, not bytes
   Position *x1, Position *x2, Position *y) {
   if (character_index < 0) return False;
   assert(x1 && x2 && y);
-
-#if 0
-  if (international) {
-    Cardinal l = Xaw3dXftAnyStrlen(encoding, text);
-    XRectangle ink[l], logical[l];
-    int nchars;
-    // Behavior is undefined for a multiline string.
-    if (XmbTextPerCharExtents(fontSet, text, l, ink, logical, l, &nchars,
-                              NULL, NULL) && character_index < nchars) {
-      const XRectangle ti=ink[character_index], tl=logical[character_index];
-      *x1 = ti.x;
-      *x2 = ti.x + ti.width - 1;
-      *y  = tl.height + 2; // +1 or +2?  Results are inconsistent.
-      return True;
-    }
-    return False;
-  }
-#endif
 
   Cardinal b1, b2;
   if (locateChar(encoding, text, character_index, &b1, &b2)) {
@@ -1013,7 +973,7 @@ Boolean Xaw3dXftLocateUnderline (
 
     // Get down to the right line
     Cardinal linesSkipped = 0;
-    void *line = text, *nl = nextnl(encoding, line);
+    const void *line = text, *nl = nextnl(encoding, line);
     while (nl && text + b2 > nl) {
       if (text + b1 <= nl) return False;
       ++linesSkipped;
