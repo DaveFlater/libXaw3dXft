@@ -345,6 +345,7 @@ static wchar_t *_8bittowc (void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const Cardinal l = *num_bytes;
   wchar_t *new = calloc(l+1, sizeof(wchar_t));
+  assert(new);
   uint8_t *src = (uint8_t *)text;
   for (Cardinal i=0; i<l; ++i)
     if (!(new[i] = src[i])) break;
@@ -359,6 +360,7 @@ static wchar_t *UCS2towc (void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const Cardinal l = *num_bytes / 2;
   wchar_t *new = calloc(l+1, sizeof(wchar_t));
+  assert(new);
   uint16_t *src = (uint16_t *)text;
   for (Cardinal i=0; i<l; ++i)
     if (!(new[i] = src[i])) break;
