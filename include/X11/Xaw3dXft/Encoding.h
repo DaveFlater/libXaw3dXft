@@ -37,30 +37,45 @@ X11 license (as per the historical licenses that the package inherits)
   Conclusion:  The Char2b encoding *never worked* in Xaw.
 */
 
-/*
-  "UCS-2 (not UTF-16):"
-  UCS-2 is the Basic Multilingual Plane as 16-bit values.  UTF-16 extends the
-  character repertoire beyond the Basic Multilingual Plane using pairs of
-  "high surrogates" and "low surrogates" which are disallowed by UCS-2.
-  libXft doesn't bother to decode those surrogate pairs and neither does
-  libXaw3dXft, so the encoding is just UCS-2.
-
-  "Locale's codeset:"
-  The codeset from the currently active C locale; e.g., UTF-8 from
-  en_US.UTF-8, ISO 8859-7 from el_GR.ISO8859-7, or ASCII from the default "C"
-  locale.  See https://github.com/DaveFlater/libXaw3dXft#locales for more
-  information.
-*/
-
 typedef enum {
   XawTextEncoding8bit   = 0, // char, ISO-8859-1, Xlib STRING
-  XawTextEncodingChar2b = 1, // XChar2b, UCS-2BE (UCS-2 big-endian)
+  XawTextEncodingChar2b = 1, // XChar2b, UCS-2 big-endian [αβ]
   XawTextEncodingUTF8   = 2, // char, char8_t, FcChar8, UTF-8
-  XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 (not UTF-16)
+  XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [α]
   XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
-  XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset
-  XawTextEncodingwc     = 6  // wchar_t, wide string, implementation-defined
+  XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset [γ]
+  XawTextEncodingwc     = 6  // wchar_t, wide string [δ]
 } XawTextEncoding;
+
+/*
+
+Notes:
+
+[α] UCS-2 is the Unicode Basic Multilingual Plane as 16-bit values.
+Microsoft encodes higher Unicode code points using surrogate pairs, which are
+defined in UTF-16 but not in UCS-2.  Surrogate pairs are not supported by
+Xaw3dXft.
+
+[β] In the core X11 fonts system, the code points for XChar2b are determined
+by the encoding of the *font* and the corresponding .enc file.  The
+assumption that XChar2b values are UCS-2 fails in a few cases; e.g.,
+-*-*-*-*-*-*-*-*-*-*-*-*-jisx0208.1990-0.  If such a font is used, Xaw3dXft
+may translate strings incorrectly.
+https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer
+
+[γ] The interpretation of narrow multibyte strings is determined by the
+codeset from the currently active C locale; e.g., UTF-8 from en_US.UTF-8, ISO
+8859-7 from el_GR.ISO8859-7, or ASCII from the default "C" locale.
+https://github.com/DaveFlater/libXaw3dXft#locales
+
+[δ] As of C23, everything about wide strings remains implementation-defined,
+and there is no reliable translation between wchar_t and UTF-anything.  A
+remedy is on track for C29 but is not yet implemented.  As a stopgap,
+Xaw3dXft relies on the Unix-centric assumption that wchar_t is UTF-32.
+https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm
+https://en.cppreference.com/c/header/stdmchar
+
+*/
 
 #define XtNencoding "encoding"
 #define XtCEncoding "Encoding"
