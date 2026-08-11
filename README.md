@@ -204,8 +204,8 @@ Xaw3dXft.
 determined by the [encoding of the *font* and the corresponding .enc
 file](https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer).
 The assumption that XChar2b values are UCS-2 fails in a few cases; e.g.,
--\*-\*-\*-\*-\*-\*-\*-\*-\*-\*-\*-\*-jisx0208.1990-0.  If such a font is
-used, Xaw3dXft may translate strings incorrectly.
+-\*-…-jisx0208.1983-0.  If such a font is used, Xaw3dXft may translate
+strings incorrectly.
 
 \[γ\] The interpretation of narrow multibyte strings is determined by the
 codeset from the [currently active C locale](#locales); e.g., UTF-8 from

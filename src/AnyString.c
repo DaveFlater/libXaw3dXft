@@ -98,6 +98,11 @@ static Cardinal nlsize (XawTextEncoding encoding) {
   }
 }
 
+// The following conversions are relying on the unsafe assumption that the
+// font-specific character mapping that applies to the Char2b string is
+// Unicode.  This assumption fails in a few cases; e.g.,
+// -*-…-jisx0208.1983-0.
+
 // Convert between the two 16-bit representations.  Result will be
 // null-terminated.  Caller is responsible for freeing the returned string.
 static void *convert16 (const void *text, Cardinal num_bytes) {
@@ -286,11 +291,9 @@ static char32_t *mbtoUTF32 (const void *text, Cardinal *num_bytes) {
   return new;
 }
 
-// ----- Begin unsafe conversions -----
-
 // The following conversions are relying on the unsafe assumption that the
-// implementation-defined wide character encoding is UTF-32.  This assertion
-// fails on Windows.  FIXME when stdmchar gets implemented.
+// implementation-defined wide character encoding is UTF-32.
+// FIXME when stdmchar gets implemented.
 static_assert(sizeof(wchar_t) == sizeof(char32_t));
 
 // Convert wc to UTF32.  num_bytes is updated as applicable.  Caller is
@@ -343,8 +346,6 @@ static wchar_t *UCS2towc (const void *text, Cardinal *num_bytes) {
   *num_bytes = l * sizeof(wchar_t);
   return new;
 }
-
-// ----- End unsafe conversions -----
 
 // Convert Char2b to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.

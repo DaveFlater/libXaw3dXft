@@ -59,8 +59,8 @@ Xaw3dXft.
 [β] In the core X11 fonts system, the code points for XChar2b are determined
 by the encoding of the *font* and the corresponding .enc file.  The
 assumption that XChar2b values are UCS-2 fails in a few cases; e.g.,
--*-*-*-*-*-*-*-*-*-*-*-*-jisx0208.1990-0.  If such a font is used, Xaw3dXft
-may translate strings incorrectly.
+-*-…-jisx0208.1983-0.  If such a font is used, Xaw3dXft may translate strings
+incorrectly.
 https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer
 
 [γ] The interpretation of narrow multibyte strings is determined by the
