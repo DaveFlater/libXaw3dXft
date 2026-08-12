@@ -153,7 +153,7 @@ xaw3dxft.pc.
 The following old documentation is provided under the [Docs_old
 subdirectory](Docs_old) to fill in the gaps left by this README:
 
-- [Athena Widget Set—C Language Inteface](Docs_old/Xaw_R6.3), X Version 11,
+- [Athena Widget Set—C Language Interface](Docs_old/Xaw_R6.3), X Version 11,
   Release 6.3.  This is the full documentation for the version of Xaw from
   which Xaw3d and Xaw3dXft were mostly forked.
 - [READMEs](Docs_old/READMEs) from relevant old versions of Xaw3d and
@@ -262,13 +262,10 @@ are replaced with ?.
 
 #### <a name="fontset"> X font sets
 
-An X font set is basically an ordered list of plain old X fonts such that,
-when a character is missing from the first font on the list, the server goes
-down the list until a font containing the needed character is found.  In this
-way, a wide character repertoire can be cobbled together from several fonts
-that support different pieces of it.  However, the rendering is done by the
-same core X11 fonts system, and the results of merging fonts with different
-characteristics can be ugly.
+An X font set is basically an ordered list of plain old X fonts that allows a
+wide character repertoire to be cobbled together from several fonts that
+support different pieces of it.  The rendering is done by the same core X11
+fonts system.
 
 When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString,
 XwcDrawString, or Xutf8DrawString to render text.  The latter two functions,
@@ -277,11 +274,15 @@ is limited to the character repertoire of the locale*.  Characters that do
 not exist in the locale's codeset are silently dropped.  For best results,
 [set a UTF-8 locale](#locales).
 
-Having done that, these functions still mangle some characters that are
-rendered correctly by XDrawString16.
-
 If 8bit, Char2b, UCS2, or UTF32 is provided, Xaw3dXft translates it to wc,
 which is then reduced to mb by Xlib.
+
+While attractive in principle, the implementation of font sets left much to
+be desired.  The process of choosing a font for a particular character goes
+through an arbitrary encoding assignment that results in a lot of characters
+being mistranslated or dropped unnecessarily (see [oddities](#fontsetfail)).
+In the best case, it is difficult to assemble a set of fonts that do not
+clash with one another's style or metrics.
 
 #### FreeType
 
@@ -1102,6 +1103,17 @@ Xaw oddities:
   (see libx11/modules/om/generic/omDefault.c).  They fail if the locale's
   codeset doesn't support the Unicode character repertoire and are useless
   for circumventing the locale dependency.
+- <a name="fontsetfail"> The font set functions don't just use the first
+  font that contains the needed character.  Instead, they first assign a font
+  encoding by going down the list in /usr/share/X11/locale/\*/XLC_LOCALE.
+  They choose the first encoding on the list that contains the needed
+  character without regard to which encodings are covered by the font set.
+  Then, they won't use any font unless it has *that* encoding.  For example,
+  if the font set contains one big ISO10646-1 Unicode font, they'll fail on
+  *plain ASCII* because they decided that ISO8859-1 is the one true encoding
+  for those characters.  The issue and a PoC patch to fix it were [posted in
+  2016](https://gitlab.freedesktop.org/xorg/lib/libx11/-/work_items/51) but
+  there has been no response.
 
 Xlib and libXt have global disagreements about the plain old data types of
 common parameters (like positions and dimensions) and about Bool/Boolean
