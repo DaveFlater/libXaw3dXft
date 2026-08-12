@@ -1093,7 +1093,7 @@ Xaw oddities:
   XwcTextPropertyToTextList.  These conversions can be done more obviously
   using C library functions.
 
-"Internationalized" text support in Xlib:
+<a name="fontsetfail"> "Internationalized" text support in Xlib:
 
 - XCreateFontSet is frustratingly choosy about which fonts it will work with
   and frequently fails for no apparent reason, even in cases where the plain
@@ -1103,15 +1103,15 @@ Xaw oddities:
   (see libx11/modules/om/generic/omDefault.c).  They fail if the locale's
   codeset doesn't support the Unicode character repertoire and are useless
   for circumventing the locale dependency.
-- <a name="fontsetfail"> The font set functions don't just use the first
-  font that contains the needed character.  Instead, they first assign a font
-  encoding by going down the list in /usr/share/X11/locale/\*/XLC_LOCALE.
-  They choose the first encoding on the list that contains the needed
-  character without regard to which encodings are covered by the font set.
-  Then, they won't use any font unless it has *that* encoding.  For example,
-  if the font set contains one big ISO10646-1 Unicode font, they'll fail on
-  *plain ASCII* because they decided that ISO8859-1 is the one true encoding
-  for those characters.  The issue and a PoC patch to fix it were [posted in
+- The font set functions don't just use the first font that contains the
+  needed character.  Instead, they first assign a font encoding by going down
+  the list in /usr/share/X11/locale/\*/XLC_LOCALE.  They choose the first
+  encoding on the list that contains the needed character without regard to
+  which encodings are covered by the font set.  Then, they won't use any font
+  unless it has *that* encoding.  For example, if the font set contains one
+  big ISO10646-1 Unicode font, they'll fail on *plain ASCII* because they
+  decided that ISO8859-1 is the one true encoding for those characters.  The
+  issue and a PoC patch to fix it were [posted in
   2016](https://gitlab.freedesktop.org/xorg/lib/libx11/-/work_items/51) but
   there has been no response.
 
