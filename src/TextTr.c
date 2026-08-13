@@ -41,7 +41,7 @@ The Japanese user typically hits their Kanji key when they want to do
 input.  This merely makes sure the input is connected.
 */
 
-char *_XawDefaultTextTranslations1 =
+char *_XawDefaultTextTranslations =
 "\
 Ctrl<Key>A:	beginning-of-line() \n\
 Ctrl<Key>B:	backward-character() \n\
@@ -66,7 +66,6 @@ Ctrl<Key>V:	next-page() \n\
 Ctrl<Key>W:	kill-selection() \n\
 Ctrl<Key>Y:	insert-selection(SECONDARY) \n\
 Ctrl<Key>Z:	scroll-one-line-up() \n\
-", *_XawDefaultTextTranslations2 = "\
 Meta<Key>B:	backward-word() \n\
 Meta<Key>F:	forward-word() \n\
 Meta<Key>I:	insert-file() \n\
@@ -87,9 +86,6 @@ Meta<Key>Z:	scroll-one-line-down() \n\
  Shift Meta<Key>Delete:		backward-kill-word() \n\
 ~Shift Meta<Key>BackSpace:	delete-previous-word() \n\
  Shift Meta<Key>BackSpace:	backward-kill-word() \n\
-",
-#if XtVersion >= 11006
-*_XawDefaultTextTranslations3 = "\
 <Key>Home:	beginning-of-file() \n\
 :<Key>KP_Home:	beginning-of-file() \n\
 <Key>End:	end-of-file() \n\
@@ -115,22 +111,6 @@ Meta<Key>Z:	scroll-one-line-down() \n\
 Ctrl<Key>backslash:	reconnect-im() \n\
 <Key>Kanji:	reconnect-im()\n\
 <Key>:		insert-char() \n\
-",
-#else
-*_XawDefaultTextTranslations3 = "\
-<Key>Right:	forward-character() \n\
-<Key>Left:	backward-character() \n\
-<Key>Down:	next-line() \n\
-<Key>Up:	previous-line() \n\
-<Key>Delete:	delete-previous-character() \n\
-<Key>BackSpace:	delete-previous-character() \n\
-<Key>Linefeed:	newline-and-indent() \n\
-<Key>Return:	newline() \n\
-<Key>KP_Enter:	newline() \n\
-<Key>:		insert-char() \n\
-",
-#endif
-*_XawDefaultTextTranslations4 = "\
 <EnterWindow>:	enter-window() \n\
 <LeaveWindow>:	leave-window() \n\
 <FocusIn>:	focus-in() \n\

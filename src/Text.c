@@ -165,8 +165,7 @@ static XawTextSelectType defaultSelectTypes[] = {
 };
 
 static XPointer defaultSelectTypesPtr = (XPointer)defaultSelectTypes;
-extern char *_XawDefaultTextTranslations1, *_XawDefaultTextTranslations2,
-  *_XawDefaultTextTranslations3, *_XawDefaultTextTranslations4;
+extern char *_XawDefaultTextTranslations;
 static Dimension defWidth = 100;
 static Dimension defHeight = DEFAULT_TEXT_HEIGHT;
 
@@ -330,31 +329,14 @@ CvtStringToResizeMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
 static void
 ClassInitialize(void)
 {
-  int len1 = strlen (_XawDefaultTextTranslations1);
-  int len2 = strlen (_XawDefaultTextTranslations2);
-  int len3 = strlen (_XawDefaultTextTranslations3);
-  int len4 = strlen (_XawDefaultTextTranslations4);
-  char *buf = XtMalloc ((unsigned)(len1 + len2 + len3 + len4 + 1));
-  char *cp = buf;
-
   if (!XawFmt8Bit)
     FMT8BIT = XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
   if (!XawFmtWide)
     XawFmtWide = XrmPermStringToQuark("FMTWIDE");
 
   XawInitializeWidgetSet();
-
-/*
- * Set the number of actions.
- */
-
   textClassRec.core_class.num_actions = _XawTextActionsTableCount;
-
-  (void) strcpy( cp, _XawDefaultTextTranslations1); cp += len1;
-  (void) strcpy( cp, _XawDefaultTextTranslations2); cp += len2;
-  (void) strcpy( cp, _XawDefaultTextTranslations3); cp += len3;
-  (void) strcpy( cp, _XawDefaultTextTranslations4);
-  textWidgetClass->core_class.tm_table = buf;
+  textWidgetClass->core_class.tm_table = _XawDefaultTextTranslations;
 
   XtAddConverter(XtRString, XtRScrollMode, CvtStringToScrollMode,
 			(XtConvertArgList)NULL, (Cardinal)0 );
