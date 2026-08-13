@@ -80,7 +80,9 @@ static_assert(sizeof(FcChar16) == 2);
   Xaw implemented _XawTextWCToMB and _XawTextMBToWC using the esoteric Xlib
   functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
   XwcTextPropertyToTextList.  These conversions can be done more obviously
-  using C library functions.
+  using C library functions.  See also the utility functions in Xlib i18n
+  https://xorg.freedesktop.org/archive/X11R7.7/doc/libX11/i18n/framework/framework.html#Utility_Functions
+  libx11/src/xlibi18n has _Xmbstoutf8 though it is not documented.
 */
 
 // Newline (LF) or NUL size
