@@ -78,10 +78,6 @@ SOFTWARE.
 #include <X11/Xfuncs.h>
 #include <ctype.h>		/* for isprint() */
 
-#ifndef MAX_LEN_CT
-#define MAX_LEN_CT 6		/* for sequence: ESC $ ( A \xx \xx */
-#endif
-
 unsigned long FMT8BIT = 0L;
 unsigned long XawFmt8Bit = 0L;
 unsigned long XawFmtWide = 0L;
