@@ -484,7 +484,7 @@ XawTextSourceSetSelection(Widget w, XawTextPosition left,
 
 /*
  * TextFormat():
- *   returns the format of text: FMT8BIT or FMTWIDE.
+ *   returns the format of text: XawFmt8Bit or XawFmtWide.
  *
  */
 XrmQuark

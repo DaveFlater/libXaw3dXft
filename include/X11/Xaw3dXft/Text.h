@@ -154,7 +154,6 @@ typedef struct {
 #define XawEditError		1
 #define XawPositionError	2
 
-extern unsigned long FMT8BIT;
 extern unsigned long XawFmt8Bit;
 extern unsigned long XawFmtWide;
 

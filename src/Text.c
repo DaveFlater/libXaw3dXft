@@ -78,7 +78,6 @@ SOFTWARE.
 #include <X11/Xfuncs.h>
 #include <ctype.h>		/* for isprint() */
 
-unsigned long FMT8BIT = 0L;
 unsigned long XawFmt8Bit = 0L;
 unsigned long XawFmtWide = 0L;
 
@@ -326,7 +325,7 @@ static void
 ClassInitialize(void)
 {
   if (!XawFmt8Bit)
-    FMT8BIT = XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
+    XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
   if (!XawFmtWide)
     XawFmtWide = XrmPermStringToQuark("FMTWIDE");
 

@@ -119,8 +119,8 @@ extern TextSrcClassRec textSrcClassRec;
 typedef struct {
     /* resources */
   XawTextEditType	edit_mode;
-  XrmQuark		text_format;	/* 2 formats: FMT8BIT for Ascii */
-					/*            FMTWIDE for ISO 10646 */
+  XrmQuark		text_format; /* 2 formats: XawFmt8Bit for Ascii */
+				     /*            XawFmtWide for ISO 10646 */
 } TextSrcPart;
 
 /****************************************************************

@@ -292,9 +292,9 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
   XawTextBlock text;
 
   /* STEP 1: The user handed me a text block called `u_text' that may be
-   * in either FMTWIDE or FMT8BIT (ie MB.)  Later code needs the block
-   * `text' to hold FMTWIDE.  So, this copies `u_text' to `text', and if
-   * `u_text' was MB, I knock it up to WIDE. */
+   * in either XawFmtWide or XawFmt8Bit (ie MB.)  Later code needs the block
+   * `text' to hold XawFmtWide.  So, this copies `u_text' to `text', and if
+   * `u_text' was MB, I knock it up to wide. */
 
   if ( u_text_p->length == 0 )	/* if so, the block contents never ref'd. */
       text.length = 0;
@@ -617,7 +617,8 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
   I'm being passed a string claiming to be 8bit chars (ie, MB text.)
   If that is the case, naturally I convert to 32bit format. */
 
-  /*if the block was FMT8BIT, length will convert to REAL wchar count below */
+  /*if the block was XawFmt8Bit, length will convert to REAL wchar count
+    below */
   wtarget_len = text->length;
 
   if ( text->format == XawFmtWide )
