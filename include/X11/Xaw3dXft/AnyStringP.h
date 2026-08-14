@@ -63,7 +63,7 @@ X11 license (as per the historical licenses that the package inherits)
 */
 
 // Genericized DrawString with specified length (num_bytes)
-extern void Xaw3dXftDrawAnyStringLen (
+extern void Xaw3dXftDrawAnyStringN (
   Display *display, Visual *visual, Colormap cmap, Window window,
 
   // One of the following will apply.
@@ -113,7 +113,7 @@ extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
 
 
 // Genericized TextWidth/TextHeight with specified length (num_bytes)
-extern void Xaw3dXftSizeAnyStringLen (
+extern void Xaw3dXftSizeAnyStringN (
   Display *display,
 
   // One of the following will apply.

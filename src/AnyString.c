@@ -572,7 +572,7 @@ static void drawOneLine (
   }
 }
 
-void Xaw3dXftDrawAnyStringLen (
+void Xaw3dXftDrawAnyStringN (
   Display *display, Visual *visual, Colormap cmap, Window window,
   XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
@@ -591,7 +591,7 @@ void Xaw3dXftDrawAnyStringLen (
 
   // The line-breaking logic is hairy, so do that just once and switch the
   // font systems three times (pre-loop, in-loop, post-loop).  The logic is
-  // still duplicated in Xaw3dXftSizeAnyStringLen.
+  // still duplicated in Xaw3dXftSizeAnyStringN.
   XftDraw *xftDraw = NULL;
   XFontSetExtents *extents = NULL;
 
@@ -659,7 +659,7 @@ void Xaw3dXftDrawAnyString (Display *display, Visual *visual, Colormap cmap,
 Window window, XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
 Boolean international, GC text_gc, XftColor *fg, Position x, Position y,
 XRectangle *clip, XawTextEncoding encoding, const void *text) {
-  Xaw3dXftDrawAnyStringLen(display, visual, cmap, window, font, fontSet,
+  Xaw3dXftDrawAnyStringN(display, visual, cmap, window, font, fontSet,
     xftFont, international, text_gc, fg, x, y, clip, encoding, text,
     Xaw3dXftAnyStrlen(encoding, text));
 }
@@ -767,7 +767,7 @@ const void *text, Cardinal num_bytes) {
 }
 
 // Genericized TextWidth/TextHeight
-void Xaw3dXftSizeAnyStringLen (Display *display, XFontStruct *font,
+void Xaw3dXftSizeAnyStringN (Display *display, XFontStruct *font,
 XFontSet fontSet, XftFont *xftFont, Boolean international,
 XawTextEncoding encoding, const void *text, Cardinal num_bytes,
 Dimension *width, Dimension *height) {
@@ -778,7 +778,7 @@ Dimension *width, Dimension *height) {
     return;
   }
 
-  // Line-breaking duplicated from Xaw3dXftDrawAnyStringLen
+  // Line-breaking duplicated from Xaw3dXftDrawAnyStringN
   XFontSetExtents *extents = NULL;
   Dimension w=0, wline=0, h=0;
 
@@ -845,7 +845,7 @@ void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
 XFontSet fontSet, XftFont *xftFont, Boolean international,
 XawTextEncoding encoding, const void *text, Dimension *width,
 Dimension *height) {
-  Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
+  Xaw3dXftSizeAnyStringN(display, font, fontSet, xftFont, international,
     encoding, text, Xaw3dXftAnyStrlen(encoding, text), width, height);
 }
 
@@ -991,13 +991,13 @@ Boolean Xaw3dXftLocateUnderline (
 
     // Get the location on that line
     Dimension w2, h2;
-    Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
+    Xaw3dXftSizeAnyStringN(display, font, fontSet, xftFont, international,
                              encoding, line, b2, &w2, &h2);
     *y += (Position)h2 - baseline + 1;
     *x2 = w2 - 1;
     if (b1) {
       Dimension w1;
-      Xaw3dXftSizeAnyStringLen(display, font, fontSet, xftFont, international,
+      Xaw3dXftSizeAnyStringN(display, font, fontSet, xftFont, international,
                                encoding, line, b1, &w1, NULL);
       *x1 = w1;
     } else *x1 = 0;
