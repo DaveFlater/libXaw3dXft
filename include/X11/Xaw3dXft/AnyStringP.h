@@ -140,8 +140,13 @@ extern void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
   Dimension *height);
 
 
-// Strdup for any encoding
+// Genericized strndup with specified length (num_bytes)
+extern void *Xaw3dXftAnyStrdupN (XawTextEncoding encoding, const void *text,
+  Cardinal num_bytes);
+
+// Ibid. but using the null teminator to determine num_bytes
 extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text);
+
 
 // Return number of bytes in any string, not counting null terminator
 Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text);

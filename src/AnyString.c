@@ -302,16 +302,14 @@ static_assert(sizeof(wchar_t) == sizeof(char32_t));
 // responsible for freeing the returned string.
 static char32_t *wctoUTF32 (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  // Ignoring num_bytes, Rule 2 not enforced
-  return (char32_t *)Xaw3dXftAnyStrdup(XawTextEncodingwc, text);
+  return (char32_t *)Xaw3dXftAnyStrdupN(XawTextEncodingwc, text, *num_bytes);
 }
 
 // Convert UTF32 to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
 static wchar_t *UTF32towc (const void *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  // Ignoring num_bytes, Rule 2 not enforced
-  return (wchar_t *)Xaw3dXftAnyStrdup(XawTextEncodingUTF32, text);
+  return (wchar_t *)Xaw3dXftAnyStrdupN(XawTextEncodingUTF32, text, *num_bytes);
 }
 
 // Convert 8bit to wc.  num_bytes is updated as applicable.  Caller is
@@ -379,12 +377,19 @@ static XChar2b *wctoChar2b (const char *text, Cardinal *num_bytes) {
   return c2b;
 }
 
-void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text) {
+void *Xaw3dXftAnyStrdupN (XawTextEncoding encoding, const void *text,
+			  Cardinal num_bytes) {
   assert(text);
-  const Cardinal nbytes = Xaw3dXftAnyStrlen(encoding, text) + nlsize(encoding);
+  const Cardinal nbytes = num_bytes + nlsize(encoding);
   void *s = malloc(nbytes);
   assert(s);
-  return memcpy(s, text, nbytes);
+  (void) memcpy(s, text, num_bytes); // Rules 2 and 3 not enforced
+  (void) memset(s+num_bytes, 0, nbytes-num_bytes);
+  return s;
+}
+
+void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text) {
+  return Xaw3dXftAnyStrdupN(encoding, text, Xaw3dXftAnyStrlen(encoding, text));
 }
 
 // Generalized strchr(s, '\n')
