@@ -45,6 +45,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xutil.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/TextSrcP.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/CharSet.h>
@@ -73,6 +74,8 @@ static XtResource resources[] = {
        offset(string_length), XtRInt, (XtPointer) &magic_value},
     {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
        offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
+    {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
+       offset(international), XtRImmediate, (XtPointer) FALSE},
     {XtNtype, XtCType, XtRTextType, sizeof (XawAsciiType),
        offset(type), XtRImmediate, (XtPointer)XawAsciiString},
     {XtNdataCompression, XtCDataCompression, XtRBoolean, sizeof (Boolean),
@@ -87,6 +90,7 @@ static XtResource resources[] = {
 
 static void ClassInitialize(void);
 static void ClassPartInitialize(WidgetClass);
+static void Initialize(Widget, Widget, ArgList, Cardinal *);
 static void SetSelection(Widget, XawTextPosition, XawTextPosition, Atom);
 static void CvtStringToEditMode(XrmValuePtr, Cardinal *, XrmValuePtr, XrmValuePtr);
 static void CvtStringToTextType(XrmValuePtr, Cardinal *, XrmValuePtr, XrmValuePtr);
@@ -109,7 +113,7 @@ TextSrcClassRec textSrcClassRec = {
     /* class_initialize   	*/	ClassInitialize,
     /* class_part_initialize	*/	ClassPartInitialize,
     /* class_inited       	*/	FALSE,
-    /* initialize	  	*/	NULL,
+    /* initialize	  	*/	Initialize,
     /* initialize_hook		*/	NULL,
     /* realize		  	*/	NULL,
     /* actions		  	*/	NULL,
@@ -166,28 +170,41 @@ ClassPartInitialize(WidgetClass wc)
   t_src = (TextSrcObjectClass) wc;
   superC = (TextSrcObjectClass) t_src->object_class.superclass;
 
-/*
- * We don't need to check for null super since we'll get to TextSrc
- * eventually.
- */
-    if (t_src->textSrc_class.Read == XtInheritRead)
-      t_src->textSrc_class.Read = superC->textSrc_class.Read;
+  /*
+   * We don't need to check for null super since we'll get to TextSrc
+   * eventually.
+   */
+  if (t_src->textSrc_class.Read == XtInheritRead)
+    t_src->textSrc_class.Read = superC->textSrc_class.Read;
 
-    if (t_src->textSrc_class.Replace == XtInheritReplace)
-      t_src->textSrc_class.Replace = superC->textSrc_class.Replace;
+  if (t_src->textSrc_class.Replace == XtInheritReplace)
+    t_src->textSrc_class.Replace = superC->textSrc_class.Replace;
 
-    if (t_src->textSrc_class.Scan == XtInheritScan)
-      t_src->textSrc_class.Scan = superC->textSrc_class.Scan;
+  if (t_src->textSrc_class.Scan == XtInheritScan)
+    t_src->textSrc_class.Scan = superC->textSrc_class.Scan;
 
-    if (t_src->textSrc_class.Search == XtInheritSearch)
-      t_src->textSrc_class.Search = superC->textSrc_class.Search;
+  if (t_src->textSrc_class.Search == XtInheritSearch)
+    t_src->textSrc_class.Search = superC->textSrc_class.Search;
 
-    if (t_src->textSrc_class.SetSelection == XtInheritSetSelection)
-      t_src->textSrc_class.SetSelection = superC->textSrc_class.SetSelection;
+  if (t_src->textSrc_class.SetSelection == XtInheritSetSelection)
+    t_src->textSrc_class.SetSelection = superC->textSrc_class.SetSelection;
 
-    if (t_src->textSrc_class.ConvertSelection == XtInheritConvertSelection)
-      t_src->textSrc_class.ConvertSelection =
-	                               superC->textSrc_class.ConvertSelection;
+  if (t_src->textSrc_class.ConvertSelection == XtInheritConvertSelection)
+    t_src->textSrc_class.ConvertSelection =
+				     superC->textSrc_class.ConvertSelection;
+}
+
+static void Initialize (Widget request, Widget new, ArgList args,
+Cardinal *num_args) {
+  TextSrcObject ts = (TextSrcObject)new;
+
+  // Maintain Xaw compatibility by changing the default encoding when a
+  // font set is going to be used, but allow a specified encoding to
+  // override it.
+  if (ts->textSrc.international &&
+    ts->textSrc.encoding == XawTextEncoding8bit &&
+    !Xaw3dXftSpecifiedEncoding(args, *num_args))
+    ts->textSrc.encoding = XawTextEncodingmb;
 }
 
 /************************************************************
@@ -556,7 +573,6 @@ _XawTextFormat(TextWidget tw)
  *              As In, length of source wchar string, measured in wchar.
  *              As Out, length of returned string.
  */
-
 
 char *
 _XawTextWCToMB(Display *d, wchar_t *wstr, int *len_in_out)

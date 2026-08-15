@@ -124,6 +124,7 @@ typedef struct {
   Boolean use_string_in_place;	/* Use the string passed in place. */
   int     string_length;	/* Optional length of string in bytes. */
   unsigned char encoding;
+  Boolean international;
 
 } TextSrcPart;
 

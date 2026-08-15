@@ -171,11 +171,11 @@ static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
   AsciiSrcObject src = (AsciiSrcObject) new;
-  FILE * file;
+  FILE *file;
 
-/*
- * Set correct flags (override resources) depending upon widget class.
- */
+  /*
+   * Set correct flags (override resources) depending upon widget class.
+   */
 
   src->text_src.text_format = XawFmt8Bit;	/* data format. */
   src->ascii_src.changes = FALSE;

@@ -203,11 +203,11 @@ static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
   MultiSrcObject src = (MultiSrcObject) new;
-  FILE * file;
+  FILE *file;
 
-/*
- * Set correct flags (override resources) depending upon widget class.
- */
+  /*
+   * Set correct flags (override resources) depending upon widget class.
+   */
 
   src->multi_src.changes = FALSE;
   src->multi_src.allocated_string = FALSE;
@@ -217,7 +217,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   if (file != NULL) fclose(file);
   src->text_src.text_format = XawFmtWide;
-
 }
 
 /*	Function Name: ReadText

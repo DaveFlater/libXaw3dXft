@@ -64,6 +64,9 @@ SOFTWARE.
  callback	     Callback		Callback	(none)
  dataCompression     DataCompression	Boolean		True
  editType	     EditType	      XawTextEditType	XawtextRead
+ encoding            Encoding           unsigned char   XawTextEncoding8bit
+                                      if international, XawTextEncodingmb
+ international       International      Boolean         False
  length		     Length		int		(internal)
  pieceSize	     PieceSize		int		BUFSIZ
  string		     String		String		NULL
