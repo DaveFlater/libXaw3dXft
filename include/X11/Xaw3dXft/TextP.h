@@ -214,8 +214,6 @@ typedef struct _TextPart {
     /* private state, shared w/Source and Sink */
     Boolean	    redisplay_needed; /* in SetValues */
     XawTextSelectionSalt    *salt2;	     /* salted away selections */
-    XIC             xic;	/* used to handle UTF8 input */
-    XIM             xim;	/* used to handle UTF8 input */
 } TextPart;
 
 /*************************************************************

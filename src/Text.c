@@ -555,19 +555,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   ctx->text.copy_area_offsets = NULL;
   ctx->text.salt2 = NULL;
 
-  if (_Xaw3dXft->encoding == -1) {
-      ctx->text.xim = XOpenIM(XtDisplay((Widget)ctx), NULL, NULL, NULL);
-      ctx->text.xic = XCreateIC(ctx->text.xim,
-		          XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-		          XNClientWindow, XtWindow((Widget)ctx),
-		          XNFocusWindow,  XtWindow((Widget)ctx),
-		          (void*)NULL);
-      Xutf8ResetIC(ctx->text.xic);
-  } else {
-      ctx->text.xim = None;
-      ctx->text.xic = None;
-  }
-
   if (ctx->core.height == DEFAULT_TEXT_HEIGHT) {
     ctx->core.height = VMargins(ctx);
     if (ctx->text.sink != NULL)
@@ -862,17 +849,6 @@ PositionForXY (TextWidget ctx, Position x, Position y)
   if (position >= ctx->text.lt.info[line + 1].position)
     position = SrcScan(ctx->text.source, ctx->text.lt.info[line + 1].position,
 		       XawstPositions, XawsdLeft, 1, TRUE);
-
-  /* UTF8 hack - don't stop in middle of multibyte char */
-  if (_Xaw3dXft->encoding == -1) {
-      XawTextPosition from = position;
-      rep : XawTextSourceRead(ctx->text.source, from, &text, 1);
-      if (from>0 && position-from<3 && (*(text.ptr)&0xc0) == 0x80) {
-          --from;
-          goto rep;
-      }
-      position = from;
-  }
   return(position);
 }
 
@@ -2813,10 +2789,6 @@ TextDestroy(Widget w)
   DestroyHScrollBar(ctx);
   DestroyVScrollBar(ctx);
 
-  if (ctx->text.xic) XDestroyIC(ctx->text.xic);
-  if (ctx->text.xim) XCloseIM(ctx->text.xim);
-  ctx->text.xic = None;
-  ctx->text.xim = None;
   XtFree((char *)ctx->text.s.selections);
   XtFree((char *)ctx->text.lt.info);
   XtFree((char *)ctx->text.search);

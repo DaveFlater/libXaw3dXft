@@ -358,34 +358,9 @@ static void
 Move(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
      XawTextScanType type, Boolean include)
 {
-  XawTextPosition to, from;
-  XawTextBlock text;
-
   StartAction(ctx, event);
   ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
 				type, dir, ctx->text.mult, include);
-
-  /* hack for UTF8 encoding */
-  if (_Xaw3dXft->encoding == -1) {
-      if (dir == XawsdLeft) {
-          to = from = ctx->text.insertPos;
-          rep1 : XawTextSourceRead(ctx->text.source, from, &text, 1);
-          if (from>0 && to-from <3 && (*(text.ptr)&0xc0) == 0x80) {
-              --from;
-              goto rep1;
-	  }
-          ctx->text.insertPos = from;
-      } else {
-          to = from = ctx->text.insertPos;
-          rep2 : XawTextSourceRead(ctx->text.source, to, &text, 1);
-          if (to-from <3 && (*(text.ptr)&0xc0) == 0x80) {
-              ++to;
-              goto rep2;
-	  }
-          ctx->text.insertPos = to;
-      }
-  }
-
   EndAction(ctx);
 }
 
@@ -872,26 +847,10 @@ DeleteOrKill(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
 
   if (dir == XawsdLeft) {
     from = to;
-    /* hack for UTF8 encoded strings */
-    if (_Xaw3dXft->encoding == -1) {
-	rep1 : XawTextSourceRead(ctx->text.source, from, &text, 1);
-	if (from > 0 && (*(text.ptr)&0xc0) == 0x80) {
-            --from;
-            goto rep1;
-	}
-    }
     to = ctx->text.insertPos;
   }
   else { /* dir == XawsdRight */
-      from = ctx->text.insertPos;
-      /* hack for UTF8 encoded strings */
-      if (_Xaw3dXft->encoding == -1) {
-          rep2 : XawTextSourceRead(ctx->text.source, to, &text, 1);
-          if (to-from <4 && (*(text.ptr)&0xc0) == 0x80) {
-              ++to;
-              goto rep2;
-	  }
-      }
+    from = ctx->text.insertPos;
   }
 
   _DeleteOrKill(ctx, from, to, kill);
@@ -1372,9 +1331,6 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
   XawTextBlock text;
   Status status;
 
-  if (_Xaw3dXft->encoding == -1)
-      text.length = Xutf8LookupString (ctx->text.xic, (XKeyEvent*)event, strbuf, BUFSIZ, &keysym, &status);
-  else
   if (XtIsSubclass (ctx->text.source, (WidgetClass) multiSrcObjectClass))
     text.length = _XawImWcLookupString (w, &event->xkey,
 		(wchar_t*) strbuf, BUFSIZ, &keysym);
