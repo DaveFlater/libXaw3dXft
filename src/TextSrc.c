@@ -60,16 +60,33 @@ in this Software without prior written authorization from the X Consortium.
 
 /* Private Data */
 
+static int magic_value = MAGIC_VALUE;
+
 #define offset(field) XtOffsetOf(TextSrcRec, textSrc.field)
 static XtResource resources[] = {
     {XtNeditType, XtCEditType, XtREditMode, sizeof(XawTextEditType),
         offset(edit_mode), XtRString, "read"},
+    {XtNstring, XtCString, XtRString, sizeof (char *),
+       offset(string), XtRString, NULL},
+    {XtNlength, XtCLength, XtRInt, sizeof (int),
+       offset(string_length), XtRInt, (XtPointer) &magic_value},
+    {XtNtype, XtCType, XtRTextType, sizeof (XawAsciiType),
+       offset(type), XtRImmediate, (XtPointer)XawAsciiString},
+    {XtNdataCompression, XtCDataCompression, XtRBoolean, sizeof (Boolean),
+       offset(data_compression), XtRImmediate, (XtPointer) TRUE},
+    {XtNpieceSize, XtCPieceSize, XtRInt, sizeof (XawTextPosition),
+       offset(piece_size), XtRImmediate, (XtPointer) BUFSIZ},
+    {XtNcallback, XtCCallback, XtRCallback, sizeof(XtPointer),
+       offset(callback), XtRCallback, (XtPointer)NULL},
+    {XtNuseStringInPlace, XtCUseStringInPlace, XtRBoolean, sizeof (Boolean),
+       offset(use_string_in_place), XtRImmediate, (XtPointer) FALSE}
 };
 
 static void ClassInitialize(void);
 static void ClassPartInitialize(WidgetClass);
 static void SetSelection(Widget, XawTextPosition, XawTextPosition, Atom);
 static void CvtStringToEditMode(XrmValuePtr, Cardinal *, XrmValuePtr, XrmValuePtr);
+static void CvtStringToTextType(XrmValuePtr, Cardinal *, XrmValuePtr, XrmValuePtr);
 static Boolean ConvertSelection(Widget, Atom *, Atom *, Atom *, XtPointer *,
                                 unsigned long *, int *);
 static XawTextPosition Search(Widget, XawTextPosition, XawTextScanDirection,
@@ -132,8 +149,9 @@ WidgetClass textSrcObjectClass = (WidgetClass)&textSrcClassRec;
 static void
 ClassInitialize(void)
 {
-    XawInitializeWidgetSet ();
-    XtAddConverter(XtRString, XtREditMode,   CvtStringToEditMode,   NULL, 0);
+  XawInitializeWidgetSet();
+  XtAddConverter(XtRString, XtREditMode, CvtStringToEditMode, NULL, 0);
+  XtAddConverter(XtRString, XtRTextType, CvtStringToTextType, NULL, 0);
 }
 
 
@@ -318,6 +336,39 @@ CvtStringToEditMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal, X
   toVal->addr = NULL;
 }
 
+static void
+CvtStringToTextType(XrmValuePtr args, Cardinal * num_args, XrmValuePtr fromVal,
+                    XrmValuePtr toVal)
+{
+  static XawAsciiType type;
+  static XrmQuark  XtQEstring = NULLQUARK;
+  static XrmQuark  XtQEfile;
+  XrmQuark q;
+  char lowerName[40];
+
+  if (XtQEstring == NULLQUARK) {
+    XtQEstring = XrmPermStringToQuark(XtEstring);
+    XtQEfile   = XrmPermStringToQuark(XtEfile);
+  }
+
+  if (strlen ((char*)fromVal->addr) < sizeof lowerName) {
+    XmuCopyISOLatin1Lowered(lowerName, (char *) fromVal->addr);
+    q = XrmStringToQuark(lowerName);
+
+    if (q == XtQEstring)     type = XawAsciiString;
+    else if (q == XtQEfile)  type = XawAsciiFile;
+    else {
+      toVal->size = 0;
+      toVal->addr = NULL;
+      return;
+    }
+    toVal->size = sizeof type;
+    toVal->addr = (XPointer) &type;
+    return;
+  }
+  toVal->size = 0;
+  toVal->addr = NULL;
+}
 
 
 /************************************************************

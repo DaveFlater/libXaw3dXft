@@ -63,21 +63,13 @@ SOFTWARE.
 #include <X11/Xaw3dXft/TextSrc.h>
 #include <X11/Xaw3dXft/TextP.h>	/* This source works with the Text widget. */
 
+#define MAGIC_VALUE ((XawTextPosition) -1) /* Magic value. */
+
 /************************************************************
  *
  * New fields for the TextSrc object class record.
  *
  ************************************************************/
-
-#if 0	/* no longer used */
-typedef struct {
-  XtPointer		next_extension;
-  XrmQuark		record_type;
-  long			version;
-  Cardinal		record_size;
-  int			(*Input)();
-} TextSrcExtRec, *TextSrcExt;
-#endif
 
 typedef XawTextPosition (*_XawSrcReadProc)
      (Widget, XawTextPosition, XawTextBlock*, int);
@@ -121,6 +113,17 @@ typedef struct {
   XawTextEditType	edit_mode;
   XrmQuark		text_format; /* 2 formats: XawFmt8Bit for Ascii */
 				     /*            XawFmtWide for ISO 10646 */
+  char       *string;		/* either the string, or the
+				   file name, depending upon the type. */
+  XawAsciiType type;		/* either string or disk. */
+  XawTextPosition piece_size;	/* Size of text buffer for each piece. */
+  Boolean data_compression;	/* compress to minimum memory automatically
+				   on save? */
+  XtCallbackList callback;	/* A callback list to call when the source is
+				   changed. */
+  Boolean use_string_in_place;	/* Use the string passed in place. */
+  int     string_length;	/* Optional length of string in bytes. */
+
 } TextSrcPart;
 
 /****************************************************************
@@ -157,10 +160,6 @@ wchar_t* _XawTextMBToWC(
  * Private declarations.
  *
  ************************************************************/
-
-#if 0	/* no longer used */
-typedef XawTextPosition (*_XawTextPositionFunc)();
-#endif
 
 #define XtInheritInput                ((_XawTextPositionFunc) _XtInherit)
 #define XtInheritRead                 ((_XawSrcReadProc) _XtInherit)

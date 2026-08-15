@@ -59,11 +59,37 @@ SOFTWARE.
 
 /* Resources:
 
- Name		     Class	      RepType		Default Value
- ----		     -----	      -------		-------------
+ Name		     Class		RepType		Default Value
+ ----		     -----		-------		-------------
+ callback	     Callback		Callback	(none)
+ dataCompression     DataCompression	Boolean		True
  editType	     EditType	      XawTextEditType	XawtextRead
+ length		     Length		int		(internal)
+ pieceSize	     PieceSize		int		BUFSIZ
+ string		     String		String		NULL
+ type		     TextType		XawAsciiType	XawAsciiString
+ useStringInPlace    UseStringInPlace	Boolean		False
 
 */
+
+/*
+ * Resource Definitions.
+ */
+
+#define XtCDataCompression "DataCompression"
+#define XtCPieceSize "PieceSize"
+#define XtCType "Type"
+#define XtCUseStringInPlace "UseStringInPlace"
+
+#define XtNdataCompression "dataCompression"
+#define XtNpieceSize "pieceSize"
+#define XtNtype "type"
+#define XtNuseStringInPlace "useStringInPlace"
+
+#define XtRTextType "TextType"
+
+#define XtEstring "string"
+#define XtEfile "file"
 
 /* Class record constants */
 
@@ -78,6 +104,7 @@ typedef enum {Normal, Selected }highlightType;
 typedef enum {XawsmTextSelect, XawsmTextExtend} XawTextSelectionMode;
 typedef enum {XawactionStart, XawactionAdjust, XawactionEnd}
     XawTextSelectionAction;
+typedef enum {XawAsciiFile, XawAsciiString} XawAsciiType;
 
 /*
  * Error Conditions:

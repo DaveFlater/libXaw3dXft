@@ -83,8 +83,6 @@ SOFTWARE.
 #define TMPSIZ 32		/* bytes to allocate for tmpnam */
 #endif
 
-#define MAGIC_VALUE ((XawTextPosition) -1) /* Magic value. */
-
 #define streq(a, b)        ( strcmp((a), (b)) == 0 )
 
 typedef struct _Piece {		/* Piece of the text file of BUFSIZ allocated
@@ -116,27 +114,14 @@ extern AsciiSrcClassRec asciiSrcClassRec;
 
 typedef struct _AsciiSrcPart {
 
-  /* Resources. */
-
-  char       *string;		/* either the string, or the
-				   file name, depending upon the type. */
-  XawAsciiType type;		/* either string or disk. */
-  XawTextPosition piece_size;	/* Size of text buffer for each piece. */
-  Boolean data_compression;	/* compress to minimum memory automatically
-				   on save? */
-  XtCallbackList callback;	/* A callback list to call when the source is
-				   changed. */
-  Boolean use_string_in_place;	/* Use the string passed in place. */
-  int     ascii_length;		/* length field for ascii string emulation. */
-
   /* Private data. */
 
   Boolean	is_tempfile;	  /* Is this a temporary file? */
   Boolean       changes;	  /* Has this file been edited? */
   Boolean       allocated_string; /* Have I allocated the
 				     string in ascii_src->string? */
-  XawTextPosition length; 	/* length of file */
-  Piece * first_piece;		/* first piece of the text. */
+  XawTextPosition length; 	  /* length of text in buffer (characters) */
+  Piece * first_piece;		  /* first piece of the text. */
 } AsciiSrcPart;
 
 /****************************************************************
