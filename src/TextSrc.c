@@ -45,6 +45,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xutil.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/TextSrcP.h>
+#include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/CharSet.h>
 
@@ -70,6 +71,8 @@ static XtResource resources[] = {
        offset(string), XtRString, NULL},
     {XtNlength, XtCLength, XtRInt, sizeof (int),
        offset(string_length), XtRInt, (XtPointer) &magic_value},
+    {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+       offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
     {XtNtype, XtCType, XtRTextType, sizeof (XawAsciiType),
        offset(type), XtRImmediate, (XtPointer)XawAsciiString},
     {XtNdataCompression, XtCDataCompression, XtRBoolean, sizeof (Boolean),

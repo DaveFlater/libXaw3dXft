@@ -109,7 +109,7 @@ extern TextSrcClassRec textSrcClassRec;
 
 /* New fields for the TextSrc object record */
 typedef struct {
-    /* resources */
+  /* resources */
   XawTextEditType	edit_mode;
   XrmQuark		text_format; /* 2 formats: XawFmt8Bit for Ascii */
 				     /*            XawFmtWide for ISO 10646 */
@@ -123,6 +123,7 @@ typedef struct {
 				   changed. */
   Boolean use_string_in_place;	/* Use the string passed in place. */
   int     string_length;	/* Optional length of string in bytes. */
+  unsigned char encoding;
 
 } TextSrcPart;
 
