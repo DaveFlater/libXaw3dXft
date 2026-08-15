@@ -11,7 +11,7 @@ X11 license (as per the historical licenses that the package inherits)
 #pragma once
 
 /*
-  2026-07-07 DWF
+  2026-08
 
   When I arrived on the scene, I found these macros repeated in Label.h and
   Tip.h:
@@ -29,12 +29,15 @@ X11 license (as per the historical licenses that the package inherits)
         lw->label.label = XtNewString(lw->label.label);
     }
 
-  When applied to a Char2b-encoded string having any of the most common
-  characters at its beginning, that results in the empty C string consisting
-  of a single 0 byte.  Any code that subsequently tries to read it as Char2b
-  will immediately do an out-of-bounds read.
+  When applied to a Char2b-encoded string having any single-byte encodable
+  character at its beginning (meaning, typically, the ASCII characters), that
+  results in the empty C string consisting of a single 0 byte.  Any code that
+  subsequently tries to read it as Char2b will immediately do an
+  out-of-bounds read.
 
-  Conclusion:  The Char2b encoding *never worked* in Xaw.
+  Conclusion:  The Char2b encoding in Xaw was tested only with double-byte
+  characters in a non-Unicode, double-byte character set.  Otherwise, it
+  never worked.
 */
 
 typedef enum {
@@ -58,9 +61,9 @@ Xaw3dXft.
 
 [β] In the core X11 fonts system, the code points for XChar2b are determined
 by the encoding of the *font* and the corresponding .enc file.  The
-assumption that XChar2b values are UCS-2 fails in a few cases; e.g.,
--*-…-jisx0208.1983-0.  If such a font is used, Xaw3dXft may translate strings
-incorrectly.
+assumption that XChar2b values are UCS-2 fails if the font uses a
+non-Unicode, double-byte character set like JIS X 0208, KS C 5601, or GB
+2312.  If such a font is used, Xaw3dXft may translate strings incorrectly.
 https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer
 
 [γ] The interpretation of narrow multibyte strings is determined by the

@@ -201,22 +201,21 @@ defined in UTF-16 but not in UCS-2.  Surrogate pairs are not supported by
 Xaw3dXft.
 
 \[β\] In the core X11 fonts system, the code points for XChar2b are
-determined by the [encoding of the *font* and the corresponding .enc
+determined by the encoding of the *font* and the corresponding [.enc
 file](https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer).
-The assumption that XChar2b values are UCS-2 fails in a few cases; e.g.,
--\*-…-jisx0208.1983-0.  If such a font is used, Xaw3dXft may translate
-strings incorrectly.
+The assumption that XChar2b values are UCS-2 fails if the font uses a
+non-Unicode, double-byte character set like JIS X 0208, KS C 5601, or GB
+2312.  If such a font is used, Xaw3dXft may translate strings incorrectly.
 
 \[γ\] The interpretation of narrow multibyte strings is determined by the
 codeset from the [currently active C locale](#locales); e.g., UTF-8 from
 en_US.UTF-8, ISO 8859-7 from el_GR.ISO8859-7, or ASCII from the default "C"
 locale.
 
-\[δ\] As of C23, [everything about wide strings remains
-implementation-defined, and there is no reliable translation between wchar_t
-and
-UTF-anything](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm).  A
-[remedy is on track for C29](https://en.cppreference.com/c/header/stdmchar)
+\[δ\] As of C23, everything about wide strings remains
+[implementation-defined](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm),
+and there is no reliable translation between wchar_t and UTF-anything.  A
+[remedy](https://en.cppreference.com/c/header/stdmchar) is on track for C29
 but is not yet implemented.  As a stopgap, Xaw3dXft relies on the
 Unix-centric assumption that wchar_t is UTF-32.
 
