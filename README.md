@@ -508,39 +508,6 @@ layout | Layout  | Layout  | NULL
 Notable differences between the classes that exist in Xaw R6.3 and their
 analogs in Xaw3dXft are detailed in the following subsections.
 
-### AsciiText
-
-From the set of widget classes that work together under the heading of "Text
-Widgets," the one that an application creates is AsciiText.  Despite the
-name, it is not limited to the ASCII character repertoire.
-
-Added resources:
-
-Name    | Class   | RepType | Default value
-:---    | :----   | :---    | :---
-encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingmb if international)
-highlight          | Background         | Pixel         | XtDefaultBackground
-highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
-xftFont            | XftFont            | String        | NULL
-
-Resources related to fonts, encodings, and text rendering are as described
-under [Generalities](#generalities).  Multi-line text is allowed.
-
-The values of the highlightStyle resource are as follows:
-
-    typedef enum {
-      TextHighlightReverse=0,    // Reverse foreground and background colors
-      TextHighlightBackground=1  // Paint background with highlight color
-    } TextHighlightStyle;
-
-The highlight resource gives the alternate background color that is used
-when highlightStyle is TextHighlightBackground.
-
-Reverse and background highlighting are applied via an exclusive-or function
-of Pixel values.  Their effect on a background pixmap is colormap-dependent
-but generally sufficient to show contrast with the unhighlighted state.
-
-
 ### Command
 
 Added resource:
@@ -796,6 +763,49 @@ zero inhibits underlining.
 
 Being a non-widget Object, SmeBSB does not have a window of its own, so the
 borderWidth resource that it inherits from Rectangle is inoperative.
+
+### Text
+
+The Text widget and its associated objects and subclasses are a complex
+assembly.  Among them, the only one that an application should create is
+AsciiText.  Despite the name, it is not limited to the ASCII character
+repertoire.  The "Ascii" naming quirk is repeated throughout associated
+definitions.
+
+Added resources:
+
+Name    | Class   | RepType | Default value
+:---    | :----   | :---    | :---
+encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingmb if international)
+highlight          | Background         | Pixel         | XtDefaultBackground
+highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
+xftFont            | XftFont            | String        | NULL
+
+Resources related to fonts, encodings, and text rendering are as described
+under [Generalities](#generalities).  Multi-line text is allowed.
+
+The values of the highlightStyle resource are as follows:
+
+    typedef enum {
+      TextHighlightReverse=0,    // Reverse foreground and background colors
+      TextHighlightBackground=1  // Paint background with highlight color
+    } TextHighlightStyle;
+
+The highlight resource gives the alternate background color that is used
+when highlightStyle is TextHighlightBackground.
+
+Reverse and background highlighting are applied via an exclusive-or function
+of Pixel values.  Their effect on a background pixmap is colormap-dependent
+but generally sufficient to show contrast with the unhighlighted state.
+
+Quirks and differences to be aware of:
+
+Xaw | Xaw3dXft
+:-- | :---
+The encoding of the string or the file is assumed to be mb if international is true and 8bit otherwise. | Use the encoding resource.
+The class of the type resource is documented as Type but implemented as AsciiType and MultiType in AsciiSrc and MultiSrc respectively. | These definitions have been merged, and the class is TextType.
+Setting useStringInPlace and international to True at the same time invokes broken code. | useStringInPlace is allowed only for XawTextEncoding8bit.
+TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
 
 ### Viewport
 
