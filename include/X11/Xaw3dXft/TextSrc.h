@@ -73,6 +73,12 @@ SOFTWARE.
  type		     TextType		XawAsciiType	XawAsciiString
  useStringInPlace    UseStringInPlace	Boolean		False
 
+ Setting useStringInPlace to True is allowed only when encoding is
+ XawTextEncoding8bit and type is XawAsciiString.
+
+ The length resource is misleading.  Its only function is to override
+ pieceSize when useStringInPlace is True so that the string can grow.
+
 */
 
 /*

@@ -35,6 +35,14 @@ static_assert(sizeof(FcChar16) == 2);
 #endif
 
 /*
+  For the RULEs, see AnyStringP.h.
+
+  Potentially useful to improve the handling of potentially unterminated
+  strings:  GNU extension size_t malloc_usable_size(void *ptr) tells you the
+  actual size of the memory block.
+*/
+
+/*
   mb and wc are a pain.
 
   The font set functions Xutf8TextEscapement, Xutf8Draw[Image]String, and the

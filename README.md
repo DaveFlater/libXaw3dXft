@@ -767,9 +767,12 @@ borderWidth resource that it inherits from Rectangle is inoperative.
 
 The Text widget and its associated objects and subclasses are a complex
 assembly.  Among them, the only one that an application should create is
-AsciiText.  Despite the name, it is not limited to the ASCII character
-repertoire.  The "Ascii" naming quirk is repeated throughout associated
-definitions.
+AsciiText.
+
+Layers of legacy have resulted in an inconsistent naming convention for
+"Ascii."  When it stands in contrast to "Multi," "Ascii" means specifically
+8bit text.  Otherwise, it just means text.  The AsciiText widget is just
+text; it accepts all encodings.
 
 Added resources:
 
@@ -801,10 +804,14 @@ Quirks and differences to be aware of:
 
 Xaw | Xaw3dXft
 :-- | :---
-The encoding of the string or the file is assumed to be mb if international is true and 8bit otherwise. | Use the encoding resource.
+The encoding of the string or the file is assumed to be mb if international is true and 8bit otherwise. | The encoding resource specifies the encoding.
 The class of the type resource is documented as Type but implemented as AsciiType and MultiType in AsciiSrc and MultiSrc respectively. | These definitions have been merged, and the class is TextType.
-Setting useStringInPlace and international to True at the same time invokes broken code. | useStringInPlace is allowed only for XawTextEncoding8bit.
+Setting useStringInPlace and international to True at the same time invokes broken code. | Setting useStringInPlace to True is allowed only when encoding is XawTextEncoding8bit and type is XawAsciiString.
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
+The encoding of a file inserted by the insert-file() action is assumed to be 8bit. | The encoding resource specifies the encoding.
+
+The length resource is misleading.  Its only function is to override
+pieceSize when useStringInPlace is True so that the string can grow.
 
 ### Viewport
 
