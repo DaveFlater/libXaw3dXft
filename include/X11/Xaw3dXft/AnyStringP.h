@@ -42,7 +42,7 @@ X11 license (as per the historical licenses that the package inherits)
 
 /*
              *** RULES ***
-  1.  All strings MUST be NUL-terminated.
+  1.  All strings MUST be NUL-terminated unless otherwise specified.
   2.  The value of num_bytes MUST NOT exceed the number of bytes preceding
       the NUL.
   3.  The first num_bytes bytes of the string MUST contain a whole number of
@@ -104,7 +104,7 @@ extern void Xaw3dXftDrawAnyStringN (
   Cardinal num_bytes
 );
 
-// Ibid. but using the null teminator to determine num_bytes
+// Ibid. but using the null terminator to determine num_bytes
 extern void Xaw3dXftDrawAnyString (Display *display, Visual *visual,
   Colormap cmap, Window window, XFontStruct *font, XFontSet fontSet,
   XftFont *xftFont, Boolean international, GC text_gc, XftColor *fg,
@@ -133,24 +133,31 @@ extern void Xaw3dXftSizeAnyStringN (
   Dimension *width, Dimension *height
 );
 
-// Ibid. but using the null teminator to determine num_bytes
+// Ibid. but using the null terminator to determine num_bytes
 extern void Xaw3dXftSizeAnyString (Display *display, XFontStruct *font,
   XFontSet fontSet, XftFont *xftFont, Boolean international,
   XawTextEncoding encoding, const void *text, Dimension *width,
   Dimension *height);
 
 
-// Genericized strndup with specified length (num_bytes)
+// Genericized strndup with specified length (num_bytes).  Rule 1 is waived
+// for the input; the result will be NUL-terminated.  This is the recommended
+// treatment for an unterminated string.
 extern void *Xaw3dXftAnyStrdupN (XawTextEncoding encoding, const void *text,
   Cardinal num_bytes);
 
-// Ibid. but using the null teminator to determine num_bytes
+// Ibid. but using a null terminator to determine num_bytes.  Obviously, Rule
+// 1 is NOT waived in this case.
 extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text);
 
 
 // Return number of bytes in any string, not counting null terminator
 Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text);
 
+
+// ---- Special interest functions ----
+
+// For SmeBSB
 // Find the coordinates to underline one character in supplied text.  Returns
 // True if coordinates are valid, False if cannot comply.
 extern Boolean Xaw3dXftLocateUnderline (
@@ -163,3 +170,9 @@ extern Boolean Xaw3dXftLocateUnderline (
   int character_index, // characters, not bytes
   // Results out
   Position *x1, Position *x2, Position *y);
+
+// For MultiSrc
+// Convert any string to wc encoding.  num_bytes is updated as applicable.
+// Caller is responsible for freeing the returned string.
+extern wchar_t *Xaw3dXftAnyToWc (XawTextEncoding encoding, const void *text,
+				 Cardinal *num_bytes);
