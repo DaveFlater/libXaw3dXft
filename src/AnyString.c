@@ -187,8 +187,7 @@ static const void *nextnl (XawTextEncoding encoding, const void *text) {
 // font-specific character mapping that applies to the Char2b string is
 // Unicode.  This assumption fails if the font uses a non-Unicode,
 // double-byte character set like JIS X 0208, KS C 5601, or GB 2312.
-static_assert(sizeof(XChar2b) == 2);
-static_assert(sizeof(FcChar16) == 2);
+static_assert(sizeof(XChar2b) == sizeof(char16_t));
 
 // Some of the following conversions rely on the unsafe assumption that the
 // implementation-defined wide character encoding is UTF-32.
@@ -346,7 +345,7 @@ static char32_t *UTF8toUTF32 (const char *text, Cardinal *num_bytes) {
 
 // Reduce UTF-32 to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *UTF32toChar2b (const void *text, Cardinal *num_bytes) {
+static XChar2b *UTF32toChar2b (const char32_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const uint32_t *textp = (uint32_t *)text;
   const uint16_t bogusChar = '?';
@@ -368,7 +367,7 @@ static XChar2b *UTF32toChar2b (const void *text, Cardinal *num_bytes) {
 // Convert mb to UTF-32.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
 // Based on https://en.cppreference.com/c/string/multibyte/mbrtoc32
-static char32_t *mbtoUTF32 (const void *text, Cardinal *num_bytes) {
+static char32_t *mbtoUTF32 (const char *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const char32_t bogusChar = '?';
   char32_t *new = calloc(*num_bytes + 1, sizeof(char32_t));
@@ -420,20 +419,6 @@ static char32_t *mbtoUTF32 (const void *text, Cardinal *num_bytes) {
   return new;
 }
 
-// Convert wc to UTF-32.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-static char32_t *wctoUTF32 (const void *text, Cardinal *num_bytes) {
-  assert(text && num_bytes);
-  return (char32_t *)Xaw3dXftAnyStrdupN(XawTextEncodingwc, text, *num_bytes);
-}
-
-// Convert UTF-32 to wc.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-static wchar_t *UTF32towc (const void *text, Cardinal *num_bytes) {
-  assert(text && num_bytes);
-  return (wchar_t *)Xaw3dXftAnyStrdupN(XawTextEncodingUTF32, text, *num_bytes);
-}
-
 // Convert UTF-8 to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
 static wchar_t *UTF8towc (const char *text, Cardinal *num_bytes) {
@@ -453,13 +438,13 @@ static wchar_t *UTF8towc (const char *text, Cardinal *num_bytes) {
 
   glibc implements mbrtoc32 by calling mbrtowc.  It never returns -3.
 */
-static wchar_t *Xaw3dXftmbtowc (const void *text, Cardinal *num_bytes) {
+static wchar_t *Xaw3dXftmbtowc (const char *text, Cardinal *num_bytes) {
   return (wchar_t *)mbtoUTF32(text, num_bytes);
 }
 
 // Convert 8bit to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *_8bittowc (const void *text, Cardinal *num_bytes) {
+static wchar_t *_8bittowc (const char *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const Cardinal l = *num_bytes;
   wchar_t *new = calloc(l+1, sizeof(wchar_t));
@@ -476,7 +461,7 @@ static wchar_t *_8bittowc (const void *text, Cardinal *num_bytes) {
 
 // Convert UCS-2 to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *UCS2towc (const void *text, Cardinal *num_bytes) {
+static wchar_t *UCS2towc (const char16_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   assert(*num_bytes % 2 == 0); // RULE 3
   const Cardinal l = *num_bytes / 2;
@@ -494,7 +479,7 @@ static wchar_t *UCS2towc (const void *text, Cardinal *num_bytes) {
 
 // Convert Char2b to wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *Char2btowc (const void *text, Cardinal *num_bytes) {
+static wchar_t *Char2btowc (const XChar2b *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   void *ucs2 = convert16(text, *num_bytes);
   wchar_t *ret = UCS2towc(ucs2, num_bytes);
@@ -515,10 +500,9 @@ static XChar2b *mbtoChar2b (const char *text, Cardinal *num_bytes) {
 
 // Convert wc to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *wctoChar2b (const char *text, Cardinal *num_bytes) {
-  char32_t *utf32 = wctoUTF32(text, num_bytes);
+static XChar2b *wctoChar2b (const wchar_t *text, Cardinal *num_bytes) {
+  const char32_t *utf32 = (const char32_t *)text;
   XChar2b *c2b = UTF32toChar2b(utf32, num_bytes);
-  free(utf32);
   return c2b;
 }
 
@@ -564,11 +548,12 @@ static void drawOneXftLine (
       XftDrawString16(xftDraw, fg, xftFont, x, yadj, text, num_bytes/2);
       break;
     case XawTextEncodingUTF32:
+    case XawTextEncodingwc:
       XftDrawString32(xftDraw, fg, xftFont, x, yadj, text, num_bytes/4);
       break;
     case XawTextEncodingChar2b:
       {
-	FcChar16 *cvt16 = convert16(text, num_bytes);
+	char16_t *cvt16 = convert16(text, num_bytes);
 	XftDrawString16(xftDraw, fg, xftFont, x, yadj, cvt16, num_bytes/2);
 	free(cvt16);
       }
@@ -576,13 +561,6 @@ static void drawOneXftLine (
     case XawTextEncodingmb:
       {
 	char32_t *cvt32 = mbtoUTF32(text, &num_bytes);
-	XftDrawString32(xftDraw, fg, xftFont, x, yadj, cvt32, num_bytes/4);
-	free(cvt32);
-      }
-      break;
-    case XawTextEncodingwc:
-      {
-	char32_t *cvt32 = wctoUTF32(text, &num_bytes);
 	XftDrawString32(xftDraw, fg, xftFont, x, yadj, cvt32, num_bytes/4);
 	free(cvt32);
       }
@@ -612,6 +590,7 @@ static void drawOneXmbLine (
     Position yadj = y - extents->max_logical_extent.y; // y is negative
     wchar_t *cvtwc = NULL;
     switch (encoding) {
+    case XawTextEncodingUTF32:
     case XawTextEncodingwc:
       XwcDrawString(display, window, fontSet, gc, x, yadj, text,
 	num_bytes/sizeof(wchar_t));
@@ -630,9 +609,6 @@ static void drawOneXmbLine (
       break;
     case XawTextEncodingUCS2:
       cvtwc = UCS2towc(text, &num_bytes);
-      break;
-    case XawTextEncodingUTF32:
-      cvtwc = UTF32towc(text, &num_bytes);
     }
     XwcDrawString(display, window, fontSet, gc, x, yadj, cvtwc,
       num_bytes/sizeof(wchar_t));
@@ -790,11 +766,12 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
     XftTextExtents16(display, xftFont, text, num_bytes/2, &extents);
     break;
   case XawTextEncodingUTF32:
+  case XawTextEncodingwc:
     XftTextExtents32(display, xftFont, text, num_bytes/4, &extents);
     break;
   case XawTextEncodingChar2b:
     {
-      FcChar16 *cvt16 = convert16(text, num_bytes);
+      char16_t *cvt16 = convert16(text, num_bytes);
       XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
       free(cvt16);
     }
@@ -802,13 +779,6 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
   case XawTextEncodingmb:
     {
       char32_t *cvt32 = mbtoUTF32(text, &num_bytes);
-      XftTextExtents32(display, xftFont, cvt32, num_bytes/4, &extents);
-      free(cvt32);
-    }
-    break;
-  case XawTextEncodingwc:
-    {
-      char32_t *cvt32 = wctoUTF32(text, &num_bytes);
       XftTextExtents32(display, xftFont, cvt32, num_bytes/4, &extents);
       free(cvt32);
     }
@@ -822,6 +792,7 @@ const void *text, Cardinal num_bytes) {
   if (num_bytes == 0) return 0;
   wchar_t *cvtwc = NULL;
   switch (encoding) {
+  case XawTextEncodingUTF32:
   case XawTextEncodingwc:
     return XwcTextEscapement(fontSet, text, num_bytes/sizeof(wchar_t));
   case XawTextEncodingmb:
@@ -836,9 +807,6 @@ const void *text, Cardinal num_bytes) {
     break;
   case XawTextEncodingUCS2:
     cvtwc = UCS2towc(text, &num_bytes);
-    break;
-  case XawTextEncodingUTF32:
-    cvtwc = UTF32towc(text, &num_bytes);
   }
   const Dimension width = XwcTextEscapement(fontSet, cvtwc,
     num_bytes/sizeof(wchar_t));
@@ -991,21 +959,12 @@ static Boolean locateChar (XawTextEncoding encoding, const void *text,
     }
     break;
   case XawTextEncodingUTF32:
+  case XawTextEncodingwc:
     {
       Cardinal byte_index = character_index*4;
       if (byte_index < l) {
 	*b1 = byte_index;
 	*b2 = byte_index+4;
-	return True;
-      }
-    }
-    break;
-  case XawTextEncodingwc:
-    {
-      Cardinal byte_index = character_index*sizeof(wchar_t);
-      if (byte_index < l) {
-	*b1 = byte_index;
-	*b2 = byte_index+sizeof(wchar_t);
 	return True;
       }
     }
@@ -1128,13 +1087,11 @@ wchar_t *Xaw3dXftAnyToWc (XawTextEncoding encoding, const void *text,
     return UTF8towc(text, num_bytes);
   case XawTextEncodingUCS2:
     return UCS2towc(text, num_bytes);
-  case XawTextEncodingUTF32:
-    return UTF32towc(text, num_bytes);
   case XawTextEncodingChar2b:
     return Char2btowc(text, num_bytes);
   case XawTextEncodingmb:
     return Xaw3dXftmbtowc(text, num_bytes);
-  case XawTextEncodingwc:
+  default: // UTF32, wc
     return (wchar_t *)Xaw3dXftAnyStrdupN(encoding, text, *num_bytes);
   }
 }
