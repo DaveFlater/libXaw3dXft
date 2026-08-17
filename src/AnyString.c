@@ -599,8 +599,10 @@ static void drawOneXmbLine (
       XmbDrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
       return;
     case XawTextEncodingUTF8:
-      Xutf8DrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
-      return;
+      // Xlib's UTF-8 converter fails on valid strings.
+      // Xutf8DrawString(display, window, fontSet, gc, x, yadj, text, num_bytes);
+      cvtwc = UTF8towc(text, &num_bytes);
+      break;
     case XawTextEncoding8bit:
       cvtwc = _8bittowc(text, &num_bytes);
       break;
@@ -798,7 +800,10 @@ const void *text, Cardinal num_bytes) {
   case XawTextEncodingmb:
     return XmbTextEscapement(fontSet, text, num_bytes);
   case XawTextEncodingUTF8:
-    return Xutf8TextEscapement(fontSet, text, num_bytes);
+    // Xlib's UTF-8 converter fails on valid strings.
+    // return Xutf8TextEscapement(fontSet, text, num_bytes);
+    cvtwc = UTF8towc(text, &num_bytes);
+    break;
   case XawTextEncoding8bit:
     cvtwc = _8bittowc(text, &num_bytes);
     break;
