@@ -688,7 +688,7 @@ void Xaw3dXftDrawAnyStringN (
     xftDraw = XftDrawCreate(display, window, visual, cmap);
     assert(xftDraw);
     if (clip && !XftDrawSetClipRectangles(xftDraw, 0, 0, clip, 1))
-      XtWarning("libXaw3dXft:  XftDrawSetClipRectangles failed");
+      XtWarning("libXaw3dXft: XftDrawSetClipRectangles failed");
   } else if (international) {
     assert(fontSet);
     extents = XExtentsOfFontSet(fontSet);
@@ -696,7 +696,7 @@ void Xaw3dXftDrawAnyStringN (
     assert(font);
   if (clip && !xftFont &&
       !XSetClipRectangles(display, text_gc, 0, 0, clip, 1, YXBanded))
-    XtWarning("libXaw3dXft:  XSetClipRectangles failed");
+    XtWarning("libXaw3dXft: XSetClipRectangles failed");
 
   // Begin line-breaking loop
   const void *nl = nextnl(encoding, text);
@@ -739,7 +739,7 @@ void Xaw3dXftDrawAnyStringN (
   else
     drawOneLine(display, window, font, text_gc, x, y, encoding, text, num_bytes);
   if (clip && !xftFont && !XSetClipMask(display, text_gc, None))
-    XtWarning("libXaw3dXft:  XSetClipMask failed");
+    XtWarning("libXaw3dXft: XSetClipMask failed");
 }
 
 // Ibid. but using the null teminator to determine num_bytes

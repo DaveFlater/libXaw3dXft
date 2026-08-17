@@ -205,7 +205,7 @@ static void SetTextWidthAndHeight(LabelWidget lw) {
     &lw->label.label_width, &lw->label.label_height, &lw->label.depth))
       return;
     XtWarning(
-"libXaw3dXft:  XGetGeometry failed in SetTextWidthAndHeight of Label.\n"
+"libXaw3dXft: XGetGeometry failed in SetTextWidthAndHeight of Label.\n"
 "There might be something wrong with the bitmap resource of a Label widget.");
     // Then we just fall through and use the text dimensions‽
   }
@@ -249,7 +249,7 @@ static void get_lbm_dimensions (LabelWidget lw) {
     if (!Xaw3dXftGetDrawableDimensions(XtDisplay(lw), lw->label.left_bitmap,
     &lw->label.lbm_width, &lw->label.lbm_height, &lw->label.depth))
       XtWarning(
-"libXaw3dXft:  XGetGeometry failed in get_lbm_dimensions of Label.\n"
+"libXaw3dXft: XGetGeometry failed in get_lbm_dimensions of Label.\n"
 "There might be something wrong with the leftBitmap resource of a Label widget.");
 }
 
