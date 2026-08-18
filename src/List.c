@@ -394,18 +394,12 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
       lw->list.xor_bghl_GC =
       NULL;
 
+    Xaw3dXftFixDefaultEncoding(args, *num_args, lw->simple.international,
+      lw->list.xftfontname, &lw->list.encoding);
     if (lw->list.xftfontname)
       lw->list.xftfont = Xaw3dXftGetFont(new, lw->list.xftfontname);
-    else {
+    else
       lw->list.xftfont = NULL;
-      // Maintain Xaw compatibility by changing the default encoding when a
-      // font set is going to be used, but allow a specified encoding to
-      // override it.
-      if (lw->simple.international &&
-	lw->list.encoding == XawTextEncoding8bit &&
-	!Xaw3dXftSpecifiedEncoding(args, *num_args))
-	lw->list.encoding = XawTextEncodingmb;
-    }
     if (lw->simple.international && !lw->list.fontset)
       XtError("List initialized with international true but no fontset");
     if (!lw->list.font) XtError("List initialized with no font");

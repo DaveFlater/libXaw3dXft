@@ -46,8 +46,8 @@ typedef enum {
   XawTextEncodingUTF8   = 2, // char, char8_t, FcChar8, UTF-8
   XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [α]
   XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
-  XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset [γ]
-  XawTextEncodingwc     = 6  // wchar_t, wide string [δ]
+  XawTextEncodingMb     = 5, // char, narrow multibyte, locale's codeset [γ]
+  XawTextEncodingWc     = 6  // wchar_t, wide string [δ]
 } XawTextEncoding;
 
 /*

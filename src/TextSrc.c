@@ -76,6 +76,8 @@ static XtResource resources[] = {
        offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
     {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
        offset(international), XtRImmediate, (XtPointer) FALSE},
+    {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
+       offset(xftfontname), XtRString, NULL},
     {XtNtype, XtCType, XtRTextType, sizeof (XawAsciiType),
        offset(type), XtRImmediate, (XtPointer)XawAsciiString},
     {XtNdataCompression, XtCDataCompression, XtRBoolean, sizeof (Boolean),
@@ -87,6 +89,7 @@ static XtResource resources[] = {
     {XtNuseStringInPlace, XtCUseStringInPlace, XtRBoolean, sizeof (Boolean),
        offset(use_string_in_place), XtRImmediate, (XtPointer) FALSE}
 };
+#undef offset
 
 static void ClassInitialize(void);
 static void ClassPartInitialize(WidgetClass);
@@ -197,14 +200,13 @@ ClassPartInitialize(WidgetClass wc)
 static void Initialize (Widget request, Widget new, ArgList args,
 Cardinal *num_args) {
   TextSrcObject ts = (TextSrcObject)new;
-
-  // Maintain Xaw compatibility by changing the default encoding when a
-  // font set is going to be used, but allow a specified encoding to
-  // override it.
-  if (ts->textSrc.international &&
-    ts->textSrc.encoding == XawTextEncoding8bit &&
-    !Xaw3dXftSpecifiedEncoding(args, *num_args))
-    ts->textSrc.encoding = XawTextEncodingmb;
+  Xaw3dXftFixDefaultEncoding(args, *num_args, ts->textSrc.international,
+    ts->textSrc.xftfontname, &ts->textSrc.encoding);
+  if (ts->textSrc.use_string_in_place &&
+    ts->textSrc.encoding != XawTextEncoding8bit)
+    XtError("libXaw3dXft: useStringInPlace requires 8bit encoding");
+  if (ts->textSrc.use_string_in_place && ts->textSrc.type != XawAsciiString)
+    XtError("libXaw3dXft: useStringInPlace requires string not file type");
 }
 
 /************************************************************

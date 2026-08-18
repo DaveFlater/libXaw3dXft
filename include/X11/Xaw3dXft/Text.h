@@ -154,8 +154,11 @@ typedef struct {
 #define XawEditError		1
 #define XawPositionError	2
 
-extern unsigned long XawFmt8Bit;
-extern unsigned long XawFmtWide;
+// These identifiers are used to specify the format of internal buffers and
+// XawTextBlocks.  The external encoding is specified by the encoding
+// resource.
+extern unsigned long XawFmt8Bit; // char
+extern unsigned long XawFmtWide; // wchar_t
 
 /* Class record constants */
 

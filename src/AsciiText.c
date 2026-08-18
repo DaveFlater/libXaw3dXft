@@ -77,12 +77,23 @@ SOFTWARE.
 #include <X11/Xaw3dXft/AsciiTextP.h>
 #include <X11/Xaw3dXft/AsciiSrc.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
+#include <X11/Xaw3dXft/CommonP.h>
+#include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/MultiSrc.h>
 #include <X11/Xaw3dXft/MultiSinkP.h>
 #include <X11/Xaw3dXft/XawImP.h>
 
 #define TAB_COUNT 32
+
+#define offset(field) XtOffsetOf(AsciiRec, ascii.field)
+static XtResource resources[] = {
+  {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+    offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
+  {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
+    offset(xftfontname), XtRString, NULL}
+};
+#undef offset
 
 static void Initialize(Widget, Widget, ArgList, Cardinal *);
 static void Destroy(Widget);
@@ -100,8 +111,8 @@ AsciiTextClassRec asciiTextClassRec = {
     /* realize          */      XtInheritRealize,
     /* actions          */      NULL,
     /* num_actions      */      0,
-    /* resources        */      NULL,
-    /* num_resource     */      0,
+    /* resources        */      resources,
+    /* num_resource     */      XtNumber(resources),
     /* xrm_class        */      NULLQUARK,
     /* compress_motion  */      TRUE,
     /* compress_exposure*/      XtExposeGraphicsExpose | XtExposeNoExpose,
@@ -144,44 +155,42 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   /* superclass Initialize can't set the following,
    * as it didn't know the source or sink when it was called */
-
+  // FIXME ???
   if (request->core.height == DEFAULT_TEXT_HEIGHT)
     new->core.height = DEFAULT_TEXT_HEIGHT;
 
+  Xaw3dXftFixDefaultEncoding(args, *num_args, w->simple.international,
+    w->ascii.xftfontname, &w->ascii.encoding);
 
-  /* This is the main change for internationalization.  */
-
-  if ( w->simple.international == True && _Xaw3dXft->encoding == 0) { /* The multi* are international. */
-
-      w->text.source = XtCreateWidget( "textSource", multiSrcObjectClass,
-				  new, args, *num_args );
-      w->text.sink = XtCreateWidget( "textSink", multiSinkObjectClass,
-				new, args, *num_args );
-  }
-  else
-  {
-
-      w->text.source = XtCreateWidget( "textSource", asciiSrcObjectClass,
-				  new, args, *num_args );
-      w->text.sink = XtCreateWidget( "textSink", asciiSinkObjectClass,
-				new, args, *num_args );
+  // MultiSrc can import and export 8bit, but it does not support
+  // useStringInPlace.
+  if (w->ascii.encoding == XawTextEncoding8bit) {
+    w->text.source = XtCreateWidget("textSource", asciiSrcObjectClass,
+      new, args, *num_args);
+    w->text.sink = XtCreateWidget("textSink", asciiSinkObjectClass,
+      new, args, *num_args);
+  } else {
+    w->text.source = XtCreateWidget("textSource", multiSrcObjectClass,
+      new, args, *num_args);
+    w->text.sink = XtCreateWidget("textSink", multiSinkObjectClass,
+      new, args, *num_args);
   }
 
+  // FIXME
   if (w->core.height == DEFAULT_TEXT_HEIGHT)
     w->core.height = VMargins(w) + XawTextSinkMaxHeight(w->text.sink, 1);
 
   for (i=0, tab=0 ; i < TAB_COUNT ; i++)
     tabs[i] = (tab += 8);
 
+  // FIXME
   XawTextSinkSetTabs(w->text.sink, TAB_COUNT, tabs);
 
   XawTextDisableRedisplay(new);
   XawTextEnableRedisplay(new);
 
-
   /* If we are using a MultiSink we need to tell the input method stuff. */
-
-  if ( w->simple.international == True && _Xaw3dXft->encoding == 0) {
+  if (w->ascii.encoding != XawTextEncoding8bit) {
     Arg list[4];
     Cardinal ac = 0;
 

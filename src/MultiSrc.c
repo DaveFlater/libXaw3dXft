@@ -54,6 +54,11 @@ in this Software without prior written authorization from the X Consortium.
 */
 
 /*
+  Copyright © 2026 David Flater
+  X11 license (as per the historical licenses that the package inherits)
+*/
+
+/*
  * MultiSrc.c - MultiSrc object. (For use with the text widget).
  *
  */
@@ -61,20 +66,22 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xfuncs.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/MultiSrcP.h>
-#include <X11/Xaw3dXft/XawImP.h>
-#include <X11/Xmu/Misc.h>
 #include <X11/Xmu/CharSet.h>
-#include "XawI18n.h"
+#include <X11/Xmu/Misc.h>
 #include <X11/Xos.h>
-#include <stdio.h>
+#include "XawI18n.h"
+#include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/XawImP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 
 #ifdef O_CLOEXEC
 #define FOPEN_CLOEXEC "e"
@@ -99,7 +106,7 @@ static XawTextPosition ReadText(Widget, XawTextPosition, XawTextBlock *, int);
 static int ReplaceText(Widget, XawTextPosition, XawTextPosition, XawTextBlock *);
 static MultiPiece * FindPiece(MultiSrcObject, XawTextPosition, XawTextPosition *);
 static MultiPiece * AllocNewPiece(MultiSrcObject, MultiPiece *);
-static FILE * InitStringOrFile(MultiSrcObject, Boolean);
+static FILE * InitStringOrFile(MultiSrcObject);
 static void FreeAllPieces(MultiSrcObject);
 static void RemovePiece(MultiSrcObject, MultiPiece *);
 static void BreakPiece(MultiSrcObject, MultiPiece *);
@@ -109,9 +116,9 @@ static void ClassInitialize(void);
 static void Initialize(Widget, Widget, ArgList, Cardinal *);
 static void Destroy(Widget);
 static void GetValuesHook(Widget, ArgList, Cardinal *);
-static String StorePiecesInString(MultiSrcObject);
+static void *StorePiecesInString(MultiSrcObject);
 static Boolean SetValues(Widget, Widget, Widget, ArgList, Cardinal *);
-static Boolean WriteToFile(String, String);
+static Boolean WriteToFile(XawTextEncoding, void*, String);
 
 #define MyWStrncpy( t,s,wcnt ) (void) memmove( (t), (s), (wcnt)*sizeof(wchar_t))
 
@@ -209,14 +216,12 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
    * Set correct flags (override resources) depending upon widget class.
    */
 
+  src->text_src.text_format = XawFmtWide;
   src->multi_src.changes = FALSE;
   src->multi_src.allocated_string = FALSE;
 
-  file = InitStringOrFile(src, src->text_src.type == XawAsciiFile);
+  file = InitStringOrFile(src);
   LoadPieces(src, file, NULL);
-
-  if (file != NULL) fclose(file);
-  src->text_src.text_format = XawFmtWide;
 }
 
 /*	Function Name: ReadText
@@ -333,10 +338,6 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
       MyWStrncpy(start_piece->text + (startPos - start_first),
 		start_piece->text + (endPos - start_first),
 		(int) (start_piece->used - (startPos - start_first)) );
-      if ( src->text_src.use_string_in_place &&
-	   ((src->multi_src.length - (endPos - startPos)) <
-	    (src->text_src.piece_size - 1)) )
-	start_piece->text[src->multi_src.length - (endPos - startPos)] = (wchar_t)0;
     }
   }
 
@@ -357,23 +358,6 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
     while (length > 0) {
       wchar_t* ptr;
       int fill;
-
-      if (src->text_src.use_string_in_place) {
-	if (start_piece->used == (src->text_src.piece_size - 1)) {
-          /*
-           * The string is used in place, then the string
-           * is not allowed to grow.
-           */
-          start_piece->used = src->multi_src.length =
-                                                 src->text_src.piece_size - 1;
-          /*((TextWidget)src->object.parent)->text.lastPos = src->multi_src.length;*/
-
-
-          start_piece->text[src->multi_src.length] = (wchar_t)0;
-	  return(XawEditError);
-	}
-      }
-
 
       if (start_piece->used == src->text_src.piece_size) {
 	BreakPiece(src, start_piece);
@@ -401,9 +385,6 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
       one I made myself.  I only care, because I need to free the string. */
 
       XFree( text.ptr );
-
-  if (src->text_src.use_string_in_place)
-    start_piece->text[start_piece->used] = (wchar_t)0;
 
   src->multi_src.changes = TRUE;
 
@@ -674,36 +655,29 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   XtAppContext app_con = XtWidgetToApplicationContext(new);
   Boolean total_reset = FALSE, string_set = FALSE;
   FILE * file;
-  int i;
 
   if ( old_src->text_src.use_string_in_place !=
        src->text_src.use_string_in_place ) {
       XtAppWarning( app_con,
-	   "MultiSrc: The XtNuseStringInPlace resources may not be changed.");
+	"libXaw3dXft MultiSrc: the useStringInPlace resource may not be changed.");
        src->text_src.use_string_in_place =
 	   old_src->text_src.use_string_in_place;
   }
 
-  for (i = 0; i < *num_args ; i++ )
+  for (Cardinal i = 0; i < *num_args ; i++ )
       if (streq(args[i].name, XtNstring)) {
 	  string_set = TRUE;
 	  break;
       }
 
-  if ( string_set || (old_src->text_src.type != src->text_src.type) ) {
+  if (string_set || (old_src->text_src.type != src->text_src.type)) {
     RemoveOldStringOrFile(old_src, string_set);
     src->multi_src.allocated_string = old_src->multi_src.allocated_string;
-    file = InitStringOrFile(src, string_set);
-
-    /* Load pieces does this logic for us, but it shouldn't.  Its messy.*/
-    /*if (old_src->text_src.type == XawAsciiString)
-        LoadPieces(src, NULL, src->text_src.string);
-    else*/
-        LoadPieces(src, file, NULL);
-    if (file != NULL) fclose(file);
-    XawTextSetSource( XtParent(new), new, 0);   /* Tell text widget
-						   what happened. */
-    total_reset = TRUE;
+    file = InitStringOrFile(src);
+    LoadPieces(src, file, NULL);
+    XawTextSetSource(XtParent(new), new, 0);   /* Tell text widget
+						  what happened. */
+    total_reset = True;
   }
 
   if ( old_src->text_src.string_length != src->text_src.string_length )
@@ -744,19 +718,11 @@ static void
 GetValuesHook(Widget w, ArgList args, Cardinal *num_args)
 {
   MultiSrcObject src = (MultiSrcObject) w;
-  int i;
-
   if (src->text_src.type == XawAsciiString) {
-    for (i = 0; i < *num_args ; i++ )
+    for (Cardinal i = 0; i < *num_args ; i++ )
       if (streq(args[i].name, XtNstring)) {
-	  if (src->text_src.use_string_in_place) {
-              *((char **) args[i].value) = (char *)
-					src->multi_src.first_piece->text;
-	  }
-	  else {
-	      if (_XawMultiSave(w))	/* If save successful. */
-		  *((char **) args[i].value) = src->text_src.string;
-	  }
+	if (_XawMultiSave(w))	/* If save successful. */
+	  *((char **) args[i].value) = src->text_src.string;
 	break;
       }
   }
@@ -812,70 +778,31 @@ _XawMultiSourceFreeString(
  * The public interface is XawAsciiSave(w)!
  */
 
-Boolean
-_XawMultiSave(
-    Widget w)
-{
-  MultiSrcObject src = (MultiSrcObject) w;
-  XtAppContext app_con = XtWidgetToApplicationContext(w);
-  char * mb_string;
-
-/*
- * If using the string in place then there is no need to play games
- * to get the internal info into a readable string.
- */
-
-  if (src->text_src.use_string_in_place)
-    return(TRUE);
-
+Boolean _XawMultiSave (Widget w) {
+  MultiSrcObject src = (MultiSrcObject)w;
+  void *mb_string;
   if (src->text_src.type == XawAsciiFile) {
-
-      if (!src->multi_src.changes) 		/* No changes to save. */
-          return(TRUE);
-
-      mb_string = StorePiecesInString( src );
-
-      if ( mb_string != 0 ) {
-          if ( WriteToFile( mb_string, src->text_src.string ) == FALSE ) {
-              XtFree( mb_string );
-              return( FALSE );
-          }
-          XtFree( mb_string );
-          src->multi_src.changes = FALSE;
-          return( TRUE );
-      } else {
-          /* If the buffer holds bad chars, don't touch it... */
-          XtAppWarningMsg( app_con,
-		"convertError", "multiSource", "XawError",
-                "Due to illegal characters, file not saved.", NULL, NULL);
-          return( FALSE );
-      }
+    if (!src->multi_src.changes) /* No changes to save. */
+      return True;
+    mb_string = StorePiecesInString(src);
+    assert(mb_string);
+    if (!WriteToFile(src->text_src.encoding, mb_string, src->text_src.string)) {
+      XtFree(mb_string);
+      return False;
+    }
+    XtFree(mb_string);
+  } else {
+    // This is used in GetValuesHook.
+    mb_string = StorePiecesInString(src);
+    assert(mb_string);
+    if (src->multi_src.allocated_string)
+      XtFree(src->text_src.string);
+    else
+      src->multi_src.allocated_string = True;
+    src->text_src.string = mb_string;
   }
-  else {
-
-  /* THIS FUNCTIONALITY IS UNDOCUMENTED, probably UNNEEDED?  The manual
-  says this routine's only function is to save files to disk.  -Sheeran */
-
-      mb_string = StorePiecesInString( src );
-
-      if ( mb_string == 0 ) {
-          /* If the buffer holds bad chars, don't touch it... */
-          XtAppWarningMsg( app_con,
-		"convertError", "multiSource", "XawError",
-                 XtName( XtParent( (Widget) src ) ), NULL, NULL);
-          return( FALSE );
-      }
-
-      /* assert: mb_string holds good characters so the buffer is fine */
-      if (src->multi_src.allocated_string == TRUE)
-          XtFree(src->text_src.string);
-      else
-          src->multi_src.allocated_string = TRUE;
-
-      src->text_src.string = mb_string;
-  }
-  src->multi_src.changes = FALSE;
-  return(TRUE);
+  src->multi_src.changes = False;
+  return True;
 }
 
 /*	Function Name: XawMultiSaveAsFile
@@ -893,22 +820,12 @@ _XawMultiSaveAsFile(
     _Xconst char* name)
 {
   MultiSrcObject src = (MultiSrcObject) w;
-  String mb_string;
-  Boolean ret;
-
-  mb_string = StorePiecesInString( src );
-
-  if ( mb_string != 0 ) {
-      ret = WriteToFile( mb_string, (char *)name );
-      XtFree( mb_string );
-      return( ret );
-  }
-
-  /* otherwise there was a conversion error.  So print widget name too. */
-  XtAppWarningMsg( XtWidgetToApplicationContext(w),
-		"convertError", "multiSource", "XawError",
-		XtName( XtParent( (Widget) src ) ), NULL, NULL);
-  return( False );
+  String mb_string = StorePiecesInString( src );
+  assert(mb_string);
+  const XawTextEncoding encoding = src->text_src.encoding;
+  Boolean ret = WriteToFile(encoding, mb_string, (char *)name);
+  XtFree(mb_string);
+  return ret;
 }
 
 /************************************************************
@@ -917,11 +834,8 @@ _XawMultiSaveAsFile(
  *
  ************************************************************/
 
-static void
-RemoveOldStringOrFile(MultiSrcObject src, Boolean checkString)
-{
+static void RemoveOldStringOrFile (MultiSrcObject src, Boolean checkString) {
   FreeAllPieces(src);
-
   if (checkString && src->multi_src.allocated_string) {
     XtFree(src->text_src.string);
     src->multi_src.allocated_string = False;
@@ -937,293 +851,227 @@ RemoveOldStringOrFile(MultiSrcObject src, Boolean checkString)
  *	Returns: returns TRUE if successful, FALSE otherwise.
  */
 
-static Boolean
-WriteToFile(String string, String name)
+static Boolean WriteToFile (XawTextEncoding encoding, void *string, String name)
 {
   int fd;
   Bool result = True;
-
-  if ((fd = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1)
-    return(FALSE);
-
-  if (write(fd, string, sizeof(unsigned char) * strlen(string)) == -1)
+  const Cardinal num_bytes = Xaw3dXftAnyStrlen(encoding, string);
+  if ((fd = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1) {
+    perror(name);
+    XtWarning("libXaw3dXft: error on file open");
+    return False;
+  }
+  if (write(fd, string, num_bytes) == -1) {
+    perror(name);
+    XtWarning("libXaw3dXft: error writing to file");
     result = False;
-
-  if ( close(fd) == -1 )
-    return(FALSE);
-
-  return(result);
+  }
+  if (close(fd) == -1) {
+    perror(name);
+    XtWarning("libXaw3dXft: error on file close");
+    result = False;
+  }
+  return result;
 }
 
 
 /*	Function Name: StorePiecesInString
- *	Description:   store the pieces in memory into a char string.
+ *	Description:   store the pieces in memory into a string in the
+ *                     external encoding.
  *	Arguments:     src - the multiSrc to gather data from
  *	Returns:       char *mb_string.     Caller must free.
- *                  or 0: conversion error. Caller must panic!
  */
 
-static String
-StorePiecesInString(MultiSrcObject src)
-{
-  wchar_t* wc_string;
-  char *mb_string;
-  int char_count = src->multi_src.length;
+static void *StorePiecesInString (MultiSrcObject src) {
+  if (src->multi_src.length >= UINT_MAX)
+    XtError("libXaw3dXft: string too long in Text widget");
+  const Cardinal num_chars = src->multi_src.length;
+
+  // Assemble the complete wide string from the piece table.
   XawTextPosition first;
-  MultiPiece * piece;
+  MultiPiece *piece;
+  wchar_t *wc_string = (wchar_t*)XtMalloc((num_chars + 1) * sizeof(wchar_t));
+  for (first = 0, piece = src->multi_src.first_piece; piece != NULL;
+       first += piece->used, piece = piece->next)
+    (void) wcsncpy(wc_string + first, piece->text, piece->used);
+  wc_string[num_chars] = 0;
 
-  /* I believe the char_count + 1 and the NULL termination are unneeded! FS*/
+  // Make the external string.
+  Cardinal num_bytes = num_chars * sizeof(wchar_t);
+  void *external_string = Xaw3dXftWcToAny(wc_string, &num_bytes,
+    src->text_src.encoding);
 
-  wc_string = (wchar_t*) XtMalloc((unsigned)(char_count + 1) * sizeof(wchar_t));
-
-  for (first = 0, piece = src->multi_src.first_piece ; piece != NULL;
-      				first += piece->used, piece = piece->next)
-      (void) wcsncpy( wc_string + first, piece->text, piece->used );
-
-  wc_string[ char_count ] = (wchar_t)0; /* NULL terminate this sucker. */
-
-
-  /* This will refill all pieces to capacity. */
-
-  if ( src->text_src.data_compression ) {
-    FreeAllPieces( src );
-    LoadPieces( src, NULL, (char *)wc_string );
+  // Optionally rebuild the piece table.  The round trip to external encoding
+  // might be lossy, but the loss is inevitable if that's how we're saving
+  // it.
+  if (src->text_src.data_compression) {
+    FreeAllPieces(src);
+    LoadPieces(src, NULL, external_string);
   }
 
-  /* Lastly, convert it to a MB format and send it back. */
-
-  mb_string = _XawTextWCToMB( XtDisplayOfObject( (Widget)src ),
-						wc_string, &char_count );
-
-  /* NOTE THAT mb_string MAY BE ZERO IF THE CONVERSION FAILED. */
-  XtFree( (char*) wc_string );
-  return( mb_string );
+  XtFree((char*)wc_string);
+  return external_string;
 }
 
 
 /*	Function Name: InitStringOrFile.
- *	Description: Initializes the string or file.
+ *	Description: Initializes the string or file before LoadPieces.
  *	Arguments: src - the MultiSource.
  *	Returns: none - May exit though.
  */
 
-static FILE *
-InitStringOrFile(MultiSrcObject src, Boolean newString)
-{
-    char * open_mode = NULL;
-    FILE * file;
-    char fileName[TMPSIZ];
-    Display *d = XtDisplayOfObject((Widget)src);
+static FILE *InitStringOrFile (MultiSrcObject src) {
+  char *open_mode = NULL;
 
-    if (src->text_src.type == XawAsciiString) {
+  assert(!src->text_src.use_string_in_place);
+  if (src->text_src.type == XawAsciiString) return NULL;
 
-	if (src->text_src.string == NULL)
-	    src->multi_src.length = 0;
+  src->multi_src.is_tempfile = False;
 
-	else if (! src->text_src.use_string_in_place) {
-	    int length;
-            String temp = XtNewString(src->text_src.string);
-            if ( src->multi_src.allocated_string )
-                XtFree( src->text_src.string );
-            src->multi_src.allocated_string = True;
-	    src->text_src.string = temp;
+  switch (src->text_src.edit_mode) {
+  case XawtextRead:
+    if (src->text_src.string == NULL)
+      XtErrorMsg("NoFile", "multiSourceCreate", "XawError",
+	"Creating a read only disk widget and no file specified.",
+	NULL, 0);
+    open_mode = "r" FOPEN_CLOEXEC;
+    break;
+  case XawtextAppend:
+  case XawtextEdit:
+    if (src->text_src.string == NULL) {
+      // Put a temp file name in text_src.string for XawAsciiSave
+      if (src->multi_src.allocated_string)
+	XtFree(src->text_src.string);
+      char fileName[TMPSIZ];
+      (void) tmpnam(fileName);
+      src->text_src.string = strdup(fileName);
+      src->multi_src.allocated_string = True;
+      src->multi_src.is_tempfile = True;
+      {
+	char buf[sizeof fileName + 80];
+	sprintf(buf,
+	  "libXaw3dXft: Text widget will save to temp file %s",
+	  fileName);
+	XtWarning(buf);
+      }
+      // File will not be opened here
+      // open_mode = "w" FOPEN_CLOEXEC;
+    } else
+      open_mode = "r+" FOPEN_CLOEXEC;
+    break;
+  default:
+    XtErrorMsg("badMode", "multiSourceCreate", "XawError",
+      "Bad editMode for multi source; must be Read, Append or Edit.",
+      NULL, NULL);
+  }
 
-	    length = strlen(src->text_src.string);
-
-	    /* Wasteful, throwing away the WC string, but need side effect! */
-	    XtFree((XtPointer)_XawTextMBToWC(d, src->text_src.string, &length));
-	    src->multi_src.length = (XawTextPosition) length;
-	} else {
-	    src->multi_src.length = strlen(src->text_src.string);
-	    /* In case the length resource is incorrectly set */
-	    if (src->multi_src.length > src->text_src.string_length)
-		src->text_src.string_length = src->multi_src.length;
-
-	    if (src->text_src.string_length == MAGIC_VALUE)
-		src->text_src.piece_size = src->multi_src.length;
-	    else
-		src->text_src.piece_size = src->text_src.string_length + 1;
-	}
-
-       /*((TextWidget)src->object.parent)->text.lastPos = src->multi_src.length;*/
-	return(NULL);
+  if (!src->multi_src.is_tempfile) {
+    FILE *file;
+    if ((file = fopen(src->text_src.string, open_mode)) != 0)
+      return file;
+    else {
+      String params[2];
+      Cardinal num_params = 2;
+      params[0] = src->text_src.string;
+      params[1] = strerror(errno);
+      XtAppWarningMsg(XtWidgetToApplicationContext((Widget)src),
+	"openError", "multiSourceCreate", "XawWarning",
+	"Cannot open file %s; %s", params, &num_params);
     }
-
-/*
- * type is XawAsciiFile.
- */
-
-    src->multi_src.is_tempfile = FALSE;
-
-    switch (src->text_src.edit_mode) {
-    case XawtextRead:
-	if (src->text_src.string == NULL)
-	    XtErrorMsg("NoFile", "multiSourceCreate", "XawError",
-		     "Creating a read only disk widget and no file specified.",
-		       NULL, 0);
-	open_mode = "r" FOPEN_CLOEXEC;
-	break;
-    case XawtextAppend:
-    case XawtextEdit:
-	if (src->text_src.string == NULL) {
-
-            if ( src->multi_src.allocated_string )
-                XtFree( src->text_src.string );
-            src->multi_src.allocated_string = False;
-	    src->text_src.string = fileName;
-
-	    (void) tmpnam(src->text_src.string);
-	    src->multi_src.is_tempfile = TRUE;
-	    open_mode = "w" FOPEN_CLOEXEC;
-	} else
-	    open_mode = "r+" FOPEN_CLOEXEC;
-	break;
-    default:
-	XtErrorMsg("badMode", "multiSourceCreate", "XawError",
-		"Bad editMode for multi source; must be Read, Append or Edit.",
-		   NULL, NULL);
-    }
-
-    /* Allocate new memory for the temp filename, because it is held in
-     * a stack memory buffer.  We must verify that all routines that set
-     * .string first check .allocated_string and free it - plumbing Sheeran.
-     */
-    if (newString || src->multi_src.is_tempfile) {
-	if ( src->multi_src.allocated_string )
-	    src->text_src.string = XtNewString(src->text_src.string);
-	src->multi_src.allocated_string = TRUE;
-    }
-
-    if (!src->multi_src.is_tempfile) {
-	if ((file = fopen(src->text_src.string, open_mode)) != 0) {
-	    (void) fseek(file, 0, SEEK_END);
-            src->multi_src.length = ftell (file);
-	    return file;
-	} else {
-	    String params[2];
-	    Cardinal num_params = 2;
-
-	    params[0] = src->text_src.string;
-	    params[1] = strerror(errno);
-	    XtAppWarningMsg(XtWidgetToApplicationContext((Widget)src),
-			    "openError", "multiSourceCreate", "XawWarning",
-			    "Cannot open file %s; %s", params, &num_params);
-	}
-    }
-    src->multi_src.length = 0;
-    return((FILE *)NULL);
-#undef StrLen
+  }
+  return NULL;
 }
 
-/* LoadPieces:  This routine takes either the MB contents of open file `file' or the
-MB contents of string or the MB contents of src->text_src.string and places
-them in Pieces in WC format.
 
-CAUTION: You must have src->multi_src.length set to file length bytes
-when src->text_src.type == XawAsciiFile.  src->multi_src.length must be
-the length of the parameter string if string is non-NULL.		*/
+/*
+  LoadPieces
 
-static void
-LoadPieces(MultiSrcObject src, FILE *file, char *string)
-{
-  Display *d = XtDisplayOfObject((Widget)src);
-  wchar_t* local_str, *ptr;
-  MultiPiece* piece = NULL;
-  XawTextPosition left;
-  int bytes = sizeof(wchar_t);
-  char* temp_mb_holder = NULL;
+  Input:  One of three sources, all in external encoding
+  1. text_src.string (initial input when text_src.type == XawAsciiString)
+  2. The file parameter (initial input when text_src.type == XawAsciiFile)
+  3. The string parameter (when recycling the piece table)
 
-  /*
-   * This is tricky - the _XawTextMBtoWC converter uses its 3rd arg
-   * in as MB length, out as WC length.  We want local_length to be
-   * WC count.
-   */
-  int local_length = src->multi_src.length;
+  multi_src.length is ignored on input.  string or text_src.string must be
+  NUL-terminated.
 
-  if (string != NULL) {
-    /*
-     * ASSERT: IF our caller passed a non-null string, THEN
-     * src->multi_src.length is currently string's * byte count,
-     * AND string is in a MB format.
-     */
-    local_str = _XawTextMBToWC(d, (char *)string, &local_length);
-    src->multi_src.length = (XawTextPosition) local_length;
-  } else if (src->text_src.type != XawAsciiFile) {
-    /*
-     * here, we are not changing the contents, just reloading,
-     * so don't change len...
-     */
-    local_length = src->text_src.string ?
-		   strlen( src->text_src.string ) : 0;
-    local_str = _XawTextMBToWC( d, (char*)src->text_src.string, &local_length );
-  } else {
-    if (src->multi_src.length != 0) {
-      temp_mb_holder =
-	XtMalloc((unsigned)(src->multi_src.length + 1) * sizeof(unsigned char));
-      fseek(file, 0, SEEK_SET);
-      src->multi_src.length = fread (temp_mb_holder,
-				     sizeof(unsigned char),
-				     (size_t)src->multi_src.length, file);
-      if (src->multi_src.length <= 0)
-	XtAppErrorMsg( XtWidgetToApplicationContext ((Widget) src),
-		       "readError", "multiSource", "XawError",
-		       "fread returned error.", NULL, NULL);
-      local_length = src->multi_src.length;
-      local_str = _XawTextMBToWC(d, temp_mb_holder, &local_length);
-      src->multi_src.length = local_length;
+  Result:
+  Piece table is filled up with the input converted to wc.
+  multi_src.length is the number of wide characters.
+  If file was provided, it is closed.
+*/
+static void LoadPieces (MultiSrcObject src, FILE *file, char *string) {
+  wchar_t *local_str = NULL;
+  Cardinal local_num_wchars = 0;
+  const XawTextEncoding encoding = src->text_src.encoding;
 
-      if ( local_str == 0 ) {
-	String params[2];
-	Cardinal num_params;
-	static char err_text[] =
-		"<<< FILE CONTENTS NOT REPRESENTABLE IN THIS LOCALE >>>";
+  // Following InitStringOrFile, string parameter is always null.
+  // When recycling the piece table, file parameter is always null.
+  // Sometimes they're both null, but they can't both be non-null.
+  assert(!file || !string);
 
-	params[0] = XtName(XtParent((Widget)src));
-	params[1] = src->text_src.string;
-	num_params = 2;
-
-	XtAppWarningMsg( XtWidgetToApplicationContext((Widget)src),
-			 "readLocaleError", "multiSource", "XawError",
-    "%s: The file `%s' contains characters not representable in this locale.",
-			 params, &num_params);
-	src->multi_src.length = sizeof err_text;
-	local_length = src->multi_src.length;
-        local_str = _XawTextMBToWC(d, err_text, &local_length);
-	src->multi_src.length = local_length;
-      }
-    } else { /*ASSERT that since following while loop looks at local_length
-        this isn't needed.  Sheeran, Omron KK, 1993/07/15
-        temp_mb_holder[src->multi_src.length] = '\0';*/
-        local_str = (wchar_t*)temp_mb_holder;
+  if (!string && !file) {
+    // Either our input is in text_src.string or there is none.
+    // If we're in "file mode," text_src.string is a file name.
+    if (src->text_src.type == XawAsciiString && src->text_src.string) {
+      Cardinal num_bytes = Xaw3dXftAnyStrlen(encoding, src->text_src.string);
+      local_str = Xaw3dXftAnyToWc(encoding, src->text_src.string, &num_bytes);
+      assert(num_bytes % sizeof(wchar_t) == 0);
+      local_num_wchars = num_bytes / sizeof(wchar_t);
     }
+  } else if (string) {
+    // Our input is in parameter string, regardless of mode.  File is null.
+    Cardinal num_bytes = Xaw3dXftAnyStrlen(encoding, string);
+    local_str = Xaw3dXftAnyToWc(encoding, string, &num_bytes);
+    assert(num_bytes % sizeof(wchar_t) == 0);
+    local_num_wchars = num_bytes / sizeof(wchar_t);
+  } else {
+    // Our input is in the file.
+    assert(src->text_src.type == XawAsciiFile);
+    if (fseek(file, 0, SEEK_END) == -1) {
+      perror("fseek");
+      XtError("libXaw3dXft: fseek failed in Text widget");
+    }
+    const long biglen = ftell(file);
+    if (biglen >= UINT_MAX)
+      XtError("libXaw3dXft: file too long in Text widget");
+    Cardinal num_bytes = biglen;
+    rewind(file);
+    void *slurp = XtMalloc(num_bytes+4);
+    size_t ret = fread(slurp, 1, num_bytes, file);
+    if (ret < num_bytes) {
+      XtWarning("libXaw3dXft: short file read in Text widget");
+      num_bytes = ret;
+    }
+    if (fclose(file)) {
+      perror("fclose");
+      XtWarning("libXaw3dXft: fclose failed in Text widget");
+    }
+    (void) memset(slurp+num_bytes, 0, 4);
+    // A short read above could lead to a Rule 2 assert fail in
+    // Xaw3dXftAnyToWc here:
+    local_str = Xaw3dXftAnyToWc(encoding, slurp, &num_bytes);
+    assert(num_bytes % sizeof(wchar_t) == 0);
+    local_num_wchars = num_bytes / sizeof(wchar_t);
+    free(slurp);
   }
 
-  if (src->text_src.use_string_in_place) {
-      piece = AllocNewPiece(src, piece);
-      piece->used = Min(src->multi_src.length, src->text_src.piece_size);
-      piece->text = (wchar_t*)src->text_src.string;
-      return;
-  }
-
-  ptr = local_str;
-  left = local_length;
-
+  // Build the piece table from the wide string.
+  wchar_t *ptr  = local_str;        // Maybe null
+  uint64_t left = local_num_wchars; // Maybe 0
+  MultiPiece *piece = NULL;
   do {
-      piece = AllocNewPiece(src, piece);
-
-      piece->text = (wchar_t*)XtMalloc(src->text_src.piece_size * bytes);
-      piece->used = Min(left, src->text_src.piece_size);
-      if (piece->used != 0)
-          (void) wcsncpy(piece->text, ptr, piece->used);
-
-      left -= piece->used;
-      ptr += piece->used;
+    piece = AllocNewPiece(src, piece);
+    piece->text = (wchar_t*)XtMalloc(src->text_src.piece_size * sizeof(wchar_t));
+    piece->used = Min(left, src->text_src.piece_size);
+    if (piece->used != 0)
+      (void) wcsncpy(piece->text, ptr, piece->used); // possibly unterminated
+    left -= piece->used;
+    ptr  += piece->used;
   } while (left > 0);
 
-  if ((char *)local_str != temp_mb_holder)
-      XtFree((XtPointer)local_str);
-  if (temp_mb_holder)
-      XtFree(temp_mb_holder);
+  src->multi_src.length = local_num_wchars;
+  if (local_str)
+    free(local_str);
 }
 
 
@@ -1293,9 +1141,7 @@ RemovePiece(MultiSrcObject src, MultiPiece *piece)
   if (piece->next != NULL)
     (piece->next)->prev = piece->prev;
 
-  if (!src->text_src.use_string_in_place)
-    XtFree((char *)piece->text);
-
+  XtFree((char *)piece->text);
   XtFree((char *)piece);
 }
 

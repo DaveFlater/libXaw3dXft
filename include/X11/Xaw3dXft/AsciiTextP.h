@@ -85,7 +85,11 @@ typedef struct _AsciiTextClassRec {
 
 extern AsciiTextClassRec asciiTextClassRec;
 
-typedef struct { char foo; /* keep compiler happy. */ } AsciiPart;
+typedef struct {
+  // Resources
+  char *xftfontname;
+  unsigned char encoding;
+} AsciiPart;
 
 typedef struct _AsciiRec {
     CorePart		core;

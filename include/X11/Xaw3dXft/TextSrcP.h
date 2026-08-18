@@ -109,7 +109,7 @@ extern TextSrcClassRec textSrcClassRec;
 
 /* New fields for the TextSrc object record */
 typedef struct {
-  /* resources */
+  /* Resources */
   XawTextEditType	edit_mode;
   XrmQuark		text_format; /* 2 formats: XawFmt8Bit for Ascii */
 				     /*            XawFmtWide for ISO 10646 */
@@ -123,8 +123,13 @@ typedef struct {
 				   changed. */
   Boolean use_string_in_place;	/* Use the string passed in place. */
   int     string_length;	/* Optional length of string in bytes. */
+
+  // TextSrc needs xftfontname and international to determine the default
+  // encoding (see Xaw3dXftFixDefaultEncoding).  The alternative is to dig it
+  // out of AsciiText.
   unsigned char encoding;
   Boolean international;
+  char *xftfontname;
 
 } TextSrcPart;
 

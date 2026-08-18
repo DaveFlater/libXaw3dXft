@@ -226,18 +226,12 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   sink->text_sink.tabs = NULL;
   sink->text_sink.char_tabs = NULL;
 
+  Xaw3dXftFixDefaultEncoding(args, *num_args, sink->text_sink.international,
+    sink->text_sink.xftfontname, &sink->text_sink.encoding);
   if (sink->text_sink.xftfontname)
     sink->text_sink.xftfont = Xaw3dXftGetFont(new, sink->text_sink.xftfontname);
-  else {
+  else
     sink->text_sink.xftfont = NULL;
-    // Maintain Xaw compatibility by changing the default encoding when a
-    // font set is going to be used, but allow a specified encoding to
-    // override it.
-    if (sink->text_sink.international &&
-      sink->text_sink.encoding == XawTextEncoding8bit &&
-      !Xaw3dXftSpecifiedEncoding(args, *num_args))
-      sink->text_sink.encoding = XawTextEncodingmb;
-  }
   if (sink->text_sink.international && !sink->text_sink.fontset)
     XtError("TextSink initialized with international true but no fontset");
   if (!sink->text_sink.font) XtError("TextSink initialized with no font");

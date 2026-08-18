@@ -462,18 +462,12 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     NULL;
   entry->sme_bsb.xorSet = False;
 
+  Xaw3dXftFixDefaultEncoding(args, *num_args, entry->sme.international,
+    entry->sme_bsb.xftfontname, &entry->sme_bsb.encoding);
   if (entry->sme_bsb.xftfontname)
     entry->sme_bsb.xftfont = Xaw3dXftGetFont(new, entry->sme_bsb.xftfontname);
-  else {
+  else
     entry->sme_bsb.xftfont = NULL;
-    // Maintain Xaw compatibility by changing the default encoding when a
-    // font set is going to be used, but allow a specified encoding to
-    // override it.
-    if (entry->sme.international &&
-      entry->sme_bsb.encoding == XawTextEncoding8bit &&
-      !Xaw3dXftSpecifiedEncoding(args, *num_args))
-      entry->sme_bsb.encoding = XawTextEncodingmb;
-  }
   if (entry->sme.international && !entry->sme_bsb.fontset)
     XtError("SmeBSB initialized with international true but no fontset");
   if (!entry->sme_bsb.font) XtError("SmeBSB initialized with no font");

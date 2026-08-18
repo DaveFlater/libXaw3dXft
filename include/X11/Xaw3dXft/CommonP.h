@@ -59,5 +59,7 @@ extern void Xaw3dXftCopy (Display *display, Drawable src, Drawable dest,
   GC gc, Dimension width, Dimension height, Cardinal depth, Position dest_x,
   Position dest_y);
 
-// Return True if encoding is among the arguments.
-extern Boolean Xaw3dXftSpecifiedEncoding (ArgList args, Cardinal num_args);
+// Maintain Xaw compatibility by changing the default encoding when a font
+// set is going to be used, but allow a specified encoding to override it.
+extern void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
+  Boolean international, const char *xftFontName, unsigned char *encoding);

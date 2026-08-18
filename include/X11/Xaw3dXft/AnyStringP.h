@@ -176,3 +176,9 @@ extern Boolean Xaw3dXftLocateUnderline (
 // Caller is responsible for freeing the returned string.
 extern wchar_t *Xaw3dXftAnyToWc (XawTextEncoding encoding, const void *text,
 				 Cardinal *num_bytes);
+
+// For MultiSrc
+// Convert wc to any encoding.  num_bytes is updated as applicable.  Caller
+// is responsible for freeing the returned string.
+extern void *Xaw3dXftWcToAny (const wchar_t *text, Cardinal *num_bytes,
+  XawTextEncoding encoding);

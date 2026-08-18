@@ -189,8 +189,8 @@ file:
       XawTextEncodingUTF8   = 2, // char, char8_t, FcChar8, UTF-8
       XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [α]
       XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
-      XawTextEncodingmb     = 5, // char, narrow multibyte, locale's codeset [γ]
-      XawTextEncodingwc     = 6  // wchar_t, wide string [δ]
+      XawTextEncodingMb     = 5, // char, narrow multibyte, locale's codeset [γ]
+      XawTextEncodingWc     = 6  // wchar_t, wide string [δ]
     } XawTextEncoding;
 
 Notes:
@@ -300,13 +300,13 @@ following resources related to fonts and encodings:
 
 Name          | Class         | RepType      | Default value
 :---          | :----         | :---         | :---
-encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international) \*
+encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international) \*
 font          | Font          | XFontStruct\* | XtDefaultFont
 fontSet       | FontSet       | XFontSet     | XtDefaultFontSet
 international | International | Boolean      | False
 xftFont       | XftFont       | String       | NULL
 
-\* To be precise, encoding defaults to XawTextEncodingmb only when
+\* To be precise, encoding defaults to XawTextEncodingMb only when
 international is True *and* xftFont is NULL.  The international resource is
 not used if xftFont is provided.
 
@@ -464,7 +464,7 @@ Core:
 Name           | Class        | RepType      | Default value
 :---           | :----        | :---         | :---
 backingStore   | BackingStore | BackingStore | Always + WhenMapped + NotUseful
-encoding       | Encoding     | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
+encoding       | Encoding     | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
 font           | Font         | XFontStruct* | XtDefaultFont
 fontSet        | FontSet      | XFontSet     | XtDefaultFontSet
 foreground     | Foreground   | Pixel        | XtDefaultForeground
@@ -573,7 +573,7 @@ Added resources:
 
 Name        | Class       | RepType | Default value
 :---        | :---        | :---    | :---
-encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
+encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight | Background | Pixel | XtDefaultBackground
 highlightStyle | ListHighlightStyle | UnsignedChar | ListHighlightReverse
 xftFont | XftFont | String  | NULL
@@ -727,7 +727,7 @@ Added resources:
 
 Name      | Class     | RepType | Default value
 :---      | :---      | :---    | :---
-encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingmb if international)
+encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight | Background | Pixel | XtDefaultBackground
 highlightStyle | MenuHighlightStyle | UnsignedChar | MenuHighlightReverse
 menuName  | MenuName  | String  | NULL
@@ -778,7 +778,7 @@ Added resources:
 
 Name    | Class   | RepType | Default value
 :---    | :----   | :---    | :---
-encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingmb if international)
+encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight          | Background         | Pixel         | XtDefaultBackground
 highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
 xftFont            | XftFont            | String        | NULL

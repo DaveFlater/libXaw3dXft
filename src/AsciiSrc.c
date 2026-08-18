@@ -939,7 +939,15 @@ InitStringOrFile(AsciiSrcObject src, Boolean newString)
 	    src->text_src.string = fileName;
 	    (void) tmpnam(src->text_src.string);
 	    src->ascii_src.is_tempfile = TRUE;
-	    open_mode = "w" FOPEN_CLOEXEC;
+	    {
+	      char buf[sizeof fileName + 80];
+	      sprintf(buf,
+		"libXaw3dXft: Text widget will save to temp file %s",
+		fileName);
+	      XtWarning(buf);
+	    }
+	    // File will not be opened here (maybe by XawAsciiSave)
+	    // open_mode = "w" FOPEN_CLOEXEC;
 	} else
 	    open_mode = "r+" FOPEN_CLOEXEC;
 	break;

@@ -65,7 +65,7 @@ SOFTWARE.
  dataCompression     DataCompression	Boolean		True
  editType	     EditType	      XawTextEditType	XawtextRead
  encoding            Encoding           unsigned char   XawTextEncoding8bit
-                                      if international, XawTextEncodingmb
+                                      if international, XawTextEncodingMb
  international       International      Boolean         False
  length		     Length		int		(internal)
  pieceSize	     PieceSize		int		BUFSIZ
@@ -89,11 +89,13 @@ SOFTWARE.
 #define XtCPieceSize "PieceSize"
 #define XtCType "Type"
 #define XtCUseStringInPlace "UseStringInPlace"
+#define XtCXftFont "XftFont"
 
 #define XtNdataCompression "dataCompression"
 #define XtNpieceSize "pieceSize"
 #define XtNtype "type"
 #define XtNuseStringInPlace "useStringInPlace"
+#define XtNxftFont "xftFont"
 
 #define XtRTextType "TextType"
 

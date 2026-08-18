@@ -58,7 +58,7 @@ in this Software without prior written authorization from the X Consortium.
  defaultColumns      Columns            int             2          **5
  destroyCallback     Callback		Pointer		NULL
  encoding	     Encoding		unsigned char	XawTextEncoding8bit
-                                      if international, XawTextEncodingmb
+                                      if international, XawTextEncodingMb
  font		     Font		XFontStruct*	XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  forceColumns        Columns            Boolean         False      **5

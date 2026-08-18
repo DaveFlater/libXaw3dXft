@@ -236,9 +236,16 @@ Position dest_y) {
     XCopyArea(display, src, dest, gc, 0, 0, width, height, dest_x, dest_y);
 }
 
-Boolean Xaw3dXftSpecifiedEncoding (ArgList args, Cardinal num_args) {
+static Boolean SpecifiedEncoding (ArgList args, Cardinal num_args) {
   for (Cardinal c=0; c<num_args; ++c)
     if (!strcmp(args[c].name, XtNencoding))
       return True;
   return False;
+}
+
+void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
+Boolean international, const char *xftFontName, unsigned char *encoding) {
+  if (!xftFontName && international && *encoding == XawTextEncoding8bit &&
+  !SpecifiedEncoding(args, num_args))
+    *encoding = XawTextEncodingMb;
 }

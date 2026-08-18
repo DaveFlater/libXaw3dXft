@@ -70,7 +70,7 @@ SOFTWARE.
  cursorName	     Cursor		String		NULL
  destroyCallback     Callback		XtCallbackList	NULL
  encoding	     Encoding		unsigned char	XawTextEncoding8bit
-                                      if international, XawTextEncodingmb
+                                      if international, XawTextEncodingMb
  font		     Font		XFontStruct*	XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground	     Foreground		Pixel		XtDefaultForeground
