@@ -223,8 +223,8 @@ Unix-centric assumption that wchar_t is UTF-32.
 
 Locales matter to Xaw3dXft for two reasons:
 
-- Narrow multibyte strings ("mb") are interpreted according to the locale's
-  codeset;
+- Narrow multibyte strings ("Mb" encoding) are interpreted according to the
+  locale's codeset;
 - Rendering using [font sets](#fontset) (described below) is limited to the
   character repertoire of the active locale regardless of the encoding used.
 
@@ -251,6 +251,16 @@ in limited sizes and with limited character repertoires.  Newer fonts with
 wide character repertoires can be used via the FreeType backend; however, the
 rendering quality is limited by the core X11 fonts system.
 
+Core fonts are identified using [X Logical Font
+Description](https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/xlfd/xlfd.html#FontName_Syntax)
+(XLFD) syntax; for example:
+`-adobe-courier-*-r-*-*-34-*-*-*-*-*-iso10646-1`.  The CHARSET_REGISTRY and
+CHARSET_ENCODING fields should be set to `iso10646-1` (Unicode) as they are
+in the preceding example whenever the font supports it.  If the registry is
+left unspecified, e.g., `-adobe-courier-*-r-*-*-34-*-*-*-*-*-*-*`, the system
+may select a limited character set such as `iso8859-1` (Latin-1), resulting in
+a lot of characters being dropped needlessly.
+
 When a plain old X font is used, Xaw3dXft calls the Xlib function XDrawString
 or XDrawString16 to render text.  XDrawString and XDrawString16 are fixed on
 the 8bit and Char2b encodings respectively.  If another encoding is provided,
@@ -266,15 +276,20 @@ wide character repertoire to be cobbled together from several fonts that
 support different pieces of it.  The rendering is done by the same core X11
 fonts system.
 
-When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString,
-XwcDrawString, or Xutf8DrawString to render text.  The latter two functions,
-unfortunately, convert the input to mb; thus, *all rendering using font sets
-is limited to the character repertoire of the locale*.  Characters that do
-not exist in the locale's codeset are silently dropped.  For best results,
-[set a UTF-8 locale](#locales).
+When building a font set, it is better to leave CHARSET_REGISTRY and
+CHARSET_ENCODING unspecified, as in the example
+`-adobe-courier-*-r-*-*-34-*-*-*-*-*-*-*`, because the system will then
+attempt to load every charset that it needs for the locale.
 
-If 8bit, Char2b, UCS2, or UTF32 is provided, Xaw3dXft translates it to wc,
-which is then reduced to mb by Xlib.
+When a font set is used, Xaw3dXft calls the Xlib function XmbDrawString or
+XwcDrawString to render text.  The latter function, unfortunately, converts
+the input to Mb; thus, *all rendering using font sets is limited to the
+character repertoire of the locale*.  Characters that do not exist in the
+locale's codeset are silently dropped.  For best results, [set a UTF-8
+locale](#locales).
+
+If 8bit, Char2b, UCS-2, UTF-8, or UTF-32 is provided, Xaw3dXft translates it
+to Wc, which is then reduced to Mb by Xlib.
 
 While attractive in principle, the implementation of font sets left much to
 be desired.  The process of choosing a font for a particular character goes
@@ -283,15 +298,24 @@ being mistranslated or dropped unnecessarily (see [oddities](#fontsetfail)).
 In the best case, it is difficult to assemble a set of fonts that do not
 clash with one another's style or metrics.
 
-#### FreeType
+#### <a name="freetype"> FreeType
 
 FreeType is an improved font rendering system that circumvents the
 limitations of the original core X11 fonts system.  Newer fonts can be scaled
 and rendered at higher quality, and anti-aliasing is supported.
 
-libXft supports the 8bit, UTF8, UCS2, and UTF32 encodings.  If Char2b is
-provided, Xaw3dXft translates it to UCS2.  If any other encoding is provided,
-Xaw3dXft translates it to UTF32.
+The Xft font name syntax is described in [this
+tutorial](https://keithp.com/~keithp/render/Xft.tutorial); e.g., `times-24`
+for 24 point Times, `times:pixelsize=34` for 34 pixel Times, or
+`times-24:foundry=adobe` to match Adobe Times only.  Xft point sizes are
+adjusted by the display scaling factors of desktop environments like KDE and
+Gnome.  For example, if your display scaling factor is set to 175%, a
+14-point font rendered by FreeType will be close in size to a 24-point font
+rendered by the core fonts system.
+
+libXft supports the 8bit, UTF-8, UCS-2, and UTF-32 encodings.  If Char2b is
+provided, Xaw3dXft translates it to UCS-2.  If any other encoding is
+provided, Xaw3dXft translates it to UTF-32.
 
 ### <a name="resources"> Resources
 
@@ -300,15 +324,11 @@ following resources related to fonts and encodings:
 
 Name          | Class         | RepType      | Default value
 :---          | :----         | :---         | :---
-encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international) \*
+encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
 font          | Font          | XFontStruct\* | XtDefaultFont
 fontSet       | FontSet       | XFontSet     | XtDefaultFontSet
 international | International | Boolean      | False
 xftFont       | XftFont       | String       | NULL
-
-\* To be precise, encoding defaults to XawTextEncodingMb only when
-international is True *and* xftFont is NULL.  The international resource is
-not used if xftFont is provided.
 
 The font system that Xaw3dXft will use to render the text is decided as
 follows:
@@ -317,15 +337,12 @@ follows:
 2. Else, if international is true, use fontSet.
 3. Otherwise, use font (plain old X font).
 
-The usual syntax of the string value given to xftFont is the Xft font name
-syntax described in [this
-tutorial](https://keithp.com/~keithp/render/Xft.tutorial); e.g., "times-24"
-for 24 point Times, "times:pixelsize=34" for 34 pixel Times, or
-"times-24:foundry=adobe" to match Adobe Times only.  To use X Logical Font
-Description (XLFD) syntax instead, prefix it with "core:"  e.g.,
-"core:-adobe-times-medium-r-\*-\*-\*-240-\*-\*-\*-\*-\*-\*".  This change is
-purely syntactic:  rendering is still done by FreeType using only the fonts
-that are known to Fontconfig.
+The string value for xftFont is the font name.  Normally, it should be given
+in the syntax described in the [previous section](#freetype), but to use XLFD
+syntax instead, prefix it with "core:"  e.g.,
+`core:-adobe-times-medium-r-*-*-*-240-*-*-*-*-iso10646-1`.  Note that this
+change is purely syntactic:  rendering is still done by FreeType using only
+the fonts that are known to Fontconfig.
 
 If a named xftFont fails to load, another font will be substituted without
 warning.  🤷
@@ -507,6 +524,10 @@ layout | Layout  | Layout  | NULL
 Notable differences between the classes that exist in Xaw R6.3 and their
 analogs in Xaw3dXft are detailed in the following subsections.
 
+### AsciiSink, AsciiSrc, AsciiText
+
+See [Text](#TextWidget).
+
 ### Command
 
 Added resource:
@@ -594,6 +615,10 @@ when highlightStyle is ListHighlightBackground.
 Reverse and background highlighting are applied via an exclusive-or function
 of Pixel values.  Their effect on a background pixmap is colormap-dependent
 but generally sufficient to show contrast with the unhighlighted state.
+
+### MultiSink, MultiSrc
+
+See [Text](#TextWidget).
 
 ### Repeater
 
@@ -763,7 +788,7 @@ zero inhibits underlining.
 Being a non-widget Object, SmeBSB does not have a window of its own, so the
 borderWidth resource that it inherits from Rectangle is inoperative.
 
-### Text
+### <a name="TextWidget"> Text
 
 The Text widget and its associated objects and subclasses are a complex
 assembly.  Among them, the only one that an application should create is
@@ -804,11 +829,12 @@ Quirks and differences to be aware of:
 
 Xaw | Xaw3dXft
 :-- | :---
-The encoding of the string or the file is assumed to be mb if international is true and 8bit otherwise. | The encoding resource specifies the encoding.
+The encoding of the string or the file is assumed to be Mb if international is true and 8bit otherwise. | The encoding resource specifies the encoding.
 The class of the type resource is documented as Type but implemented as AsciiType and MultiType in AsciiSrc and MultiSrc respectively. | These definitions have been merged, and the class is TextType.
 Setting useStringInPlace and international to True at the same time invokes broken code. | Setting useStringInPlace to True is allowed only when encoding is XawTextEncoding8bit and type is XawAsciiString.
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
 The encoding of a file inserted by the insert-file() action is assumed to be 8bit. | The encoding resource specifies the encoding.
+The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
 
 The length resource is misleading.  Its only function is to override
 pieceSize when useStringInPlace is True so that the string can grow.
@@ -886,23 +912,6 @@ resource is true
 Determines the behavior of a menu when it doesn't fit on the screen in a
 single column.  1 = multiple columns; 0 = single column with scroll arrows.
 
-### char text_bg_hilight = 0
-
-Applicable when:  encoding != 0
-
-1 = highlight selected text in text fields using text_bg_hilight_color; 0 =
-do not highlight selected text at all.
-
-When encoding is 0, selected text is shown with reversed fg/bg colors.
-
-### Pixel text_bg_hilight_color = -1
-
-Applicable when:  encoding != 0 && text_bg_hilight == 1
-
-Bitwise XOR value applied to background colors to highlight selected text.
-The Pixel is interpreted as a 3-byte value, one byte per color:  0xRRGGBB.
-If left on the default value of -1, no highlighting occurs.
-
 ### char show_tips = 1
 
 Globally enable/disable showing tips.
@@ -935,7 +944,6 @@ These functions are also declared directly in Xaw3dXftP.h.
 Xaw3dXftProc | Xaw3dXftP.h | Function
 :--- | :--- | :---
 set_default_fontname    | Xaw3dXftSetDefaultFontName   | default_fontname = strdup(value) (after freeing any previous value)
-set_insensitive_twist   | Xaw3dXftSetInsensitiveTwist  | See insensitive_twist
 get_font                | Xaw3dXftGetFont              | Return XftFont *
 text_width              | Xaw3dXftTextWidth            | Return x-extent of string
 draw_string             | Xaw3dXftDrawString           | Draw string on widget
@@ -987,6 +995,8 @@ menu_spacing:  use SmeBSB.vertSpace resource
 no_hilit_reverse:  use highlightStyle resource  
 insensitive_twist:  deleted (all insensitive widgets are stippled)  
 string_use_pixmap:  deleted (workaround not needed anymore)  
+text_bg_hilight:  use highlightStyle resource  
+text_bg_hilight_color:  use highlight resource  
 tip_background_color:  use Tip.background resource
 
 **Changed signatures of semi-private functions**
@@ -1091,10 +1101,17 @@ immediate, synchronous updating of the display.
 
 ## <a name="oddities"> Oddities
 
-The second X in Xaw3dXft is extra, but renaming the whole library at this
-point would only exacerbate the problem of losing people in the transition.
+Xaw3dXft oddities:
 
-Xaw oddities:
+- The second X in Xaw3dXft is extra, but renaming the whole library at this
+  point would only cause more people to lose track of it.
+- There are a lot of different ways for a character to fail.  Depending on
+  the mode of failure, the font system in use, and the selected font, the
+  character might be replaced by any of '?', '�', '□', a box drawn with
+  dotted lines, or a space, or it might disappear entirely, becoming a
+  zero-width character.
+
+Xaw oddities (inherited by Xaw3dXft):
 
 - Label and SmeBSB have different options for pixmaps and text for no reason.
   Label can have a left pixmap but not a right one.  SmeBSB can have both
@@ -1104,7 +1121,7 @@ Xaw oddities:
   subclass has no use for them.
 - Most widgets have pointerColor and pointerColorBackground resources that
   they inherit from Simple, but these resources are completely unused.
-- Xaw implemented conversions between mb and wc using the esoteric Xlib
+- Xaw implemented conversions between Mb and Wc using the esoteric Xlib
   functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
   XwcTextPropertyToTextList.  These conversions can be done more obviously
   using C library functions.
@@ -1115,7 +1132,7 @@ Xaw oddities:
   and frequently fails for no apparent reason, even in cases where the plain
   old XDrawString16 does quite well at covering the Basic Multilingual Plane.
 - The font set functions Xutf8TextEscapement, Xutf8Draw[Image]String, and the
-  corresponding Xwc\* functions are all implemented using a translation to mb
+  corresponding Xwc\* functions are all implemented using a translation to Mb
   (see libx11/modules/om/generic/omDefault.c).  They fail if the locale's
   codeset doesn't support the Unicode character repertoire and are useless
   for circumventing the locale dependency.

@@ -71,7 +71,6 @@ extern const char     libXaw3dXft_version[];
 static_assert(Got_XAW_defines);
 typedef struct _Xaw3dXftProc {
     void (* set_default_fontname)(char *name);
-    void (* set_insensitive_twist)(char *value);
     XftFont * (* get_font)(Widget object, char *name);
     int (* text_width)(Widget w, XftFont *font, char *str, int len);
     void (* draw_string)(Visual *visual, Widget w, XftFont *font, int x, int y, char *str, int len);
@@ -85,17 +84,14 @@ typedef struct _Xaw3dXftProc {
 
 typedef struct _Xaw3dXftData {
     char encoding;
-    char text_bg_hilight;
     char menu_spacing;
     char show_tips;
     char tip_do_grab;
     char multi_column_menu;
     char edit_delete_alternative;
     char text_sb_right;
-    unsigned short insensitive_twist[4];
     Xaw3dXftProc * proc;
     Pixel tip_background_color;
-    Pixel text_bg_hilight_color;
     char * default_fontname;
     XftFont * default_font;
 } Xaw3dXftData;

@@ -76,8 +76,6 @@ static XtResource resources[] = {
        offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
     {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
        offset(international), XtRImmediate, (XtPointer) FALSE},
-    {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
-       offset(xftfontname), XtRString, NULL},
     {XtNtype, XtCType, XtRTextType, sizeof (XawAsciiType),
        offset(type), XtRImmediate, (XtPointer)XawAsciiString},
     {XtNdataCompression, XtCDataCompression, XtRBoolean, sizeof (Boolean),
@@ -201,7 +199,7 @@ static void Initialize (Widget request, Widget new, ArgList args,
 Cardinal *num_args) {
   TextSrcObject ts = (TextSrcObject)new;
   Xaw3dXftFixDefaultEncoding(args, *num_args, ts->textSrc.international,
-    ts->textSrc.xftfontname, &ts->textSrc.encoding);
+    &ts->textSrc.encoding);
   if (ts->textSrc.use_string_in_place &&
     ts->textSrc.encoding != XawTextEncoding8bit)
     XtError("libXaw3dXft: useStringInPlace requires 8bit encoding");

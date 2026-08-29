@@ -92,7 +92,6 @@ typedef struct {
     GC xor_bghl_GC;             // function = GXxor by bg ^ hl
     XftColor xftfg;
     XftColor xftbg;
-    XftColor xfthl;
     Boolean xorSet;
     Dimension label_width;
     Dimension label_height;

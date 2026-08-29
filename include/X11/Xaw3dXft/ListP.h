@@ -99,7 +99,6 @@ typedef struct {
     GC xor_bghl_GC;             // function = GXxor by bg ^ hl
     XftColor xftfg;
     XftColor xftbg;
-    XftColor xfthl;
     Dimension   col_width,	/* width of each column. */
                 row_height;	/* height of each row. */
     Cardinal    nrows,		/* number of rows in the list. */

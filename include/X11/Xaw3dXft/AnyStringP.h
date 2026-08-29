@@ -47,9 +47,18 @@ X11 license (as per the historical licenses that the package inherits)
       the NUL.
   3.  The first num_bytes bytes of the string MUST contain a whole number of
       characters, i.e., MUST NOT end in the middle of a multibyte character.
+  4.  A string MUST be less than than 1 GB.  This applies to the input, the
+      output, and any temporary strings created in between.
   Violating these rules invokes undefined behavior.
 */
 
+// The Xlib and libXft DrawString functions take at most INT_MAX characters.
+// Far fewer can actually be drawn in window at one time.  This limit should
+// be lowered to what Text can reliably edit.  FIXME
+#define Xaw3dXftAnyStringLengthLimit 999999999U
+
+
+// ---- String functions ----
 
 /*
   The Xft tutorial warns:  "Note that drawing the same string multiple times
@@ -152,7 +161,26 @@ extern void *Xaw3dXftAnyStrdup (XawTextEncoding encoding, const void *text);
 
 
 // Return number of bytes in any string, not counting null terminator
-Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text);
+extern Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text);
+
+
+// ---- Font metrics ----
+
+/*
+  Logical height:  nominal advance from one line to the next, in pixels.
+
+  Logical ascent:  nominal distance between the top of the box (the y
+  coordinate passed to Xaw3dXftDrawAnyStringN) and the baseline of the font,
+  in pixels.
+
+  Figure width:  nominal character width used for setting tabs, in pixels.
+  It is actually the width of the '$' character.
+
+  Pass NULL for unwanted returns.
+*/
+extern void Xaw3dXftAnyFontMetrics (Display *display, XFontStruct *font,
+  XFontSet fontSet, XftFont *xftFont, Boolean international, Dimension *height,
+  Dimension *ascent, Dimension *width);
 
 
 // ---- Special interest functions ----
@@ -174,11 +202,11 @@ extern Boolean Xaw3dXftLocateUnderline (
 // For MultiSrc
 // Convert any string to wc encoding.  num_bytes is updated as applicable.
 // Caller is responsible for freeing the returned string.
-extern wchar_t *Xaw3dXftAnyToWc (XawTextEncoding encoding, const void *text,
+extern wchar_t *Xaw3dXftAnyToWcN (XawTextEncoding encoding, const void *text,
 				 Cardinal *num_bytes);
 
 // For MultiSrc
 // Convert wc to any encoding.  num_bytes is updated as applicable.  Caller
 // is responsible for freeing the returned string.
-extern void *Xaw3dXftWcToAny (const wchar_t *text, Cardinal *num_bytes,
+extern void *Xaw3dXftWcToAnyN (const wchar_t *text, Cardinal *num_bytes,
   XawTextEncoding encoding);

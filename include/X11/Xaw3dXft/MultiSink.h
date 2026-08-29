@@ -88,5 +88,4 @@ extern WidgetClass multiSinkObjectClass;
 typedef struct _MultiSinkClassRec *MultiSinkObjectClass;
 typedef struct _MultiSinkRec      *MultiSinkObject;
 
-
 #endif /* _XawMultiSrc_h */

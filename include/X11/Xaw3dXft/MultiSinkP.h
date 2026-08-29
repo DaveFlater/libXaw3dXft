@@ -109,13 +109,9 @@ typedef struct _MultiSinkClassRec {
 extern MultiSinkClassRec multiSinkClassRec;
 
 /* New fields for the MultiSink object record */
-typedef struct {
-    /* private state */
-    GC normgc, invgc, xorgc;
-    Pixmap insertCursorOn;
-    XawTextInsertState laststate;
-    short cursor_x, cursor_y;	/* Cursor Location. */
-} MultiSinkPart;
+// Everything went up to TextSink
+// typedef struct {
+// } MultiSinkPart;
 
 /****************************************************************
  *
@@ -126,7 +122,7 @@ typedef struct {
 typedef struct _MultiSinkRec {
     ObjectPart          object;
     TextSinkPart	text_sink;
-    MultiSinkPart	multi_sink;
+  // MultiSinkPart	multi_sink;
 } MultiSinkRec;
 
 
@@ -137,6 +133,7 @@ typedef struct _MultiSinkRec {
  *
  *******************************************/
 
+// This is for XawIm.  w is the TextWidget.
 extern void _XawMultiSinkPosToXY(
     Widget			/* w */,
     XawTextPosition		/* pos */,

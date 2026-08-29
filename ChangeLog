@@ -34,6 +34,8 @@ Next release, v2.0  Dave Flater
   menu_spacing:  use SmeBSB.vertSpace resource
   no_hilit_reverse:  use highlightStyle resource
   string_use_pixmap:  deleted (workaround not needed anymore)
+  text_bg_hilight:  use highlightStyle resource
+  text_bg_hilight_color:  use highlight resource
   tip_background_color:  use Tip.background resource
 
   - Changed signatures of semi-private functions.

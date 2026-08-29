@@ -68,21 +68,21 @@ SOFTWARE.
  *          kit@expo.lcs.mit.edu
  */
 
-#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/Cardinals.h>
-#include <X11/Xaw3dXft/AsciiTextP.h>
-#include <X11/Xaw3dXft/AsciiSrc.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
+#include <X11/Xaw3dXft/AsciiSrc.h>
+#include <X11/Xaw3dXft/AsciiTextP.h>
+#include <X11/Xaw3dXft/Cardinals.h>
 #include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/Encoding.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <X11/Xaw3dXft/MultiSrc.h>
 #include <X11/Xaw3dXft/MultiSinkP.h>
+#include <X11/Xaw3dXft/MultiSrc.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/XawImP.h>
+#include <X11/Xaw3dXft/XawInit.h>
 
 #define TAB_COUNT 32
 
@@ -148,19 +148,17 @@ WidgetClass asciiTextWidgetClass = (WidgetClass)&asciiTextClassRec;
 static void
 Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-  AsciiWidget w = (AsciiWidget) new;
+  AsciiWidget w = (AsciiWidget)new;
   int i;
-  int tabs[TAB_COUNT], tab;
   MultiSinkObject sink;
 
-  /* superclass Initialize can't set the following,
-   * as it didn't know the source or sink when it was called */
-  // FIXME ???
+  /* Superclass Initialize can't set the following as it didn't know the
+   * source or sink when it was called. */
   if (request->core.height == DEFAULT_TEXT_HEIGHT)
     new->core.height = DEFAULT_TEXT_HEIGHT;
 
   Xaw3dXftFixDefaultEncoding(args, *num_args, w->simple.international,
-    w->ascii.xftfontname, &w->ascii.encoding);
+    &w->ascii.encoding);
 
   // MultiSrc can import and export 8bit, but it does not support
   // useStringInPlace.
@@ -176,14 +174,15 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       new, args, *num_args);
   }
 
-  // FIXME
+  // So now we do this, after creating the sink.  tl;dr it defaults to
+  // fontHeight plus vertical margins.
   if (w->core.height == DEFAULT_TEXT_HEIGHT)
     w->core.height = VMargins(w) + XawTextSinkMaxHeight(w->text.sink, 1);
 
+  // Initialize tab stops to multiples of 8.
+  int tabs[TAB_COUNT], tab;
   for (i=0, tab=0 ; i < TAB_COUNT ; i++)
     tabs[i] = (tab += 8);
-
-  // FIXME
   XawTextSinkSetTabs(w->text.sink, TAB_COUNT, tabs);
 
   XawTextDisableRedisplay(new);
@@ -195,7 +194,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     Cardinal ac = 0;
 
     sink = (MultiSinkObject)w->text.sink;
-    _XawImRegister( new );
+    _XawImRegister(new);
     XtSetArg (list[ac], XtNfontSet, sink->text_sink.fontset); ac++;
     XtSetArg (list[ac], XtNinsertPosition, w->text.insertPos); ac++;
     XtSetArg (list[ac], XtNforeground, sink->text_sink.foreground); ac++;
@@ -204,17 +203,12 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   }
 }
 
-static void
-Destroy(Widget w)
-{
-    /* Disconnect input method */
-
-    if ( ((AsciiWidget)w)->simple.international == True && _Xaw3dXft->encoding == 0)
-        _XawImUnregister( w );
-
-    if (w == XtParent(((AsciiWidget)w)->text.source))
-	XtDestroyWidget( ((AsciiWidget)w)->text.source );
-
-    if (w == XtParent(((AsciiWidget)w)->text.sink))
-	XtDestroyWidget( ((AsciiWidget)w)->text.sink );
+static void Destroy (Widget w) {
+  AsciiWidget aw = (AsciiWidget)w;
+  if (aw->ascii.encoding != XawTextEncoding8bit)
+    _XawImUnregister(w);
+  if (w == XtParent(aw->text.source))
+    XtDestroyWidget(aw->text.source);
+  if (w == XtParent(aw->text.sink))
+    XtDestroyWidget(aw->text.sink);
 }

@@ -244,8 +244,8 @@ static Boolean SpecifiedEncoding (ArgList args, Cardinal num_args) {
 }
 
 void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
-Boolean international, const char *xftFontName, unsigned char *encoding) {
-  if (!xftFontName && international && *encoding == XawTextEncoding8bit &&
+Boolean international, unsigned char *encoding) {
+  if (international && *encoding == XawTextEncoding8bit &&
   !SpecifiedEncoding(args, num_args))
     *encoding = XawTextEncodingMb;
 }

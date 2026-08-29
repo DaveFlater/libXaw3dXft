@@ -132,9 +132,6 @@ _XFUNCPROTOBEGIN
  *                              in the text buffer.
  *                 highlight - highlight this text?
  *	Returns: none.
- *
- * This function doesn't actually display anything, it is only a place
- * holder.
  */
 
 extern void XawTextSinkDisplayText(
@@ -152,9 +149,6 @@ extern void XawTextSinkDisplayText(
  *                 x, y - location for the cursor.
  *                 staye - whether to turn the cursor on, or off.
  *	Returns: none.
- *
- * This function doesn't actually display anything, it is only a place
- * holder.
  */
 
 extern void XawTextSinkInsertCursor(
@@ -170,9 +164,6 @@ extern void XawTextSinkInsertCursor(
  *                 x, y  - location of area to clear.
  *                 width, height - size of area to clear
  *	Returns: void.
- *
- * This function doesn't actually display anything, it is only a place
- * holder.
  */
 
 extern void XawTextSinkClearToBackground(

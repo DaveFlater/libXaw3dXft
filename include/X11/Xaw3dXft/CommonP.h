@@ -62,4 +62,4 @@ extern void Xaw3dXftCopy (Display *display, Drawable src, Drawable dest,
 // Maintain Xaw compatibility by changing the default encoding when a font
 // set is going to be used, but allow a specified encoding to override it.
 extern void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
-  Boolean international, const char *xftFontName, unsigned char *encoding);
+  Boolean international, unsigned char *encoding);

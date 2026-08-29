@@ -85,14 +85,9 @@ typedef struct _AsciiSinkClassRec {
 extern AsciiSinkClassRec asciiSinkClassRec;
 
 /* New fields for the AsciiSink object record */
-typedef struct {
-    /* private state */
-    GC normgc, invgc, xorgc;
-    Pixmap insertCursorOn;
-    XawTextInsertState laststate;
-    short cursor_x, cursor_y;	/* Cursor Location. */
-    Visual *visual;
-} AsciiSinkPart;
+// Everything went up to TextSink
+// typedef struct {
+// } AsciiSinkPart;
 
 /****************************************************************
  *
@@ -103,7 +98,7 @@ typedef struct {
 typedef struct _AsciiSinkRec {
     ObjectPart          object;
     TextSinkPart	text_sink;
-    AsciiSinkPart	ascii_sink;
+  // AsciiSinkPart	ascii_sink;
 } AsciiSinkRec;
 
 #endif /* _XawAsciiSinkP_h */

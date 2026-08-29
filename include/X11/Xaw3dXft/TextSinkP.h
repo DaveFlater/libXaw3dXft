@@ -61,8 +61,9 @@ SOFTWARE.
  ***********************************************************************/
 
 #include <X11/Xaw3dXft/TextSink.h>
-#include <X11/Xaw3dXft/TextP.h>	/* This source works with the Text widget. */
-#include <X11/Xaw3dXft/TextSrcP.h>	/* This source works with the Text Source. */
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/TextSrcP.h>
+#include <X11/Xaw3dXft/Encoding.h>
 
 /************************************************************
  *
@@ -100,7 +101,12 @@ typedef void (*_XawSinkSetTabsProc)
 typedef void (*_XawSinkGetCursorBoundsProc)
      (Widget, XRectangle*);
 
+typedef Dimension (*_XawSinkPaintTextProc) (Widget w, Position x,
+  Position y, XawTextEncoding encoding, const void *buf,
+  Cardinal num_chars, Boolean highlight);
+
 typedef struct _TextSinkClassPart {
+  // public:
     _XawSinkDisplayTextProc DisplayText;
     _XawSinkInsertCursorProc InsertCursor;
     _XawSinkClearToBackgroundProc ClearToBackground;
@@ -111,6 +117,8 @@ typedef struct _TextSinkClassPart {
     _XawSinkMaxHeightProc MaxHeight;
     _XawSinkSetTabsProc	SetTabs;
     _XawSinkGetCursorBoundsProc GetCursorBounds;
+  // protected:
+    _XawSinkPaintTextProc PaintText;
 } TextSinkClassPart;
 
 /* Full class record declaration */
@@ -137,10 +145,22 @@ typedef struct {
     unsigned char highlightStyle;
 
     /* private state. */
+    GC normal_GC;               // fg, font
+    GC rev_GC;                  // foreground = bg, font
+    GC stipple_GC;              // FillStippled with bg
+    GC xor_fgbg_GC;             // function = GXxor by fg ^ bg
+    GC xor_bghl_GC;             // function = GXxor by bg ^ hl
+    XftColor xftfg;
+    XftColor xftbg;
+    XftFont  *xftfont;
+    Visual *visual;
     Position *tabs;		/* The tab stops as pixel values. */
     short    *char_tabs;	/* The tabs stops as character values. */
     int      tab_count;		/* number of items in tabs */
-    XftFont  *xftfont;
+    Dimension fontHeight, fontAscent, fontWidth;
+    Pixmap insertCursorOn;
+    XawTextInsertState laststate;
+    Position cursor_x, cursor_y; /* Cursor Location. */
 
 } TextSinkPart;
 
@@ -171,5 +191,6 @@ typedef struct _TextSinkRec {
 #define XtInheritMaxHeight	   ((_XawSinkMaxHeightProc)_XtInherit)
 #define XtInheritSetTabs	   ((_XawSinkSetTabsProc)_XtInherit)
 #define XtInheritGetCursorBounds   ((_XawSinkGetCursorBoundsProc)_XtInherit)
+#define XtInheritPaintText         ((_XawSinkPaintTextProc)_XtInherit)
 
 #endif /* _XawTextSinkP_h */

@@ -124,12 +124,11 @@ typedef struct {
   Boolean use_string_in_place;	/* Use the string passed in place. */
   int     string_length;	/* Optional length of string in bytes. */
 
-  // TextSrc needs xftfontname and international to determine the default
-  // encoding (see Xaw3dXftFixDefaultEncoding).  The alternative is to dig it
-  // out of AsciiText.
+  // TextSrc needs international to determine the default encoding (see
+  // Xaw3dXftFixDefaultEncoding).  The alternative is to dig it out of
+  // AsciiText.
   unsigned char encoding;
   Boolean international;
-  char *xftfontname;
 
 } TextSrcPart;
 

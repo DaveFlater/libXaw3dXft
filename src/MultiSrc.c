@@ -883,8 +883,8 @@ static Boolean WriteToFile (XawTextEncoding encoding, void *string, String name)
  */
 
 static void *StorePiecesInString (MultiSrcObject src) {
-  if (src->multi_src.length >= UINT_MAX)
-    XtError("libXaw3dXft: string too long in Text widget");
+  if (src->multi_src.length > Xaw3dXftAnyStringLengthLimit)
+    XtError("libXaw3dXft: character string too long in Text widget");
   const Cardinal num_chars = src->multi_src.length;
 
   // Assemble the complete wide string from the piece table.
@@ -898,7 +898,7 @@ static void *StorePiecesInString (MultiSrcObject src) {
 
   // Make the external string.
   Cardinal num_bytes = num_chars * sizeof(wchar_t);
-  void *external_string = Xaw3dXftWcToAny(wc_string, &num_bytes,
+  void *external_string = Xaw3dXftWcToAnyN(wc_string, &num_bytes,
     src->text_src.encoding);
 
   // Optionally rebuild the piece table.  The round trip to external encoding
@@ -1014,14 +1014,14 @@ static void LoadPieces (MultiSrcObject src, FILE *file, char *string) {
     // If we're in "file mode," text_src.string is a file name.
     if (src->text_src.type == XawAsciiString && src->text_src.string) {
       Cardinal num_bytes = Xaw3dXftAnyStrlen(encoding, src->text_src.string);
-      local_str = Xaw3dXftAnyToWc(encoding, src->text_src.string, &num_bytes);
+      local_str = Xaw3dXftAnyToWcN(encoding, src->text_src.string, &num_bytes);
       assert(num_bytes % sizeof(wchar_t) == 0);
       local_num_wchars = num_bytes / sizeof(wchar_t);
     }
   } else if (string) {
     // Our input is in parameter string, regardless of mode.  File is null.
     Cardinal num_bytes = Xaw3dXftAnyStrlen(encoding, string);
-    local_str = Xaw3dXftAnyToWc(encoding, string, &num_bytes);
+    local_str = Xaw3dXftAnyToWcN(encoding, string, &num_bytes);
     assert(num_bytes % sizeof(wchar_t) == 0);
     local_num_wchars = num_bytes / sizeof(wchar_t);
   } else {
@@ -1032,7 +1032,7 @@ static void LoadPieces (MultiSrcObject src, FILE *file, char *string) {
       XtError("libXaw3dXft: fseek failed in Text widget");
     }
     const long biglen = ftell(file);
-    if (biglen >= UINT_MAX)
+    if (biglen > Xaw3dXftAnyStringLengthLimit)
       XtError("libXaw3dXft: file too long in Text widget");
     Cardinal num_bytes = biglen;
     rewind(file);
@@ -1048,8 +1048,8 @@ static void LoadPieces (MultiSrcObject src, FILE *file, char *string) {
     }
     (void) memset(slurp+num_bytes, 0, 4);
     // A short read above could lead to a Rule 2 assert fail in
-    // Xaw3dXftAnyToWc here:
-    local_str = Xaw3dXftAnyToWc(encoding, slurp, &num_bytes);
+    // Xaw3dXftAnyToWcN here:
+    local_str = Xaw3dXftAnyToWcN(encoding, slurp, &num_bytes);
     assert(num_bytes % sizeof(wchar_t) == 0);
     local_num_wchars = num_bytes / sizeof(wchar_t);
     free(slurp);

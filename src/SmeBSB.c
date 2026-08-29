@@ -221,7 +221,6 @@ static void get_or_change_GCs (SmeBSBObject ent) {
   Colormap cmap = ObjParent(ent)->core.colormap;
   Xaw3dXftGetXftColor(display, visual, cmap, fg, &ent->sme_bsb.xftfg);
   Xaw3dXftGetXftColor(display, visual, cmap, bg, &ent->sme_bsb.xftbg);
-  Xaw3dXftGetXftColor(display, visual, cmap, hl, &ent->sme_bsb.xfthl);
 }
 
 /*
@@ -463,7 +462,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   entry->sme_bsb.xorSet = False;
 
   Xaw3dXftFixDefaultEncoding(args, *num_args, entry->sme.international,
-    entry->sme_bsb.xftfontname, &entry->sme_bsb.encoding);
+    &entry->sme_bsb.encoding);
   if (entry->sme_bsb.xftfontname)
     entry->sme_bsb.xftfont = Xaw3dXftGetFont(new, entry->sme_bsb.xftfontname);
   else

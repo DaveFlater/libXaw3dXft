@@ -250,7 +250,6 @@ static void get_or_change_GCs (ListWidget lw) {
   Colormap cmap = lw->core.colormap;
   Xaw3dXftGetXftColor(display, visual, cmap, fg, &lw->list.xftfg);
   Xaw3dXftGetXftColor(display, visual, cmap, bg, &lw->list.xftbg);
-  Xaw3dXftGetXftColor(display, visual, cmap, hl, &lw->list.xfthl);
 }
 
 
@@ -395,7 +394,7 @@ Initialize(Widget junk, Widget new, ArgList args, Cardinal *num_args)
       NULL;
 
     Xaw3dXftFixDefaultEncoding(args, *num_args, lw->simple.international,
-      lw->list.xftfontname, &lw->list.encoding);
+      &lw->list.encoding);
     if (lw->list.xftfontname)
       lw->list.xftfont = Xaw3dXftGetFont(new, lw->list.xftfontname);
     else

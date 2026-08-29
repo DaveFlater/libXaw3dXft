@@ -91,31 +91,6 @@ static int hexa(char c)
     return 0;
 }
 
-void Xaw3dXftSetInsensitiveTwist(char *value)
-{
-    int i;
-    if (!value) return;
-    if (*value == '|')
-        _Xaw3dXft->insensitive_twist[0] = 1;
-    else
-    if (*value == '&')
-        _Xaw3dXft->insensitive_twist[0] = 2;
-    else
-    if (*value == '^')
-        _Xaw3dXft->insensitive_twist[0] = 3;
-    else
-    if (*value == '~') {
-        if (strlen(value)<3) return;
-        _Xaw3dXft->insensitive_twist[0] = 4;
-        _Xaw3dXft->insensitive_twist[1] = (hexa(value[1])*16+hexa(value[2]))*257;
-        return;
-    } else
-        _Xaw3dXft->insensitive_twist[0] = 0;
-    if (strlen(value)<7) return;
-    for (i=1; i<=3; i++)
-        _Xaw3dXft->insensitive_twist[i] = (hexa(value[2*i-1])*16+hexa(value[2*i]))*257;
-}
-
 int
 Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len)
 {
@@ -141,29 +116,7 @@ static void
 AdjustBackground(Display *dpy, Window win, Colormap cmap, Widget widget,
 		 int x, int y, int w, int h)
 {
-    // Negation of text_bg_hilight is a covert signal from AsciiSink to let
-    // us know when to apply text_bg_hilight_color.  It negates
-    // text_bg_hilight, calls Xaw3dXftDrawString, and then sets it back.
-    if (_Xaw3dXft->text_bg_hilight == -1 &&
-	_Xaw3dXft->text_bg_hilight_color != -1) {
-	XColor xcol;
-	// Background comes from Core.  Non-widget Object SmeBSB should never
-	// get here.  Pixel 0 would be valid but is probably black....
-	xcol.pixel = 0U;
-	XtVaGetValues(widget, XtNbackground, &xcol.pixel, NULL);
-	xcol.flags = DoRed | DoGreen | DoBlue;
-	XQueryColor(dpy, cmap, &xcol);
-	xcol.red   ^= ((_Xaw3dXft->text_bg_hilight_color&0xff0000)>>8);
-	xcol.green ^=  (_Xaw3dXft->text_bg_hilight_color&0xff00);
-	xcol.blue  ^= ((_Xaw3dXft->text_bg_hilight_color&0xff) << 8);
-	XAllocColor(dpy, cmap, &xcol);
-	XGCValues values;
-	values.foreground = xcol.pixel;
-	GC gc = XtGetGC(widget, GCForeground, &values);
-        XFillRectangle(dpy, win, gc, x, y, w, h);
-        XtReleaseGC(widget, gc);
-    } else
-        XClearArea(dpy, win, x, y, w, h, False);
+  XClearArea(dpy, win, x, y, w, h, False);
 }
 
 void
@@ -199,32 +152,6 @@ Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y,
         xre_color.red = xcol.red;
         xre_color.green = xcol.green;
         xre_color.blue = xcol.blue;
-    }
-
-    if (!XtIsSensitive(w)) {
-        /* modify color for non sensitive items */
-        if (_Xaw3dXft->insensitive_twist[0] < 2) {
-            if (_Xaw3dXft->insensitive_twist[0] == 0) {
-                xre_color.red    = _Xaw3dXft->insensitive_twist[1];
-                xre_color.green  = _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue   = _Xaw3dXft->insensitive_twist[3];
-	    } else {
-                xre_color.red   |= _Xaw3dXft->insensitive_twist[1];
-                xre_color.green |= _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue  |= _Xaw3dXft->insensitive_twist[3];
-	    }
-	} else if (_Xaw3dXft->insensitive_twist[0] < 4) {
-	    if (_Xaw3dXft->insensitive_twist[0] == 2) {
-                xre_color.red   &= _Xaw3dXft->insensitive_twist[1];
-                xre_color.green &= _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue  &= _Xaw3dXft->insensitive_twist[3];
-	    } else {
-                xre_color.red   ^= _Xaw3dXft->insensitive_twist[1];
-                xre_color.green ^= _Xaw3dXft->insensitive_twist[2];
-                xre_color.blue  ^= _Xaw3dXft->insensitive_twist[3];
-	    }
-	} else
-	    xre_color.alpha = _Xaw3dXft->insensitive_twist[1]*257;
     }
 
     XftColor color;
@@ -358,22 +285,18 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft = (Xaw3dXftData *) XtMalloc(sizeof(Xaw3dXftData));
     sprintf(str, "mem:%lu",  (unsigned long) _Xaw3dXft);
     _Xaw3dXft->encoding  = 0;
-    _Xaw3dXft->text_bg_hilight  = 0;
     _Xaw3dXft->menu_spacing  = 1;
     _Xaw3dXft->show_tips  = 1;
     _Xaw3dXft->tip_do_grab  = 1;
     _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
     _Xaw3dXft->text_sb_right = 0;
-    memset(_Xaw3dXft->insensitive_twist, 0, 4*sizeof(unsigned short));
-    _Xaw3dXft->text_bg_hilight_color  = -1;
     _Xaw3dXft->default_fontname  = NULL;
     _Xaw3dXft->default_font  = NULL;
 
     proc = (Xaw3dXftProc *) XtMalloc(sizeof(Xaw3dXftProc));
     _Xaw3dXft->proc = proc;
     proc->set_default_fontname = Xaw3dXftSetDefaultFontName;
-    proc->set_insensitive_twist = Xaw3dXftSetInsensitiveTwist;
     proc->get_font = Xaw3dXftGetFont;
     proc->text_width = Xaw3dXftTextWidth;
     proc->draw_string = Xaw3dXftDrawString;

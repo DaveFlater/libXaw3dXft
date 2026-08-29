@@ -262,7 +262,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     lw->label.normal_GC = lw->label.stipple_GC = NULL;
 
     Xaw3dXftFixDefaultEncoding(args, *num_args, lw->simple.international,
-      lw->label.xftfontname, &lw->label.encoding);
+      &lw->label.encoding);
     if (lw->label.xftfontname)
       lw->label.xftfont = Xaw3dXftGetFont(new, lw->label.xftfontname);
     else

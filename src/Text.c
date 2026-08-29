@@ -447,6 +447,7 @@ DestroyVScrollBar(TextWidget ctx)
 
   if (vbar == NULL) return;
 
+  // FIXME failed to handle text_sb_right
   ctx->text.r_margin.left -= vbar->core.width + vbar->core.border_width;
   ctx->text.margin.left = ctx->text.r_margin.left;
   if (ctx->text.hbar == NULL)
@@ -527,7 +528,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   ctx->text.r_margin.left += s;
   ctx->text.r_margin.right += s;
   ctx->text.r_margin.top += s;
-  ctx->text.r_margin.bottom += s - 1;
+  ctx->text.r_margin.bottom += s - 1; // FIXME why is bottom margin thinner?
 
   ctx->text.lt.lines = 0;
   ctx->text.lt.info = NULL;
@@ -545,7 +546,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   ctx->text.updateFrom = (XawTextPosition *) XtMalloc((unsigned) ONE);
   ctx->text.updateTo = (XawTextPosition *) XtMalloc((unsigned) ONE);
   ctx->text.numranges = ctx->text.maxranges = 0;
-  ctx->text.gc = DefaultGCOfScreen(XtScreen(ctx));
+  ctx->text.gc = DefaultGCOfScreen(XtScreen(ctx));  // FIXME
   ctx->text.hasfocus = FALSE;
   ctx->text.margin = ctx->text.r_margin; /* Structure copy. */
   ctx->text.update_disabled = FALSE;
@@ -2868,6 +2869,8 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   newtw->text.redisplay_needed = False;
   XtSetValues( (Widget)newtw->text.source, args, *num_args );
   XtSetValues( (Widget)newtw->text.sink, args, *num_args );
+  // The SetValues functions of the source and sink always return False, but
+  // they set text.redisplay_needed, which triggers a redisplay here, below.
 
   if ( oldtw->text.wrap != newtw->text.wrap ||
        oldtw->text.lt.top != newtw->text.lt.top ||
