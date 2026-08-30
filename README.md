@@ -23,7 +23,7 @@ while some have not yet migrated.
 - [To do](#todo)
 
 
-## <a name="overview"> Overview
+## <a name="overview">Overview</a>
 
 libXaw3dXft is an extension of
 [libXaw3d](https://gitlab.freedesktop.org/xorg/lib/libxaw3d) that adds
@@ -36,7 +36,7 @@ years.  The contents of libXaw3dXft, libXaw3d, and libXaw may be referred to
 as Xaw3dXft, Xaw3d, and Xaw, respectively.
 
 
-## <a name="building"> Building a release
+## <a name="building">Building a release</a>
 
     ./configure
     make -j 4
@@ -45,7 +45,7 @@ as Xaw3dXft, Xaw3d, and Xaw, respectively.
 See the INSTALL file for general help on using configure.
 
 
-## <a name="gitsrc"> Building git sources
+## <a name="gitsrc">Building git sources</a>
 
 First,
 
@@ -54,7 +54,7 @@ First,
 Then proceed as for building a release.
 
 
-## <a name="configopt"> Configure options
+## <a name="configopt">Configure options</a>
 
 Effective in version 2.0, the three options below are enabled by default, and
 the option to disable internationalization has been removed.  For version
@@ -92,7 +92,7 @@ Enabled:  ![Scrollbar stippled with black, white, and gray pixels](README_pics/g
 Disabled:  ![Scrollbar stippled with only black and white pixels](README_pics/gray_disabled.png)
 
 
-## <a name="linking"> Linking with libXaw3dXft
+## <a name="linking">Linking with libXaw3dXft</a>
 
 To link with libXaw3dXft, an application using the GNU autotools build system
 would include this in configure.ac:
@@ -105,7 +105,7 @@ And this in Makefile.am:
     LDADD     = $(XAW3DXFT_LIBS)
 
 
-## <a name="version"> Version identification
+## <a name="version">Version identification</a>
 
 Starting with version 2.0, libXaw3dXft implements
 [libversiontemplate](https://github.com/DaveFlater/libversiontemplate) to
@@ -148,7 +148,7 @@ pkg-config file, which was then called libxaw3dxft.pc rather than
 xaw3dxft.pc.
 
 
-## <a name="olddocs"> Old documentation
+## <a name="olddocs">Old documentation</a>
 
 The following old documentation is provided under the [Docs_old
 subdirectory](Docs_old) to fill in the gaps left by this README:
@@ -175,9 +175,9 @@ The following sections assume familiarity with Xaw R6.3 and Xt and
 incorporate material from the Xaw3d and Xaw3dXft READMEs.
 
 
-## <a name="generalities"> Generalities
+## <a name="generalities">Generalities</a>
 
-### <a name="encodings"> Encodings
+### <a name="encodings">Encodings</a>
 
 The encoding specifies how character strings are to be interpreted.  The
 encodings understood by Xaw3dXft are enumerated in the Encoding.h header
@@ -219,7 +219,7 @@ and there is no reliable translation between wchar_t and UTF-anything.  A
 but is not yet implemented.  As a stopgap, Xaw3dXft relies on the
 Unix-centric assumption that wchar_t is UTF-32.
 
-### <a name="locales"> Locales
+### <a name="locales">Locales</a>
 
 Locales matter to Xaw3dXft for two reasons:
 
@@ -242,7 +242,7 @@ XtToolkitInitialize(), Xt will automatically activate the locale specified by
 (1) the -xnllanguage command line switch, (2) the xnlLanguage resource, or
 (3) the LANG environment variable.
 
-### <a name="fontsys"> Font systems
+### <a name="fontsys">Font systems</a>
 
 #### Original core X11 fonts system (plain old X fonts)
 
@@ -269,7 +269,7 @@ Multilingual
 Plane](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane)
 are replaced with ?.
 
-#### <a name="fontset"> X font sets
+#### <a name="fontset">X font sets</a>
 
 An X font set is basically an ordered list of plain old X fonts that allows a
 wide character repertoire to be cobbled together from several fonts that
@@ -298,7 +298,7 @@ being mistranslated or dropped unnecessarily (see [oddities](#fontsetfail)).
 In the best case, it is difficult to assemble a set of fonts that do not
 clash with one another's style or metrics.
 
-#### <a name="freetype"> FreeType
+#### <a name="freetype">FreeType</a>
 
 FreeType is an improved font rendering system that circumvents the
 limitations of the original core X11 fonts system.  Newer fonts can be scaled
@@ -317,7 +317,7 @@ libXft supports the 8bit, UTF-8, UCS-2, and UTF-32 encodings.  If Char2b is
 provided, Xaw3dXft translates it to UCS-2.  If any other encoding is
 provided, Xaw3dXft translates it to UTF-32.
 
-### <a name="resources"> Resources
+### <a name="resources">Resources</a>
 
 A widget accepting text (e.g., Label or its subclasses) will offer the
 following resources related to fonts and encodings:
@@ -370,9 +370,9 @@ Of course, the resources can also be set on an individual basis when widgets
 are created using XtCreateManagedWidget or XtVaCreateManagedWidget.
 
 
-## <a name="newclasses"> Classes not present in Athena Widgets
+## <a name="newclasses">Classes not present in Athena Widgets</a>
 
-### <a name="threed"> ThreeD
+### <a name="threed">ThreeD</a>
 
 The ThreeD widget class does not exist in Xaw.  It is inherited by many other
 widget classes to add 3D shadows to them.  Those widgets thus acquire the
@@ -519,7 +519,7 @@ debug  | Boolean | Boolean | False
 layout | Layout  | Layout  | NULL
 
 
-## <a name="alterations"> Alterations to Athena Widgets classes
+## <a name="alterations">Alterations to Athena Widgets classes</a>
 
 Notable differences between the classes that exist in Xaw R6.3 and their
 analogs in Xaw3dXft are detailed in the following subsections.
@@ -588,7 +588,7 @@ As in Xaw, Label will use its core name as the label text if XtNlabel is not
 supplied.  In this case, the encoding must be 8bit, UTF8, or mb because the
 core name is handled by Xt as a regular C string.
 
-### <a name="listwidget"> List
+### <a name="listwidget">List</a>
 
 Added resources:
 
@@ -698,7 +698,7 @@ Space is allowed for 3D shadows to be used as a highlighting mechanism on
 menu items.  Extra vertical space comes from the vertSpace resource (from
 Xaw) and from xaw3dxft_data->menu_spacing.
 
-#### <a name="submenus"> Sub-menus
+#### <a name="submenus">Sub-menus</a>
 
 Support for sub-menus was added to Xaw3d after its fork from Xaw.  Compatible
 functionality was added to Xaw in X11R6.7, but it still is not mentioned in
@@ -794,7 +794,7 @@ zero inhibits underlining.
 Being a non-widget Object, SmeBSB does not have a window of its own, so the
 borderWidth resource that it inherits from Rectangle is inoperative.
 
-### <a name="TextWidget"> Text, TextSink, TextSrc
+### <a name="TextWidget">Text, TextSink, TextSrc</a>
 
 The Text widget and its associated objects and subclasses are a complex
 assembly.  Among them, the only one that an application should create is
@@ -861,7 +861,7 @@ They appeared in Xaw3dXft 1.3.1 without documentation and were probably used
 for debugging.
 
 
-## <a name="runtimeopts"> Run-time options
+## <a name="runtimeopts">Run-time options</a>
 
 🚨 This feature is going away.  Functions are being transferred from the
 global struct to Xt resources.
@@ -961,7 +961,7 @@ set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | scroll_steps = value
 #endif | |
 
 
-## <a name="migration"> Version 1.x to 2.0 migration
+## <a name="migration">Version 1.x to 2.0 migration</a>
 
 Summary of backward-incompatible changes:
 
@@ -1027,7 +1027,7 @@ The colorSwitch resource of the List widget was weird, undocumented, and of
 no known use.
 
 
-## <a name="rationale"> Rationale for features removed in 2.0
+## <a name="rationale">Rationale for features removed in 2.0</a>
 
 ### no_hilit_reverse extra highlighting behaviors
 
@@ -1105,7 +1105,7 @@ reasonable implementation that works on a modern X server.  It needs
 immediate, synchronous updating of the display.
 
 
-## <a name="oddities"> Oddities
+## <a name="oddities">Oddities</a>
 
 Xaw3dXft oddities:
 
@@ -1164,7 +1164,7 @@ on a non-widget Object, so to avoid confusion, both kinds are passed as type
 Widget.
 
 
-## <a name="history"> History
+## <a name="history">History</a>
 
 Kaleb Keithley originated libXaw3d in 1992 as a general replacement for the
 [Athena Widgets (Xaw)](https://gitlab.freedesktop.org/xorg/lib/libxaw) of
@@ -1202,6 +1202,6 @@ The new repo is at
 [https://github.com/DaveFlater/libXaw3dXft](https://github.com/DaveFlater/libXaw3dXft).
 
 
-## <a name="todo"> To do
+## <a name="todo">To do</a>
 
 For planned changes, see the [Issues tab](https://github.com/DaveFlater/libXaw3dXft/issues) of the GitHub repo.
