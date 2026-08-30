@@ -186,10 +186,11 @@ extern void Xaw3dXftAnyFontMetrics (Display *display, XFontStruct *font,
 // ---- Special interest functions ----
 
 // For SmeBSB
-// Find the coordinates to underline one character in supplied text.  Returns
-// True if coordinates are valid, False if cannot comply.
-extern Boolean Xaw3dXftLocateUnderline (
-  // Similar to Xaw3dXftSizeAnyString
+// Find the coordinates of one character in supplied text.  Returns True if
+// coordinates are valid, False if cannot comply.  x1 and x2 are the left and
+// right edges of the character.  y is the top of the box.  All positions are
+// relative to the top left corner of the text.
+extern Boolean Xaw3dXftLocateCharacter (
   Display *display,
   XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,

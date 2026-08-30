@@ -404,17 +404,54 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
   Position text_x, text_y;
   GetTextPosition(ent, &text_x, &text_y);
   Xaw3dXftDrawAnyString(display, visual, cmap, window, ent->sme_bsb.font,
-    ent->sme_bsb.fontset, ent->sme_bsb.xftfont, ent->sme.international, gc, xfg,
-    text_x, text_y, NULL, ent->sme_bsb.encoding, ent->sme_bsb.label);
+    ent->sme_bsb.fontset, ent->sme_bsb.xftfont, ent->sme.international, gc,
+    xfg, text_x, text_y, NULL, ent->sme_bsb.encoding, ent->sme_bsb.label);
   if (ent->sme_bsb.underline >= 0) {
     Position x1, x2, y;
-    if (Xaw3dXftLocateUnderline(display, ent->sme_bsb.font, ent->sme_bsb.fontset,
-        ent->sme_bsb.xftfont, ent->sme.international, ent->sme_bsb.encoding,
-	ent->sme_bsb.label, ent->sme_bsb.underline, &x1, &x2, &y)) {
-      x1 += text_x;
-      x2 += text_x;
-      y  += text_y;
-      XDrawLine(display, window, gc, x1, y, x2, y);
+    if (Xaw3dXftLocateCharacter(display, ent->sme_bsb.font,
+	ent->sme_bsb.fontset, ent->sme_bsb.xftfont, ent->sme.international,
+	ent->sme_bsb.encoding, ent->sme_bsb.label, ent->sme_bsb.underline,
+	&x1, &x2, &y)) {
+      // Core fonts optionally provide UNDERLINE_POSITION and
+      // UNDERLINE_THICKNESS properties.  The docs give algorithms for
+      // approximating them if they are not provided.  IDK what FontConfig
+      // does.  Anyway, skip all that by overstriking with literal underline
+      // characters.
+      char const underlineStr[] = "_";
+      Dimension underlineWidth, height;
+      Xaw3dXftSizeAnyStringN(display, ent->sme_bsb.font, ent->sme_bsb.fontset,
+	ent->sme_bsb.xftfont, ent->sme.international, XawTextEncoding8bit,
+	underlineStr, 1, &underlineWidth, &height);
+      const Position underline_y = text_y + y;
+      if (underlineWidth >= x2 - x1 + 1) {
+	// Center the underline on the target.  Empirically, rounding up here
+	// yields better results.
+	const Position underline_x = text_x +
+	  (x1 + x2 - (Position)underlineWidth + 1) / 2;
+	Xaw3dXftDrawAnyStringN(display, visual, cmap,
+	  window, ent->sme_bsb.font, ent->sme_bsb.fontset,
+	  ent->sme_bsb.xftfont, ent->sme.international, gc, xfg, underline_x,
+	  underline_y, NULL, XawTextEncoding8bit, underlineStr, 1);
+      } else {
+	// The underline character is narrower than the target.  Fix it with
+	// double tap.  Clip to avoid thickening/darkening where they overlap
+	// (anti-aliasing reveals the overstrike).
+	const Position underline_x1 = text_x + x1,
+	               underline_x2 = text_x + x2 + 1 - underlineWidth,
+	           underline_center = text_x + (x1 + x2) / 2;
+	XRectangle clip1 = {underline_x1, underline_y,
+	                    underline_center - underline_x1, height},
+                   clip2 = {underline_center, underline_y,
+	                    text_x + x2 + 1 - underline_center, height};
+	Xaw3dXftDrawAnyStringN(display, visual, cmap,
+	  window, ent->sme_bsb.font, ent->sme_bsb.fontset,
+	  ent->sme_bsb.xftfont, ent->sme.international, gc, xfg, underline_x1,
+	  underline_y, &clip1, XawTextEncoding8bit, underlineStr, 1);
+	Xaw3dXftDrawAnyStringN(display, visual, cmap,
+	  window, ent->sme_bsb.font, ent->sme_bsb.fontset,
+	  ent->sme_bsb.xftfont, ent->sme.international, gc, xfg, underline_x2,
+	  underline_y, &clip2, XawTextEncoding8bit, underlineStr, 1);
+      }
     }
   }
 }

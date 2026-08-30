@@ -1240,7 +1240,7 @@ static Boolean locateChar (XawTextEncoding encoding, const void *text,
 
 // X(mb,wc,utf8)TextPerCharExtents almost does it for font sets but it
 // doesn't handle line breaking.
-Boolean Xaw3dXftLocateUnderline (
+Boolean Xaw3dXftLocateCharacter (
   Display *display,
   XFontStruct *font, XFontSet fontSet, XftFont *xftFont,
   Boolean international,
@@ -1255,9 +1255,9 @@ Boolean Xaw3dXftLocateUnderline (
   if (locateChar(encoding, text, character_index, &b1, &b2)) {
     assert(b2 > b1);
 
-    Dimension fontHeight, fontAscent;
+    Dimension fontHeight;
     Xaw3dXftAnyFontMetrics(display, font, fontSet, xftFont, international,
-      &fontHeight, &fontAscent, NULL);
+      &fontHeight, NULL, NULL);
 
     // Get down to the right line.
     Cardinal linesSkipped = 0;
@@ -1273,9 +1273,6 @@ Boolean Xaw3dXftLocateUnderline (
     assert(bytesSkipped <= b1);
     b1 -= bytesSkipped;
     b2 -= bytesSkipped;
-
-    // Get the y location on that line.
-    *y += fontAscent + 1;
 
     // Get the x locations on that line.
     Dimension w2, h2;
