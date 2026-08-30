@@ -917,11 +917,15 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     if ( nl->list.longest == 0 )
         nl->list.freedoms &= ~LongestLock;
 
-    /* _DONT_ check for fontset here - it's not in GC.*/
-    if (  (cl->list.foreground       != nl->list.foreground)       ||
-	  (cl->list.highlight        != nl->list.highlight)        ||
-	  (cl->core.background_pixel != nl->core.background_pixel) ||
-	  (cl->list.font->fid        != nl->list.font->fid) ) {
+    // Notice if the colors or plain old font changed.  We need
+    // get_or_change_GCs when international changes because the GCs need to
+    // be writable if true and they need to have their font set if false.
+    // Xaw does not allow international to change.
+    if (cl->list.foreground       != nl->list.foreground       ||
+	cl->list.highlight        != nl->list.highlight        ||
+	cl->core.background_pixel != nl->core.background_pixel ||
+	cl->list.font->fid        != nl->list.font->fid        ||
+	cl->simple.international  != nl->simple.international) {
       get_or_change_GCs(nl);
       redraw = True;
     }

@@ -636,7 +636,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   // The default lazy policy is to recalculate everything and repaint.
   // rectangle.sensitive:  ancestor_sensitive can't change here.
   if (cur_ent->sme_bsb.underline != new_ent->sme_bsb.underline ||
-      cur_ent->sme.international != new_ent->sme.international ||
       cur_ent->rectangle.sensitive != new_ent->rectangle.sensitive ||
       cur_ent->sme_bsb.left_margin != new_ent->sme_bsb.left_margin ||
       cur_ent->sme_bsb.right_margin != new_ent->sme_bsb.right_margin ||
@@ -664,11 +663,15 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     ret_val = True;
   }
 
-  // Notice if colors or plain old font changed.
+  // Notice if the colors or plain old font changed.  We need
+  // get_or_change_GCs when international changes because the GCs need to be
+  // writable if true and they need to have their font set if false.  Xaw
+  // does not allow international to change.
   // We have no idea whether Parent->core.background_pixel changed.
   if (cur_ent->sme_bsb.foreground != new_ent->sme_bsb.foreground ||
       cur_ent->sme_bsb.highlight != new_ent->sme_bsb.highlight ||
-      cur_ent->sme_bsb.font->fid != new_ent->sme_bsb.font->fid) {
+      cur_ent->sme_bsb.font->fid != new_ent->sme_bsb.font->fid ||
+      cur_ent->sme.international != new_ent->sme.international) {
     get_or_change_GCs(new_ent);
     ret_val = True;
   }

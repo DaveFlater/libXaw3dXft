@@ -239,9 +239,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     SimpleWidget s_new = (SimpleWidget) new;
     Boolean new_cursor = FALSE;
 
-    /* this disables user changes after creation*/
-    s_new->simple.international = s_old->simple.international;
-
     if ( XtIsSensitive(current) != XtIsSensitive(new) )
 	(*((SimpleWidgetClass)XtClass(new))->
 	     simple_class.change_sensitive) ( new );

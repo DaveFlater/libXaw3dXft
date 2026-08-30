@@ -643,6 +643,12 @@ The Scrollbar widget does not adjust its size to accommodate 3D shadows.  The
 shadows "grow inward" and crowd the scrollbar's contents.  To make room for
 wider shadows, increase the thickness resource (default 14 pixels).
 
+### Simple
+
+Simple contains the international resource that is inherited by most other
+widgets.  In Xaw, international is settable only at widget creation time and
+may not be modified with XtSetValues.  That restriction has been removed.
+
 ### SimpleMenu
 
 The border width of SimpleMenu widgets is permanently fixed at 0 in Xaw3dXft
@@ -788,7 +794,7 @@ zero inhibits underlining.
 Being a non-widget Object, SmeBSB does not have a window of its own, so the
 borderWidth resource that it inherits from Rectangle is inoperative.
 
-### <a name="TextWidget"> Text
+### <a name="TextWidget"> Text, TextSink, TextSrc
 
 The Text widget and its associated objects and subclasses are a complex
 assembly.  Among them, the only one that an application should create is

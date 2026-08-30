@@ -507,11 +507,14 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     }
   }
 
-  // Notice if colors changed.  (GCs also need updating if plain old font
-  // changed.)
+  // Notice if the colors or plain old font changed.  We need
+  // get_or_change_GCs when international changes because the GCs need to be
+  // writable if true and they need to have their font set if false.  Xaw
+  // does not allow international to change.
   if (curlw->core.background_pixel != newlw->core.background_pixel ||
 	   curlw->label.foreground != newlw->label.foreground ||
-	    curlw->label.font->fid != newlw->label.font->fid) {
+	    curlw->label.font->fid != newlw->label.font->fid ||
+       curlw->simple.international != newlw->simple.international) {
     get_or_change_GCs(newlw);
     redisplay = True;
   }

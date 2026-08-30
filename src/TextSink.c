@@ -411,9 +411,10 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
   TextSinkObject newts = (TextSinkObject)new;
   Boolean redraw = False;
 
-  // Notice if the colors or plain old font changed.  A change to
-  // international requires get_or_change_GCs because fontsets require a
-  // writable GC.
+  // Notice if the colors or plain old font changed.  We need
+  // get_or_change_GCs when international changes because the GCs need to be
+  // writable if true and they need to have their font set if false.  Xaw
+  // does not allow international to change.
   if (curts->text_sink.foreground    != newts->text_sink.foreground ||
       curts->text_sink.background    != newts->text_sink.background ||
       curts->text_sink.highlight     != newts->text_sink.highlight  ||
