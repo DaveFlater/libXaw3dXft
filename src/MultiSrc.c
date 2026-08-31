@@ -474,17 +474,17 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
 	    non_space = TRUE;
 	}
 	else if (type == XawstEOL) {
-          if (c == _Xaw_atowc(XawLF)) break;
+          if (c == L'\n') break;
 	}
 	else { /* XawstParagraph */
 	  if (first_eol) {
-            if (c == _Xaw_atowc(XawLF)) {
+            if (c == L'\n') {
 	      first_eol_position = position;
 	      first_eol = FALSE;
 	    }
 	  }
 	  else
-            if ( c == _Xaw_atowc(XawLF))
+            if ( c == L'\n')
               break;
             else if ( !iswspace(c) )
 	      first_eol = TRUE;

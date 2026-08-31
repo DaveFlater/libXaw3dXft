@@ -1000,13 +1000,13 @@ InsertNewLineAndBackupInternal(TextWidget ctx)
       text.ptr =  XtMalloc(sizeof(wchar_t) * ctx->text.mult);
       wptr = (wchar_t *)text.ptr;
       for (count = 0; count < ctx->text.mult; count++ )
-          wptr[count] = _Xaw_atowc(XawLF);
+          wptr[count] = L'\n';
   }
   else
   {
       text.ptr = XtMalloc(sizeof(char) * ctx->text.mult);
       for (count = 0; count < ctx->text.mult; count++ )
-          text.ptr[count] = XawLF;
+          text.ptr[count] = '\n';
   }
 
   if (_XawTextReplace(ctx, ctx->text.insertPos, ctx->text.insertPos, &text)) {
@@ -1071,11 +1071,11 @@ InsertNewLineAndIndent(Widget w, XEvent *event, String *p, Cardinal *n)
      text.ptr = XtMalloc( ( 2 + wcslen((wchar_t*)line_to_ip) ) * sizeof(wchar_t) );
 
      ptr = (wchar_t*)text.ptr;
-     ptr[0] = _Xaw_atowc( XawLF );
+     ptr[0] = L'\n';
      wcscpy( (wchar_t*) ++ptr, (wchar_t*) line_to_ip );
 
      length = wcslen((wchar_t*)text.ptr);
-     while ( length && ( iswspace(*ptr) || ( *ptr == _Xaw_atowc(XawTAB) ) ) )
+     while ( length && ( iswspace(*ptr) || ( *ptr == L'\t' ) ) )
          ptr++, length--;
      *ptr = (wchar_t)0;
      text.length = wcslen((wchar_t*)text.ptr);
@@ -1094,11 +1094,11 @@ InsertNewLineAndIndent(Widget w, XEvent *event, String *p, Cardinal *n)
      text.ptr = XtMalloc( ( 2 + length ) * sizeof( char ) );
 
      ptr = text.ptr;
-     ptr[0] = XawLF;
+     ptr[0] = '\n';
      strcpy( ++ptr, line_to_ip );
 
      length++;
-     while ( length && ( isspace(*ptr) || ( *ptr == XawTAB ) ) )
+     while ( length && ( isspace(*ptr) || ( *ptr == '\t' ) ) )
          ptr++, length--;
      *ptr = '\0';
      text.length = strlen(text.ptr);
@@ -1310,7 +1310,7 @@ AutoFill(TextWidget ctx)
   if (_XawTextFormat(ctx) == XawFmtWide) {
     text.format = XawFmtWide;
     text.ptr =  (char *)XtMalloc(sizeof(wchar_t) * 2);
-    ((wchar_t*)text.ptr)[0] = _Xaw_atowc(XawLF);
+    ((wchar_t*)text.ptr)[0] = L'\n';
     ((wchar_t*)text.ptr)[1] = 0;
   } else
     text.ptr = "\n";
@@ -1632,8 +1632,8 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
       text.ptr= "  ";
   else {
       static wchar_t wc_two_spaces[ 3 ];
-      wc_two_spaces[0] = _Xaw_atowc(XawSP);
-      wc_two_spaces[1] = _Xaw_atowc(XawSP);
+      wc_two_spaces[0] = L' ';
+      wc_two_spaces[1] = L' ';
       wc_two_spaces[2] = 0;
       text.ptr = (char*) wc_two_spaces;
   }
@@ -1671,7 +1671,7 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
       text.length = 1;
       buf = _XawTextGetText(ctx, periodPos, next_word);
       if (text.format == XawFmtWide) {
-        if ( (periodPos < endPos) && (((wchar_t*)buf)[0] == _Xaw_atowc('.')))
+        if ( (periodPos < endPos) && (((wchar_t*)buf)[0] == L'.'))
           text.length++;
       } else
         if ( (periodPos < endPos) && (buf[0] == '.') )
@@ -1724,7 +1724,7 @@ InsertNewCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
       text.ptr = "\n";
   else {
       static wchar_t wide_CR[ 2 ];
-      wide_CR[0] = _Xaw_atowc(XawLF);
+      wide_CR[0] = L'\n';
       wide_CR[1] = 0;
       text.ptr = (char*) wide_CR;
   }

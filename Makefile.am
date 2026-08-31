@@ -54,7 +54,6 @@ libXaw3dXft_la_SOURCES = \
   src/Vendor.c \
   src/Viewport.c \
   src/Xaw3d.c \
-  src/XawI18n.c \
   src/XawI18n.h \
   src/XawIm.c \
   src/XawInit.c \

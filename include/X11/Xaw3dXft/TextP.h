@@ -68,15 +68,6 @@ SOFTWARE.
 extern XtActionsRec _XawTextActionsTable[];
 extern Cardinal _XawTextActionsTableCount;
 
-#define XawLF	0x0a
-#define XawCR	0x0d
-#define XawTAB	0x09
-#define XawBS	0x08
-#define XawSP	0x20
-#define XawDEL	0x7f
-#define XawESC  0x1b
-#define XawBSLASH '\\'
-
 /* constants that subclasses may want to know */
 #define DEFAULT_TEXT_HEIGHT ((Dimension)~0)
 

@@ -25,6 +25,8 @@ in this Software without prior written authorization from the X Consortium.
 
 ********************************************************/
 
+// FIXME is this all obsolete?
+
 #ifdef HAVE_WCTYPE_H
 #include <wctype.h>
 #ifdef HAVE_WIDEC_H
@@ -47,10 +49,6 @@ in this Software without prior written authorization from the X Consortium.
 #define mbtowc(wc,s,l) _Xmbtowc(wc,s,l)
 #endif
 #endif
-
-extern wchar_t _Xaw_atowc (
-    unsigned char	c
-);
 
 #ifndef HAVE_ISWSPACE
 #include <ctype.h>

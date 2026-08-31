@@ -108,29 +108,35 @@ unsigned long XawFmtWide = 0L;
  */
 extern void _XawTextZapSelection(TextWidget, XEvent *, Boolean);
 
-
 /*
  * Defined in Text.c
  */
-static void UnrealizeScrollbars(Widget, XtPointer, XtPointer);
-static void VScroll(Widget, XtPointer, XtPointer);
-static void VJump(Widget, XtPointer, XtPointer);
-static void HScroll(Widget, XtPointer, XtPointer);
-static void HJump(Widget, XtPointer, XtPointer);
+static XawTextPosition _BuildLineTable(TextWidget, XawTextPosition, XawTextPosition, int);
+static Boolean ChangeSensitive(Widget w);
+static void ClassInitialize(void);
 static void ClearWindow(Widget);
 static void DisplayTextWindow(Widget);
+static XawTextPosition FindGoodPosition(TextWidget, XawTextPosition);
+static void FlushUpdate(TextWidget);
+static void GetValuesHook(Widget w, ArgList args, Cardinal * num_args);
+static void HJump(Widget, XtPointer, XtPointer);
+static void HScroll(Widget, XtPointer, XtPointer);
+static void Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args);
+static Boolean LineAndXYForPosition(TextWidget, XawTextPosition, int *, Position *, Position *);
 static void ModifySelection(TextWidget, XawTextPosition, XawTextPosition);
+static void PopCopyQueue(TextWidget);
+static void ProcessExposeRegion(Widget w, XEvent *event, Region region);
 static void PushCopyQueue(TextWidget, int, int);
+static void Realize(Widget w, Mask *valueMask, XSetWindowAttributes *attributes);
+static void Resize(Widget w);
+static Boolean SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args);
+static void TextDestroy(Widget w);
+static Boolean TranslateExposeRegion(TextWidget, XRectangle *);
+static void UnrealizeScrollbars(Widget, XtPointer, XtPointer);
 static void UpdateTextInLine(TextWidget, int, Position, Position);
 static void UpdateTextInRectangle(TextWidget, XRectangle *);
-static void PopCopyQueue(TextWidget);
-static void FlushUpdate(TextWidget);
-static Boolean LineAndXYForPosition(TextWidget, XawTextPosition, int *,
-                                    Position *, Position *);
-static Boolean TranslateExposeRegion(TextWidget, XRectangle *);
-static XawTextPosition FindGoodPosition(TextWidget, XawTextPosition);
-static XawTextPosition _BuildLineTable(TextWidget, XawTextPosition,
-                                       XawTextPosition, int);
+static void VJump(Widget, XtPointer, XtPointer);
+static void VScroll(Widget, XtPointer, XtPointer);
 
 void _XawTextAlterSelection(TextWidget, XawTextSelectionMode,
                             XawTextSelectionAction, String *, Cardinal *);
@@ -145,14 +151,8 @@ void _XawTextSetSelection(TextWidget, XawTextPosition, XawTextPosition,
                           String *, Cardinal);
 void _XawTextShowPosition(TextWidget);
 void _XawTextPrepareToUpdate(TextWidget);
-int _XawTextReplace(TextWidget, XawTextPosition, XawTextPosition, XawTextBlock *);
+int  _XawTextReplace(TextWidget, XawTextPosition, XawTextPosition, XawTextBlock *);
 void _XawTextVScroll(TextWidget, int);
-
-/****************************************************************
- *
- * Full class record constant
- *
- ****************************************************************/
 
 static XawTextSelectType defaultSelectTypes[] = {
   XawselectPosition, XawselectWord, XawselectLine, XawselectParagraph,
@@ -207,6 +207,57 @@ static XtResource resources[] = {
      offset(text.unrealize_callbacks), XtRCallback, (XtPointer) NULL}
 };
 #undef offset
+
+/****************************************************************
+ *
+ * Full class record constant
+ *
+ ****************************************************************/
+
+TextClassRec textClassRec = {
+  { /* core fields */
+    /* superclass       */      (WidgetClass) &simpleClassRec,
+    /* class_name       */      "Text",
+    /* widget_size      */      sizeof(TextRec),
+    /* class_initialize */      ClassInitialize,
+    /* class_part_init  */	NULL,
+    /* class_inited     */      FALSE,
+    /* initialize       */      Initialize,
+    /* initialize_hook  */	NULL,
+    /* realize          */      Realize,
+    /* actions          */      _XawTextActionsTable,
+    /* num_actions      */      0,                /* Set in ClassInitialize. */
+    /* resources        */      resources,
+    /* num_ resource    */      XtNumber(resources),
+    /* xrm_class        */      NULLQUARK,
+    /* compress_motion  */      TRUE,
+    /* compress_exposure*/      XtExposeGraphicsExpose | XtExposeNoExpose,
+    /* compress_enterleave*/	TRUE,
+    /* visible_interest */      FALSE,
+    /* destroy          */      TextDestroy,
+    /* resize           */      Resize,
+    /* expose           */      ProcessExposeRegion,
+    /* set_values       */      SetValues,
+    /* set_values_hook  */	NULL,
+    /* set_values_almost*/	XtInheritSetValuesAlmost,
+    /* get_values_hook  */	GetValuesHook,
+    /* accept_focus     */      NULL,
+    /* version          */	XtVersion,
+    /* callback_private */      NULL,
+    /* tm_table         */      NULL,    /* set in ClassInitialize */
+    /* query_geometry   */	XtInheritQueryGeometry,
+    /* display_accelerator*/	XtInheritDisplayAccelerator,
+    /* extension	*/	NULL
+  },
+  { /* Simple fields */
+    /* change_sensitive	*/	ChangeSensitive
+  },
+  { /* text fields */
+    /* empty            */	0
+  }
+};
+
+WidgetClass textWidgetClass = (WidgetClass)&textClassRec;
 
 static void
 CvtStringToScrollMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
@@ -695,6 +746,7 @@ InsertCursor (Widget w, XawTextInsertState state)
   ctx->text.ev_y = y;
 
   /* Keep Input Method up to speed  */
+  // FIXME this is no longer tied to international
 
   if ( ctx->simple.international ) {
     Arg list[1];
@@ -784,7 +836,9 @@ _XawTextGetSTRING(TextWidget ctx, XawTextPosition left, XawTextPosition right)
   unsigned char c;
   long i, j, n;
 
+  /* only HT and NL control chars are allowed, strip out others */
   /* allow ESC in accordance with ICCCM */
+  // FIXME Wc discards DEL, the other one doesn't
   if (_XawTextFormat(ctx) == XawFmtWide) {
      MultiSinkObject sink = (MultiSinkObject) ctx->text.sink;
      wchar_t *ws, wc;
@@ -792,21 +846,22 @@ _XawTextGetSTRING(TextWidget ctx, XawTextPosition left, XawTextPosition right)
      n = wcslen(ws);
      for (j = 0, i = 0; j < n; j++) {
          wc = ws[j];
+	 // FIXME wrong font, and it's just checking to see whether it's a
+	 // 0-width char
          if (XwcTextEscapement (sink->text_sink.fontset, &wc, 1) ||
-            (wc == _Xaw_atowc(XawTAB)) || (wc == _Xaw_atowc(XawLF)) || (wc == _Xaw_atowc(XawESC)))
+            (wc == L'\t') || (wc == L'\n') || (wc == L'\e'))
             ws[i++] = wc;
      }
      ws[i] = (wchar_t)0;
      return (char *)ws;
   } else {
      s = (unsigned char *)_XawTextGetText(ctx, left, right);
-     /* only HT and NL control chars are allowed, strip out others */
      n = strlen((char *)s);
      i = 0;
      for (j = 0; j < n; j++) {
 	c = s[j];
 	if (((c >= 0x20) && c <= 0x7f) ||
-	   (c >= 0xa0) || (c == XawTAB) || (c == XawLF) || (c == XawESC)) {
+	   (c >= 0xa0) || (c == '\t') || (c == '\n') || (c == '\e')) {
 	   s[i] = c;
 	   i++;
 	}
@@ -3314,48 +3369,3 @@ XawTextSearch(Widget w,
 
   return(SrcSearch(ctx->text.source, ctx->text.insertPos, dir, text));
 }
-
-TextClassRec textClassRec = {
-  { /* core fields */
-    /* superclass       */      (WidgetClass) &simpleClassRec,
-    /* class_name       */      "Text",
-    /* widget_size      */      sizeof(TextRec),
-    /* class_initialize */      ClassInitialize,
-    /* class_part_init  */	NULL,
-    /* class_inited     */      FALSE,
-    /* initialize       */      Initialize,
-    /* initialize_hook  */	NULL,
-    /* realize          */      Realize,
-    /* actions          */      _XawTextActionsTable,
-    /* num_actions      */      0,                /* Set in ClassInitialize. */
-    /* resources        */      resources,
-    /* num_ resource    */      XtNumber(resources),
-    /* xrm_class        */      NULLQUARK,
-    /* compress_motion  */      TRUE,
-    /* compress_exposure*/      XtExposeGraphicsExpose | XtExposeNoExpose,
-    /* compress_enterleave*/	TRUE,
-    /* visible_interest */      FALSE,
-    /* destroy          */      TextDestroy,
-    /* resize           */      Resize,
-    /* expose           */      ProcessExposeRegion,
-    /* set_values       */      SetValues,
-    /* set_values_hook  */	NULL,
-    /* set_values_almost*/	XtInheritSetValuesAlmost,
-    /* get_values_hook  */	GetValuesHook,
-    /* accept_focus     */      NULL,
-    /* version          */	XtVersion,
-    /* callback_private */      NULL,
-    /* tm_table         */      NULL,    /* set in ClassInitialize */
-    /* query_geometry   */	XtInheritQueryGeometry,
-    /* display_accelerator*/	XtInheritDisplayAccelerator,
-    /* extension	*/	NULL
-  },
-  { /* Simple fields */
-    /* change_sensitive	*/	ChangeSensitive
-  },
-  { /* text fields */
-    /* empty            */	0
-  }
-};
-
-WidgetClass textWidgetClass = (WidgetClass)&textClassRec;

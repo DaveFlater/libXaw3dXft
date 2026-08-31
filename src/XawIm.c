@@ -70,9 +70,10 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/VarargsI.h>
 #include "XawI18n.h"
 #include <ctype.h>
+#include <wchar.h>
 
-# include <stdarg.h>
-# define Va_start(a,b) va_start(a,b)
+#include <stdarg.h>
+#define Va_start(a,b) va_start(a,b)
 
 #define maxAscentOfFontSet(fontset)     \
         ( - (XExtentsOfFontSet((fontset)))->max_logical_extent.y)
@@ -1547,8 +1548,14 @@ _XawImWcLookupString(Widget inwidg, XKeyPressedEvent *event,
     }
     ret = XLookupString( event, tmp_buf, sizeof(tmp_buf), keysym_return,
 		         NULL );
+    // FIXME:  Replaced _Xaw_atowc with standard equivalent btowc.  Either
+    // way, you're assuming that the source is in Mb encoding (possibly
+    // ISO-8859 part N) not 8bit.  True?
     for ( i = 0, tmp_p = tmp_buf, buf_p = buffer_return; i < ret; i++ ) {
-	*buf_p++ = _Xaw_atowc((unsigned char)*tmp_p++);
+      const wint_t w = btowc((unsigned char)*tmp_p++);
+      if (w == WEOF)
+	XtError("libXaw3dXft: conversion failure in _XawImWcLookupString");
+      *buf_p++ = w;
     }
     return( ret );
 }
