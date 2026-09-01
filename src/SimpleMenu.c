@@ -360,7 +360,6 @@ Redisplay(Widget w, XEvent * event, Region region)
     SmeObject *entry;
     SmeObjectClass class;
     ThreeDWidget tdw = (ThreeDWidget)smw->simple_menu.threeD;
-    Position old_pos;
     int y, max_y, new_y, s = tdw->threeD.shadow_width;
     Boolean can_paint;
     XPoint point[3];
@@ -394,6 +393,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 	    smw->simple_menu.current_first = entry;
 	}
 
+	const Position old_pos = (*entry)->rectangle.y;
 	if (smw->simple_menu.too_tall)
 	{
 	    if (entry == (smw->simple_menu.current_first))
@@ -421,8 +421,7 @@ Redisplay(Widget w, XEvent * event, Region region)
 	    else if (!can_paint)
 		continue;
 
-	    old_pos = (*entry)->rectangle.y;
-	    (*entry)->rectangle.y -= new_y;
+	    (*entry)->rectangle.y -= new_y; // Temporary adjustment
 
 	    // max_y is the limit *without* an arrow.  There is an edge case
 	    // when we are on the last entry, and it'll fit, but there's no
@@ -450,12 +449,9 @@ Redisplay(Widget w, XEvent * event, Region region)
 	}
 
 	class = (SmeObjectClass)(*entry)->object.widget_class;
-
 	if (class->rect_class.expose != NULL)
 	    (class->rect_class.expose)((Widget)*entry, NULL, NULL);
-
-	if (smw->simple_menu.too_tall) (*entry)->rectangle.y = old_pos;
-
+	(*entry)->rectangle.y = old_pos;
 	y += (*entry)->rectangle.height;
     }
 }

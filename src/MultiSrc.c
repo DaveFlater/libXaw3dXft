@@ -1114,8 +1114,8 @@ FreeAllPieces(MultiSrcObject src)
 {
   MultiPiece * next, * first = src->multi_src.first_piece;
 
-  if (first->prev != NULL)
-    printf("Xaw MultiSrc Object: possible memory leak in FreeAllPieces().\n");
+  if (first && first->prev)
+    XtWarning("libXaw3dXft MultiSrc: possible memory leak in FreeAllPieces()");
 
   for ( ; first != NULL ; first = next ) {
     next = first->next;

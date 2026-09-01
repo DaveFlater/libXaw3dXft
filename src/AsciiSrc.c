@@ -1080,8 +1080,8 @@ FreeAllPieces(AsciiSrcObject src)
 {
   Piece * next, * first = src->ascii_src.first_piece;
 
-  if (first->prev != NULL)
-    (void) printf("Xaw AsciiSrc Object: possible memory leak in FreeAllPieces().\n");
+  if (first && first->prev)
+    XtWarning("libXaw3dXft AsciiSrc: possible memory leak in FreeAllPieces()");
 
   for ( ; first != NULL ; first = next ) {
     next = first->next;
