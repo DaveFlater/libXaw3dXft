@@ -227,12 +227,27 @@ Dimension *width, Dimension *height, Cardinal *depth) {
   return status;
 }
 
-void Xaw3dXftCopy (Display *display, Drawable src, Drawable dest,
+void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest,
 GC gc, Dimension width, Dimension height, Cardinal depth, Position dest_x,
 Position dest_y) {
-  if (depth == 1)
-    XCopyPlane(display, src, dest, gc, 0, 0, width, height, dest_x, dest_y, 1);
-  else
+  Display *display = XtDisplayOfObject(w);
+  if (depth == 1) {
+    // XCopyPlane requires both foreground and background colors.
+    // XCopyPlane(display, src, dest, gc, 0, 0, width, height, dest_x, dest_y, 1);
+    // Make the background transparent.
+    XGCValues v;
+    if (!XGetGCValues(display, gc, GCForeground, &v))
+      XtError("libXaw3dXft: failed to get foreground from gc in Xaw3dXftCopy");
+    v.graphics_exposures = False;
+    v.clip_x_origin = dest_x;
+    v.clip_y_origin = dest_y;
+    v.function = GXcopy;
+    v.clip_mask = src;
+    GC tempGC = XtGetGC(w, GCForeground|GCClipXOrigin|GCClipYOrigin|GCClipMask|
+      GCFunction|GCGraphicsExposures, &v);
+    XFillRectangle(display, dest, tempGC, dest_x, dest_y, width, height);
+    XtReleaseGC(w, tempGC);
+  } else
     XCopyArea(display, src, dest, gc, 0, 0, width, height, dest_x, dest_y);
 }
 

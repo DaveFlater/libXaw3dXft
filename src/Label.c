@@ -320,7 +320,7 @@ static void Redisplay (Widget gw, XEvent *event, Region region) {
   if (w->label.pixmap == None) {
     /* draw left bitmap */
     if (w->label.left_bitmap && w->label.lbm_width && w->label.lbm_height)
-      Xaw3dXftCopy(display, w->label.left_bitmap, window, gc,
+      Xaw3dXftCopy(gw, w->label.left_bitmap, window, gc,
 		   w->label.lbm_width, w->label.lbm_height, w->label.depth,
 		   w->label.internal_width + s,
 		   ((Position)w->core.height - (Position)w->label.lbm_height)/2);
@@ -331,7 +331,7 @@ static void Redisplay (Widget gw, XEvent *event, Region region) {
 	w->simple.international, gc, &w->label.xftfg, w->label.label_x,
 	w->label.label_y, NULL, w->label.encoding, w->label.label);
   } else // w->label.pixmap != None
-    Xaw3dXftCopy(display, w->label.pixmap, window, gc,
+    Xaw3dXftCopy(gw, w->label.pixmap, window, gc,
 		 w->label.label_width, w->label.label_height, w->label.depth,
 		 w->label.label_x, w->label.label_y);
 

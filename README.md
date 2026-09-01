@@ -574,6 +574,10 @@ xftFont | XftFont | String  | NULL
 Resources related to fonts, encodings, and text rendering are as described
 under [Generalities](#generalities).  Multi-line text is allowed.
 
+The bitmap and leftBitmap resources will take either 2-color bitmaps or
+full-color pixmaps.  If a 2-color bitmap is supplied, its background will
+be rendered as transparent.
+
 The default size of Label widgets (which includes subclasses like Command
 buttons) has increased by 2×shadowWidth in both dimensions.
 
@@ -790,6 +794,10 @@ sub-menus was explained above under SimpleMenu [Sub-menus](#submenus).
 The underline resource is used to specify a character to underline in the
 label.  The integer value is the index of the character.  A value less than
 zero inhibits underlining.
+
+The leftBitmap and rightBitmap resources will take either 2-color bitmaps or
+full-color pixmaps.  If a 2-color bitmap is supplied, its background will be
+rendered as transparent.
 
 Being a non-widget Object, SmeBSB does not have a window of its own, so the
 borderWidth resource that it inherits from Rectangle is inoperative.

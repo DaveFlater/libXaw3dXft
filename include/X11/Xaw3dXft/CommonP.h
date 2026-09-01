@@ -54,8 +54,9 @@ extern GC Xaw3dXftGetTextGC (Widget w, Pixel fg, XFontStruct *font,
 extern Status Xaw3dXftGetDrawableDimensions (Display *display, Drawable d,
   Dimension *width, Dimension *height, Cardinal *depth);
 
-// If depth is 1, do XCopyPlane; otherwise, do XCopyArea.
-extern void Xaw3dXftCopy (Display *display, Drawable src, Drawable dest,
+// If depth is 1, draw the foreground color where src contains a bit set to 1.
+// If depth is not 1, do XCopyArea.
+extern void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest,
   GC gc, Dimension width, Dimension height, Cardinal depth, Position dest_x,
   Position dest_y);
 

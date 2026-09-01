@@ -322,7 +322,7 @@ static void DrawBitmaps (Widget w) {
     y_loc = (Position)ent->rectangle.y +
       ((Position)ent->rectangle.height -
        (Position)ent->sme_bsb.left_bitmap_height) / 2;
-    Xaw3dXftCopy(XtDisplayOfObject(w), ent->sme_bsb.left_bitmap,
+    Xaw3dXftCopy(w, ent->sme_bsb.left_bitmap,
 		 XtWindowOfObject(w), gc,
 		 ent->sme_bsb.left_bitmap_width,
 		 ent->sme_bsb.left_bitmap_height,
@@ -343,7 +343,7 @@ static void DrawBitmaps (Widget w) {
     y_loc = (Position)ent->rectangle.y +
       ((Position)ent->rectangle.height -
        (Position)ent->sme_bsb.right_bitmap_height) / 2;
-    Xaw3dXftCopy(XtDisplayOfObject(w), ent->sme_bsb.right_bitmap,
+    Xaw3dXftCopy(w, ent->sme_bsb.right_bitmap,
 		 XtWindowOfObject(w), gc,
 		 ent->sme_bsb.right_bitmap_width,
 		 ent->sme_bsb.right_bitmap_height,
