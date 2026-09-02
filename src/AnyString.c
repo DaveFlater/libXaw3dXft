@@ -200,11 +200,7 @@ Cardinal Xaw3dXftAnyStrlen (XawTextEncoding encoding, const void *text) {
     }
     break;
   case XawTextEncodingWc:
-    {
-      const wchar_t *s = text;
-      while (*s) ++s;
-      biglen = (uint64_t)((uint8_t *)s - (uint8_t *)text);
-    }
+    biglen = wcslen(text) * sizeof(wchar_t);
     break;
   default: // 8bit, UTF8, Mb
     biglen = strlen(text);
