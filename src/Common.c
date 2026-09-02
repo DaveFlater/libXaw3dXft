@@ -227,8 +227,8 @@ Dimension *width, Dimension *height, Cardinal *depth) {
   return status;
 }
 
-void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest,
-GC gc, Dimension width, Dimension height, Cardinal depth, Position dest_x,
+void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest, GC gc,
+Dimension width, Dimension height, Cardinal depth, Position dest_x,
 Position dest_y) {
   Display *display = XtDisplayOfObject(w);
   if (depth == 1) {
@@ -241,10 +241,9 @@ Position dest_y) {
     v.graphics_exposures = False;
     v.clip_x_origin = dest_x;
     v.clip_y_origin = dest_y;
-    v.function = GXcopy;
     v.clip_mask = src;
     GC tempGC = XtGetGC(w, GCForeground|GCClipXOrigin|GCClipYOrigin|GCClipMask|
-      GCFunction|GCGraphicsExposures, &v);
+      GCGraphicsExposures, &v);
     XFillRectangle(display, dest, tempGC, dest_x, dest_y, width, height);
     XtReleaseGC(w, tempGC);
   } else

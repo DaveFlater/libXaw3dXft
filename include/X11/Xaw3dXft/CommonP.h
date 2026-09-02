@@ -56,8 +56,8 @@ extern Status Xaw3dXftGetDrawableDimensions (Display *display, Drawable d,
 
 // If depth is 1, draw the foreground color where src contains a bit set to 1.
 // If depth is not 1, do XCopyArea.
-extern void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest,
-  GC gc, Dimension width, Dimension height, Cardinal depth, Position dest_x,
+extern void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest, GC gc,
+  Dimension width, Dimension height, Cardinal depth, Position dest_x,
   Position dest_y);
 
 // Maintain Xaw compatibility by changing the default encoding when a font
