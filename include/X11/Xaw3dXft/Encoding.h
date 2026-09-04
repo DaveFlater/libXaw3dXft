@@ -20,8 +20,8 @@ X11 license (as per the historical licenses that the package inherits)
   #define XawTextEncodingChar2b   1
 
   The Label widget acquired its encoding resource in X11R5's Xaw.  At that
-  point and ever since, Label has done this in Initialize, regardless of
-  encoding:
+  point and ever since, Xaw's Label has done the following in Initialize,
+  regardless of encoding:
 
     if (lw->label.label == NULL) 
         lw->label.label = XtNewString(lw->core.name);
@@ -29,22 +29,23 @@ X11 license (as per the historical licenses that the package inherits)
         lw->label.label = XtNewString(lw->label.label);
     }
 
-  When applied to a Char2b-encoded string having any single-byte encodable
-  character at its beginning (meaning, typically, the ASCII characters), that
-  results in the empty C string consisting of a single 0 byte.  Any code that
-  subsequently tries to read it as Char2b will immediately do an
-  out-of-bounds read.
+  If the character mapping is Unicode or any other that preserves the ASCII
+  code points, an ASCII character c will be represented in Char2b by a pair
+  of bytes {0, c}.  XtNewString will truncate the string at the 0, and any
+  code that subsequently tries to read the string as Char2b will do an out-
+  of-bounds read.
 
-  Conclusion:  The Char2b encoding in Xaw was tested only with double-byte
-  characters in a non-Unicode, double-byte character set.  Otherwise, it
-  never worked.
+  Conclusion:  The Char2b encoding in Xaw was tested only with CJK characters
+  in a non-Unicode, double-byte character set.  This situation has been
+  resolved in Xaw3dXft for the label resource.  The core name, however, is
+  handled by Xt as a regular C string, so it cannot be made safe for Char2b.
 */
 
 typedef enum {
-  XawTextEncoding8bit   = 0, // char, ISO-8859-1, Xlib STRING
-  XawTextEncodingChar2b = 1, // XChar2b, UCS-2 big-endian [αβ]
+  XawTextEncoding8bit   = 0, // char [α]
+  XawTextEncodingChar2b = 1, // XChar2b [α]
   XawTextEncodingUTF8   = 2, // char, char8_t, FcChar8, UTF-8
-  XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [α]
+  XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [β]
   XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
   XawTextEncodingMb     = 5, // char, narrow multibyte, locale's codeset [γ]
   XawTextEncodingWc     = 6  // wchar_t, wide string [δ]
@@ -54,29 +55,33 @@ typedef enum {
 
 Notes:
 
-[α] UCS-2 is the Unicode Basic Multilingual Plane as 16-bit values.
-Microsoft encodes higher Unicode code points using surrogate pairs, which are
-defined in UTF-16 but not in UCS-2.  Surrogate pairs are not supported by
-Xaw3dXft.
+[α] 8bit and Char2b are the encodings supported by XDrawString and
+XDrawString16 respectively.  Ultimately, the interpretation of 8bit and
+Char2b strings is determined by the font that is supplied in the graphics
+context (GC) that is used to render them.  That font can be changed at the
+discretion of the application; thus, 8bit and Char2b strings by themselves
+have no interpretation.  If Xaw3dXft needs to translate an 8bit or Char2b
+string to or from a different encoding, it assumes a Unicode mapping.  This
+results in an interpretation of ISO 8859-1 for 8bit and big-endian UCS-2 [β]
+for Char2b.  The fonts for which this assumption is valid are those whose X
+Logical Font Description (XLFD) font name ends with -iso10646-1 (for the
+entire Unicode Basic Multilingual Plane) or -iso8859-1 (for Latin-1
+characters only).
 
-[β] In the core X11 fonts system, the code points for XChar2b are determined
-by the encoding of the *font* and the corresponding .enc file.  The
-assumption that XChar2b values are UCS-2 fails if the font uses a
-non-Unicode, double-byte character set like JIS X 0208, KS C 5601, or GB
-2312.  If such a font is used, Xaw3dXft may translate strings incorrectly.
-https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer
+[β] UCS-2 is the Unicode Basic Multilingual Plane represented with 16-bit
+values.  Microsoft encodes higher Unicode code points using surrogate pairs,
+which are defined in UTF-16 but not in UCS-2.  Surrogate pairs are not
+supported by Xaw3dXft.
 
 [γ] The interpretation of narrow multibyte strings is determined by the
-codeset from the currently active C locale; e.g., UTF-8 from en_US.UTF-8, ISO
-8859-7 from el_GR.ISO8859-7, or ASCII from the default "C" locale.
-https://github.com/DaveFlater/libXaw3dXft#locales
+codeset from the currently active C locale; e.g., UTF-8 from en_US.UTF-8,
+ISO 8859-7 from el_GR.ISO8859-7, or ASCII from the default "C" locale.
 
-[δ] As of C23, everything about wide strings remains implementation-defined,
-and there is no reliable translation between wchar_t and UTF-anything.  A
-remedy is on track for C29 but is not yet implemented.  As a stopgap,
-Xaw3dXft relies on the Unix-centric assumption that wchar_t is UTF-32.
-https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm
-https://en.cppreference.com/c/header/stdmchar
+[δ] As of the C23 standard, everything about wide strings remains
+implementation-defined and there is no reliable translation between wchar_t
+and UTF-anything.  Xaw3dXft assumes that wchar_t is UTF-32, which is true
+under normal circumstances for all mainstream Unix/Linux distributions but
+not for strong proprietary flavors.
 
 */
 

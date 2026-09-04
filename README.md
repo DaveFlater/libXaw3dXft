@@ -184,10 +184,10 @@ encodings understood by Xaw3dXft are enumerated in the Encoding.h header
 file:
 
     typedef enum {
-      XawTextEncoding8bit   = 0, // char, ISO-8859-1, Xlib STRING
-      XawTextEncodingChar2b = 1, // XChar2b, UCS-2 big-endian [αβ]
+      XawTextEncoding8bit   = 0, // char [α]
+      XawTextEncodingChar2b = 1, // XChar2b [α]
       XawTextEncodingUTF8   = 2, // char, char8_t, FcChar8, UTF-8
-      XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [α]
+      XawTextEncodingUCS2   = 3, // char16_t, FcChar16, UCS-2 [β]
       XawTextEncodingUTF32  = 4, // char32_t, FcChar32, UTF-32, UCS-4
       XawTextEncodingMb     = 5, // char, narrow multibyte, locale's codeset [γ]
       XawTextEncodingWc     = 6  // wchar_t, wide string [δ]
@@ -195,29 +195,42 @@ file:
 
 Notes:
 
-\[α\] UCS-2 is the Unicode Basic Multilingual Plane as 16-bit values.
-Microsoft encodes higher Unicode code points using surrogate pairs, which are
-defined in UTF-16 but not in UCS-2.  Surrogate pairs are not supported by
-Xaw3dXft.
+\[α\] 8bit and Char2b are the encodings supported by XDrawString and
+XDrawString16 respectively.  Ultimately, the interpretation of 8bit and
+Char2b strings is determined by the font that is supplied in the graphics
+context (GC) that is used to render them.  That font can be changed at the
+discretion of the application; thus, 8bit and Char2b strings by themselves
+have no interpretation.  If Xaw3dXft needs to translate an 8bit or Char2b
+string to or from a different encoding, it assumes a Unicode mapping.  This
+results in an interpretation of
+[ISO 8859-1](https://en.wikipedia.org/wiki/ISO/IEC_8859-1) for 8bit and
+big-endian
+[UCS-2](https://en.wikipedia.org/wiki/Universal_Coded_Character_Set) \[β\]
+for Char2b.  The fonts for which this assumption is valid are those whose [X
+Logical Font
+Description](https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/xlfd/xlfd.html#FontName_Syntax)
+(XLFD) font name ends with -iso10646-1 (for the entire Unicode [Basic
+Multilingual
+Plane](https://en.wikipedia.org/wiki/Plane_(Unicode)#Basic_Multilingual_Plane))
+or -iso8859-1 (for Latin-1 characters only).
 
-\[β\] In the core X11 fonts system, the code points for XChar2b are
-determined by the encoding of the *font* and the corresponding [.enc
-file](https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer).
-The assumption that XChar2b values are UCS-2 fails if the font uses a
-non-Unicode, double-byte character set like JIS X 0208, KS C 5601, or GB
-2312.  If such a font is used, Xaw3dXft may translate strings incorrectly.
+\[β\] UCS-2 is the Unicode Basic Multilingual Plane represented with 16-bit
+values.  Microsoft encodes higher Unicode code points using surrogate pairs,
+which are defined in UTF-16 but not in UCS-2.  Surrogate pairs are not
+supported by Xaw3dXft.
 
 \[γ\] The interpretation of narrow multibyte strings is determined by the
-codeset from the [currently active C locale](#locales); e.g., UTF-8 from
-en_US.UTF-8, ISO 8859-7 from el_GR.ISO8859-7, or ASCII from the default "C"
+codeset from the currently active [C locale](#locales); e.g., UTF-8 from
+en_US.UTF-8, ISO 8859-7 from el_GR.ISO8859-7, or ASCII from the default "C"
 locale.
 
-\[δ\] As of C23, everything about wide strings remains
-[implementation-defined](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm),
-and there is no reliable translation between wchar_t and UTF-anything.  A
-[remedy](https://en.cppreference.com/c/header/stdmchar) is on track for C29
-but is not yet implemented.  As a stopgap, Xaw3dXft relies on the
-Unix-centric assumption that wchar_t is UTF-32.
+\[δ\] As of the C23 standard, everything about wide strings remains
+implementation-defined and there is [no reliable translation between wchar_t
+and
+UTF-anything](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3366.htm).
+Xaw3dXft assumes that wchar_t is UTF-32, which is true under normal
+circumstances for all mainstream Unix/Linux distributions but not for strong
+proprietary flavors.
 
 ### <a name="locales"></a>Locales
 
@@ -307,11 +320,12 @@ and rendered at higher quality, and anti-aliasing is supported.
 The Xft font name syntax is described in [this
 tutorial](https://keithp.com/~keithp/render/Xft.tutorial); e.g., `times-24`
 for 24 point Times, `times:pixelsize=34` for 34 pixel Times, or
-`times-24:foundry=adobe` to match Adobe Times only.  Xft point sizes are
-adjusted by the display scaling factors of desktop environments like KDE and
-Gnome.  For example, if your display scaling factor is set to 175%, a
-14-point font rendered by FreeType will be close in size to a 24-point font
-rendered by the core fonts system.
+`times-24:foundry=adobe` to match Adobe Times only.
+
+Xft point sizes are adjusted by the display scaling factors of desktop
+environments like KDE and Gnome.  For example, if your display scaling factor
+is set to 175%, a 14-point font rendered by FreeType will be close in size to
+a 24-point font rendered by the core fonts system.
 
 libXft supports the 8bit, UTF-8, UCS-2, and UTF-32 encodings.  If Char2b is
 provided, Xaw3dXft translates it to UCS-2.  If any other encoding is
@@ -1161,6 +1175,9 @@ Xaw oddities (inherited by Xaw3dXft):
   for those characters.  The issue and a PoC patch to fix it were [posted in
   2016](https://gitlab.freedesktop.org/xorg/lib/libx11/-/work_items/51) but
   there has been no response.
+- The UTF-8 conversions implemented in libx11/src/xlibi18n/lcUniConv/utf8.h
+  translate code points up to 0x7fffffff and generate up to 6 bytes per
+  character.
 
 Xlib and libXt have global disagreements about the plain old data types of
 common parameters (like positions and dimensions) and about Bool/Boolean

@@ -74,17 +74,22 @@ X11 license (as per the historical licenses that the package inherits)
   and is a fixed-length encoding.  Windows Wc is 16 bits and is a variable-
   length encoding.
 
-  Char2b
-  ------
+  8bit and Char2b
+  ---------------
 
-  The code points for Char2b are determined by the encoding of the *font* and
-  the corresponding .enc file:
+  The code points for 8bit and Char2b are determined by the encoding of the
+  *font*:
   https://xorg.freedesktop.org/archive/X11R7.7/doc/xorg-docs/fonts/fonts.html#The_fontenc_layer
 
   The XChar2b data type appears to have been introduced firstly to support
-  non-Unicode, double-byte character sets like JIS X 0208, KS C 5601, and GB
-  2312.  But now, the fonts using those character sets are the exceptions
+  non-Unicode, double-byte character sets like JIS X 0208, KS C 5601, and
+  GB 2312.  But now, the fonts using those character sets are the exceptions
   that break the general rule that Char2b is UCS-2 big-endian.
+
+  XChar2b values don't even agree with the encoding that is advertised in the
+  XLFD font name.  For the GB 2312 font tested, you have to subtract 0x80
+  from every byte.  It's not clear how an application developer was supposed
+  to know that.
 
   Xlib
   ----
@@ -145,10 +150,11 @@ X11 license (as per the historical licenses that the package inherits)
   Identifying UTF-32 and Wc as separate encodings is probably wasteful, but
   it keeps a path open to utilize stdmchar when it is implemented.
 
-  3.  The font-dependent Char2b encoding will be UCS-2 big-endian.  This
-  enables us to cover the Basic Multilingual Plane using XDrawString16.
-  However, it means that the original use of Char2b for non-Unicode, double-
-  byte character sets will work only if translations are completely avoided.
+  3.  If Xaw3dXft needs to translate an 8bit or Char2b string to or from a
+  different encoding, it assumes a Unicode mapping.  The fonts for which this
+  assumption is valid are those whose XLFD font name ends with -iso10646-1
+  (for the entire Unicode Basic Multilingual Plane) or -iso8859-1 (for
+  Latin-1 characters only).
 */
 
 static_assert(sizeof(XChar2b) == sizeof(char16_t));
