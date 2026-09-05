@@ -290,7 +290,6 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->tip_do_grab  = 1;
     _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
-    _Xaw3dXft->text_sb_right = 0;
     _Xaw3dXft->default_fontname  = NULL;
     _Xaw3dXft->default_font  = NULL;
 

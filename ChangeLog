@@ -36,6 +36,7 @@ Next release, v2.0  Dave Flater
   string_use_pixmap:  deleted (workaround not needed anymore)
   text_bg_hilight:  use highlightStyle resource
   text_bg_hilight_color:  use highlight resource
+  text_sb_right:  use Text.useRight resource
   tip_background_color:  use Tip.background resource
 
   - Changed signatures of semi-private functions.

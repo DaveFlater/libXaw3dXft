@@ -77,6 +77,7 @@ SOFTWARE.
  textSource	    TextSource	     Widget		NULL
  topMargin	    Margin	     Position		2
  unrealizeCallback  Callback	     Callback		NULL
+ useRight           Boolean          Boolean            False
  wrap		    Wrap	     XawTextWrapMode	XawTextWrapNever
 
 */
@@ -140,6 +141,7 @@ typedef struct {
 #define XtNinsertPosition "insertPosition"
 #define XtNresize "resize"
 #define XtNselection "selection"
+#define XtNuseRight "useRight"
 #define XtCResize "Resize"
 #endif
 

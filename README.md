@@ -834,6 +834,7 @@ Name    | Class   | RepType | Default value
 encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight          | Background         | Pixel         | XtDefaultBackground
 highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
+useRight | Boolean | Boolean | False
 xftFont            | XftFont            | String        | NULL
 
 Resources related to fonts, encodings, and text rendering are as described
@@ -852,6 +853,10 @@ when highlightStyle is TextHighlightBackground.
 Reverse and background highlighting are applied via an exclusive-or function
 of Pixel values.  Their effect on a background pixmap is colormap-dependent
 but generally sufficient to show contrast with the unhighlighted state.
+
+By default, the vertical scrollbar will be placed on the left side.  If the
+useRight resource is True, the vertical scrollbar will instead be placed on
+the right side.
 
 Quirks and differences to be aware of:
 
@@ -959,11 +964,6 @@ Value | Delete action | Other key action
 1 | Delete selected text | Insert char
 2 | Delete selected text | Replace selected text with char
 
-### char text_sb_right = 0
-
-1 = put the scrollbar on the right side of Text widgets; 0 = put it on
-the left.
-
 ### Xaw3dXftProc * <a name="proc"></a>proc = ...
 
 The Xaw3dXftProc struct contains pointers to [in]convenience functions.
@@ -1025,6 +1025,7 @@ insensitive_twist:  deleted (all insensitive widgets are stippled)
 string_use_pixmap:  deleted (workaround not needed anymore)  
 text_bg_hilight:  use highlightStyle resource  
 text_bg_hilight_color:  use highlight resource  
+text_sb_right:  use Text.useRight resource  
 tip_background_color:  use Tip.background resource
 
 **Changed signatures of semi-private functions**

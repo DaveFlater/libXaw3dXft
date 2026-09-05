@@ -204,7 +204,9 @@ static XtResource resources[] = {
   {XtNautoFill, XtCAutoFill, XtRBoolean, sizeof(Boolean),
      offset(text.auto_fill), XtRImmediate, (XtPointer) FALSE},
   {XtNunrealizeCallback, XtCCallback, XtRCallback, sizeof(XtPointer),
-     offset(text.unrealize_callbacks), XtRCallback, (XtPointer) NULL}
+     offset(text.unrealize_callbacks), XtRCallback, (XtPointer) NULL},
+  {XtNuseRight, XtCBoolean, XtRBoolean, sizeof(Boolean),
+     offset(text.useright), XtRImmediate, (XtPointer)False}
 };
 #undef offset
 
@@ -429,9 +431,7 @@ PositionHScrollBar(TextWidget ctx)
  *	Returns: none.
  */
 
-static void
-PositionVScrollBar(TextWidget ctx)
-{
+static void PositionVScrollBar (TextWidget ctx) {
   Widget vbar = ctx->text.vbar;
   Position pos;
   Dimension bw;
@@ -444,16 +444,14 @@ PositionVScrollBar(TextWidget ctx)
   pos = s / 2 - (Position)bw;
   if (pos < 0) pos = 0;
 
-  if (_Xaw3dXft->text_sb_right)
+  if (ctx->text.useright)
       XtMoveWidget( vbar, ctx->core.width - vbar->core.width
 		    - vbar->core.border_width, pos);
   else
       XtMoveWidget( vbar, pos, pos);
 }
 
-static void
-CreateVScrollBar(TextWidget ctx)
-{
+static void CreateVScrollBar (TextWidget ctx) {
   Widget vbar;
 
   if (ctx->text.vbar != NULL) return;
@@ -468,7 +466,7 @@ CreateVScrollBar(TextWidget ctx)
       XtAddCallback((Widget) ctx, XtNunrealizeCallback, UnrealizeScrollbars,
 		    (XtPointer) NULL);
 
-  if (_Xaw3dXft->text_sb_right) {
+  if (ctx->text.useright) {
       ctx->text.r_margin.right += vbar->core.width + vbar->core.border_width;
       ctx->text.margin.right = ctx->text.r_margin.right;
   } else {
@@ -491,16 +489,19 @@ CreateVScrollBar(TextWidget ctx)
  *	Returns: none.
  */
 
-static void
-DestroyVScrollBar(TextWidget ctx)
-{
+static void DestroyVScrollBar (TextWidget ctx) {
   Widget vbar = ctx->text.vbar;
 
   if (vbar == NULL) return;
 
-  // FIXME failed to handle text_sb_right
-  ctx->text.r_margin.left -= vbar->core.width + vbar->core.border_width;
-  ctx->text.margin.left = ctx->text.r_margin.left;
+  if (ctx->text.useright) {
+    ctx->text.r_margin.right -= vbar->core.width + vbar->core.border_width;
+    ctx->text.margin.right = ctx->text.r_margin.right;
+  } else {
+    ctx->text.r_margin.left -= vbar->core.width + vbar->core.border_width;
+    ctx->text.margin.left = ctx->text.r_margin.left;
+  }
+
   if (ctx->text.hbar == NULL)
       XtRemoveCallback((Widget) ctx, XtNunrealizeCallback, UnrealizeScrollbars,
 		       (XtPointer) NULL);

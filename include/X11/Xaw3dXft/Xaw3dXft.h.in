@@ -89,7 +89,6 @@ typedef struct _Xaw3dXftData {
     char tip_do_grab;
     char multi_column_menu;
     char edit_delete_alternative;
-    char text_sb_right;
     Xaw3dXftProc * proc;
     Pixel tip_background_color;
     char * default_fontname;

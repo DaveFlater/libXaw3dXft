@@ -170,6 +170,7 @@ typedef struct _TextPart {
     int			dialog_vert_offset;  /* position for popup dialog */
     Boolean		display_caret;	     /* insertion pt visible iff T */
     Boolean             auto_fill;           /* Auto fill mode? */
+    Boolean             useright; /* Place vertical scrollbar on right side? */
     XawTextScrollMode   scroll_vert, scroll_horiz; /*what type of scrollbars.*/
     XawTextWrapMode     wrap;            /* The type of wrapping. */
     XawTextResizeMode   resize;	             /* what to resize */
