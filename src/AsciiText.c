@@ -185,6 +185,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     tabs[i] = (tab += 8);
   XawTextSinkSetTabs(w->text.sink, TAB_COUNT, tabs);
 
+  // FIXME what is this about?
   XawTextDisableRedisplay(new);
   XawTextEnableRedisplay(new);
 

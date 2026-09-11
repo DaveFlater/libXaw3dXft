@@ -189,7 +189,8 @@ static Dimension CharWidth (Widget w, int x, unsigned char c) {
 
   // Tabs
   if (c == '\t') {
-    x -= ((TextWidget)XtParent(w))->text.margin.left;
+    TextWidget tw = (TextWidget)XtParent(w);
+    x -= tw->text.margins.left - (Position)tw->text.hscroll_offset;
     unsigned i;
     Position *tab;
     for (i=0, tab = sink->text_sink.tabs; i < sink->text_sink.tab_count;
@@ -232,9 +233,7 @@ XawTextPosition pos1, XawTextPosition pos2, Boolean highlight) {
     XawTextEncoding encoding, const void *buf, Cardinal num_chars,
     Boolean highlight) = asciiSinkClassRec.text_sink_class.PaintText;
 
-  // FIXME margins handling remains unclear
-  Position max_x = XtWidth(ctx) - ctx->text.margin.right - 1;
-
+  const Position max_x = XtWidth(ctx) - ctx->text.margins.right - 1;
   unsigned char buf[BUFSIZ+1]; // Leave room to terminate
   Cardinal j, k;
   XawTextBlock blk;
@@ -267,10 +266,10 @@ XawTextPosition pos1, XawTextPosition pos2, Boolean highlight) {
         const Dimension width = CharWidth(w, x, '\t'),
 	               height = sink->text_sink.fontHeight;
 	// Possibly restore a background pixmap before mangling it.
-	Window window = XtWindow(ctx);
-	Display *display = XtDisplay(ctx);
-	XClearArea(display, window, x, y, width, height, False);
+	XawTextSinkClearToBackground(w, x, y, width, height);
 	if (highlight) {
+	  Window window = XtWindow(ctx);
+	  Display *display = XtDisplay(ctx);
 	  GC fillgc = (sink->text_sink.highlightStyle == TextHighlightReverse ?
 	    sink->text_sink.xor_fgbg_GC : sink->text_sink.xor_bghl_GC);
 	  XFillRectangle(display, window, fillgc, x, y, width, height);

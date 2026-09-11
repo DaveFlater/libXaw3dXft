@@ -1139,6 +1139,10 @@ Xaw3dXft oddities:
   character might be replaced by any of '?', '�', '□', a box drawn with
   dotted lines, or a space, or it might disappear entirely, becoming a
   zero-width character.
+- In a Text widget, if scrollHorizontal is set to XawtextScrollWhenNeeded,
+  there is only one long line, and the long line is occupying the space where
+  the horizontal scrollbar goes, it's a catch-22.  Either you need a
+  horizontal scrollbar and don't have it or you have it and don't need it.
 
 Xaw oddities (inherited by Xaw3dXft):
 

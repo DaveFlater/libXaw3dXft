@@ -254,17 +254,29 @@ static void InsertCursor (Widget w, Position x, Position y,
 XawTextInsertState state) {
   TextSinkObject sink = (TextSinkObject)w;
   Widget text_widget = XtParent(w);
-  XRectangle rect;
 
   sink->text_sink.cursor_x = x;
   sink->text_sink.cursor_y = y;
-  GetCursorBounds(w, &rect);
-  if (state != sink->text_sink.laststate && XtIsRealized(text_widget))
-    XCopyPlane(XtDisplay(text_widget),
-      sink->text_sink.insertCursorOn,
-      XtWindow(text_widget), sink->text_sink.xor_fgbg_GC,
-      0, 0, (unsigned int) rect.width, (unsigned int) rect.height,
-      (int) rect.x, (int) rect.y, 1);
+  if (state != sink->text_sink.laststate && XtIsRealized(text_widget)) {
+    // Text will keep on calling us even when the cursor has scrolled off
+    // into space.  Allow the caret to intrude into the margins so that it
+    // won't get chopped when it's at the edge of the text area, but don't
+    // draw it at all when it's clearly out of bounds.  The +1 on the right
+    // is deliberate.  Caret is centered on x but goes down from y.
+    TextWidget ctx = (TextWidget)text_widget;
+    if (x >= ctx->text.margins.left &&
+        x <= ctx->core.width - ctx->text.margins.right &&
+        y >= ctx->text.margins.top &&
+        y <  ctx->core.height - ctx->text.margins.bottom) {
+      XRectangle rect;
+      GetCursorBounds(w, &rect);
+      XCopyPlane(XtDisplay(text_widget),
+	sink->text_sink.insertCursorOn,
+	XtWindow(text_widget), sink->text_sink.xor_fgbg_GC,
+	0, 0, (unsigned int) rect.width, (unsigned int) rect.height,
+	(int) rect.x, (int) rect.y, 1);
+    }
+  }
   sink->text_sink.laststate = state;
 }
 
@@ -365,7 +377,7 @@ static void Initialize (Widget request, Widget new, ArgList args, Cardinal *num_
   sink->text_sink.tabs = sink->text_sink.char_tabs = NULL;
 
   get_or_change_GCs(sink);
-  // FIXME tempted to default size to fit initial text
+  // FIXME resize resource? / other way to default size to fit initial text
 }
 
 /*	Function Name: Destroy
@@ -466,7 +478,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 
 /*	Function Name: PaintText
  *	Description: Actually paints the text into the window.
- *	Arguments: w - the text widget.
+ *	Arguments: w - the text sink widget.
  *                 x, y - location to paint the text (upper left)
  *                 encoding - 8bit or wc internal encoding
  *                 buf, num_chars - buffer and length of text to paint.
@@ -493,11 +505,11 @@ Boolean highlight) {
     XtError("libXaw3dXft: unsupported internal encoding in PaintText");
   }
 
-  // FIXME margins handling remains unclear.
   const Dimension corewidth = ctx->core.width,
-                    rmargin = ctx->text.margin.right;
-  Position max_x = (Position)corewidth - (Position)rmargin - 1;
-  // DrawText shouldn't call us if x is off the right edge.
+                 coreheight = ctx->core.height;
+  const Position rmargin = ctx->text.margins.right,
+                   max_x = (Position)corewidth - rmargin - 1;
+  // DrawText shouldn't call us with x off the right edge.
   assert(x <= max_x);
 
   Dimension width, height;
@@ -506,8 +518,45 @@ Boolean highlight) {
     sink->text_sink.fontset, sink->text_sink.xftfont,
     sink->text_sink.international, encoding, buf, num_bytes, &width, &height);
 
-  if ((Position)width <= -x)
-    return width; // Off the left side
+  // Cases in which we do nothing but declare success
+  // (More are caught below as textrec is adjusted)
+  if ( corewidth <= HMargins(ctx) ||  // No room to draw anything
+      coreheight <= VMargins(ctx) ||  // No room to draw anything
+      width == 0 || height == 0)      // Nothing to draw
+    return width;
+
+  // Clipping area for DrawString
+  XRectangle clip = {ctx->text.margins.left, ctx->text.margins.top,
+		     corewidth - HMargins(ctx), coreheight - VMargins(ctx)};
+
+  // Pre-clipped area for the other functions
+  // (surely there is an existing function that does this longwinded thing‽)
+  // Declare success and bail out if the net area is 0.
+  XRectangle textrec = {x, y, width, height};
+  if (clip.x > textrec.x) {
+    const int shrinkage = clip.x - textrec.x;
+    if (textrec.width <= shrinkage) return width;
+    textrec.width -= shrinkage;
+    textrec.x += shrinkage;
+  }
+  if ((int)clip.x + (int)clip.width < (int)textrec.x + (int)textrec.width) {
+    const int shrinkage = (int)textrec.x + (int)textrec.width -
+                          ((int)clip.x + (int)clip.width);
+    if (textrec.width <= shrinkage) return width;
+    textrec.width -= shrinkage;
+  }
+  if (clip.y > textrec.y) {
+    const int shrinkage = clip.y - textrec.y;
+    if (textrec.height <= shrinkage) return width;
+    textrec.height -= shrinkage;
+    textrec.y += shrinkage;
+  }
+  if ((int)clip.y + (int)clip.height < (int)textrec.y + (int)textrec.height) {
+    const int shrinkage = (int)textrec.y + (int)textrec.height -
+                          ((int)clip.y + (int)clip.height);
+    if (textrec.height <= shrinkage) return width;
+    textrec.height -= shrinkage;
+  }
 
   // The text arrives here in little pieces, and every little piece has to
   // clear its own background and apply its own highlighting or stipple.
@@ -520,12 +569,14 @@ Boolean highlight) {
   }
 
   // Possibly restore a background pixmap before mangling it.
+  XawTextSinkClearToBackground(w, textrec.x, textrec.y, textrec.width,
+    textrec.height);
   Window window = XtWindow(ctx);
-  XClearArea(display, window, x, y, width, height, False);
   if (highlight) {
     GC fillgc = (sink->text_sink.highlightStyle == TextHighlightReverse ?
 	         sink->text_sink.xor_fgbg_GC : sink->text_sink.xor_bghl_GC);
-    XFillRectangle(display, window, fillgc, x, y, width, height);
+    XFillRectangle(display, window, fillgc, textrec.x, textrec.y,
+      textrec.width, textrec.height);
   }
 
   GC gc;
@@ -539,22 +590,15 @@ Boolean highlight) {
   }
   Xaw3dXftDrawAnyStringN(display, VisualOf(sink), ctx->core.colormap, window,
     sink->text_sink.font, sink->text_sink.fontset, sink->text_sink.xftfont,
-    sink->text_sink.international, gc, xfg, x, y, NULL, encoding, buf,
+    sink->text_sink.international, gc, xfg, x, y, &clip, encoding, buf,
     num_bytes);
 
   // Insensitive stipple
   if (!sensitive)
-    XFillRectangle(display, window, sink->text_sink.stipple_GC, x, y, width,
-      height);
+    XFillRectangle(display, window, sink->text_sink.stipple_GC, textrec.x,
+      textrec.y, textrec.width, textrec.height);
 
-  // Draw the box at the right margin when text runs off the right side.
-  // This uses normal_GC regardless of the gc used for text.
-  if (x + (Position)width > max_x && rmargin != 0) {
-    x = max_x + 1;
-    XFillRectangle(display, window, sink->text_sink.normal_GC, x, y, rmargin,
-      height);
-  }
-
+  // Drawing of overflow markers has moved up to Text's DisplayText.
   return width;
 }
 
@@ -584,20 +628,19 @@ DisplayText(Widget w, Position x, Position y, XawTextPosition pos1,
  *                 x, y  - location of area to clear.
  *                 width, height - size of area to clear
  *	Returns: void.
- *
  */
 
 static void
 ClearToBackground(Widget w, Position x, Position y, Dimension width, Dimension height)
 {
-/*
- * Don't clear in height or width are zero.
- * XClearArea() has special semantic for these values.
- */
-
-    if ( (height == 0) || (width == 0) ) return;
-    XClearArea(XtDisplayOfObject(w), XtWindowOfObject(w),
-	       x, y, width, height, False);
+  /*
+   * Don't clear if height or width are zero.
+   * XClearArea() has special semantics for these values.
+   */
+  if (!width || !height) return;
+  // Otherwise, no clipping is done in this function
+  XClearArea(XtDisplayOfObject(w), XtWindowOfObject(w), x, y, width, height,
+    False);
 }
 
 /*	Function Name: FindPosition
@@ -672,9 +715,15 @@ XawTextPosition *resPos) {
  *	Returns: the number of lines that will fit.
  */
 
+// The only use of this is by _XawTextBuildLineTable.  Round up so that Text
+// will display partial lines at the bottom instead of leaving a big empty
+// space.
 static int MaxLines (Widget w, Dimension height) {
   TextSinkObject sink = (TextSinkObject)w;
-  return height / sink->text_sink.fontHeight;
+  int rtn = height / sink->text_sink.fontHeight;
+  if (rtn * sink->text_sink.fontHeight < height)
+    ++rtn;
+  return rtn;
 }
 
 /*	Function Name: MaxHeight
@@ -778,9 +827,6 @@ XawTextSinkInsertCursor(Widget w,
  *                 x, y  - location of area to clear.
  *                 width, height - size of area to clear
  *	Returns: void.
- *
- * This function doesn't actually display anything, it is only a place
- * holder.
  */
 
 void

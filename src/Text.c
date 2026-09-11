@@ -44,6 +44,10 @@ WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
 ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
+
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+
 ******************************************************************/
 
 #ifdef HAVE_CONFIG_H
@@ -57,6 +61,7 @@ SOFTWARE.
 #include <X11/Xutil.h>
 
 #include "XawI18n.h"
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,6 +75,7 @@ SOFTWARE.
 #include <X11/Xaw3dXft/Scrollbar.h>
 #include <X11/Xaw3dXft/TextP.h>
 #include <X11/Xaw3dXft/TextSrc.h>
+#include <X11/Xaw3dXft/TextSinkP.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/MultiSinkP.h>
@@ -102,6 +108,9 @@ unsigned long XawFmtWide = 0L;
 
 #define IsValidLine(ctx, num) ( ((num) == 0) || \
 			        ((ctx)->text.lt.info[(num)].position != 0) )
+
+#define ScrollbarWidth(w)  ((w)->core.width  + 2*(w)->core.border_width)
+#define ScrollbarHeight(w) ((w)->core.height + 2*(w)->core.border_width)
 
 /*
  * Defined in TextAction.c
@@ -145,7 +154,7 @@ void _XawTextClearAndCenterDisplay(TextWidget);
 void _XawTextExecuteUpdate(TextWidget);
 char *_XawTextGetText(TextWidget, XawTextPosition, XawTextPosition);
 void _XawTextNeedsUpdating(TextWidget, XawTextPosition, XawTextPosition);
-Atom * _XawTextSelectionList(TextWidget, String *, Cardinal);
+Atom *_XawTextSelectionList(TextWidget, String *, Cardinal);
 void _XawTextSetScrollBars(TextWidget);
 void _XawTextSetSelection(TextWidget, XawTextPosition, XawTextPosition,
                           String *, Cardinal);
@@ -177,13 +186,13 @@ static XtResource resources[] = {
   {XtNinsertPosition, XtCTextPosition, XtRInt, sizeof(XawTextPosition),
      offset(text.insertPos), XtRImmediate,(XtPointer)0},
   {XtNleftMargin, XtCMargin, XtRPosition, sizeof (Position),
-     offset(text.r_margin.left), XtRImmediate, (XtPointer)2},
+     offset(text.res_margins.left), XtRImmediate, (XtPointer)2},
   {XtNrightMargin, XtCMargin, XtRPosition, sizeof (Position),
-     offset(text.r_margin.right), XtRImmediate, (XtPointer)4},
+     offset(text.res_margins.right), XtRImmediate, (XtPointer)4},
   {XtNtopMargin, XtCMargin, XtRPosition, sizeof (Position),
-     offset(text.r_margin.top), XtRImmediate, (XtPointer)2},
+     offset(text.res_margins.top), XtRImmediate, (XtPointer)2},
   {XtNbottomMargin, XtCMargin, XtRPosition, sizeof (Position),
-     offset(text.r_margin.bottom), XtRImmediate, (XtPointer)2},
+     offset(text.res_margins.bottom), XtRImmediate, (XtPointer)2},
   {XtNselectTypes, XtCSelectTypes, XtRPointer,
      sizeof(XawTextSelectType*), offset(text.sarray),
      XtRPointer, (XtPointer)&defaultSelectTypesPtr},
@@ -374,9 +383,7 @@ CvtStringToResizeMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
   toVal->addr = NULL;
 }
 
-static void
-ClassInitialize(void)
-{
+static void ClassInitialize (void) {
   if (!XawFmt8Bit)
     XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
   if (!XawFmtWide)
@@ -400,29 +407,26 @@ ClassInitialize(void)
  *	Returns: none
  */
 
-static void
-PositionHScrollBar(TextWidget ctx)
-{
+// If both vbar and hbar exist, vbar gets right of way in the corner.
+// Otherwise, hbar spans the full width.
+static void PositionHScrollBar (TextWidget ctx) {
   Widget vbar = ctx->text.vbar, hbar = ctx->text.hbar;
-  Position top, left = 0;
-  int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
 
-  if (ctx->text.hbar == NULL) return;
+  if (hbar == NULL) return;
 
-  if (vbar != NULL)
-    left += (Position) (vbar->core.width + vbar->core.border_width);
+  // Text core width, less Text shadows, less hbar borders
+  Dimension width = ctx->core.width - 2*s - 2*hbar->core.border_width;
+  if (vbar) // Less vbar width
+    width -= ScrollbarWidth(vbar);
+  // Changing width only
+  XtResizeWidget(hbar, width, hbar->core.height, hbar->core.border_width);
 
-  XtResizeWidget( hbar, ctx->core.width - left - s, hbar->core.height,
-		 hbar->core.border_width );
-
-  left = s / 2 - (Position) hbar->core.border_width;
-  if (left < 0) left = 0;
-  if (vbar != NULL)
-    left += (Position) (vbar->core.width + vbar->core.border_width);
-
-  top = ctx->core.height - (hbar->core.height + hbar->core.border_width + s / 2);
-
-  XtMoveWidget( hbar, left, top);
+  Position x = s,
+           y = ctx->core.height - s - ScrollbarHeight(hbar);
+  if (vbar && !ctx->text.useright)
+    x += ScrollbarWidth(vbar);
+  XtMoveWidget(hbar, x, y);
 }
 
 /*	Function Name: PositionVScrollBar.
@@ -433,23 +437,24 @@ PositionHScrollBar(TextWidget ctx)
 
 static void PositionVScrollBar (TextWidget ctx) {
   Widget vbar = ctx->text.vbar;
-  Position pos;
-  Dimension bw;
-  int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
 
   if (vbar == NULL) return;
-  bw = vbar->core.border_width;
 
-  XtResizeWidget( vbar, vbar->core.width, ctx->core.height - s, bw);
-  pos = s / 2 - (Position)bw;
-  if (pos < 0) pos = 0;
+  // Text core height, less Text shadows, less vbar borders
+  Dimension height = ctx->core.height - 2*s - 2*vbar->core.border_width;
+  // Changing height only
+  XtResizeWidget(vbar, vbar->core.width, height, vbar->core.border_width);
 
+  Position x = s, y = s;
   if (ctx->text.useright)
-      XtMoveWidget( vbar, ctx->core.width - vbar->core.width
-		    - vbar->core.border_width, pos);
-  else
-      XtMoveWidget( vbar, pos, pos);
+    x = ctx->core.width - s - ScrollbarWidth(vbar);
+  XtMoveWidget(vbar, x, y);
 }
+
+// The clearing that is done in the following functions is primarily because
+// debris is left behind in the res_margins area.  Clearing the space
+// occupied by the scrollbars themselves might be overkill.
 
 static void CreateVScrollBar (TextWidget ctx) {
   Widget vbar;
@@ -466,17 +471,30 @@ static void CreateVScrollBar (TextWidget ctx) {
       XtAddCallback((Widget) ctx, XtNunrealizeCallback, UnrealizeScrollbars,
 		    (XtPointer) NULL);
 
+  // If an hbar exists, VMargins will account for it, so the clearing of the
+  // res_margins space won't touch it.
   if (ctx->text.useright) {
-      ctx->text.r_margin.right += vbar->core.width + vbar->core.border_width;
-      ctx->text.margin.right = ctx->text.r_margin.right;
+    ctx->text.margins.right += ScrollbarWidth(vbar);
+    const int clearwidth = (int)ScrollbarWidth(vbar) +
+                           (int)ctx->text.res_margins.right;
+    if (clearwidth > 0 && ctx->core.height > VMargins(ctx))
+      SinkClearToBG(ctx->text.sink,
+	(Position)ctx->core.width - ctx->text.margins.right,
+	ctx->text.margins.top, clearwidth,
+	ctx->core.height - VMargins(ctx));
   } else {
-      ctx->text.r_margin.left += vbar->core.width + vbar->core.border_width;
-      ctx->text.margin.left = ctx->text.r_margin.left;
+    ctx->text.margins.left += ScrollbarWidth(vbar);
+    const int clearwidth = (int)ScrollbarWidth(vbar) +
+                           (int)ctx->text.res_margins.left;
+    if (clearwidth > 0 && ctx->core.height > VMargins(ctx))
+      SinkClearToBG(ctx->text.sink,
+	ctx->text.margins.left - clearwidth,
+	ctx->text.margins.top, clearwidth,
+	ctx->core.height - VMargins(ctx));
   }
 
-  PositionVScrollBar(ctx);
-  PositionHScrollBar(ctx);	/* May modify location of Horiz. Bar. */
-
+  PositionVScrollBar(ctx); // Does not modify width or margins
+  PositionHScrollBar(ctx); // Does not modify height or margins
   if (XtIsRealized((Widget)ctx)) {
     XtRealizeWidget(vbar);
     XtMapWidget(vbar);
@@ -494,12 +512,26 @@ static void DestroyVScrollBar (TextWidget ctx) {
 
   if (vbar == NULL) return;
 
+  // If an hbar exists, VMargins will account for it, so the clearing of the
+  // res_margins space won't touch it.
   if (ctx->text.useright) {
-    ctx->text.r_margin.right -= vbar->core.width + vbar->core.border_width;
-    ctx->text.margin.right = ctx->text.r_margin.right;
+    const int clearwidth = (int)ScrollbarWidth(vbar) +
+                           (int)ctx->text.res_margins.right;
+    if (clearwidth > 0 && ctx->core.height > VMargins(ctx))
+      SinkClearToBG(ctx->text.sink,
+	(Position)ctx->core.width - ctx->text.margins.right,
+	ctx->text.margins.top, clearwidth,
+	ctx->core.height - VMargins(ctx));
+    ctx->text.margins.right -= ScrollbarWidth(vbar);
   } else {
-    ctx->text.r_margin.left -= vbar->core.width + vbar->core.border_width;
-    ctx->text.margin.left = ctx->text.r_margin.left;
+    const int clearwidth = (int)ScrollbarWidth(vbar) +
+                           (int)ctx->text.res_margins.left;
+    if (clearwidth > 0 && ctx->core.height > VMargins(ctx))
+      SinkClearToBG(ctx->text.sink,
+	ctx->text.margins.left - clearwidth,
+	ctx->text.margins.top, clearwidth,
+	ctx->core.height - VMargins(ctx));
+    ctx->text.margins.left -= ScrollbarWidth(vbar);
   }
 
   if (ctx->text.hbar == NULL)
@@ -507,12 +539,10 @@ static void DestroyVScrollBar (TextWidget ctx) {
 		       (XtPointer) NULL);
   XtDestroyWidget(vbar);
   ctx->text.vbar = NULL;
-  PositionHScrollBar(ctx);
+  PositionHScrollBar(ctx); // Does not modify height or margins
 }
 
-static void
-CreateHScrollBar(TextWidget ctx)
-{
+static void CreateHScrollBar(TextWidget ctx) {
   Arg args[1];
   Widget hbar;
 
@@ -528,11 +558,17 @@ CreateHScrollBar(TextWidget ctx)
       XtAddCallback((Widget) ctx, XtNunrealizeCallback, UnrealizeScrollbars,
 		    (XtPointer) NULL);
 
-/**/
-  ctx->text.r_margin.bottom += hbar->core.height + hbar->core.border_width;
-  ctx->text.margin.bottom = ctx->text.r_margin.bottom;
-/**/
-  PositionHScrollBar(ctx);
+  ctx->text.margins.bottom += ScrollbarHeight(hbar);
+  PositionHScrollBar(ctx); // Get the correct position and width
+  const Position clearx = hbar->core.x,
+                 cleary = (Position)ctx->core.height -
+                          ctx->text.margins.bottom;
+  const int clearheight = (int)ScrollbarHeight(hbar) +
+		 	  (int)ctx->text.res_margins.bottom;
+  if (clearheight > 0 && ctx->core.width > HMargins(ctx))
+    SinkClearToBG(ctx->text.sink, clearx, cleary, ScrollbarWidth(hbar),
+      clearheight);
+
   if (XtIsRealized((Widget)ctx)) {
     XtRealizeWidget(hbar);
     XtMapWidget(hbar);
@@ -552,10 +588,16 @@ DestroyHScrollBar(TextWidget ctx)
 
   if (hbar == NULL) return;
 
-/**/
-  ctx->text.r_margin.bottom -= hbar->core.height + hbar->core.border_width;
-  ctx->text.margin.bottom = ctx->text.r_margin.bottom;
-/**/
+  const Position clearx = hbar->core.x,
+                 cleary = (Position)ctx->core.height -
+                          ctx->text.margins.bottom;
+  const int clearheight = (int)ScrollbarHeight(hbar) +
+		 	  (int)ctx->text.res_margins.bottom;
+  if (clearheight > 0 && ctx->core.width > HMargins(ctx))
+    SinkClearToBG(ctx->text.sink, clearx, cleary, ScrollbarWidth(hbar),
+      clearheight);
+
+  ctx->text.margins.bottom -= ScrollbarHeight(hbar);
   if (ctx->text.vbar == NULL)
       XtRemoveCallback((Widget) ctx, XtNunrealizeCallback, UnrealizeScrollbars,
 		       (XtPointer) NULL);
@@ -568,20 +610,19 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
   TextWidget ctx = (TextWidget) new;
   char error_buf[BUFSIZ];
-  int s;
 
   ctx->text.threeD = XtVaCreateWidget("threeD", threeDWidgetClass, new,
                                  XtNx, 0, XtNy, 0,
                                  XtNwidth, 10, XtNheight, 10, /* dummy */
                                  NULL);
 
-  s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  ctx->text.margins.left   = ctx->text.res_margins.left   + s;
+  ctx->text.margins.right  = ctx->text.res_margins.right  + s;
+  ctx->text.margins.top    = ctx->text.res_margins.top    + s;
+  ctx->text.margins.bottom = ctx->text.res_margins.bottom + s;
 
-  ctx->text.r_margin.left += s;
-  ctx->text.r_margin.right += s;
-  ctx->text.r_margin.top += s;
-  ctx->text.r_margin.bottom += s - 1; // FIXME why is bottom margin thinner?
-
+  ctx->text.hscroll_offset = 0;
   ctx->text.lt.lines = 0;
   ctx->text.lt.info = NULL;
   memset(&(ctx->text.origSel), 0, sizeof(XawTextSelection));
@@ -600,7 +641,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   ctx->text.numranges = ctx->text.maxranges = 0;
   ctx->text.gc = DefaultGCOfScreen(XtScreen(ctx));  // FIXME
   ctx->text.hasfocus = FALSE;
-  ctx->text.margin = ctx->text.r_margin; /* Structure copy. */
   ctx->text.update_disabled = FALSE;
   ctx->text.old_insert = -1;
   ctx->text.mult = 1;
@@ -646,8 +686,6 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     else if (ctx->text.scroll_horiz == XawtextScrollAlways)
       CreateHScrollBar(ctx);
   }
-  if (ctx->text.vbar)
-      ctx->text.r_margin.right += ctx->text.vbar->core.width;
 }
 
 static void
@@ -659,7 +697,7 @@ Realize(Widget w, Mask *valueMask, XSetWindowAttributes *attributes)
     (w, valueMask, attributes);
 
   if (ctx->text.hbar != NULL) {	        /* Put up Hbar -- Must be first. */
-    XtRealizeWidget(ctx->text.hbar);
+    XtRealizeWidget(ctx->text.hbar);    // Why?
     XtMapWidget(ctx->text.hbar);
   }
 
@@ -686,9 +724,7 @@ UnrealizeScrollbars(Widget widget, XtPointer client, XtPointer call)
 
 /* Utility routines for support of Text */
 
-static void
-_CreateCutBuffers(Display *d)
-{
+static void _CreateCutBuffers (Display *d) {
   static struct _DisplayRec {
     struct _DisplayRec *next;
     Display *dpy;
@@ -704,18 +740,16 @@ _CreateCutBuffers(Display *d)
   dpy_list = dpy_ptr;
 
 #define Create(buffer) \
-    XChangeProperty(d, RootWindow(d, 0), buffer, XA_STRING, 8, \
-		    PropModeAppend, NULL, 0 );
-
-    Create( XA_CUT_BUFFER0 );
-    Create( XA_CUT_BUFFER1 );
-    Create( XA_CUT_BUFFER2 );
-    Create( XA_CUT_BUFFER3 );
-    Create( XA_CUT_BUFFER4 );
-    Create( XA_CUT_BUFFER5 );
-    Create( XA_CUT_BUFFER6 );
-    Create( XA_CUT_BUFFER7 );
-
+  XChangeProperty(d, RootWindow(d, 0), buffer, XA_STRING, 8, \
+		  PropModeAppend, NULL, 0 );
+  Create( XA_CUT_BUFFER0 );
+  Create( XA_CUT_BUFFER1 );
+  Create( XA_CUT_BUFFER2 );
+  Create( XA_CUT_BUFFER3 );
+  Create( XA_CUT_BUFFER4 );
+  Create( XA_CUT_BUFFER5 );
+  Create( XA_CUT_BUFFER6 );
+  Create( XA_CUT_BUFFER7 );
 #undef Create
 }
 
@@ -725,9 +759,7 @@ _CreateCutBuffers(Display *d)
  * position is immediately preceded by an eol graphic, then the insert cursor
  * is displayed at the beginning of the next line.
 */
-static void
-InsertCursor (Widget w, XawTextInsertState state)
-{
+static void InsertCursor (Widget w, XawTextInsertState state) {
   TextWidget ctx = (TextWidget)w;
   Position x, y;
   int line;
@@ -747,7 +779,7 @@ InsertCursor (Widget w, XawTextInsertState state)
   ctx->text.ev_y = y;
 
   /* Keep Input Method up to speed  */
-  // FIXME this is no longer tied to international
+  // FIXME this is no longer tied to international.  Maybe should be always on.
 
   if ( ctx->simple.international ) {
     Arg list[1];
@@ -888,7 +920,6 @@ PositionForXY (TextWidget ctx, Position x, Position y)
 {
   int fromx, line, width, height;
   XawTextPosition position;
-  XawTextBlock text;
 
   if (ctx->text.lt.lines == 0) return 0;
 
@@ -899,7 +930,7 @@ PositionForXY (TextWidget ctx, Position x, Position y)
   position = ctx->text.lt.info[line].position;
   if (position >= ctx->text.lastPos)
     return(ctx->text.lastPos);
-  fromx = (int) ctx->text.margin.left;
+  fromx = (int)ctx->text.margins.left - (int)ctx->text.hscroll_offset;
   XawTextSinkFindPosition( ctx->text.sink, position, fromx, x - fromx,
 			  FALSE, &position, &width, &height);
   if (position > ctx->text.lastPos) return(ctx->text.lastPos);
@@ -942,13 +973,13 @@ LineAndXYForPosition(TextWidget ctx, XawTextPosition pos, int *line,
   Boolean visible;
   int realW, realH;
 
+  // Initial values here will be returned if the position isn't visible.
   *line = 0;
-  *x = ctx->text.margin.left;
-  *y = ctx->text.margin.top;
+  *x = ctx->text.margins.left - (Position)ctx->text.hscroll_offset;
+  *y = ctx->text.margins.top;
   if ((visible = IsPositionVisible(ctx, pos))) {
     *line = LineForPosition(ctx, pos);
     *y = ctx->text.lt.info[*line].y;
-    *x = ctx->text.margin.left;
     linePos = ctx->text.lt.info[*line].position;
     XawTextSinkFindDistance( ctx->text.sink, linePos,
 			    *x, pos, &realW, &endPos, &realH);
@@ -971,12 +1002,11 @@ _XawTextBuildLineTable (
     XawTextPosition position,
     _XtBoolean force_rebuild)
 {
-  Dimension height = 0;
   int lines = 0;
   Cardinal size;
 
   if ((int)ctx->core.height > VMargins(ctx)) {
-    height = ctx->core.height - VMargins(ctx);
+    const Dimension height = ctx->core.height - VMargins(ctx);
     lines = XawTextSinkMaxLines(ctx->text.sink, height);
   }
   size = sizeof(XawTextLineTableEntry) * (lines + 1);
@@ -1013,16 +1043,17 @@ _BuildLineTable(TextWidget ctx, XawTextPosition position,
        (ctx->text.wrap == XawtextWrapNever) )
     width = BIGNUM;
   else
-    width = Max(0, ((int)ctx->core.width - (int)HMargins(ctx)));
+    width = Max(0, ((int)ctx->core.width - (int)HMarginsOffset(ctx)));
 
-  y = ( (line == 0) ? ctx->text.margin.top : lt->y );
+  y = ( (line == 0) ? ctx->text.margins.top : lt->y );
 
-  /* CONSTCOND */
   while ( TRUE ) {
     lt->y = y;
     lt->position = position;
 
-    XawTextSinkFindPosition( ctx->text.sink, position, ctx->text.margin.left,
+    // Line widths are based on the inflated width resulting from the
+    // horizontal scrolling offset
+    XawTextSinkFindPosition(ctx->text.sink, position, ctx->text.margins.left,
 			    width, ctx->text.wrap == XawtextWrapWord,
 			    &endPos, &realW, &realH);
     lt->textWidth = realW;
@@ -1043,25 +1074,24 @@ _BuildLineTable(TextWidget ctx, XawTextPosition position,
       return(position);
   }
 
-/*
- * If we are at the end of the buffer put two special lines in the table.
- *
- * a) Both have position > text.lastPos and lt->textWidth = 0.
- * b) The first has a real height, and the second has a height that
- *    is the rest of the screen.
- *
- * I could fill in the rest of the table with valid heights and a large
- * lastPos, but this method keeps the number of fill regions down to a
- * minimum.
- *
- * One valid entry is needed at the end of the table so that the cursor
- * does not jump off the bottom of the window.
- */
+  /*
+   * If we are at the end of the buffer put two special lines in the table.
+   *
+   * a) Both have position > text.lastPos and lt->textWidth = 0.
+   * b) The first has a real height, and the second has a height that
+   *    is the rest of the screen.
+   *
+   * I could fill in the rest of the table with valid heights and a large
+   * lastPos, but this method keeps the number of fill regions down to a
+   * minimum.
+   *
+   * One valid entry is needed at the end of the table so that the cursor
+   * does not jump off the bottom of the window.
+   */
 
   for ( count = 0; count < 2 ; count++)
-    if (line++ < ctx->text.lt.lines) { /* make sure not to run of the end. */
-      (++lt)->y = (count == 0) ? y : ctx->core.height
-	  - 2 * ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+    if (line++ < ctx->text.lt.lines) { /* make sure not to run off the end. */
+      (++lt)->y = (count == 0) ? y : ctx->core.height - ctx->text.margins.bottom;
       lt->textWidth = 0;
       lt->position = ctx->text.lastPos + 100;
     }
@@ -1084,13 +1114,12 @@ _BuildLineTable(TextWidget ctx, XawTextPosition position,
  * NOTE: This function requires a valid line table.
  */
 
-static Dimension
-GetWidestLine(TextWidget ctx)
-{
+static Dimension GetWidestLine (TextWidget ctx) {
   int i;
   Dimension widest;
   XawTextLineTablePtr lt = &(ctx->text.lt);
 
+  // Phony minimum width of 1 px prevents divide by zero elsewhere
   for (i = 0, widest = 1 ; i < lt->lines ; i++)
     if (widest < lt->info[i].textWidth)
       widest = lt->info[i].textWidth;
@@ -1098,11 +1127,9 @@ GetWidestLine(TextWidget ctx)
   return(widest);
 }
 
-static void
-CheckVBarScrolling(TextWidget ctx)
-{
+static void CheckVBarScrolling (TextWidget ctx) {
   float first, last;
-  Boolean temp = (ctx->text.vbar == NULL);
+  const Boolean previousVbar = (ctx->text.vbar != NULL);
 
   if (ctx->text.scroll_vert == XawtextScrollNever) return;
 
@@ -1118,11 +1145,7 @@ CheckVBarScrolling(TextWidget ctx)
     if (ctx->text.scroll_vert == XawtextScrollWhenNeeded) {
       int line;
       XawTextPosition last_pos;
-      Position y = ctx->core.height - ctx->text.margin.bottom;
-
-      if (ctx->text.hbar != NULL)
-	y -= (ctx->text.hbar->core.height +
-	      2 * ctx->text.hbar->core.border_width);
+      Position y = ctx->core.height - ctx->text.margins.bottom;
 
       last_pos = PositionForXY(ctx, (Position) ctx->core.width, y);
       line = LineForPosition(ctx, last_pos);
@@ -1136,7 +1159,7 @@ CheckVBarScrolling(TextWidget ctx)
     if (ctx->text.vbar != NULL)
       XawScrollbarSetThumb(ctx->text.vbar, first, last - first);
 
-    if ( (ctx->text.vbar == NULL) != temp) {
+    if ((ctx->text.vbar != NULL) != previousVbar) {
       _XawTextNeedsUpdating(ctx, zeroPosition, ctx->text.lastPos);
       if (ctx->text.vbar == NULL)
 	_XawTextBuildLineTable (ctx, zeroPosition, FALSE);
@@ -1156,72 +1179,91 @@ CheckVBarScrolling(TextWidget ctx)
  * displayed in the window.
  */
 
-void
-_XawTextSetScrollBars(TextWidget ctx)
-{
-  float first, last, widest;
-  Boolean temp = (ctx->text.hbar == NULL);
-  Boolean vtemp = (ctx->text.vbar == NULL);
-  int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+void _XawTextSetScrollBars(TextWidget ctx) {
+  const Boolean previousHbar = (ctx->text.hbar != NULL),
+                previousVbar = (ctx->text.vbar != NULL);
 
   CheckVBarScrolling(ctx);
 
   if (ctx->text.scroll_horiz == XawtextScrollNever) return;
 
-  if (ctx->text.vbar != NULL)
-    widest = (int)(ctx->core.width - ctx->text.vbar->core.width -
-		   2 * s - ctx->text.vbar->core.border_width);
-  else
-    widest = ctx->core.width - 2 * s;
-  widest /= (last = GetWidestLine(ctx));
+  /*
+    Catch-22
+
+    - If the only long line is the last one above the hbar and you scroll up
+      by one line, the hbar is destroyed, which makes room for the long line
+      to reappear with no hbar.
+
+    - If the only long line is one that just scrolled on from below, the hbar
+      appears on top of it, so then there is an hbar with no long line.
+  */
   if (ctx->text.scroll_horiz == XawtextScrollWhenNeeded) {
-    if (widest < 1.0)
+    // These values may change after the next line table rebuild.
+    const float widestLinePx = GetWidestLine(ctx),
+      viewportWidthProportion = (ctx->core.width - HMargins(ctx))/widestLinePx;
+    if (viewportWidthProportion < 1.0)
       CreateHScrollBar(ctx);
     else
       DestroyHScrollBar(ctx);
   }
-
-  if ( (ctx->text.hbar == NULL) != temp ) {
+  if ((ctx->text.hbar != NULL) != previousHbar) {
     _XawTextBuildLineTable (ctx, ctx->text.lt.top, TRUE);
     CheckVBarScrolling(ctx);	/* Recheck need for vbar, now that we added
 				   or removed the hbar.*/
   }
 
-  if (ctx->text.hbar != NULL) {
-    first = ctx->text.r_margin.left - ctx->text.margin.left;
-    first /= last;
-    XawScrollbarSetThumb(ctx->text.hbar, first, widest);
+  Boolean updateText = False;
+  if (!ctx->text.hbar && ctx->text.hscroll_offset) {
+    // If hbar went away, warp hscroll offset to 0
+    ctx->text.hscroll_offset = 0;
+    updateText = True;
+  } else if ((ctx->text.vbar != NULL) != previousVbar)
+    updateText = True;
+  if (ctx->text.hbar) {
+    // Reposition the hbar thumb
+    const float widestLinePx = GetWidestLine(ctx),
+      viewportWidthProportion = (ctx->core.width - HMargins(ctx))/widestLinePx,
+      first = (float)ctx->text.hscroll_offset / widestLinePx;
+    XawScrollbarSetThumb(ctx->text.hbar, first, viewportWidthProportion);
   }
-
-  if (((ctx->text.hbar == NULL) && (ctx->text.margin.left !=
-				   ctx->text.r_margin.left)) ||
-      (ctx->text.vbar == NULL) != vtemp)
-  {
-    ctx->text.margin.left = ctx->text.r_margin.left;
+  if (updateText) {
     _XawTextNeedsUpdating(ctx, zeroPosition, ctx->text.lastPos);
     FlushUpdate(ctx);
   }
 }
 
 /*
- * The routine will scroll the displayed text by lines.  If the arg  is
+ * The routine will scroll the displayed text by lines.  If the arg is
  * positive, move up; otherwise, move down. [note: this is really a private
  * procedure but is used in multiple modules].
  */
 
-void
-_XawTextVScroll(TextWidget ctx, int n)
-{
-  XawTextPosition top, target;
-  int y;
-  Arg list[1];
-  XawTextLineTable * lt = &(ctx->text.lt);
-  int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+void _XawTextVScroll(TextWidget ctx, int n) {
+  XawTextPosition top;
+  XawTextLineTable *lt = &(ctx->text.lt);
 
+  if (n == 0) return;
   if (abs(n) > ctx->text.lt.lines)
     n = (n > 0) ? ctx->text.lt.lines : -ctx->text.lt.lines;
 
-  if (n == 0) return;
+  // HScroll does _XawTextPrepareToUpdate ... _XawTextExecuteUpdate.
+  // VScroll doesn't.  What does this mean‽
+
+  const Dimension corewidth = ctx->core.width,
+                 coreheight = ctx->core.height;
+  // Get rid of degenerate cases.
+  if (corewidth <= HMargins(ctx) || coreheight <= VMargins(ctx))
+    return;
+
+  // If there's a background pixmap, XCopyArea will cause carnage.
+  const Boolean haveBgPixmap =
+    (ctx->core.background_pixmap != XtUnspecifiedPixmap);
+
+  // The scrolling area includes the overflow markers that are drawn in the
+  // right margin.
+  Dimension scrollWidth = corewidth - HMargins(ctx);
+  if (ctx->text.res_margins.right > 0)
+    scrollWidth += ctx->text.res_margins.right;
 
   if (n > 0) {
     if ( IsValidLine(ctx, n) )
@@ -1229,173 +1271,148 @@ _XawTextVScroll(TextWidget ctx, int n)
     else
       top = ctx->text.lastPos;
 
-    y = IsValidLine(ctx, n) ? lt->info[n].y : ctx->core.height - 2 * s;
+    // y is relative to the window, includes the top margin
+    const Position y = IsValidLine(ctx, n) ? lt->info[n].y :
+      coreheight - ctx->text.margins.bottom;
     _XawTextBuildLineTable(ctx, top, FALSE);
-    if (top >= ctx->text.lastPos)
-      DisplayTextWindow( (Widget) ctx);
+
+    if (top >= ctx->text.lastPos || haveBgPixmap)
+      DisplayTextWindow((Widget)ctx);
     else {
+      // Move old stuff up
       XCopyArea(XtDisplay(ctx), XtWindow(ctx), XtWindow(ctx), ctx->text.gc,
-		s, y, (int)ctx->core.width - 2 * s, (int)ctx->core.height - y - s,
-		s, ctx->text.margin.top);
-
+	ctx->text.margins.left, y,                       // src x and y
+	scrollWidth,                                     // width
+	coreheight - ctx->text.margins.bottom - y,       // height
+	ctx->text.margins.left, ctx->text.margins.top);  // dest x and y
       PushCopyQueue(ctx, 0, (int) -y);
+      // Clear new space at bottom
+      const Dimension spaceHeight = y - ctx->text.margins.top;
       SinkClearToBG(ctx->text.sink,
-		    (Position) s,
-		    (Position) (ctx->text.margin.top + ctx->core.height - y - s),
-		   (Dimension) ctx->core.width - 2 * s,
-		   (Dimension) ctx->core.height - 2 * s);
-
+	ctx->text.margins.left,
+	coreheight - ctx->text.margins.bottom - spaceHeight,
+	scrollWidth,
+	spaceHeight);
       if (n < lt->lines) n++; /* update descenders at bottom */
       _XawTextNeedsUpdating(ctx, lt->info[lt->lines - n].position,
 			    ctx->text.lastPos);
       _XawTextSetScrollBars(ctx);
     }
-  }
-  else {
-    XawTextPosition updateTo;
-    unsigned int height, clear_height;
-
+  } else { // n < 0
     n = -n;
-    target = lt->top;
-    top = SrcScan(ctx->text.source, target, XawstEOL,
+    const XawTextPosition old_top = lt->top;
+    // Scan back n lines to find the new top
+    top = SrcScan(ctx->text.source, old_top, XawstEOL,
 		  XawsdLeft, n+1, FALSE);
-
     _XawTextBuildLineTable(ctx, top, FALSE);
-    y = IsValidLine(ctx, n) ? lt->info[n].y : ctx->core.height - 2 * s;
-    updateTo = IsValidLine(ctx, n) ? lt->info[n].position : ctx->text.lastPos;
-    if (IsValidLine(ctx, lt->lines - n))
-      height = lt->info[lt->lines-n].y - ctx->text.margin.top;
-    else if (ctx->core.height - HMargins(ctx))
-      height = ctx->core.height - HMargins(ctx);
-    else
-      height = 0;
-    if (y > (int) ctx->text.margin.top)
-      clear_height = y - ctx->text.margin.top;
-    else
-      clear_height = 0;
 
-    if ( updateTo == target ) {
+    // Since we built the line table starting from n lines back, the
+    // previously existing text would now be on line n of the new table...
+    // unless n exceeded the number of lines remaining
+    const Position y = IsValidLine(ctx, n) ? lt->info[n].y :
+      coreheight - ctx->text.margins.bottom;
+    const XawTextPosition updateTo = IsValidLine(ctx, n) ?
+      lt->info[n].position : ctx->text.lastPos;
+
+    if (updateTo == old_top && !haveBgPixmap) { // If the old top line was found
+      // Move old stuff down
       XCopyArea(XtDisplay(ctx), XtWindow(ctx), XtWindow(ctx), ctx->text.gc,
-		s, ctx->text.margin.top, (int) ctx->core.width - 2 * s,
-		height, s, y);
+	ctx->text.margins.left, ctx->text.margins.top,  // src x and y
+	scrollWidth,                                    // width
+	coreheight - ctx->text.margins.bottom - y,      // height
+	ctx->text.margins.left, y);                     // dest x and y
       PushCopyQueue(ctx, 0, (int) y);
-      SinkClearToBG(ctx->text.sink, (Position) s, ctx->text.margin.top,
-		   (Dimension) ctx->core.width - 2 * s, (Dimension) clear_height);
-
+      // Clear new space at top
+      SinkClearToBG(ctx->text.sink,
+	ctx->text.margins.left,
+	ctx->text.margins.top,
+	scrollWidth,
+	y - ctx->text.margins.top);
       _XawTextNeedsUpdating(ctx, lt->info[0].position, updateTo);
       _XawTextSetScrollBars(ctx);
     }
-    else if (lt->top != target)
-      DisplayTextWindow((Widget)ctx);
+    else if (lt->top != old_top)       // Unless it's a no-op,
+      DisplayTextWindow((Widget)ctx);  // redraw everything
   }
-  XtSetArg (list[0], XtNinsertPosition, ctx->text.lt.top+ctx->text.lt.lines);
-  _XawImSetValues ((Widget) ctx, list, 1);
-
-  _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
-		0, 0, ctx->core.width, ctx->core.height,
-		((ThreeDWidget)ctx->text.threeD)->threeD.relief, False);
+  Arg list[1] = {{XtNinsertPosition, ctx->text.lt.top+ctx->text.lt.lines}};
+  _XawImSetValues((Widget) ctx, list, 1);
 }
 
-static void
-HScroll(Widget w, XtPointer closure, XtPointer callData)
-{
-  TextWidget ctx = (TextWidget) closure;
-  Widget tw = (Widget) ctx;
-  Position old_left, pixels = (Position)(intptr_t) callData;
-  XRectangle rect, t_rect;
-  int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+static void HScroll (Widget w, XtPointer closure, XtPointer callData) {
+  TextWidget ctx = (TextWidget)closure;
+  Widget tw = (Widget)ctx;
+  const Position pixels = (intptr_t)callData;
+  XRectangle rect;
+
+  if (pixels == 0) return;
 
   _XawTextPrepareToUpdate(ctx);
+  ctx->text.hscroll_offset += pixels;
 
-  old_left = ctx->text.margin.left;
-  ctx->text.margin.left -= pixels;
-  if (ctx->text.margin.left > ctx->text.r_margin.left) {
-    ctx->text.margin.left = ctx->text.r_margin.left;
-    pixels = old_left - ctx->text.margin.left;
-  }
-
-  if (pixels > 0) {
-    rect.width = (unsigned short) pixels + ctx->text.margin.right;
-    rect.x = (short) ctx->core.width - (short) rect.width;
-    rect.y = (short) ctx->text.margin.top;
-    rect.height = (unsigned short) ctx->core.height - rect.y - 2 * s;
-
-    XCopyArea(XtDisplay(tw), XtWindow(tw), XtWindow(tw), ctx->text.gc,
-	      pixels + s, (int) rect.y,
-	      (unsigned int) rect.x, (unsigned int) ctx->core.height - 2 * s,
-	      s, (int) rect.y);
-
-    PushCopyQueue(ctx, (int) -pixels, 0);
-  }
-  else if (pixels < 0) {
-    rect.x = s;
-
-    if (ctx->text.vbar != NULL)
-      rect.x += (short) (ctx->text.vbar->core.width +
-			 ctx->text.vbar->core.border_width);
-
-    rect.width = (Position) - pixels;
-    rect.y = ctx->text.margin.top;
-    rect.height = ctx->core.height - rect.y - 2 * s;
-
-    XCopyArea(XtDisplay(tw), XtWindow(tw), XtWindow(tw), ctx->text.gc,
-	      (int) rect.x, (int) rect.y,
-	      (unsigned int) ctx->core.width - rect.width - 2 * s,
-	      (unsigned int) rect.height,
-	      (int) rect.x + rect.width, (int) rect.y);
-
-    PushCopyQueue(ctx, (int) rect.width, 0);
-
-/*
- * Redraw the line overflow marks.
- */
-
-    t_rect.x = ctx->core.width - ctx->text.margin.right - s;
-    t_rect.width = ctx->text.margin.right;
-    t_rect.y = rect.y;
-    t_rect.height = rect.height - 2 * s;
-
-    SinkClearToBG(ctx->text.sink, (Position) t_rect.x, (Position) t_rect.y,
-		  (Dimension) t_rect.width, (Dimension) t_rect.height);
-
-    UpdateTextInRectangle(ctx, &t_rect);
-  }
-
-/*
- * Put in the text that just became visible.
- */
-
-  if ( pixels != 0 ) {
-    SinkClearToBG(ctx->text.sink, (Position) rect.x, (Position) rect.y,
-		  (Dimension) rect.width, (Dimension) rect.height);
-
+  // If there's a background pixmap, XCopyArea will cause carnage.
+  if (ctx->core.background_pixmap == XtUnspecifiedPixmap) {
+    // rect must be set to the area being cleared out
+    rect.y = ctx->text.margins.top;
+    rect.height = ctx->core.height - VMargins(ctx);
+    if (pixels > 0) {
+      rect.x = ctx->core.width - ctx->text.margins.right - pixels;
+      rect.width = pixels;
+      // Move old stuff left
+      XCopyArea(XtDisplay(tw), XtWindow(tw), XtWindow(tw), ctx->text.gc,
+	ctx->text.margins.left + pixels, ctx->text.margins.top, // src x and y
+	ctx->core.width - HMargins(ctx) - pixels,               // width
+	ctx->core.height - VMargins(ctx),                       // height
+	ctx->text.margins.left, ctx->text.margins.top);         // dest x and y
+      PushCopyQueue(ctx, -pixels, 0);
+      // Clear space on the right
+      SinkClearToBG(ctx->text.sink, (Position)rect.x, (Position)rect.y,
+		    (Dimension)rect.width, (Dimension)rect.height);
+    } else { // pixels < 0
+      rect.x = ctx->text.margins.left;
+      rect.width = -pixels;
+      // Move old stuff right
+      XCopyArea(XtDisplay(tw), XtWindow(tw), XtWindow(tw), ctx->text.gc,
+	ctx->text.margins.left, ctx->text.margins.top,           // src x and y
+	ctx->core.width - HMargins(ctx) + pixels,                // width
+	ctx->core.height - VMargins(ctx),                        // height
+	ctx->text.margins.left - pixels, ctx->text.margins.top); // dest x and y
+      PushCopyQueue(ctx, -pixels, 0);
+      // All debris on the left should get overwritten by PaintText since it
+      // was part of a longer line.
+    }
+    // Put in the text that just became visible.
     UpdateTextInRectangle(ctx, &rect);
-  }
+    _XawTextSetScrollBars(ctx);
+  } else
+    DisplayTextWindow((Widget)ctx);
+
   _XawTextExecuteUpdate(ctx);
-  _XawTextSetScrollBars(ctx);
 }
 
-static void
-HJump(Widget w, XtPointer closure, XtPointer callData)
-{
-  TextWidget ctx = (TextWidget) closure;
-  float * percent = (float *) callData;
-  Position new_left, old_left = ctx->text.margin.left;
-
-  long move; /*difference of Positions can be bigger than Position; lint err */
-
-  new_left = ctx->text.r_margin.left;
-  new_left -= (Position) (*percent * GetWidestLine(ctx));
-  move = old_left - new_left;
-
-  if (labs(move) < (int)ctx->core.width) {
-    HScroll(w, (XtPointer) ctx, (XtPointer) move);
-    return;
+// Warp the horizontal scroll position to the proportion that is passed in
+// callData.  If the difference is less than the viewport width, it is
+// converted into a scroll so that XCopyArea can happen.
+static void HJump (Widget w, XtPointer closure, XtPointer callData) {
+  TextWidget ctx = (TextWidget)closure;
+  const Dimension prev_offset = ctx->text.hscroll_offset;
+  const float widestLine = GetWidestLine(ctx);
+  float proportion = *(float *)callData;
+  if (proportion < 0)
+    proportion = 0;
+  else if (proportion > 1)
+    proportion = 1;
+  const Dimension new_offset = proportion * widestLine;
+  const Position delta_px = (Position)new_offset - (Position)prev_offset;
+  if (abs(delta_px) < ctx->core.width - HMargins(ctx))
+    // It's literally giving me a 'cast to pointer from integer of different
+    // size' warning on (XtPointer)delta_px
+    HScroll(w, (XtPointer)ctx, (XtPointer)(intptr_t)delta_px);
+  else {
+    ctx->text.hscroll_offset = new_offset;
+    _XawTextPrepareToUpdate(ctx);
+    if (XtIsRealized((Widget)ctx)) DisplayTextWindow((Widget)ctx);
+    _XawTextExecuteUpdate(ctx);
   }
-  _XawTextPrepareToUpdate(ctx);
-  ctx->text.margin.left = new_left;
-  if (XtIsRealized((Widget) ctx)) DisplayTextWindow((Widget) ctx);
-  _XawTextExecuteUpdate(ctx);
 }
 
 /*	Function Name: UpdateTextInLine
@@ -1403,7 +1420,8 @@ HJump(Widget w, XtPointer closure, XtPointer callData)
  *	Arguments: ctx - the text widget.
  *                 line - the line number (in the line table) of this line.
  *                 left, right - left and right pixel offsets of the
- *                               area to update.
+ *                               area to update.  These are real x coords
+ *                               relative to the window.
  *	Returns: none.
  */
 
@@ -1413,17 +1431,18 @@ UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
   XawTextPosition pos1, pos2;
   int width, height, local_left, local_width;
   XawTextLineTableEntry * lt = ctx->text.lt.info + line;
+  const Position leftAdj = ctx->text.margins.left -
+                           (Position)ctx->text.hscroll_offset;
 
-  if ( ((int)(lt->textWidth + ctx->text.margin.left) < left) ||
-       ( ctx->text.margin.left > right ) )
+  if (leftAdj + (Position)lt->textWidth < left || leftAdj > right)
     return;			/* no need to update. */
 
-  local_width = left - ctx->text.margin.left;
+  local_width = left - leftAdj;
   XawTextSinkFindPosition(ctx->text.sink, lt->position,
-			  (int) ctx->text.margin.left,
+			  leftAdj,
 			  local_width, FALSE, &pos1, &width, &height);
 
-  if (right >= (Position) lt->textWidth - ctx->text.margin.left)
+  if (right >= (Position)lt->textWidth - leftAdj)
     if ( (IsValidLine(ctx, line + 1)) &&
 	 (ctx->text.lt.info[line + 1].position <= ctx->text.lastPos) )
       pos2 = SrcScan( ctx->text.source, (lt + 1)->position, XawstPositions,
@@ -1433,7 +1452,7 @@ UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
   else {
     XawTextPosition t_pos;
 
-    local_left = ctx->text.margin.left + width;
+    local_left = leftAdj + width;
     local_width = right  - local_left;
     XawTextSinkFindPosition(ctx->text.sink, pos1, local_left,
 			    local_width, FALSE, &pos2, &width, &height);
@@ -1448,7 +1467,7 @@ UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
 }
 
 /*
- * The routine will scroll the displayed text by pixels.  If the calldata is
+ * The routine will scroll the displayed text by lines.  If the calldata is
  * positive, move up; otherwise, move down.
  */
 
@@ -1457,7 +1476,7 @@ static void
 VScroll(Widget w, XtPointer closure, XtPointer callData)
 {
   TextWidget ctx = (TextWidget)closure;
-  int height, nlines, lines = (intptr_t) callData;
+  int height, nlines, lines = (intptr_t)callData;
 
   height = ctx->core.height - VMargins(ctx);
   if (height < 1)
@@ -2059,112 +2078,117 @@ _XawTextReplace (TextWidget ctx, XawTextPosition pos1, XawTextPosition pos2,
  * In the event that this span contains highlighted text for the selection,
  * only that portion will be displayed highlighted.
  *
- * NOTE: it is illegal to call this routine unless there
- *       is a valid line table!
+ * NOTE: it is illegal to call this routine unless there is a valid line table!
  */
 
-static void
-DisplayText(Widget w, XawTextPosition pos1, XawTextPosition pos2)
-{
+static void DisplayText (Widget w, XawTextPosition pos1, XawTextPosition pos2) {
   TextWidget ctx = (TextWidget)w;
   Position x, y;
-  int height, line, i, lastPos = ctx->text.lastPos;
+  int line, i, lastPos = ctx->text.lastPos;
   XawTextPosition startPos, endPos;
   Boolean clear_eol, done_painting;
-  Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Position leftAdj = ctx->text.margins.left -
+                           (Position)ctx->text.hscroll_offset,
+	          bottom = ctx->core.height - ctx->text.margins.bottom;
+  GC gc = ((TextSinkObject)ctx->text.sink)->text_sink.normal_GC; // yoink
 
   pos1 = (pos1 < ctx->text.lt.top) ? ctx->text.lt.top : pos1;
   pos2 = FindGoodPosition(ctx, pos2);
+  if (pos1 >= pos2 ||
+      !LineAndXYForPosition(ctx, pos1, &line, &x, &y) ||
+      y >= bottom)
+    return; /* line not visible or pos1 >= pos2 */
 
-  if ( (pos1 >= pos2) || !LineAndXYForPosition(ctx, pos1, &line, &x, &y) )
-    return;			/* line not visible, or pos1 >= pos2. */
+  for (startPos = pos1, i = line; IsValidLine(ctx, i) &&
+	 i < ctx->text.lt.lines; ++i) {
 
-  for ( startPos = pos1, i = line; IsValidLine(ctx, i) &&
-                                   (i < ctx->text.lt.lines) ; i++) {
-
-
-    if ( (endPos = ctx->text.lt.info[i + 1].position) > pos2 ) {
+    if ((endPos = ctx->text.lt.info[i + 1].position) > pos2) {
+      // Our stopping point is somewhere in the current line.
+      // clear_eol only if the stopping point is end of text.
       clear_eol = ((endPos = pos2) >= lastPos);
-      done_painting = (!clear_eol || ctx->text.single_char);
+      done_painting = True;
+    } else {
+      // This is not the last line.  clear_eol yes, done no.
+      clear_eol = True;
+      done_painting = False;
     }
-    else {
-      clear_eol = TRUE;
-      done_painting = FALSE;
-    }
 
-    height = ctx->text.lt.info[i + 1].y - ctx->text.lt.info[i].y - s + 1;
-
-    if ( (endPos > startPos) ) {
-
-      /* note to self: _ShadowSurroundedBox() hacks are in here */
-      if ( (x == (Position) ctx->text.margin.left) && (x > 0) )
-      {
-	 SinkClearToBG (ctx->text.sink,
-			(Position) s, y,
-			(Dimension) ctx->text.margin.left, (Dimension)height);
-	 _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
-			      0, 0, ctx->core.width, ctx->core.height,
-			      ((ThreeDWidget)ctx->text.threeD)->threeD.relief,
-			      False);
-      }
-
-      if ( (startPos >= ctx->text.s.right) || (endPos <= ctx->text.s.left) )
+    if (endPos > startPos) {
+      // text.s is a selection
+      if (startPos >= ctx->text.s.right || endPos <= ctx->text.s.left)
+	// All non-highlighted
 	XawTextSinkDisplayText(ctx->text.sink, x, y, startPos, endPos, FALSE);
-      else if ((startPos >= ctx->text.s.left) && (endPos <= ctx->text.s.right))
+      else if (startPos >= ctx->text.s.left && endPos <= ctx->text.s.right)
+	// All highlighted
 	XawTextSinkDisplayText(ctx->text.sink, x, y, startPos, endPos, TRUE);
       else {
+	// Separate the highlighted from the non-highlighted and recurse
 	DisplayText(w, startPos, ctx->text.s.left);
 	DisplayText(w, Max(startPos, ctx->text.s.left),
 		    Min(endPos, ctx->text.s.right));
 	DisplayText(w, ctx->text.s.right, endPos);
       }
     }
-    startPos = endPos;
-    if (clear_eol) {
-	Position myx = ctx->text.lt.info[i].textWidth + ctx->text.margin.left;
 
-	SinkClearToBG(ctx->text.sink,
-		      (Position) myx,
-		      (Position) y, w->core.width - myx/* - 2 * s*/,
-		      (Dimension) height);
-	_ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
-			     0, 0, ctx->core.width, ctx->core.height,
-			     ((ThreeDWidget)ctx->text.threeD)->threeD.relief,
-			     False);
+    Position endx = (Position)ctx->text.lt.info[i].textWidth + leftAdj,
+            margx = (Position)ctx->core.width - ctx->text.margins.right;
+    Position y2 = ctx->text.lt.info[i + 1].y;
+    if (y2 > bottom) y2 = bottom;
+    Dimension height = y2 - y;
+    assert(height > 0);
 
-	/*
-	 * We only get here if single character is true, and we need
-	 * to clear to the end of the screen.  We know that since there
-	 * was only one character deleted that this is the same
-	 * as clearing an extra line, so we do this, and are done.
-	 *
-	 * This a performance hack, and a pretty gross one, but it works.
-	 *
-	 * Chris Peterson 11/13/89.
-	 */
-
-	if (done_painting) {
-	    y += height;
-	    SinkClearToBG(ctx->text.sink,
-			  (Position) ctx->text.margin.left, (Position) y,
-			  w->core.width - ctx->text.margin.left/* - 2 * s*/,
-			  (Dimension) Min(height, ctx->core.height - 2 * s - y));
-	    _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
-				 0, 0, ctx->core.width, ctx->core.height,
-				 ((ThreeDWidget)ctx->text.threeD)->threeD.relief,
-				 False);
-
-	    break;		/* set single_char to FALSE and return. */
-	}
+    // Optimized drawing/clearing of overflow marks had too many modes of
+    // failure.  Just fix them every time a line is touched.
+    if (ctx->text.res_margins.right > 0) {
+      if (endx > margx)
+	XFillRectangle(XtDisplay(ctx), XtWindow(ctx), gc, margx, y,
+	  ctx->text.res_margins.right, height);
+      else
+	SinkClearToBG(ctx->text.sink, margx, y, ctx->text.res_margins.right,
+	  height);
     }
 
-    x = (Position) ctx->text.margin.left;
+    if (clear_eol) {
+      if (endx < ctx->text.margins.left)
+	endx = ctx->text.margins.left;
+      if (endx < margx)
+	SinkClearToBG(ctx->text.sink, endx, y, margx - endx, height);
+
+      /*
+       * We only get here if single character is true, and we need
+       * to clear to the end of the screen.  We know that since there
+       * was only one character deleted that this is the same
+       * as clearing an extra line, so we do this, and are done.
+       *
+       * This a performance hack, and a pretty gross one, but it works.
+       *
+       * Chris Peterson 11/13/89.
+       */
+      if (done_painting) {
+	y = ctx->text.lt.info[i + 1].y;
+	if (y < bottom) {
+	  if (i+2 <= ctx->text.lt.lines) {
+	    y2 = ctx->text.lt.info[i + 2].y;
+	    if (y2 > bottom) y2 = bottom;
+	  } else y2 = bottom;
+	  height = y2 - y;
+	  Dimension clearWidth = w->core.width - HMargins(ctx);
+	  if (ctx->text.res_margins.right > 0)
+	    clearWidth += ctx->text.res_margins.right;
+	  SinkClearToBG(ctx->text.sink, ctx->text.margins.left, y,
+	    clearWidth, height);
+	}
+	break; /* set single_char to False and return. */
+      }
+    }
+
     y = ctx->text.lt.info[i + 1].y;
-    if ( done_painting
-	 || (y >= (int)(ctx->core.height - ctx->text.margin.bottom)) )
+    if (done_painting || y >= (int)bottom)
       break;
+    startPos = endPos;
+    x = leftAdj;
   }
-  ctx->text.single_char = FALSE;
+  ctx->text.single_char = False;
 }
 
 /*
@@ -2384,12 +2408,12 @@ ClearWindow (Widget w)
   TextWidget ctx = (TextWidget) w;
   int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
 
-  if (XtIsRealized(w))
-  {
+  if (XtIsRealized(w)) {
+    // This is clearing everything except the shadows.
+    // Scrollbars gone.
     SinkClearToBG(ctx->text.sink,
 		  (Position) s, (Position) s,
 		  w->core.width - 2 * s, w->core.height - 2 * s);
-    /* note to self: _ShadowSurroundedBox() hack might be needed here */
   }
 }
 
@@ -2400,12 +2424,9 @@ ClearWindow (Widget w)
  *	Returns: none.
  */
 
-void
-_XawTextClearAndCenterDisplay(TextWidget ctx)
-{
+void _XawTextClearAndCenterDisplay(TextWidget ctx) {
   int insert_line = LineForPosition(ctx, ctx->text.insertPos);
   int scroll_by = insert_line - ctx->text.lt.lines/2;
-
   _XawTextVScroll(ctx, scroll_by);
   DisplayTextWindow( (Widget) ctx);
 }
@@ -2415,9 +2436,7 @@ _XawTextClearAndCenterDisplay(TextWidget ctx)
  * Legal to call only if widget is realized.
  */
 
-static void
-DisplayTextWindow (Widget w)
-{
+static void DisplayTextWindow (Widget w) {
   TextWidget ctx = (TextWidget) w;
   ClearWindow(w);
   _XawTextBuildLineTable(ctx, ctx->text.lt.top, FALSE);
@@ -2431,12 +2450,12 @@ DisplayTextWindow (Widget w)
  * the bottom of the window. It is used by the keyboard input routine.
  */
 
-void
-_XawTextCheckResize(TextWidget ctx)
-{
+void _XawTextCheckResize (TextWidget ctx) {
   Widget w = (Widget) ctx;
   int line = 0, old_height;
   XtWidgetGeometry rbox, return_geom;
+  const Position leftAdj = ctx->text.margins.left -
+                           (Position)ctx->text.hscroll_offset;
 
   if ( (ctx->text.resize == XawtextResizeWidth) ||
        (ctx->text.resize == XawtextResizeBoth) ) {
@@ -2445,11 +2464,11 @@ _XawTextCheckResize(TextWidget ctx)
     for (lt = ctx->text.lt.info;
 	 IsValidLine(ctx, line) && (line < ctx->text.lt.lines);
 	 line++, lt++) {
-      if ((int)(lt->textWidth + ctx->text.margin.left) > (int)rbox.width)
-	  rbox.width = lt->textWidth + ctx->text.margin.left;
+      if ((Position)lt->textWidth + leftAdj > rbox.width)
+	rbox.width = lt->textWidth + leftAdj;
     }
 
-    rbox.width += ctx->text.margin.right;
+    rbox.width += ctx->text.margins.right;
     if (rbox.width > ctx->core.width) { /* Only get wider. */
       rbox.request_mode = CWWidth;
       if (XtMakeGeometryRequest(w, &rbox, &return_geom) == XtGeometryAlmost)
@@ -2623,50 +2642,50 @@ UpdateTextInRectangle(TextWidget ctx, XRectangle * rect)
  * window, that it can.
  */
 
-static void
-ProcessExposeRegion(Widget w, XEvent *event, Region region)
-{
-    TextWidget ctx = (TextWidget) w;
-    XRectangle expose, cursor;
-    Boolean need_to_draw;
+static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
+  TextWidget ctx = (TextWidget) w;
+  XRectangle expose, cursor;
+  Boolean need_to_draw;
 
-    if (event->type == Expose) {
-	expose.x = event->xexpose.x;
-	expose.y = event->xexpose.y;
-	expose.width = event->xexpose.width;
-	expose.height = event->xexpose.height;
-    }
-    else if (event->type == GraphicsExpose) {
-	expose.x = event->xgraphicsexpose.x;
-	expose.y = event->xgraphicsexpose.y;
-	expose.width = event->xgraphicsexpose.width;
-	expose.height = event->xgraphicsexpose.height;
-    }
-    else { /* No Expose */
-	PopCopyQueue(ctx);
-	return;			/* no more processing necessary. */
-    }
+  if (event->type == Expose) {
+      expose.x = event->xexpose.x;
+      expose.y = event->xexpose.y;
+      expose.width = event->xexpose.width;
+      expose.height = event->xexpose.height;
+  }
+  else if (event->type == GraphicsExpose) {
+      expose.x = event->xgraphicsexpose.x;
+      expose.y = event->xgraphicsexpose.y;
+      expose.width = event->xgraphicsexpose.width;
+      expose.height = event->xgraphicsexpose.height;
+  }
+  else { /* No Expose */
+      PopCopyQueue(ctx);
+      return;			/* no more processing necessary. */
+  }
 
-    need_to_draw = TranslateExposeRegion(ctx, &expose);
-    if ((event->type == GraphicsExpose) && (event->xgraphicsexpose.count == 0))
-	PopCopyQueue(ctx);
+  need_to_draw = TranslateExposeRegion(ctx, &expose);
+  if ((event->type == GraphicsExpose) && (event->xgraphicsexpose.count == 0))
+      PopCopyQueue(ctx);
 
-    if (!need_to_draw)
-	return;			/* don't draw if we don't need to. */
+  if (!need_to_draw)
+      return;			/* don't draw if we don't need to. */
 
-    _XawTextPrepareToUpdate(ctx);
-    UpdateTextInRectangle(ctx, &expose);
-    XawTextSinkGetCursorBounds(ctx->text.sink, &cursor);
-    if (RectanglesOverlap(&cursor, &expose)) {
-	SinkClearToBG(ctx->text.sink, (Position) cursor.x, (Position) cursor.y,
-		      (Dimension) cursor.width, (Dimension) cursor.height);
-	UpdateTextInRectangle(ctx, &cursor);
-    }
-    _XawTextExecuteUpdate(ctx);
+  _XawTextPrepareToUpdate(ctx);
+  UpdateTextInRectangle(ctx, &expose);
+  XawTextSinkGetCursorBounds(ctx->text.sink, &cursor);
+  if (RectanglesOverlap(&cursor, &expose)) {
+      // I guess it's a problem when the cursor is on the edge of the box
+      SinkClearToBG(ctx->text.sink, (Position) cursor.x, (Position) cursor.y,
+		    (Dimension) cursor.width, (Dimension) cursor.height);
+      UpdateTextInRectangle(ctx, &cursor);
+  }
+  _XawTextExecuteUpdate(ctx);
 
-    _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
-		  0, 0, ctx->core.width, ctx->core.height,
-		  ((ThreeDWidget)ctx->text.threeD)->threeD.relief, False);
+  // Draw the shadows.
+  _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
+		0, 0, ctx->core.width, ctx->core.height,
+		((ThreeDWidget)ctx->text.threeD)->threeD.relief, False);
 }
 
 /*
@@ -2690,9 +2709,7 @@ _XawTextPrepareToUpdate(TextWidget ctx)
  * ranges where possible.
  */
 
-static
-void FlushUpdate(TextWidget ctx)
-{
+static void FlushUpdate (TextWidget ctx) {
   int i, w;
   XawTextPosition updateFrom, updateTo;
   if (!XtIsRealized((Widget)ctx)) {
@@ -2732,66 +2749,69 @@ void FlushUpdate(TextWidget ctx)
  * generalization to allow more options.
  */
 
-void
-_XawTextShowPosition(TextWidget ctx)
-{
-  int x, y, lines, number;
-  Boolean no_scroll;
-  XawTextPosition max_pos, top, first;
+void _XawTextShowPosition(TextWidget ctx) {
+  int lines, number;
+  XawTextPosition max_pos, top;
 
-  if ( (!XtIsRealized((Widget)ctx)) || (ctx->text.lt.lines <= 0) )
+  if (!XtIsRealized((Widget)ctx) ||
+      ctx->text.lt.lines <= 0 ||
+      ctx->core.height < VMargins(ctx))
     return;
 
-/*
- * Find out the bottom the visible window, and make sure that the
- * cursor does not go past the end of this space.
- *
- * This makes sure that the cursor does not go past the end of the
- * visible window.
- */
-
-  x = ctx->core.width;
-  y = ctx->core.height - ctx->text.margin.bottom;
-  if (ctx->text.hbar != NULL)
-    y -= ctx->text.hbar->core.height + 2 * ctx->text.hbar->core.border_width;
-
-  max_pos = PositionForXY (ctx, x, y);
+  #if 0
+  // Old code saved for future reference
+  /*
+   * Find out the bottom the visible window, and make sure that the
+   * cursor does not go past the end of this space.
+   *
+   * This makes sure that the cursor does not go past the end of the
+   * visible window.
+   */
+  int x = ctx->core.width;
+  int y = ctx->core.height - ctx->text.margins.bottom;
+  max_pos = PositionForXY(ctx, x, y);
   lines = LineForPosition(ctx, max_pos) + 1; /* number of visible lines. */
+  #endif
 
-  if ( (ctx->text.insertPos >= ctx->text.lt.top) &&
-       (ctx->text.insertPos < max_pos))
+  // If we are drawing a partial line at the bottom, exclude that from the
+  // "cursor is visible" region.  The cursor won't show if the bottom of the
+  // line is cropped.  This block replaces the old code immediately above.
+  {
+    const Position bottom = ctx->core.height - ctx->text.margins.bottom;
+    for (lines = ctx->text.lt.lines;
+	 lines > 0 && ctx->text.lt.info[lines].y > bottom; --lines);
+    max_pos = ctx->text.lt.info[lines].position;
+    if (max_pos > 0) --max_pos;
+  }
+
+  if (ctx->text.insertPos >= ctx->text.lt.top &&
+      ctx->text.insertPos < max_pos)
     return;
 
-  first = ctx->text.lt.top;
-  no_scroll = FALSE;
+  XawTextPosition first = ctx->text.lt.top;
+  Boolean no_scroll = FALSE;
 
   if (ctx->text.insertPos < first) { /* We need to scroll down. */
       top = SrcScan(ctx->text.source, ctx->text.insertPos,
 		    XawstEOL, XawsdLeft, 1, FALSE);
 
       /* count the number of lines we have to scroll */
-
       number = 0;
       while (first > top) {
 	  first = SrcScan(ctx->text.source, first,
 			  XawstEOL, XawsdLeft, 1, TRUE);
-
 	  if ( - number > lines )
 	      break;
-
 	  number--;
       }
 
       if (first <= top) {	/* If we found the proper number
 				   of lines. */
-
 	  /* Back up to just before the last CR. */
-
 	  first = SrcScan(ctx->text.source, first,
 			  XawstPositions, XawsdRight, 1, TRUE);
 
 	  /* Check to make sure the cursor is visible. */
-
 	  if (first <= top)
 	      number++;
 
@@ -2811,11 +2831,10 @@ _XawTextShowPosition(TextWidget ctx)
   }
 
   if (no_scroll) {
-      _XawTextBuildLineTable(ctx, top, FALSE);
-      DisplayTextWindow((Widget)ctx);
-  }
-  else
-      _XawTextVScroll(ctx, lines);
+    _XawTextBuildLineTable(ctx, top, FALSE);
+    DisplayTextWindow((Widget)ctx);
+  } else
+    _XawTextVScroll(ctx, lines);
 
   _XawTextSetScrollBars(ctx);
 }
@@ -2824,12 +2843,9 @@ _XawTextShowPosition(TextWidget ctx)
  * This routine causes all batched screen updates to be performed
  */
 
-void
-_XawTextExecuteUpdate(TextWidget ctx)
-{
+void _XawTextExecuteUpdate(TextWidget ctx) {
   if ( ctx->text.update_disabled || (ctx->text.old_insert < 0) )
     return;
-
   if((ctx->text.old_insert != ctx->text.insertPos) || (ctx->text.showposition))
     _XawTextShowPosition(ctx);
   FlushUpdate(ctx);
@@ -2838,9 +2854,7 @@ _XawTextExecuteUpdate(TextWidget ctx)
 }
 
 
-static void
-TextDestroy(Widget w)
-{
+static void TextDestroy (Widget w) {
   TextWidget ctx = (TextWidget)w;
 
   DestroyHScrollBar(ctx);
@@ -2877,24 +2891,17 @@ Resize(Widget w)
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-  TextWidget oldtw = (TextWidget) current;
-  TextWidget newtw = (TextWidget) new;
+  TextWidget oldtw = (TextWidget)current;
+  TextWidget newtw = (TextWidget)new;
   Boolean    redisplay = FALSE;
   Boolean    display_caret = newtw->text.display_caret;
-
+  Boolean    recomputed_margins = False;
 
   newtw->text.display_caret = oldtw->text.display_caret;
   _XawTextPrepareToUpdate(newtw);
   newtw->text.display_caret = display_caret;
 
-  if (oldtw->text.r_margin.left != newtw->text.r_margin.left) {
-    newtw->text.margin.left = newtw->text.r_margin.left;
-    if (newtw->text.vbar != NULL)
-      newtw->text.margin.left += newtw->text.vbar->core.width +
-	                         newtw->text.vbar->core.border_width;
-    redisplay = TRUE;
-  }
-
+  // Add or remove scrollbars.
   if (oldtw->text.scroll_vert != newtw->text.scroll_vert) {
     if (newtw->text.scroll_vert == XawtextScrollNever)
       DestroyVScrollBar(newtw);
@@ -2902,15 +2909,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
       CreateVScrollBar(newtw);
     redisplay = TRUE;
   }
-
-  if (oldtw->text.r_margin.bottom != newtw->text.r_margin.bottom) {
-    newtw->text.margin.bottom = newtw->text.r_margin.bottom;
-    if (newtw->text.hbar != NULL)
-      newtw->text.margin.bottom += newtw->text.hbar->core.height +
-	                           newtw->text.hbar->core.border_width;
-    redisplay = TRUE;
-  }
-
   if (oldtw->text.scroll_horiz != newtw->text.scroll_horiz) {
     if (newtw->text.scroll_horiz == XawtextScrollNever)
       DestroyHScrollBar(newtw);
@@ -2919,22 +2917,45 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     redisplay = TRUE;
   }
 
+  // FIXME allow & handle changes to shadowWidth
+  const Dimension s = ((ThreeDWidget)newtw->text.threeD)->threeD.shadow_width;
+
+  // Recompute adjusted margins when necessary.
+  if (oldtw->text.res_margins.left != newtw->text.res_margins.left ||
+      oldtw->text.res_margins.right != newtw->text.res_margins.right ||
+      oldtw->text.res_margins.top != newtw->text.res_margins.top ||
+      oldtw->text.res_margins.bottom != newtw->text.res_margins.bottom ||
+      oldtw->text.useright != newtw->text.useright) {
+    newtw->text.margins.left = newtw->text.res_margins.left + s;
+    newtw->text.margins.right = newtw->text.res_margins.right + s;
+    newtw->text.margins.top = newtw->text.res_margins.top + s;
+    newtw->text.margins.bottom = newtw->text.res_margins.bottom + s;
+    if (newtw->text.hbar)
+      newtw->text.margins.bottom += ScrollbarHeight(newtw->text.hbar);
+    if (newtw->text.vbar) {
+      if (newtw->text.useright)
+	newtw->text.margins.right += ScrollbarWidth(newtw->text.vbar);
+      else
+	newtw->text.margins.left += ScrollbarWidth(newtw->text.vbar);
+    }
+    redisplay = recomputed_margins = True;
+  }
+
   if ( oldtw->text.source != newtw->text.source )
-    XawTextSetSource( (Widget) newtw, newtw->text.source, newtw->text.lt.top);
+    XawTextSetSource((Widget)newtw, newtw->text.source, newtw->text.lt.top);
 
   newtw->text.redisplay_needed = False;
   XtSetValues( (Widget)newtw->text.source, args, *num_args );
   XtSetValues( (Widget)newtw->text.sink, args, *num_args );
-  // The SetValues functions of the source and sink always return False, but
-  // they set text.redisplay_needed, which triggers a redisplay here, below.
+  // FIXME what about the threeD and shadowWidth?
 
-  if ( oldtw->text.wrap != newtw->text.wrap ||
-       oldtw->text.lt.top != newtw->text.lt.top ||
-       oldtw->text.r_margin.right != newtw->text.r_margin.right ||
-       oldtw->text.r_margin.top != newtw->text.r_margin.top ||
-       oldtw->text.sink != newtw->text.sink ||
-       newtw->text.redisplay_needed )
-  {
+  // The SetValues functions of the source and sink always return False, but
+  // they set text.redisplay_needed, which triggers this.
+  if (oldtw->text.wrap != newtw->text.wrap ||
+      oldtw->text.lt.top != newtw->text.lt.top ||
+      oldtw->text.sink != newtw->text.sink ||
+      newtw->text.redisplay_needed ||
+      recomputed_margins) {
     _XawTextBuildLineTable(newtw, newtw->text.lt.top, TRUE);
     redisplay = TRUE;
   }
@@ -2986,6 +3007,7 @@ GetValuesHook(Widget w, ArgList args, Cardinal * num_args)
         XtGetValues(tw->text.source, args, *num_args);
     if (tw->text.sink)
         XtGetValues(tw->text.sink, args, *num_args);
+    // FIXME what about the ThreeD?
 }
 
 /*	Function Name: FindGoodPosition

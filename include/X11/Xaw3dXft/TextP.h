@@ -44,6 +44,10 @@ WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
 ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 SOFTWARE.
 
+
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+
 ******************************************************************/
 
 #ifndef _XawTextP_h
@@ -105,13 +109,14 @@ typedef struct {
   XawTextLineTableEntry *info;  /* A dynamic array, one entry per line  */
 } XawTextLineTable, *XawTextLineTablePtr;
 
-
+// These should have been Dimensions, but now the signedness is baked in.
 typedef struct _XawTextMargin {
   Position left, right, top, bottom;
 } XawTextMargin;
 
-#define VMargins(ctx) ( (ctx)->text.margin.top + (ctx)->text.margin.bottom )
-#define HMargins(ctx) ( (ctx)->text.margin.left + (ctx)->text.margin.right )
+#define VMargins(ctx) ((ctx)->text.margins.top + (ctx)->text.margins.bottom)
+#define HMargins(ctx) ((ctx)->text.margins.left + (ctx)->text.margins.right)
+#define HMarginsOffset(ctx) (HMargins(ctx) - (Position)(ctx)->text.hscroll_offset)
 
 #define IsPositionVisible(ctx, pos) \
 		(pos >= ctx->text.lt.info[0].position && \
@@ -174,11 +179,12 @@ typedef struct _TextPart {
     XawTextScrollMode   scroll_vert, scroll_horiz; /*what type of scrollbars.*/
     XawTextWrapMode     wrap;            /* The type of wrapping. */
     XawTextResizeMode   resize;	             /* what to resize */
-    XawTextMargin       r_margin;            /* The real margins. */
+    XawTextMargin       res_margins;         /* Original resource margins */
     XtCallbackList	unrealize_callbacks; /* used for scrollbars */
 
     /* private state */
-    XawTextMargin       margin;            /* The current margins. */
+    XawTextMargin       margins;    /* Includes shadow and scrollbar widths */
+    Dimension       hscroll_offset; /* Horizontal scrolling amount in pixels */
     XawTextLineTable	lt;
     XawTextScanDirection extendDir;
     XawTextSelection	origSel;    /* the selection being modified */

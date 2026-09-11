@@ -248,7 +248,7 @@ ConfigureCB(Widget w, XtPointer closure, XEvent *event,
         pe_area.y = 0;
         pe_area.width = w->core.width;
         pe_area.height = w->core.height;
-	margin = &(((TextWidget)w)->text.margin);
+	margin = &(((TextWidget)w)->text.margins);
 	pe_area.x += margin->left;
 	pe_area.y += margin->top;
 	pe_area.width -= (margin->left + margin->right - 1);
@@ -786,7 +786,7 @@ CreateIC(Widget w, XawVendorShellExtPart *ve)
 	pe_area.y = 0;
 	pe_area.width = w->core.width;
 	pe_area.height = w->core.height;
-	margin = &(((TextWidget)w)->text.margin);
+	margin = &(((TextWidget)w)->text.margins);
 	pe_area.x += margin->left;
 	pe_area.y += margin->top;
 	pe_area.width -= (margin->left + margin->right - 1);
@@ -952,7 +952,7 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Boolean focus)
 	    pe_area.y = 0;
 	    pe_area.width = w->core.width;
 	    pe_area.height = w->core.height;
-	    margin = &(((TextWidget)w)->text.margin);
+	    margin = &(((TextWidget)w)->text.margins);
 	    pe_area.x += margin->left;
 	    pe_area.y += margin->top;
 	    pe_area.width -= (margin->left + margin->right - 1);

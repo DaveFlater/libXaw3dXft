@@ -427,7 +427,9 @@ MoveLine(TextWidget ctx, XEvent *event, XawTextScanDirection dir)
   new = SrcScan(ctx->text.source, ctx->text.insertPos,
 		XawstEOL, XawsdLeft, 1, FALSE);
 
-  FindDist(ctx->text.sink, new, ctx->text.margin.left, ctx->text.insertPos,
+  const Position adjLeft = ctx->text.margins.left -
+                           (Position)ctx->text.hscroll_offset;
+  FindDist(ctx->text.sink, new, adjLeft, ctx->text.insertPos,
 	   &from_left, &junk, &garbage);
 
   new = SrcScan(ctx->text.source, ctx->text.insertPos, XawstEOL, dir,
@@ -435,7 +437,7 @@ MoveLine(TextWidget ctx, XEvent *event, XawTextScanDirection dir)
 
   next_line = SrcScan(ctx->text.source, new, XawstEOL, XawsdRight, 1, FALSE);
 
-  FindPos(ctx->text.sink, new, ctx->text.margin.left, from_left, FALSE,
+  FindPos(ctx->text.sink, new, adjLeft, from_left, FALSE,
 	  &(ctx->text.insertPos), &garbage, &garbage);
 
   if (ctx->text.insertPos > next_line)
@@ -1297,9 +1299,9 @@ AutoFill(TextWidget ctx)
       break;
   line_num--;			/* backup a line. */
 
-  max_width = Max(0, (int)(ctx->core.width - HMargins(ctx)));
+  max_width = Max(0, (int)(ctx->core.width - HMarginsOffset(ctx)));
 
-  x = ctx->text.margin.left;
+  x = ctx->text.margins.left - (int)ctx->text.hscroll_offset;
   XawTextSinkFindPosition( ctx->text.sink,ctx->text.lt.info[line_num].position,
 			  x, max_width, TRUE, &ret_pos, &width, &height);
 
@@ -1733,8 +1735,8 @@ InsertNewCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
   /* CONSTCOND */
   while (TRUE) {
       XawTextSinkFindPosition( ctx->text.sink, startPos,
-			    (int) ctx->text.margin.left,
-			    (int) (ctx->core.width - HMargins(ctx)),
+	(int)ctx->text.margins.left - (int)ctx->text.hscroll_offset,
+			    (int) (ctx->core.width - HMarginsOffset(ctx)),
 			    TRUE, &eol, &width, &height);
       if (eol >= to)
           break;
