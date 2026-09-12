@@ -794,12 +794,13 @@ RepeatNotify(XtPointer client_data, XtIntervalId *idp)
     call_data = MAX (A_FEW_PIXELS, sbw->scrollbar.length / 20);
     if (sbw->scrollbar.scroll_mode == 1)
 	call_data = -call_data;
-    XtCallCallbacks((Widget)sbw, XtNscrollProc, (XtPointer) call_data);
     sbw->scrollbar.timer_id =
     XtAppAddTimeOut(XtWidgetToApplicationContext((Widget)sbw),
 		    (unsigned long) 150,
 		    RepeatNotify,
 		    client_data);
+    // XtCallCallbacks may result in the Scrollbar being destroyed
+    XtCallCallbacks((Widget)sbw, XtNscrollProc, (XtPointer) call_data);
 }
 
 #else /* XAW_ARROW_SCROLLBARS */
