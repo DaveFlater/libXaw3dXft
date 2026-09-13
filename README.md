@@ -1046,9 +1046,7 @@ included by Text.h.
 
 **Deleted colorSwitch**
 
-The colorSwitch resource of the List widget was weird, undocumented, and of
-no known use.
-
+See [Issue #29](https://github.com/DaveFlater/libXaw3dXft/issues/29).
 
 ## <a name="rationale"></a>Rationale for features removed in 2.0
 

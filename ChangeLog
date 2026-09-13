@@ -53,8 +53,7 @@ Next release, v2.0  Dave Flater
   included by Text.h.
 
   - Deleted colorSwitch.
-  The colorSwitch resource of the List widget was weird, undocumented, and
-  of no known use.
+  See Issue #29.
 
   Other noteworthy changes:
   - Fixed many display glitches.
