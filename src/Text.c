@@ -822,7 +822,7 @@ _XawTextNeedsUpdating(TextWidget ctx, XawTextPosition left, XawTextPosition righ
 }
 
 /*
- * Procedure to read a span of text in Ascii form. This is purely a hack and
+ * Procedure to read a span of text in string form. This is purely a hack and
  * we probably need to add a function to sources to provide this functionality.
  * [note: this is really a private procedure but is used in multiple modules].
  */
@@ -832,14 +832,7 @@ _XawTextGetText(TextWidget ctx, XawTextPosition left, XawTextPosition right)
 {
   char *result, *tempResult;
   XawTextBlock text;
-  int bytes;
-
-  if (_XawTextFormat(ctx) == XawFmt8Bit)
-      bytes = sizeof(unsigned char);
-  else if (_XawTextFormat(ctx) == XawFmtWide)
-      bytes = sizeof(wchar_t);
-  else /* if there is another format, add here */
-      bytes = 1;
+  const int bytes = (_XawTextFormat(ctx) == XawFmtWide ? sizeof(wchar_t) : 1);
 
   /* leave space for ZERO */
   tempResult=result=XtMalloc( (unsigned)(((Cardinal)(right-left))+ONE )* bytes);
@@ -858,52 +851,72 @@ _XawTextGetText(TextWidget ctx, XawTextPosition left, XawTextPosition right)
   return(result);
 }
 
-/* Like _XawTextGetText, but enforces ICCCM STRING type encoding.  This
-routine is currently used to put just the ASCII chars in the selection into a
-cut buffer. */
+/*
+  What the original comments on _XawTextGetSTRING said it did:
+    Like _XawTextGetText, but enforces ICCCM STRING type encoding.  This
+    routine is currently used to put just the ASCII chars in the selection
+    into a cut buffer.
 
-char *
-_XawTextGetSTRING(TextWidget ctx, XawTextPosition left, XawTextPosition right)
-{
-  unsigned char *s;
-  unsigned char c;
-  long i, j, n;
+  What it actually did:
+    Get a new string from _XawTextGetText
+    If the internal encoding is Wc
+      Discard all 0-width characters except HT, LF, and ESC
+      (Chars outside of the 8-bit range were not discarded)
+    Else
+      Discard all C0 control codes except HT, LF, and ESC
+      Discard all C1 control codes
+      (DEL was not discarded)
+    Return new string in the same internal encoding
 
-  /* only HT and NL control chars are allowed, strip out others */
-  /* allow ESC in accordance with ICCCM */
-  // FIXME Wc discards DEL, the other one doesn't
+  The callers then sent the resulting wide string through
+  XwcTextListToTextProperty to get XCompoundTextStyle or XStringStyle as
+  needed or used the 8-bit string directly.
+
+  The Inter-Client Communication Conventions Manual for X11R7.7 Version 2.0
+  says STRING is "ISO Latin-1 (+TAB+NEWLINE) text."  It does not allow ESC,
+  DEL, or any C1 control characters.  It definitely does not allow wide
+  strings.
+
+  The Compound Text Encoding specification for X11R7.7 Version 1.1 includes
+  ICCCM STRING but adds ESC (0x1b) and CSI (0x9b) as allowed characters.  ESC
+  is used to switch character sets.  CSI is used for directional text.
+
+  Until the callers are sorted out, just filter out control codes.
+*/
+char *_XawTextGetSTRING (TextWidget ctx, XawTextPosition left,
+XawTextPosition right) {
+  size_t i, j;
   if (_XawTextFormat(ctx) == XawFmtWide) {
-     MultiSinkObject sink = (MultiSinkObject) ctx->text.sink;
-     wchar_t *ws, wc;
-     ws = (wchar_t *)_XawTextGetText(ctx, left, right);
-     n = wcslen(ws);
-     for (j = 0, i = 0; j < n; j++) {
-         wc = ws[j];
-	 // FIXME wrong font, and it's just checking to see whether it's a
-	 // 0-width char
-         if (XwcTextEscapement (sink->text_sink.fontset, &wc, 1) ||
-            (wc == L'\t') || (wc == L'\n') || (wc == L'\e'))
-            ws[i++] = wc;
+     wchar_t *ws = (wchar_t *)_XawTextGetText(ctx, left, right);
+     const size_t n = wcslen(ws);
+     for (i=0, j=0; j < n; ++j) {
+       wchar_t wc = ws[j];
+       switch (wc) {
+       case 0x09 ... 0x0A:
+       case 0x1b: // ESC is not STRING
+       case 0x20 ... 0x7E:
+       case 0xA0 ... WCHAR_MAX: // Nothing above 0xFF is STRING
+	 ws[i++] = wc;
+       }
      }
      ws[i] = (wchar_t)0;
      return (char *)ws;
   } else {
-     s = (unsigned char *)_XawTextGetText(ctx, left, right);
-     n = strlen((char *)s);
-     i = 0;
-     for (j = 0; j < n; j++) {
-	c = s[j];
-	if (((c >= 0x20) && c <= 0x7f) ||
-	   (c >= 0xa0) || (c == '\t') || (c == '\n') || (c == '\e')) {
-	   s[i] = c;
-	   i++;
-	}
+     unsigned char *s = (unsigned char *)_XawTextGetText(ctx, left, right);
+     const size_t n = strlen((char *)s);
+     for (i=0, j=0; j < n; ++j) {
+       unsigned char c = s[j];
+       switch (c) {
+       case 0x09 ... 0x0A:
+       case 0x1b: // ESC is not STRING
+       case 0x20 ... 0x7E:
+       case 0xA0 ... 0xFF:
+	 s[i++] = c;
+       }
      }
      s[i] = 0;
      return (char *)s;
   }
-#undef ESC
-
 }
 
 /*
