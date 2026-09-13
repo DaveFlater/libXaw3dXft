@@ -1046,7 +1046,7 @@ included by Text.h.
 
 **Deleted colorSwitch**
 
-See [Issue #29](https://github.com/DaveFlater/libXaw3dXft/issues/29).
+See [Issue \#29](https://github.com/DaveFlater/libXaw3dXft/issues/29).
 
 ## <a name="rationale"></a>Rationale for features removed in 2.0
 
@@ -1115,9 +1115,15 @@ font was used, the function could choose the foreground text colors of list
 items as they were being redrawn.  There was no similar control for the
 background color.
 
-Although colorSwitch was accessible to applications, it was never mentioned
-in the README and had no convincing use case.  Perhaps it was a remnant of an
-abandoned approach to implementing highlighting.
+This undocumented resource was used in the file browser of XPaint to apply
+different foreground colors to file names depending on whether they were the
+link to the parent directory, other directories, image files, or other types
+of files.  It was obviously a hack made for exactly that one purpose, and it
+did not integrate nicely with the normal management of colors and
+highlighting by List.  If there's still a need, it would be better to
+implement a file browser widget in Xaw3dXft where colors are associated with
+libmagic file types instead of file name heuristics.  See [Issue
+\#29](https://github.com/DaveFlater/libXaw3dXft/issues/29).
 
 ### Repeater flash
 
