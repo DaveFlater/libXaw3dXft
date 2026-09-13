@@ -799,7 +799,7 @@ RepeatNotify(XtPointer client_data, XtIntervalId *idp)
 		    (unsigned long) 150,
 		    RepeatNotify,
 		    client_data);
-    // XtCallCallbacks may result in the Scrollbar being destroyed
+    // XtCallCallbacks may result in Text destroying the Scrollbar
     XtCallCallbacks((Widget)sbw, XtNscrollProc, (XtPointer) call_data);
 }
 
@@ -888,21 +888,21 @@ NotifyScroll (Widget w, XEvent *event, String *params, Cardinal *num_params)
     if (PICKLENGTH (sbw,x,y) < sbw->scrollbar.thickness) {
 	/* handle first arrow zone */
 	call_data = -MAX (A_FEW_PIXELS, sbw->scrollbar.length / 20);
-	XtCallCallbacks (w, XtNscrollProc, (XtPointer)(call_data));
+	sbw->scrollbar.scroll_mode = 1;
 	/* establish autoscroll */
 	sbw->scrollbar.timer_id =
 	    XtAppAddTimeOut (XtWidgetToApplicationContext (w),
 				(unsigned long) 300, RepeatNotify, (XtPointer)w);
-	sbw->scrollbar.scroll_mode = 1;
+	XtCallCallbacks (w, XtNscrollProc, (XtPointer)(call_data));
     } else if (PICKLENGTH (sbw,x,y) > sbw->scrollbar.length - sbw->scrollbar.thickness) {
 	/* handle last arrow zone */
 	call_data = MAX (A_FEW_PIXELS, sbw->scrollbar.length / 20);
-	XtCallCallbacks (w, XtNscrollProc, (XtPointer)(call_data));
+	sbw->scrollbar.scroll_mode = 3;
 	/* establish autoscroll */
 	sbw->scrollbar.timer_id =
 	    XtAppAddTimeOut (XtWidgetToApplicationContext (w),
 				(unsigned long) 300, RepeatNotify, (XtPointer)w);
-	sbw->scrollbar.scroll_mode = 3;
+	XtCallCallbacks (w, XtNscrollProc, (XtPointer)(call_data));
     } else if (PICKLENGTH (sbw, x, y) < sbw->scrollbar.topLoc) {
 	/* handle zone "above" the thumb */
 	call_data = - sbw->scrollbar.length;
