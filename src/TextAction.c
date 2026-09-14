@@ -170,173 +170,156 @@ EndAction(TextWidget ctx)
   ctx->text.mult = 1;
 }
 
-
 struct _SelectionList {
     String* params;
     Cardinal count;
     Time time;
-    Boolean CT_asked;	/* flag if asked XA_COMPOUND_TEXT */
+    int asked;		/* which selection currently has been asked for:
+			   0 = UTF8_STRING, 1 = COMPOUND_TEXT, 2 = STRING */
     Atom selection;	/* selection atom when asking XA_COMPOUND_TEXT */
 };
 
-static int
-ProbablyMB(char *s)
-{
-    int escapes = 0;
-    int has_hi_bit = False;
-
-    /* if it has more than one ESC char, I assume it is COMPOUND_TEXT.
-    If it has at least one hi bit set character, I pretend it is multibyte. */
-
-    while ( (wchar_t)(*s) != (wchar_t)0 ) {
-        if ( *s & 128 )
-            has_hi_bit = True;
-        if ( *s++ == '\033' )
-            escapes++;
-        if ( escapes >= 2 )
-            return( 0 );
-    }
-    return( has_hi_bit );
-}
-
+// Updated from Xaw as of 2026-09-14
+// Kept two things that were in Xaw3d but not Xaw:
+// - Retained else clause setting text.format = XawFmt8Bit
+// - Retained _XawTextSetScrollBars(ctx) that preceded EndAction
+// But deleted the ProbablyMB hack.
 static void
 _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
-                   XtPointer value, unsigned long *length, int* format)
-{
-  TextWidget ctx = (TextWidget)w;
-  XawTextBlock text;
+                   XtPointer value, unsigned long *length, int* format) {
+    Display *d = XtDisplay(w);
+    TextWidget ctx = (TextWidget)w;
+    XawTextBlock text;
 
-  if (*type == 0 /*XT_CONVERT_FAIL*/ || *length == 0) {
-    struct _SelectionList* list = (struct _SelectionList*)client_data;
-    if (list != NULL) {
-      if (list->CT_asked) {
+    if (*type == 0 /*XT_CONVERT_FAIL*/ || *length == 0) {
+	struct _SelectionList* list = (struct _SelectionList*)client_data;
 
-	/* If we just asked for a XA_COMPOUND_TEXT and got a null
-	response, we'll ask again, this time for an XA_STRING. */
-
-	list->CT_asked = False;
-        XtGetSelectionValue(w, list->selection, XA_STRING, _SelectionReceived,
-                            (XtPointer)list, list->time);
-      } else {
-	GetSelection(w, list->time, list->params, list->count);
-	XtFree(client_data);
-     }
+	if (list != NULL) {
+	    if (list->asked == 0) {
+		/* If we just asked for XA_UTF8_STRING and got no response,
+		   we'll ask again, this time for XA_COMPOUND_TEXT. */
+		list->asked++;
+		XtGetSelectionValue(w, list->selection, XA_COMPOUND_TEXT(d),
+				    _SelectionReceived,
+				    (XtPointer)list, list->time);
+	    } else if (list->asked == 1) {
+		/* If we just asked for XA_COMPOUND_TEXT and got no response,
+		   we'll ask again, this time for XA_STRING. */
+		list->asked++;
+		XtGetSelectionValue(w, list->selection, XA_STRING,
+				    _SelectionReceived,
+				    (XtPointer)list, list->time);
+	    } else {
+		/* We tried all possible text targets in this param.
+		   Recurse on the tail of the params list. */
+		GetSelection(w, list->time, list->params, list->count);
+		XtFree(client_data);
+	    }
+	}
+	return;
     }
-    return;
-  }
 
-  /* Many programs, especially old terminal emulators, give us multibyte text
-but tell us it is COMPOUND_TEXT :(  The following routine checks to see if the
-string is a legal multibyte string in our locale using a spooky heuristic :O
-and if it is we can only assume the sending client is using the same locale as
-we are, and convert it.  I also warn the user that the other client is evil. */
+    StartAction(ctx, NULL);
+    if (_XawTextFormat(ctx) == XawFmtWide) {
+	wchar_t **wlist;
+	int count;
+	XTextProperty textprop = {
+	    .encoding = *type,
+	    .value = (unsigned char *)value,
+	    .nitems = strlen(value),
+	    .format = 8
+	};
 
-  StartAction( ctx, (XEvent*) NULL );
-  if (_XawTextFormat(ctx) == XawFmtWide) {
-      XTextProperty textprop;
-      Display *d = XtDisplay((Widget)ctx);
-      wchar_t **wlist;
-      int count;
-      int try_CT = 1;
+	if (XwcTextPropertyToTextList(d, &textprop, &wlist, &count)
+	    !=	Success
+	    || count < 1) {
+	    XwcFreeStringList(wlist);
 
-      /* IS THE SELECTION IN MULTIBYTE FORMAT? */
+	    /* Notify the user on strerr and in the insertion :) */
+	    fprintf(stderr, "Xaw Text Widget: An attempt was made to insert "
+		    "an illegal selection.\n");
 
-      if ( ProbablyMB( (char *) value ) ) {
-          char * list[1];
-          list[0] = (char *) value;
-          if ( XmbTextListToTextProperty( d, (char**) list, 1,
-				XCompoundTextStyle, &textprop ) == Success )
-              try_CT = 0;
-      }
+	    textprop.value = (unsigned char *)" >> ILLEGAL SELECTION << ";
+	    textprop.nitems = strlen((char *) textprop.value);
+	    if (XwcTextPropertyToTextList(d, &textprop, &wlist, &count)
+		!=  Success
+		|| count < 1)
+		return;
+	}
 
-      /* OR IN COMPOUND TEXT FORMAT? */
+	XFree(value);
+	value = (XPointer)wlist[0];
 
-      if ( try_CT ) {
-          textprop.encoding = XA_COMPOUND_TEXT(d);
-          textprop.value = (unsigned char *)value;
-          textprop.nitems = strlen(value);
-          textprop.format = 8;
-      }
-
-      if ( XwcTextPropertyToTextList( d, &textprop, (wchar_t***) &wlist, &count )
-		!=  Success) {
-          XwcFreeStringList( (wchar_t**) wlist );
-
-          /* Notify the user on strerr and in the insertion :) */
-          textprop.value = (unsigned char *) " >> ILLEGAL SELECTION << ";
-          count = 1;
-          XtWarning("Xaw Text Widget: An attempt was made to insert an illegal selection.");
-
-          if ( XwcTextPropertyToTextList( d, &textprop, (wchar_t***) &wlist, &count )
-		!=  Success) return;
-      }
-
-      XFree(value);
-      value = (XPointer)wlist[0];
-
-      *length = wcslen(wlist[0]);
-      XtFree((XtPointer)wlist);
-      text.format = XawFmtWide;
-  } else
+	*length = wcslen(wlist[0]);
+	XtFree((XtPointer)wlist);
+	text.format = XawFmtWide;
+    } else
       text.format = XawFmt8Bit;
-  text.ptr = (char*)value;
-  text.firstPos = 0;
-  text.length = *length;
-  if (_XawTextReplace(ctx, ctx->text.insertPos, ctx->text.insertPos, &text)) {
-    XBell(XtDisplay(ctx), 0);
-    return;
-  }
-  ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
-				XawstPositions, XawsdRight, text.length, TRUE);
+    text.ptr = (char*)value;
+    text.firstPos = 0;
+    text.length = (int)*length;
+    if (_XawTextReplace(ctx, ctx->text.insertPos, ctx->text.insertPos, &text)) {
+	XBell(d, 0);
+	EndAction(ctx);
+	return;
+    }
+    ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.old_insert,
+				  XawstPositions, XawsdRight, text.length, True);
 
-  _XawTextSetScrollBars(ctx);
-  EndAction(ctx);
-  XtFree(client_data);
-  XFree(value);		/* the selection value should be freed with XFree */
+    _XawTextSetScrollBars(ctx);
+    EndAction(ctx);
+    XtFree(client_data);
+    XFree(value);	/* the selection value should be freed with XFree */
 }
 
+// Updated from Xaw as of 2026-09-14
 static void
-GetSelection(Widget w, Time time, String *params, Cardinal num_params)
-{
+GetSelection (Widget w, Time timev, String *params, Cardinal num_params) {
+    Display *d = XtDisplay(w);
+    TextWidget ctx = (TextWidget)w;
     Atom selection;
     int buffer;
 
-    selection = XInternAtom(XtDisplay(w), *params, False);
-
+    selection = XInternAtom(d, *params, False);
     switch (selection) {
-      case XA_CUT_BUFFER0: buffer = 0; break;
-      case XA_CUT_BUFFER1: buffer = 1; break;
-      case XA_CUT_BUFFER2: buffer = 2; break;
-      case XA_CUT_BUFFER3: buffer = 3; break;
-      case XA_CUT_BUFFER4: buffer = 4; break;
-      case XA_CUT_BUFFER5: buffer = 5; break;
-      case XA_CUT_BUFFER6: buffer = 6; break;
-      case XA_CUT_BUFFER7: buffer = 7; break;
-      default:	       buffer = -1;
+	case XA_CUT_BUFFER0: buffer = 0; break;
+	case XA_CUT_BUFFER1: buffer = 1; break;
+	case XA_CUT_BUFFER2: buffer = 2; break;
+	case XA_CUT_BUFFER3: buffer = 3; break;
+	case XA_CUT_BUFFER4: buffer = 4; break;
+	case XA_CUT_BUFFER5: buffer = 5; break;
+	case XA_CUT_BUFFER6: buffer = 6; break;
+	case XA_CUT_BUFFER7: buffer = 7; break;
+	default:	     buffer = -1;
     }
     if (buffer >= 0) {
 	int nbytes;
 	unsigned long length;
 	int fmt8 = 8;
 	Atom type = XA_STRING;
-	char *line = XFetchBuffer(XtDisplay(w), &nbytes, buffer);
-	if ((length = nbytes))
-	    _SelectionReceived(w, (XtPointer) NULL, &selection, &type, (XPointer)line,
-			       &length, &fmt8);
+	char *line = XFetchBuffer(d, &nbytes, buffer);
+
+	if ((length = (unsigned long)nbytes) != 0L)
+	    _SelectionReceived(w, NULL, &selection, &type, line, &length, &fmt8);
 	else if (num_params > 1)
-	    GetSelection(w, time, params+1, num_params-1);
-    } else {
+	    GetSelection(w, timev, params+1, num_params-1);
+    }
+    else {
 	struct _SelectionList* list;
+
 	if (--num_params) {
 	    list = XtNew(struct _SelectionList);
 	    list->params = params + 1;
 	    list->count = num_params;
-	    list->time = time;
-	    list->CT_asked = True;
+	    list->time = timev;
+	    list->asked = 0;
 	    list->selection = selection;
-	} else list = NULL;
-	XtGetSelectionValue(w, selection, XA_COMPOUND_TEXT(XtDisplay(w)),
-			    _SelectionReceived, (XtPointer)list, time);
+	}
+	else
+	    list = NULL;
+	XtGetSelectionValue(w, selection, _XawTextFormat(ctx) == XawFmtWide ?
+			    XA_UTF8_STRING(d) : XA_TEXT(d),
+			    _SelectionReceived, (XtPointer)list, timev);
     }
 }
 
