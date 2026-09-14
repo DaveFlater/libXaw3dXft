@@ -1568,79 +1568,93 @@ MatchSelection(Atom selection, XawTextSelection *s)
     return False;
 }
 
-static Boolean
-ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
-                 XtPointer *value, unsigned long *length, int *format)
-{
-  Display* d = XtDisplay(w);
-  TextWidget ctx = (TextWidget)w;
-  Widget src = ctx->text.source;
-  XawTextEditType edit_mode;
-  Arg args[1];
+// Updated from Xaw as of 2026-09-14.  Copied in the Text.c version then
+// added the one block from TextAction.c.  Other differences between the two
+// copies were immaterial.
+Boolean _XawTextConvertSelection (Widget w, Atom *selection,
+Atom *target, Atom *type, XtPointer *value, unsigned long *length,
+int *format, Boolean SelectionSelect) {
+    Display *d = XtDisplay(w);
+    TextWidget ctx = (TextWidget)w;
+    Widget src = ctx->text.source;
+    XawTextEditType edit_mode;
+    XawTextSelectionSalt *salt = NULL;
+    XawTextSelection *s;
 
-  XawTextSelectionSalt	*salt = NULL;
-  XawTextSelection	*s;
+    if (*target == XA_TARGETS(d)) {
+	Atom *targetP, *std_targets;
+	unsigned long std_length;
 
-  if (*target == XA_TARGETS(d)) {
-    Atom* targetP, * std_targets;
-    unsigned long std_length;
+	if (SrcCvtSel(src, selection, target, type, value, length, format))
+	    return (True);
+	else {
+	    Arg args[1];
 
-    if ( SrcCvtSel(src, selection, target, type, value, length, format) )
-	return True;
+	    XtSetArg(args[0], XtNeditType, &edit_mode);
+	    XtGetValues(src, args, ONE);
+	}
 
-    XmuConvertStandardSelection(w, ctx->text.time, selection,
-				target, type, (XPointer*)&std_targets,
-				&std_length, format);
+	XmuConvertStandardSelection(w, ctx->text.time, selection,
+				    target, type, (XPointer*)&std_targets,
+				    &std_length, format);
 
-    *value = XtMalloc((unsigned) sizeof(Atom)*(std_length + 7));
-    targetP = *(Atom**)value;
-    *length = std_length + 6;
-    *targetP++ = XA_STRING;
-    *targetP++ = XA_TEXT(d);
-    *targetP++ = XA_COMPOUND_TEXT(d);
-    *targetP++ = XA_LENGTH(d);
-    *targetP++ = XA_LIST_LENGTH(d);
-    *targetP++ = XA_CHARACTER_POSITION(d);
-
-    XtSetArg(args[0], XtNeditType,&edit_mode);
-    XtGetValues(src, args, ONE);
-
-    if (edit_mode == XawtextEdit) {
-      *targetP++ = XA_DELETE(d);
-      (*length)++;
+	*length = 7 + (unsigned long)(edit_mode == XawtextEdit) + std_length;
+	*value = XtMalloc((Cardinal)(sizeof(Atom)*(*length)));
+	targetP = *(Atom**)value;
+	*targetP++ = XA_STRING;
+	*targetP++ = XA_TEXT(d);
+	*targetP++ = XA_UTF8_STRING(d);
+	*targetP++ = XA_COMPOUND_TEXT(d);
+	*targetP++ = XA_LENGTH(d);
+	*targetP++ = XA_LIST_LENGTH(d);
+	*targetP++ = XA_CHARACTER_POSITION(d);
+	if (edit_mode == XawtextEdit) {
+	    *targetP++ = XA_DELETE(d);
+	}
+	(void)memmove((char*)targetP, (char*)std_targets,
+		      sizeof(Atom) * std_length);
+	XtFree((char*)std_targets);
+	*type = XA_ATOM;
+	*format = 32;
+	return (True);
     }
-    (void) memmove((char*)targetP, (char*)std_targets, sizeof(Atom)*std_length);
-    XtFree((char*)std_targets);
-    *type = XA_ATOM;
-    *format = 32;
-    return True;
-  }
 
-  if ( SrcCvtSel(src, selection, target, type, value, length, format) )
-    return True;
+    if (SrcCvtSel(src, selection, target, type, value, length, format))
+	return (True);
 
-  if (MatchSelection (*selection, &ctx->text.s))
-    s = &ctx->text.s;
-  else
-  {
-    for (salt = ctx->text.salt; salt; salt = salt->next)
-	if (MatchSelection (*selection, &salt->s))
+    if (SelectionSelect) {
+      // Text version
+      if (MatchSelection(*selection, &ctx->text.s))
+	s = &ctx->text.s;
+      else {
+	for (salt = ctx->text.salt; salt; salt = salt->next)
+	  if (MatchSelection(*selection, &salt->s))
 	    break;
-    if (!salt)
-	return False;
-    s = &salt->s;
-  }
-  if (*target == XA_STRING ||
-      *target == XA_TEXT(d) ||
-      *target == XA_COMPOUND_TEXT(d)) {
+	if (!salt)
+	  return (False);
+	s = &salt->s;
+      }
+    } else {
+      // TextAction version
+      for (salt = ctx->text.salt2; salt; salt = salt->next)
+	if (MatchSelection (*selection, &salt->s))
+	  break;
+      if (!salt)
+	return (False);
+      s = &salt->s;
+    }
+    if (*target == XA_STRING
+	|| *target == XA_TEXT(d)
+	|| *target == XA_UTF8_STRING(d)
+	|| *target == XA_COMPOUND_TEXT(d)) {
 	if (*target == XA_TEXT(d)) {
 	    if (_XawTextFormat(ctx) == XawFmtWide)
 		*type = XA_COMPOUND_TEXT(d);
 	    else
 		*type = XA_STRING;
-	} else {
-	    *type = *target;
 	}
+	else
+	    *type = *target;
 	/*
 	 * If salt is True, the salt->contents stores CT string,
 	 * its length is measured in bytes.
@@ -1654,93 +1668,126 @@ ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
 		XTextProperty textprop;
 		if (XwcTextListToTextProperty(d, (wchar_t **)value, 1,
 					      XCompoundTextStyle, &textprop)
-			<  Success) {
-		    XtFree(*value);
-		    return False;
+		    <  Success) {
+		    XtFree((char *)*value);
+		    return (False);
 		}
-		XtFree(*value);
+		XtFree((char *)*value);
 		*value = (XtPointer)textprop.value;
 		*length = textprop.nitems;
-	    } else {
-		*length = strlen(*value);
 	    }
-	} else {
-	    *value = XtMalloc((salt->length + 1) * sizeof(unsigned char));
-	    strcpy (*value, salt->contents);
-	    *length = salt->length;
+	    else
+	        *length = strlen((char *)*value);
 	}
+	else {
+	    *value = XtMalloc((Cardinal)((size_t)(salt->length + 1) * sizeof(unsigned char)));
+	    strcpy ((char *)*value, salt->contents);
+	    *length = (unsigned long)salt->length;
+	}
+	/* Got *value and *length, now in COMPOUND_TEXT format. */
 	if (_XawTextFormat(ctx) == XawFmtWide && *type == XA_STRING) {
-	    XTextProperty textprop;
 	    wchar_t **wlist;
 	    int count;
-	    textprop.encoding = XA_COMPOUND_TEXT(d);
-	    textprop.value = (unsigned char *)*value;
-	    textprop.nitems = strlen(*value);
-	    textprop.format = 8;
-	    if (XwcTextPropertyToTextList(d, &textprop, (wchar_t ***)&wlist, &count)
-			< Success) {
-		XtFree(*value);
-		return False;
+	    XTextProperty textprop = {
+		.encoding = XA_COMPOUND_TEXT(d),
+		.value = (unsigned char *)*value,
+		.nitems = strlen(*value),
+		.format = 8
+	    };
+
+	    if (XwcTextPropertyToTextList(d, &textprop, &wlist, &count)
+		 < Success
+		|| count < 1) {
+		XtFree((char *)*value);
+		return (False);
 	    }
-	    XtFree(*value);
-	    if (XwcTextListToTextProperty( d, (wchar_t **)wlist, 1,
-					  XStringStyle, &textprop) < Success) {
-		XwcFreeStringList( (wchar_t**) wlist );
-		return False;
+	    XtFree((char *)*value);
+	    if (XwcTextListToTextProperty(d, wlist, 1, XStringStyle, &textprop)
+		 < Success) {
+		XwcFreeStringList((wchar_t**) wlist);
+		return (False);
 	    }
-	    *value = (XtPointer) textprop.value;
+	    *value = (XtPointer)textprop.value;
 	    *length = textprop.nitems;
-	    XwcFreeStringList( (wchar_t**) wlist );
+	    XwcFreeStringList(wlist);
+	} else if (*type == XA_UTF8_STRING(d)) {
+	    char **list;
+	    int count;
+	    XTextProperty textprop = {
+		.encoding = XA_COMPOUND_TEXT(d),
+		.value = (unsigned char *)*value,
+		.nitems = strlen(*value),
+		.format = 8
+	    };
+
+	    if (Xutf8TextPropertyToTextList(d, &textprop, &list, &count)
+		 < Success
+		|| count < 1) {
+		XtFree((char *)*value);
+		return (False);
+	    }
+	    XtFree((char *)*value);
+	    *value = *list;
+	    *length = strlen(*list);
+	    XFree(list);
 	}
 	*format = 8;
-	return True;
-  }
+	return (True);
+    }
 
-  if ( (*target == XA_LIST_LENGTH(d)) || (*target == XA_LENGTH(d)) ) {
-    long * temp;
+    if ((*target == XA_LIST_LENGTH(d)) || (*target == XA_LENGTH(d))) {
+	long * temp;
 
-    temp = (long *) XtMalloc( (unsigned) sizeof(long) );
-    if (*target == XA_LIST_LENGTH(d))
-      *temp = 1L;
-    else			/* *target == XA_LENGTH(d) */
-      *temp = (long) (s->right - s->left);
+	temp = (long *)XtMalloc((unsigned)sizeof(long));
+	if (*target == XA_LIST_LENGTH(d))
+	    *temp = 1L;
+	else			/* *target == XA_LENGTH(d) */
+	    *temp = (long) (s->right - s->left);
 
-    *value = (XPointer) temp;
-    *type = XA_INTEGER;
-    *length = 1L;
-    *format = 32;
-    return True;
-  }
+	*value = (XPointer)temp;
+	*type = XA_INTEGER;
+	*length = 1L;
+	*format = 32;
+	return (True);
+    }
 
-  if (*target == XA_CHARACTER_POSITION(d)) {
-    long * temp;
+    if (*target == XA_CHARACTER_POSITION(d)) {
+	long * temp;
 
-    temp = (long *) XtMalloc( (unsigned)( 2 * sizeof(long) ) );
-    temp[0] = (long) (s->left + 1);
-    temp[1] = s->right;
-    *value = (XPointer) temp;
-    *type = XA_SPAN(d);
-    *length = 2L;
-    *format = 32;
-    return True;
-  }
+	temp = (long *)XtMalloc((unsigned)(2 * sizeof(long)));
+	temp[0] = (long)(s->left + 1);
+	temp[1] = s->right;
+	*value = (XPointer)temp;
+	*type = XA_SPAN(d);
+	*length = 2L;
+	*format = 32;
+	return (True);
+    }
 
-  if (*target == XA_DELETE(d)) {
-    if (!salt)
-	_XawTextZapSelection( ctx, (XEvent *) NULL, TRUE);
-    *value = NULL;
-    *type = XA_NULL(d);
-    *length = 0;
-    *format = 32;
-    return True;
-  }
+    if (*target == XA_DELETE(d)) {
+	if (!salt)
+	    _XawTextZapSelection(ctx, NULL, True);
+	*value = NULL;
+	*type = XA_NULL(d);
+	*length = 0;
+	*format = 32;
+	return (True);
+    }
 
-  if (XmuConvertStandardSelection(w, ctx->text.time, selection, target, type,
-				  (XPointer *)value, length, format))
-    return True;
+    if (XmuConvertStandardSelection(w, ctx->text.time, selection, target, type,
+				    (XPointer *)value, length, format))
+	return (True);
 
-  /* else */
-  return False;
+    /* else */
+    return (False);
+}
+
+// Wrapper to route the XtOwnSelection callback to merged code
+static Boolean
+ConvertSelection(Widget w, Atom *selection, Atom *target, Atom *type,
+                 XtPointer *value, unsigned long *length, int *format) {
+  return _XawTextConvertSelection(w, selection, target, type, value, length,
+    format, True);
 }
 
 /*	Function Name: GetCutBufferNumber

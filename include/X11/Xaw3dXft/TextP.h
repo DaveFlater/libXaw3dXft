@@ -268,4 +268,16 @@ extern void _XawTextPosToXY(
     Position *			/*y */
 );
 
+/*
+  Vs. the signature required by XtOwnSelection, this function has one extra
+  parameter at the end, SelectionSelect.
+     True = do the Text version of the MatchSelection block
+    False = do the TextAction version
+  This used to be two very long, nearly identical functions that differed
+  only in that one place.
+*/
+extern Boolean _XawTextConvertSelection (Widget w, Atom *selection,
+  Atom *target, Atom *type, XtPointer *value, unsigned long *length,
+  int *format, Boolean SelectionSelect);
+
 #endif /* _XawTextP_h */
