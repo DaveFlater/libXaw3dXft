@@ -272,6 +272,7 @@ externaldef(xawvendorshellwidgetclass) WidgetClass
      xawvendorShellExtWidgetClass = (WidgetClass) (&xawvendorShellExtClassRec);
 
 
+// FIXME:  TextList/TextProperty fns
 static Boolean
 XawCvtCompoundTextToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
                            XrmValue *fromVal, XrmValue *toVal, XtPointer *cvt_data)

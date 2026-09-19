@@ -648,113 +648,6 @@ static XChar2b *WctoChar2b (const wchar_t *text, Cardinal *num_bytes) {
   return c2b;
 }
 
-// The rest of these are only for Xaw3dXftWcToAny (i.e. only to get strings
-// back out of MultiSrc).
-
-// Convert Wc to 8bit.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-// This function is reachable as follows:
-// - Create AsciiText with encoding not 8bit so you get a MultiSrc
-// - Use SetValues to change the encoding to 8bit
-// - Save to file or string:  MultiSrc exports to 8bit
-// It'll probably also be used to reduce cut buffers to STRING encoding.
-static char *Wcto8bit (const wchar_t *text, Cardinal *num_bytes) {
-  assert(text && num_bytes);
-  const uint32_t *textp = (uint32_t *)text;
-  const uint8_t bogusChar = '?';
-  assert(*num_bytes % 4 == 0); // RULE 3
-  const Cardinal l = checklen(*num_bytes) / 4; // RULE 4
-  uint8_t *new = malloc(l+1);
-  assert(new);
-  for (Cardinal i=0; i<l; ++i)
-    new[i] = (textp[i] < 0x100 ? textp[i] : bogusChar);
-  new[l] = 0;
-  *num_bytes = l;
-  return (char *)new;
-}
-
-// Convert Wc to UCS-2.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-static char16_t *WctoUCS2 (const wchar_t *text, Cardinal *num_bytes) {
-  return UTF32toUCS2((const char32_t *)text, num_bytes);
-}
-
-// Convert Wc to Mb.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-// wcsnrtombs does the whole string at once but makes it difficult to work
-// around invalid characters.
-static char *WctoMb (const wchar_t *text, Cardinal *num_bytes) {
-  assert(text && num_bytes);
-  assert(*num_bytes % sizeof(wchar_t) == 0); // RULE 3
-  Cardinal num_wc = checklen(*num_bytes) / sizeof(wchar_t); // RULE 4
-  // GNU libc is giving me MB_CUR_MAX = 6 for a UTF-8 locale (expected 4) and
-  // MB_LEN_MAX = 16 (how?).
-  //   MB_CUR_MAX = 6 → max 1.5 GB malloc
-  //   MB_CUR_MAX = 16 → max 4 GB malloc
-  // Alternatives:
-  // 1. Limit malloc to 1 GB and enforce Rule 4 inside the loop.
-  // 2. 2-pass (get the length before malloc and conversion).
-  // 3. Start with a conservative guess and realloc if needed.
-  char *new = malloc(num_wc * MB_CUR_MAX + 1);
-  assert(new);
-  char *s = new;
-  mbstate_t state = {0};
-  for (Cardinal i=0; i<num_wc; ++i) {
-    size_t ret = wcrtomb(s, text[i], &state);
-    if (ret == -1)
-      *s++ = '?';
-    else
-      s += ret;
-  }
-  *s = 0;
-  *num_bytes = checklen(s - new); // RULE 4
-  return new;
-}
-
-// Convert Wc to UTF-8.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-// Nowhere else do we require a conversion to UTF-8.
-static char *WctoUTF8 (const wchar_t *text, Cardinal *num_bytes) {
-  assert(text && num_bytes);
-  assert(*num_bytes % sizeof(wchar_t) == 0); // RULE 3
-  Cardinal num_wc = checklen(*num_bytes) / sizeof(wchar_t); // RULE 4
-  uint8_t *new = malloc(num_wc * 4 + 1);
-  assert(new);
-  uint8_t *s = new;
-  for (Cardinal i=0; i<num_wc; ++i) {
-    const uint32_t c = text[i];
-    switch (c) {
-    case 0: // Rule 2 violation
-      goto cmBHtZWn;
-    case 1 ... 0x7f: // Single-byte ASCII character
-      *s++ = c;
-      break;
-    case 0x80 ... 0x7ff: // Two-byte character
-      *s++ = 0xc0 | (c & 0x7c0) >> 6;
-      *s++ = 0x80 | c & 0x3f;
-      break;
-    case 0x800 ... 0xd7ff:  // Three-byte character range 1
-    case 0xe000 ... 0xffff: // Three-byte character range 2
-      *s++ = 0xe0 | (c & 0xf000) >> 12;
-      *s++ = 0x80 | (c & 0xfc0) >> 6;
-      *s++ = 0x80 | c & 0x3f;
-      break;
-    case 0x10000 ... 0x10ffff: // Four-byte character
-      *s++ = 0xf0 | (c & 0x1c000) >> 18;
-      *s++ = 0x80 | (c & 0x3f000) >> 12;
-      *s++ = 0x80 | (c & 0xfc0) >> 6;
-      *s++ = 0x80 | c & 0x3f;
-      break;
-    default: // Illegal surrogate or past the end of Unicode
-      *s++ = '?';
-    }
-  }
-  cmBHtZWn:
-  *s = 0;
-  *num_bytes = s - new;
-  return (char *)new;
-}
-
 // ---- Main functions ----
 
 // Rule 1 is specifically waived so that this can be used to terminate
@@ -1292,8 +1185,138 @@ Boolean Xaw3dXftLocateCharacter (
   return False;
 }
 
+// ---- Special interest converters ----
+
+// These conversions are never needed by DrawAnyString, only by the special
+// interest functions.
+
+// Convert Wc to 8bit.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char *Wcto8bit (const wchar_t *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  const uint32_t *textp = (uint32_t *)text;
+  const uint8_t bogusChar = '?';
+  assert(*num_bytes % 4 == 0); // RULE 3
+  const Cardinal l = checklen(*num_bytes) / 4; // RULE 4
+  uint8_t *new = malloc(l+1);
+  assert(new);
+  for (Cardinal i=0; i<l; ++i)
+    new[i] = (textp[i] < 0x100 ? textp[i] : bogusChar);
+  new[l] = 0;
+  *num_bytes = l;
+  return (char *)new;
+}
+
+// Convert Wc to UCS-2.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char16_t *WctoUCS2 (const wchar_t *text, Cardinal *num_bytes) {
+  return UTF32toUCS2((const char32_t *)text, num_bytes);
+}
+
+// Convert Wc to Mb.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+// wcsnrtombs does the whole string at once but makes it difficult to work
+// around invalid characters.
+static char *WctoMb (const wchar_t *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  assert(*num_bytes % sizeof(wchar_t) == 0); // RULE 3
+  Cardinal num_wc = checklen(*num_bytes) / sizeof(wchar_t); // RULE 4
+  // GNU libc is giving me MB_CUR_MAX = 6 for a UTF-8 locale (expected 4) and
+  // MB_LEN_MAX = 16 (how?).
+  //   MB_CUR_MAX = 6 → max 1.5 GB malloc
+  //   MB_CUR_MAX = 16 → max 4 GB malloc
+  // Alternatives:
+  // 1. Limit malloc to 1 GB and enforce Rule 4 inside the loop.
+  // 2. 2-pass (get the length before malloc and conversion).
+  // 3. Start with a conservative guess and realloc if needed.
+  char *new = malloc(num_wc * MB_CUR_MAX + 1);
+  assert(new);
+  char *s = new;
+  mbstate_t state = {0};
+  for (Cardinal i=0; i<num_wc; ++i) {
+    size_t ret = wcrtomb(s, text[i], &state);
+    if (ret == -1)
+      *s++ = '?';
+    else
+      s += ret;
+  }
+  *s = 0;
+  *num_bytes = checklen(s - new); // RULE 4
+  return new;
+}
+
+// Convert Wc to UTF-8.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char *WctoUTF8 (const wchar_t *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  assert(*num_bytes % sizeof(wchar_t) == 0); // RULE 3
+  Cardinal num_wc = checklen(*num_bytes) / sizeof(wchar_t); // RULE 4
+  uint8_t *new = malloc(num_wc * 4 + 1);
+  assert(new);
+  uint8_t *s = new;
+  for (Cardinal i=0; i<num_wc; ++i) {
+    const uint32_t c = text[i];
+    switch (c) {
+    case 0: // Rule 2 violation
+      goto finish;
+    case 1 ... 0x7f: // Single-byte ASCII character
+      *s++ = c;
+      break;
+    case 0x80 ... 0x7ff: // Two-byte character
+      *s++ = 0xc0 | (c & 0x7c0) >> 6;
+      *s++ = 0x80 | c & 0x3f;
+      break;
+    case 0x800 ... 0xd7ff:  // Three-byte character range 1
+    case 0xe000 ... 0xffff: // Three-byte character range 2
+      *s++ = 0xe0 | (c & 0xf000) >> 12;
+      *s++ = 0x80 | (c & 0xfc0) >> 6;
+      *s++ = 0x80 | c & 0x3f;
+      break;
+    case 0x10000 ... 0x10ffff: // Four-byte character
+      *s++ = 0xf0 | (c & 0x1c000) >> 18;
+      *s++ = 0x80 | (c & 0x3f000) >> 12;
+      *s++ = 0x80 | (c & 0xfc0) >> 6;
+      *s++ = 0x80 | c & 0x3f;
+      break;
+    default: // Illegal surrogate or past the end of Unicode
+      *s++ = '?';
+    }
+  }
+  finish:
+  *s = 0;
+  *num_bytes = s - new;
+  return (char *)new;
+}
+
+// Convert 8bit to UTF-8.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char *_8bittoUTF8 (const char *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  const Cardinal nbytes = checklen(*num_bytes); // RULE 4
+  uint8_t *new = malloc(nbytes * 2 + 1);
+  assert(new);
+  uint8_t *s = new;
+  for (Cardinal i=0; i<nbytes; ++i) {
+    const uint8_t c = text[i];
+    switch (c) {
+    case 0: // Rule 2 violation
+      goto finish;
+    case 1 ... 0x7f: // Single-byte ASCII character
+      *s++ = c;
+      break;
+    default: // Two-byte character
+      *s++ = 0xc0 | (c & 0xc0) >> 6;
+      *s++ = 0x80 | c & 0x3f;
+    }
+  }
+  finish:
+  *s = 0;
+  *num_bytes = checklen(s - new); // RULE 4
+  return (char *)new;
+}
+
 wchar_t *Xaw3dXftAnyToWcN (XawTextEncoding encoding, const void *text,
-			  Cardinal *num_bytes) {
+Cardinal *num_bytes) {
   assert(text && num_bytes);
   switch (encoding) {
   case XawTextEncoding8bit:
@@ -1328,4 +1351,75 @@ XawTextEncoding encoding) {
   default: // UTF32, wc
     return Xaw3dXftAnyStrdupN(encoding, text, *num_bytes);
   }
+}
+
+char *Xaw3dXftUTF8To8bit (const char *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  const uint8_t *textp = (uint8_t *)text;
+  const uint8_t bogusChar = '?';
+  const Cardinal nb = checklen(*num_bytes); // RULE 4
+  uint8_t *new = malloc(nb+1);
+  assert(new);
+  uint8_t *oldp = (uint8_t *)text;
+  uint8_t *newp = new;
+  while (oldp - textp < nb && *oldp != 0) {
+    if ((*oldp & 0xc0) == 0x80)
+      oldp++; // desynced; skip forward
+    else if (!(*oldp & 0x80))
+      *newp++ = *oldp++;
+    else if (oldp + 1 - textp < nb &&
+	     (*oldp & 0xe0) == 0xc0 &&
+	     (*(oldp+1) & 0xc0) == 0x80) {
+      uint16_t temp = (uint16_t)(*oldp & 0x1f) << 6 | (*(oldp+1) & 0x3f);
+      if (temp < 0x80 || // overlong encoding
+	  temp > 0xff)   // out of 8-bit range
+	*newp++ = bogusChar;
+      else
+	*newp++ = temp;
+      oldp += 2;
+    } else {
+      // Broken character, character cut in half by num_bytes, or out of
+      // 8-bit range
+      *newp++ = bogusChar;
+      oldp++;
+    }
+  }
+  *newp = 0;
+  *num_bytes = newp - new;
+  return (char *)new;
+}
+
+/*
+  The Inter-Client Communication Conventions Manual for X11R7.7 Version 2.0
+  says STRING is "ISO Latin-1 (+TAB+NEWLINE) text."  It does not allow ESC,
+  DEL, or any C1 control characters.
+*/
+void Xaw3dXft8bitToSTRING (char *text, Cardinal *num_bytes) {
+  unsigned char *s = (unsigned char *)text;
+  Cardinal lefty, righty;
+  for (lefty=0, righty=0; righty < *num_bytes; ++righty) {
+    const unsigned char c = s[righty];
+    switch (c) {
+    case 0: // Rule 2 violation
+      goto finish;
+    case 0x09 ... 0x0A:
+    case 0x20 ... 0x7E:
+    case 0xA0 ... 0xFF:
+      s[lefty++] = c;
+    }
+  }
+  finish:
+  s[lefty] = 0;
+  *num_bytes = lefty;
+}
+
+char *Xaw3dXftAnyToUTF8N (XawTextEncoding encoding, const void *text,
+Cardinal *num_bytes) {
+  switch (encoding) {
+  case XawTextEncoding8bit:
+    return _8bittoUTF8(text, num_bytes);
+  case XawTextEncodingWc:
+    return WctoUTF8(text, num_bytes);
+  }
+  XtError("libXaw3dXft: unimplemented source encoding in Xaw3dXftAnyToUTF8N");
 }

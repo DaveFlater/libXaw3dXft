@@ -53,39 +53,41 @@ X11 license (as per the historical licenses that the package inherits)
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
-#include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
-#include <X11/Shell.h>
-#include <X11/Xatom.h>
-#include <X11/Xutil.h>
 
-#include "XawI18n.h"
 #include <assert.h>
+#include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <X11/IntrinsicP.h>
+#include <X11/Shell.h>
+#include <X11/StringDefs.h>
+#include <X11/Xatom.h>
+#include <X11/Xfuncs.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/CharSet.h>
 #include <X11/Xmu/Converters.h>
-#include <X11/Xmu/StdSel.h>
 #include <X11/Xmu/Misc.h>
-#include <X11/Xaw3dXft/XawInit.h>
+#include <X11/Xmu/StdSel.h>
+#include <X11/Xutil.h>
+#include "XawI18n.h"
+#include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/MultiSinkP.h>
 #include <X11/Xaw3dXft/Scrollbar.h>
 #include <X11/Xaw3dXft/TextP.h>
-#include <X11/Xaw3dXft/TextSrc.h>
 #include <X11/Xaw3dXft/TextSinkP.h>
-#include <X11/Xaw3dXft/AsciiSink.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <X11/Xaw3dXft/MultiSinkP.h>
-#include <X11/Xaw3dXft/XawImP.h>
+#include <X11/Xaw3dXft/TextSrc.h>
 #include <X11/Xaw3dXft/ThreeDP.h>
-#include <X11/Xfuncs.h>
-#include <ctype.h>		/* for isprint() */
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawImP.h>
+#include <X11/Xaw3dXft/XawInit.h>
 
-unsigned long XawFmt8Bit = 0L;
-unsigned long XawFmtWide = 0L;
+// These are initialized in ClassInitialize (sans display)
+XrmQuark XawFmt8Bit = 0, XawFmtWide = 0;
+AtomPtr  _XAWA_UTF32_STRING = 0, _XAWA_8BIT_STRING = 0, _XAWA_C_STRING = 0;
 
 #define SinkClearToBG          XawTextSinkClearToBackground
 
@@ -98,13 +100,6 @@ unsigned long XawFmtWide = 0L;
 
 #define BIGNUM ((Dimension)32023)
 #define MULTI_CLICK_TIME 500L
-
-/*
- * Compute a the maximum length of a cut buffer that we can pass at any
- * time.  The 64 allows for the overhead of the Change Property request.
- */
-
-#define MAX_CUT_LEN(dpy)  (XMaxRequestSize(dpy) - 64)
 
 #define IsValidLine(ctx, num) ( ((num) == 0) || \
 			        ((ctx)->text.lt.info[(num)].position != 0) )
@@ -384,10 +379,11 @@ CvtStringToResizeMode(XrmValuePtr args, Cardinal *num_args, XrmValuePtr fromVal,
 }
 
 static void ClassInitialize (void) {
-  if (!XawFmt8Bit)
-    XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
-  if (!XawFmtWide)
-    XawFmtWide = XrmPermStringToQuark("FMTWIDE");
+  if (!XawFmt8Bit) XawFmt8Bit = XrmPermStringToQuark("FMT8BIT");
+  if (!XawFmtWide) XawFmtWide = XrmPermStringToQuark("FMTWIDE");
+  if (!_XAWA_UTF32_STRING) _XAWA_UTF32_STRING = XmuMakeAtom("UTF32_STRING");
+  if (!_XAWA_8BIT_STRING)   _XAWA_8BIT_STRING = XmuMakeAtom("8BIT_STRING");
+  if (!_XAWA_C_STRING)         _XAWA_C_STRING = XmuMakeAtom("C_STRING");
 
   XawInitializeWidgetSet();
   textClassRec.core_class.num_actions = _XawTextActionsTableCount;
@@ -399,6 +395,11 @@ static void ClassInitialize (void) {
 			(XtConvertArgList)NULL, (Cardinal)0 );
   XtAddConverter(XtRString, XtRResizeMode, CvtStringToResizeMode,
 			(XtConvertArgList)NULL, (Cardinal)0 );
+}
+
+Atom _XawTextInternalEncoding (Display *d, TextWidget ctx) {
+  return (_XawTextFormat(ctx) == XawFmtWide ?
+          XAWA_UTF32_STRING(d) : XAWA_8BIT_STRING(d));
 }
 
 /*	Function Name: PositionHScrollBar.
@@ -849,74 +850,6 @@ _XawTextGetText(TextWidget ctx, XawTextPosition left, XawTextPosition right)
   else
       *tempResult = '\0';
   return(result);
-}
-
-/*
-  What the original comments on _XawTextGetSTRING said it did:
-    Like _XawTextGetText, but enforces ICCCM STRING type encoding.  This
-    routine is currently used to put just the ASCII chars in the selection
-    into a cut buffer.
-
-  What it actually did:
-    Get a new string from _XawTextGetText
-    If the internal encoding is Wc
-      Discard all 0-width characters except HT, LF, and ESC
-      (Chars outside of the 8-bit range were not discarded)
-    Else
-      Discard all C0 control codes except HT, LF, and ESC
-      Discard all C1 control codes
-      (DEL was not discarded)
-    Return new string in the same internal encoding
-
-  The callers then sent the resulting wide string through
-  XwcTextListToTextProperty to get XCompoundTextStyle or XStringStyle as
-  needed or used the 8-bit string directly.
-
-  The Inter-Client Communication Conventions Manual for X11R7.7 Version 2.0
-  says STRING is "ISO Latin-1 (+TAB+NEWLINE) text."  It does not allow ESC,
-  DEL, or any C1 control characters.  It definitely does not allow wide
-  strings.
-
-  The Compound Text Encoding specification for X11R7.7 Version 1.1 includes
-  ICCCM STRING but adds ESC (0x1b) and CSI (0x9b) as allowed characters.  ESC
-  is used to switch character sets.  CSI is used for directional text.
-
-  Until the callers are sorted out, just filter out control codes.
-*/
-char *_XawTextGetSTRING (TextWidget ctx, XawTextPosition left,
-XawTextPosition right) {
-  size_t i, j;
-  if (_XawTextFormat(ctx) == XawFmtWide) {
-     wchar_t *ws = (wchar_t *)_XawTextGetText(ctx, left, right);
-     const size_t n = wcslen(ws);
-     for (i=0, j=0; j < n; ++j) {
-       wchar_t wc = ws[j];
-       switch (wc) {
-       case 0x09 ... 0x0A:
-       case 0x1b: // ESC is not STRING
-       case 0x20 ... 0x7E:
-       case 0xA0 ... WCHAR_MAX: // Nothing above 0xFF is STRING
-	 ws[i++] = wc;
-       }
-     }
-     ws[i] = (wchar_t)0;
-     return (char *)ws;
-  } else {
-     unsigned char *s = (unsigned char *)_XawTextGetText(ctx, left, right);
-     const size_t n = strlen((char *)s);
-     for (i=0, j=0; j < n; ++j) {
-       unsigned char c = s[j];
-       switch (c) {
-       case 0x09 ... 0x0A:
-       case 0x1b: // ESC is not STRING
-       case 0x20 ... 0x7E:
-       case 0xA0 ... 0xFF:
-	 s[i++] = c;
-       }
-     }
-     s[i] = 0;
-     return (char *)s;
-  }
 }
 
 /*
@@ -1556,230 +1489,227 @@ VJump(Widget w, XtPointer closure, XtPointer callData)
   _XawTextExecuteUpdate(ctx);
 }
 
-static Boolean
-MatchSelection(Atom selection, XawTextSelection *s)
-{
-    Atom    *match;
-    int	    count;
-
-    for (count = 0, match = s->selections; count < s->atom_count; match++, count++)
-	if (*match == selection)
-	    return True;
-    return False;
+static Boolean MatchSelection (Atom selection, XawTextSelection *s) {
+  Atom *match;
+  int  count;
+  for (count = 0, match = s->selections; count < s->atom_count; match++, count++)
+    if (*match == selection)
+      return True;
+  return False;
 }
 
-// Updated from Xaw as of 2026-09-14.  Copied in the Text.c version then
-// added the one block from TextAction.c.  Other differences between the two
-// copies were immaterial.
 Boolean _XawTextConvertSelection (Widget w, Atom *selection,
 Atom *target, Atom *type, XtPointer *value, unsigned long *length,
 int *format, Boolean SelectionSelect) {
-    Display *d = XtDisplay(w);
-    TextWidget ctx = (TextWidget)w;
-    Widget src = ctx->text.source;
-    XawTextEditType edit_mode;
-    XawTextSelectionSalt *salt = NULL;
-    XawTextSelection *s;
+  Display *d = XtDisplay(w);
+  TextWidget ctx = (TextWidget)w;
+  Widget src = ctx->text.source;
+  XawTextEditType edit_mode;
+  XawTextSelectionSalt *salt = NULL;
+  XawTextSelection *s = NULL;
 
-    if (*target == XA_TARGETS(d)) {
-	Atom *targetP, *std_targets;
-	unsigned long std_length;
+  assert(target);
+  #ifdef TEXT_TRACE
+  printf("ConvertSelection:  somebody asked for %s\n", XGetAtomName(d, *target));
+  #endif
 
-	if (SrcCvtSel(src, selection, target, type, value, length, format))
-	    return (True);
-	else {
-	    Arg args[1];
+  // Unless someone subclasses TextSrc, this always returns False.
+  if (SrcCvtSel(src, selection, target, type, value, length, format))
+    return True;
 
-	    XtSetArg(args[0], XtNeditType, &edit_mode);
-	    XtGetValues(src, args, ONE);
-	}
+  Arg args[1] = {{XtNeditType, (XtArgVal)&edit_mode}};
+  XtGetValues(src, args, ONE);
 
-	XmuConvertStandardSelection(w, ctx->text.time, selection,
-				    target, type, (XPointer*)&std_targets,
-				    &std_length, format);
+  if (*target == XA_TARGETS(d)) {
+    Atom *targetP, *std_targets;
+    unsigned long std_length;
 
-	*length = 7 + (unsigned long)(edit_mode == XawtextEdit) + std_length;
-	*value = XtMalloc((Cardinal)(sizeof(Atom)*(*length)));
-	targetP = *(Atom**)value;
-	*targetP++ = XA_STRING;
-	*targetP++ = XA_TEXT(d);
-	*targetP++ = XA_UTF8_STRING(d);
-	*targetP++ = XA_COMPOUND_TEXT(d);
-	*targetP++ = XA_LENGTH(d);
-	*targetP++ = XA_LIST_LENGTH(d);
-	*targetP++ = XA_CHARACTER_POSITION(d);
-	if (edit_mode == XawtextEdit) {
-	    *targetP++ = XA_DELETE(d);
-	}
-	(void)memmove((char*)targetP, (char*)std_targets,
-		      sizeof(Atom) * std_length);
-	XtFree((char*)std_targets);
-	*type = XA_ATOM;
-	*format = 32;
-	return (True);
-    }
+    XmuConvertStandardSelection(w, ctx->text.time, selection,
+				target, type, (XPointer*)&std_targets,
+				&std_length, format);
 
-    if (SrcCvtSel(src, selection, target, type, value, length, format))
-	return (True);
+    *length = 9 + (unsigned long)(edit_mode == XawtextEdit) + std_length;
+    *value = XtMalloc((Cardinal)(sizeof(Atom)*(*length)));
+    targetP = *(Atom**)value;
+    *targetP++ = XAWA_UTF32_STRING(d);
+    *targetP++ = XAWA_8BIT_STRING(d);
+    *targetP++ = XAWA_C_STRING(d);
+    *targetP++ = XA_UTF8_STRING(d);
+    *targetP++ = XA_STRING;
+    *targetP++ = XA_TEXT(d);
+    *targetP++ = XA_LENGTH(d);
+    *targetP++ = XA_LIST_LENGTH(d);
+    *targetP++ = XA_CHARACTER_POSITION(d);
+    if (edit_mode == XawtextEdit)
+      *targetP++ = XA_DELETE(d);
+    (void)memmove((char*)targetP, (char*)std_targets,
+		  sizeof(Atom) * std_length);
+    XtFree((char*)std_targets);
+    *type = XA_ATOM;
+    *format = 32;
+    return True;
+  }
 
-    if (SelectionSelect) {
-      // Text version
-      if (MatchSelection(*selection, &ctx->text.s))
-	s = &ctx->text.s;
-      else {
-	for (salt = ctx->text.salt; salt; salt = salt->next)
-	  if (MatchSelection(*selection, &salt->s))
-	    break;
-	if (!salt)
-	  return (False);
-	s = &salt->s;
-      }
-    } else {
-      // TextAction version
-      for (salt = ctx->text.salt2; salt; salt = salt->next)
-	if (MatchSelection (*selection, &salt->s))
+  if (SelectionSelect) {
+    // Text version
+    if (MatchSelection(*selection, &ctx->text.s))
+      s = &ctx->text.s;
+    else {
+      for (salt = ctx->text.salt; salt; salt = salt->next)
+	if (MatchSelection(*selection, &salt->s))
 	  break;
       if (!salt)
-	return (False);
+	return False;
       s = &salt->s;
     }
-    if (*target == XA_STRING
-	|| *target == XA_TEXT(d)
-	|| *target == XA_UTF8_STRING(d)
-	|| *target == XA_COMPOUND_TEXT(d)) {
-	if (*target == XA_TEXT(d)) {
-	    if (_XawTextFormat(ctx) == XawFmtWide)
-		*type = XA_COMPOUND_TEXT(d);
-	    else
-		*type = XA_STRING;
-	}
-	else
-	    *type = *target;
-	/*
-	 * If salt is True, the salt->contents stores CT string,
-	 * its length is measured in bytes.
-	 * Refer to _XawTextSaltAwaySelection().
-	 *
-	 * by Li Yuhong, Mar. 20, 1991.
-	 */
-	if (!salt) {
-	    *value = _XawTextGetSTRING(ctx, s->left, s->right);
-	    if (_XawTextFormat(ctx) == XawFmtWide) {
-		XTextProperty textprop;
-		if (XwcTextListToTextProperty(d, (wchar_t **)value, 1,
-					      XCompoundTextStyle, &textprop)
-		    <  Success) {
-		    XtFree((char *)*value);
-		    return (False);
-		}
-		XtFree((char *)*value);
-		*value = (XtPointer)textprop.value;
-		*length = textprop.nitems;
-	    }
-	    else
-	        *length = strlen((char *)*value);
-	}
-	else {
-	    *value = XtMalloc((Cardinal)((size_t)(salt->length + 1) * sizeof(unsigned char)));
-	    strcpy ((char *)*value, salt->contents);
-	    *length = (unsigned long)salt->length;
-	}
-	/* Got *value and *length, now in COMPOUND_TEXT format. */
-	if (_XawTextFormat(ctx) == XawFmtWide && *type == XA_STRING) {
-	    wchar_t **wlist;
-	    int count;
-	    XTextProperty textprop = {
-		.encoding = XA_COMPOUND_TEXT(d),
-		.value = (unsigned char *)*value,
-		.nitems = strlen(*value),
-		.format = 8
-	    };
+  } else {
+    // TextAction version
+    for (salt = ctx->text.salt2; salt; salt = salt->next)
+      if (MatchSelection (*selection, &salt->s))
+	break;
+    if (!salt)
+      return False;
+    s = &salt->s;
+  }
 
-	    if (XwcTextPropertyToTextList(d, &textprop, &wlist, &count)
-		 < Success
-		|| count < 1) {
-		XtFree((char *)*value);
-		return (False);
-	    }
-	    XtFree((char *)*value);
-	    if (XwcTextListToTextProperty(d, wlist, 1, XStringStyle, &textprop)
-		 < Success) {
-		XwcFreeStringList((wchar_t**) wlist);
-		return (False);
-	    }
-	    *value = (XtPointer)textprop.value;
-	    *length = textprop.nitems;
-	    XwcFreeStringList(wlist);
-	} else if (*type == XA_UTF8_STRING(d)) {
-	    char **list;
-	    int count;
-	    XTextProperty textprop = {
-		.encoding = XA_COMPOUND_TEXT(d),
-		.value = (unsigned char *)*value,
-		.nitems = strlen(*value),
-		.format = 8
-	    };
+  if (*target == XAWA_UTF32_STRING(d) ||
+      *target == XAWA_8BIT_STRING(d) ||
+      *target == XAWA_C_STRING(d) ||
+      *target == XA_UTF8_STRING(d) ||
+      *target == XA_STRING ||
+      *target == XA_TEXT(d)) {
 
-	    if (Xutf8TextPropertyToTextList(d, &textprop, &list, &count)
-		 < Success
-		|| count < 1) {
-		XtFree((char *)*value);
-		return (False);
-	    }
-	    XtFree((char *)*value);
-	    *value = *list;
-	    *length = strlen(*list);
-	    XFree(list);
-	}
-	*format = 8;
-	return (True);
+    // TEXT asks for "text in the owner's choice of encoding" as if.  This
+    // nonspecific request doesn't come from Xaw3dXft.  For external
+    // requests, the default will be UTF-8.
+    if (*target == XA_TEXT(d))
+      *type = XA_UTF8_STRING(d);
+    else
+      *type = *target;
+    target = NULL; // prevent using wrong variable below
+    // *type now holds the disambiguated target encoding.
+
+    // Now get the source text, which will be in our internal encoding.
+    const XawTextEncoding srcEncoding = (_XawTextFormat(ctx) == XawFmtWide ?
+      XawTextEncodingWc : XawTextEncoding8bit);
+    void *srcText;
+    Cardinal num_bytes;
+    if (salt) {
+      #ifdef TEXT_TRACE
+      printf("ConvertSelection:  using salt->contents\n");
+      #endif
+      num_bytes = Xaw3dXftAnyStrlen(srcEncoding, salt->contents);
+      srcText = Xaw3dXftAnyStrdupN(srcEncoding, salt->contents, num_bytes);
+    } else {
+      #ifdef TEXT_TRACE
+      printf("ConvertSelection:  using _XawTextGetText\n");
+      #endif
+      srcText = _XawTextGetText(ctx, s->left, s->right);
+      num_bytes = Xaw3dXftAnyStrlen(srcEncoding, srcText);
     }
+    // srcText and num_bytes now hold the source text in srcEncoding.
 
-    if ((*target == XA_LIST_LENGTH(d)) || (*target == XA_LENGTH(d))) {
-	long * temp;
-
-	temp = (long *)XtMalloc((unsigned)sizeof(long));
-	if (*target == XA_LIST_LENGTH(d))
-	    *temp = 1L;
-	else			/* *target == XA_LENGTH(d) */
-	    *temp = (long) (s->right - s->left);
-
-	*value = (XPointer)temp;
-	*type = XA_INTEGER;
-	*length = 1L;
-	*format = 32;
-	return (True);
+    // We need to return a new string in *value (it is Xt's problem to free
+    // that) and set *length and *format to the number of elements and the
+    // size in bits of the elements respectively.
+    if (*type == XAWA_UTF32_STRING(d)) {
+      if (srcEncoding != XawTextEncodingWc) {
+	wchar_t *wcs = Xaw3dXftAnyToWcN(srcEncoding, srcText, &num_bytes);
+	free(srcText);
+	srcText = wcs;
+      }
+      *value = srcText;
+      *format = 32;
+      *length = num_bytes/sizeof(wchar_t);
+      return True;
+    } else if (*type == XAWA_8BIT_STRING(d) ||
+               *type == XA_STRING) {
+      if (srcEncoding == XawTextEncodingWc) {
+	char *cs = Xaw3dXftWcToAnyN(srcText, &num_bytes, XawTextEncoding8bit);
+	free(srcText);
+	srcText = cs;
+      }
+      if (*type == XA_STRING)
+	Xaw3dXft8bitToSTRING(srcText, &num_bytes);
+    } else { // XA_UTF8_STRING(d) or XAWA_C_STRING(d)
+      char *ucs = Xaw3dXftAnyToUTF8N(srcEncoding, srcText, &num_bytes);
+      free(srcText);
+      srcText = ucs;
     }
+    *value = srcText;
+    *format = 8;
+    *length = num_bytes;
+    return True;
 
-    if (*target == XA_CHARACTER_POSITION(d)) {
-	long * temp;
-
-	temp = (long *)XtMalloc((unsigned)(2 * sizeof(long)));
-	temp[0] = (long)(s->left + 1);
-	temp[1] = s->right;
-	*value = (XPointer)temp;
-	*type = XA_SPAN(d);
-	*length = 2L;
-	*format = 32;
-	return (True);
+  // ------------- end of text targets -------------
+  } else if (*target == XA_LIST_LENGTH(d) ||
+             *target == XA_LENGTH(d)) {
+    /* LIST_LENGTH:  number of disjoint parts of the selection
+       LENGTH:  number of bytes in the selection
+      * This definition is ambiguous, as the selection may be converted into
+      any of several targets that may return differing amounts of data.  The
+      requestor has no way of knowing which, if any, of these targets
+      corresponds to the result of LENGTH.  Clients are advised that no
+      guarantees can be made about the result of a conversion to LENGTH; its
+      use is thus deprecated.
+    */
+    uint32_t *temp = (uint32_t *)XtMalloc(sizeof(uint32_t));
+    if (*target == XA_LIST_LENGTH(d))
+      *temp = 1;
+    else {
+      // right and left are XawTextPositions, not bytes.
+      *temp = s->right - s->left;
+      if (_XawTextFormat(ctx) == XawFmtWide)
+	*temp *= sizeof(wchar_t);
     }
+    *value = (XPointer)temp;
+    *type = XA_INTEGER; // specified as 32 bits
+    *length = 1;
+    *format = 32;
+    return True;
 
-    if (*target == XA_DELETE(d)) {
-	if (!salt)
-	    _XawTextZapSelection(ctx, NULL, True);
-	*value = NULL;
-	*type = XA_NULL(d);
-	*length = 0;
-	*format = 32;
-	return (True);
+  } else if (*target == XA_CHARACTER_POSITION(d)) {
+    // start and end of the selection in bytes
+    /*
+      Properties with type SPAN contain a list of cardinal-pairs with the
+      length of the cardinals determined by the format.  The first
+      specifies the starting position, and the second specifies the ending
+      position plus one.  The base is zero.  If they are the same, the span
+      is zero-length and is before the specified position.  The units are
+      implied by the target atom, such as LINE_NUMBER or
+      CHARACTER_POSITION.
+    */
+    uint32_t *temp = (uint32_t *)XtMalloc(2 * sizeof(uint32_t));
+    temp[0] = s->left;
+    temp[1] = s->right;
+    *value = (XPointer)temp;
+    *type = XA_SPAN(d);
+    *length = 2;
+    *format = 32;
+    return True;
+
+  } else if (*target == XA_DELETE(d)) {
+    /*
+      When the owner of a selection receives a request to convert it to
+      DELETE, it should delete the corresponding selection (whatever doing
+      so means for its internal data structures) and return a zero-length
+      property of type NULL if the deletion was successful.
+    */
+    if (edit_mode == XawtextEdit) {
+      if (!salt)
+	_XawTextZapSelection(ctx, NULL, True);
+      // I guess if it's in salt then it has already been deleted so okay?
+      *value = NULL;
+      *type = XA_NULL(d);
+      *length = 0;
+      *format = 32;
+      return True;
     }
+    return False;
 
-    if (XmuConvertStandardSelection(w, ctx->text.time, selection, target, type,
-				    (XPointer *)value, length, format))
-	return (True);
-
-    /* else */
-    return (False);
+  } else
+    return XmuConvertStandardSelection(w, ctx->text.time, selection, target,
+      type, (XPointer *)value, length, format);
 }
 
 // Wrapper to route the XtOwnSelection callback to merged code
@@ -1895,8 +1825,7 @@ LoseSelection(Widget w, Atom *selection)
   }
 }
 
-void
-_XawTextSaltAwaySelection(TextWidget ctx, Atom *selections, int num_atoms)
+void _XawTextSaltAwaySelection (TextWidget ctx, Atom *selections, int num_atoms)
 {
     XawTextSelectionSalt    *salt;
     int			    i, j;
@@ -1916,24 +1845,13 @@ _XawTextSaltAwaySelection(TextWidget ctx, Atom *selections, int num_atoms)
 	XtFree ((char *) salt);
 	return;
     }
+    #ifdef TEXT_TRACE
+    printf("SaltAwaySelection:  putting text into salt->contents\n");
+    #endif
     salt->s.left = ctx->text.s.left;
     salt->s.right = ctx->text.s.right;
     salt->s.type = ctx->text.s.type;
-    salt->contents = _XawTextGetSTRING(ctx, ctx->text.s.left, ctx->text.s.right);
-    if (_XawTextFormat(ctx) == XawFmtWide) {
-	XTextProperty textprop;
-	if (XwcTextListToTextProperty(XtDisplay((Widget)ctx),
-			(wchar_t**)(&(salt->contents)), 1, XCompoundTextStyle,
-			&textprop) < Success) {
-	    XtFree(salt->contents);
-	    salt->length = 0;
-	    return;
-	}
-	XtFree(salt->contents);
-	salt->contents = (char *)textprop.value;
-	salt->length = textprop.nitems;
-    } else
-       salt->length = strlen (salt->contents);
+    salt->contents = _XawTextGetText(ctx, ctx->text.s.left, ctx->text.s.right);
     salt->next = ctx->text.salt;
     ctx->text.salt = salt;
     j = 0;
@@ -1980,50 +1898,55 @@ _SetSelection(TextWidget ctx, XawTextPosition left, XawTextPosition right,
 
   if (left < right) {
     Widget w = (Widget) ctx;
+    Display *d = XtDisplay(w);
     int buffer;
 
     while (count) {
       Atom selection = selections[--count];
 
       if ((buffer = GetCutBufferNumber(selection)) != NOT_A_CUT_BUFFER) {
-
-	unsigned char *ptr, *tptr;
-	unsigned int amount, max_len = MAX_CUT_LEN(XtDisplay(w));
-	unsigned long len;
-
-	tptr= ptr= (unsigned char *) _XawTextGetSTRING(ctx, ctx->text.s.left,
-						       ctx->text.s.right);
+	// We need STRING
+	const XawTextEncoding srcEncoding = (_XawTextFormat(ctx) == XawFmtWide
+	  ? XawTextEncodingWc : XawTextEncoding8bit);
+	void *srcText = _XawTextGetText(ctx, ctx->text.s.left,
+	  ctx->text.s.right);
+	Cardinal num_bytes = Xaw3dXftAnyStrlen(srcEncoding, srcText);
 	if (_XawTextFormat(ctx) == XawFmtWide) {
-	   /*
-	    * Only XA_STRING(Latin 1) is allowed in CUT_BUFFER,
-	    * so we get it from wchar string, then free the wchar string.
-	    */
-	    XTextProperty textprop;
-	    if (XwcTextListToTextProperty(XtDisplay(w), (wchar_t**)&ptr, 1,
-		    XStringStyle, &textprop) <  Success) {
-		XtFree((char *)ptr);
-		return;
-	    }
-	    XtFree((char *)ptr);
-	    tptr = ptr = textprop.value;
-        }
-	if (buffer == 0) {
-	  _CreateCutBuffers(XtDisplay(w));
-	  XRotateBuffers(XtDisplay(w), 1);
+	  char *cs = Xaw3dXftWcToAnyN(srcText, &num_bytes,
+	    XawTextEncoding8bit);
+	  free(srcText);
+	  srcText = cs;
 	}
-	amount = Min ( (len = strlen((char *)ptr)), max_len);
-	XChangeProperty(XtDisplay(w), RootWindow(XtDisplay(w), 0), selection,
-			XA_STRING, 8, PropModeReplace, ptr, amount);
+	Xaw3dXft8bitToSTRING(srcText, &num_bytes);
+
+	//     max_len = MAX_CUT_LEN(XtDisplay(w));
+	//     #define MAX_CUT_LEN(dpy) (XMaxRequestSize(dpy) - 64)
+	// - The result of XMaxRequestSize is in 4-byte units
+	// - 64 was the estimated overhead of the Change Property request
+	// The protocol guarantees the size to be no smaller than 4096 units
+	// = 16384 bytes.
+	const Cardinal max_len = XMaxRequestSize(d)*4 - 128;
+	unsigned char *ptr = srcText;
+	Cardinal len;
+
+	// FIXME validate use of RootWindow(d, 0)
+
+	if (buffer == 0) {
+	  _CreateCutBuffers(d);
+	  XRotateBuffers(d, 1);
+	}
+	unsigned amount = Min((len = num_bytes), max_len);
+	XChangeProperty(d, RootWindow(d, 0), selection, XA_STRING, 8,
+	  PropModeReplace, ptr, amount);
 
 	while (len > max_len) {
-	    len -= max_len;
-	    tptr += max_len;
-	    amount = Min (len, max_len);
-	    XChangeProperty(XtDisplay(w), RootWindow(XtDisplay(w), 0),
-			    selection, XA_STRING, 8, PropModeAppend,
-			    tptr, amount);
+	  len -= max_len;
+	  ptr += max_len;
+	  amount = Min(len, max_len);
+	  XChangeProperty(d, RootWindow(d, 0), selection, XA_STRING, 8,
+	    PropModeAppend, ptr, amount);
 	}
-	XtFree ((char *)ptr);
+	free(srcText);
       }
       else			/* This is a real selection */
       XtOwnSelection(w, selection, ctx->text.time, ConvertSelection,

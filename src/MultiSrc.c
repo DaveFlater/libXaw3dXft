@@ -66,22 +66,23 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include "XawI18n.h"
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xfuncs.h>
 #include <X11/Xmu/CharSet.h>
 #include <X11/Xmu/Misc.h>
 #include <X11/Xos.h>
-#include "XawI18n.h"
 #include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/Text.h>
 #include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/Xaw3dXft/XawImP.h>
 #include <X11/Xaw3dXft/XawInit.h>
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stdio.h>
 
 #ifdef O_CLOEXEC
 #define FOPEN_CLOEXEC "e"
@@ -127,7 +128,6 @@ static void (MyWStrncpy)();
 #endif
 
 extern wchar_t* _XawTextMBToWC(Display *, char *, int *);
-extern char *_XawTextWCToMB(Display *, wchar_t *, int *);
 
 #define superclass		(&textSrcClassRec)
 MultiSrcClassRec multiSrcClassRec = {
@@ -258,64 +258,34 @@ ReadText(Widget w, XawTextPosition pos, XawTextBlock *text, int length)
  */
 
 static int
-ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextBlock *u_text_p)
-{
-  MultiSrcObject src = (MultiSrcObject) w;
+ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
+             XawTextBlock *text) {
+  MultiSrcObject src = (MultiSrcObject)w;
   MultiPiece *start_piece, *end_piece, *temp_piece;
   XawTextPosition start_first = 0, end_first;
-  int length, firstPos;
-  wchar_t *wptr;
-  Boolean local_artificial_block = False;
-  XawTextBlock text;
 
-  /* STEP 1: The user handed me a text block called `u_text' that may be
-   * in either XawFmtWide or XawFmt8Bit (ie MB.)  Later code needs the block
-   * `text' to hold XawFmtWide.  So, this copies `u_text' to `text', and if
-   * `u_text' was MB, I knock it up to wide. */
+  assert(text && text->length >= 0);
 
-  if ( u_text_p->length == 0 )	/* if so, the block contents never ref'd. */
-      text.length = 0;
-
-  else if ( u_text_p->format == XawFmtWide) {
-      local_artificial_block = False;		/* ie, don't have to free it ourselves*/
-      text.firstPos = u_text_p->firstPos;
-      text.length =   u_text_p->length;
-      text.ptr =      u_text_p->ptr;
-      /* text.format is unneeded */
-
-  } else {
-      /* WARNING! u_text->firstPos and length are in units of CHAR, not CHARACTERS! */
-
-      local_artificial_block = True;	/* ie, have to free it ourselves */
-      text.firstPos = 0;
-      text.length = u_text_p->length; /* _XawTextMBToWC converts this to wchar len. */
-
-      text.ptr = (char*)_XawTextMBToWC( XtDisplay(XtParent(w)),
-			 &(u_text_p->ptr[u_text_p->firstPos]), &(text.length) );
-
-      /* I assert the following assignment is not needed - since Step 4
-      depends on length, it has no need of a terminating NULL.  I think
-      the ASCII-version has the same needless NULL. */
-      /*((wchar_t*)text.ptr)[ text.length ] = NULL;*/
-  }
-
-
-  /* STEP 2: some initialization... */
-
+  /*
+   * Editing a read only source is not allowed.
+   */
   if (src->text_src.edit_mode == XawtextRead)
-    return(XawEditError);
+    return XawEditError;
 
   start_piece = FindPiece(src, startPos, &start_first);
   end_piece = FindPiece(src, endPos, &end_first);
 
+  src->multi_src.changes = TRUE; /* We have changed the buffer. */
 
-  /* STEP 3: remove the empty pieces... */
-
+  /*
+   * Remove old stuff.
+   */
   if (start_piece != end_piece) {
     temp_piece = start_piece->next;
 
-  /* If empty and not the only piece then remove it. */
-
+    /*
+     * If empty and not the only piece then remove it.
+     */
     if ( ((start_piece->used = startPos - start_first) == 0) &&
 	 !((start_piece->next == NULL) && (start_piece->prev == NULL)) )
       RemovePiece(src, start_piece);
@@ -328,8 +298,8 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
     if (end_piece->used != 0)
       MyWStrncpy(end_piece->text, (end_piece->text + endPos - end_first),
 		(int) end_piece->used);
-  }
-  else {			/* We are fully in one piece. */
+
+  } else { /* We are fully in one piece. */
     if ( (start_piece->used -= endPos - startPos) == 0) {
       if ( !((start_piece->next == NULL) && (start_piece->prev == NULL)) )
 	RemovePiece(src, start_piece);
@@ -341,36 +311,47 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
     }
   }
 
-  src->multi_src.length += text.length -(endPos - startPos);
-  /*((TextWidget)src->object.parent)->text.lastPos = src->multi_src.length;*/
+  // Now we need the text to insert in Wc encoding.
+  XawTextBlock srcTextBlock;
+  if (text->format == XawFmt8Bit) {
+    // FIXME I think this never happens
+    assert(0);
+    #ifdef TEXT_TRACE
+    printf("MultiSrc ReplaceText: converting 8bit to Wc\n");
+    #endif
+    Cardinal num_bytes = text->length;
+    srcTextBlock.ptr = (char *)Xaw3dXftAnyToWcN(XawTextEncoding8bit,
+      text->ptr + text->firstPos, &num_bytes);
+    srcTextBlock.length = num_bytes / sizeof(wchar_t);
+    srcTextBlock.firstPos = 0;
+    srcTextBlock.format = XawFmtWide;
+  } else
+    srcTextBlock = *text;
 
+  src->multi_src.length += srcTextBlock.length - (endPos - startPos);
 
-
-  /* STEP 4: insert the new stuff */
-
-  if ( text.length != 0) {
-
+  if (srcTextBlock.length > 0) {
+    /*
+     * Put in the new stuff.
+     */
     start_piece = FindPiece(src, startPos, &start_first);
-
-    length = text.length;
-    firstPos = text.firstPos;
+    Cardinal length = srcTextBlock.length;
+    int firstPos = srcTextBlock.firstPos;
 
     while (length > 0) {
-      wchar_t* ptr;
-      int fill;
-
       if (start_piece->used == src->text_src.piece_size) {
 	BreakPiece(src, start_piece);
 	start_piece = FindPiece(src, startPos, &start_first);
       }
 
-      fill = Min((int)(src->text_src.piece_size - start_piece->used), length);
-
-      ptr = start_piece->text + (startPos - start_first);
+      const Cardinal fill = Min(src->text_src.piece_size - start_piece->used,
+	length);
+      wchar_t *ptr = start_piece->text + (startPos - start_first);
+      // Make space
       MyWStrncpy(ptr + fill, ptr,
 		(int) start_piece->used - (startPos - start_first));
-      wptr =(wchar_t *)text.ptr;
-      (void)wcsncpy(ptr, wptr + firstPos, fill);
+      // Copy in new text
+      (void)wcsncpy(ptr, (wchar_t *)srcTextBlock.ptr + firstPos, fill);
 
       startPos += fill;
       firstPos += fill;
@@ -379,18 +360,11 @@ ReplaceText(Widget w, XawTextPosition startPos, XawTextPosition endPos, XawTextB
     }
   }
 
-  if ( local_artificial_block == True )
-
-      /* In other words, text is not the u_text that the user handed me but
-      one I made myself.  I only care, because I need to free the string. */
-
-      XFree( text.ptr );
-
-  src->multi_src.changes = TRUE;
-
-  XtCallCallbacks(w, XtNcallback, NULL);
-
-  return(XawEditDone);
+  XtCallCallbacks(w, XtNcallback, NULL); /* Call callbacks, we have changed
+					    the buffer. */
+  if (srcTextBlock.ptr != text->ptr)
+    free(srcTextBlock.ptr);
+  return XawEditDone;
 }
 
 /*	Function Name: Scan

@@ -200,14 +200,32 @@ extern Boolean Xaw3dXftLocateCharacter (
   // Results out
   Position *x1, Position *x2, Position *y);
 
-// For MultiSrc
-// Convert any string to wc encoding.  num_bytes is updated as applicable.
+// For Text and its associates
+// Convert any string to Wc encoding.  num_bytes is updated as applicable.
 // Caller is responsible for freeing the returned string.
 extern wchar_t *Xaw3dXftAnyToWcN (XawTextEncoding encoding, const void *text,
-				 Cardinal *num_bytes);
+				  Cardinal *num_bytes);
 
-// For MultiSrc
-// Convert wc to any encoding.  num_bytes is updated as applicable.  Caller
+// For Text and its associates
+// Convert Wc to any encoding.  num_bytes is updated as applicable.  Caller
 // is responsible for freeing the returned string.
 extern void *Xaw3dXftWcToAnyN (const wchar_t *text, Cardinal *num_bytes,
   XawTextEncoding encoding);
+
+// For TextAction
+// Convert UTF-8 to 8bit.  The only time we ever need to do this is when
+// pasting a selection from another app into AsciiSrc.  num_bytes is updated
+// as applicable.  Caller is responsible for freeing the returned string.
+extern char *Xaw3dXftUTF8To8bit (const char *text, Cardinal *num_bytes);
+
+// For Text
+// IN PLACE reduce an 8bit string to ICCCM STRING.  num_bytes is updated as
+// applicable.
+extern void Xaw3dXft8bitToSTRING (char *text, Cardinal *num_bytes);
+
+// For Text
+// Convert 8bit or Wc to UTF-8.  Other source encodings are not implemented
+// yet.  num_bytes is updated as applicable.  Caller is responsible for
+// freeing the returned string.
+extern char *Xaw3dXftAnyToUTF8N (XawTextEncoding encoding, const void *text,
+  Cardinal *num_bytes);

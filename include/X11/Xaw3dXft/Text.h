@@ -49,6 +49,7 @@ SOFTWARE.
 #ifndef _XawText_h
 #define _XawText_h
 
+#include <X11/Xmu/Atoms.h>
 #include <X11/Xaw3dXft/Simple.h>
 
 /*
@@ -99,11 +100,11 @@ typedef enum {XawselectNull, XawselectPosition, XawselectChar, XawselectWord,
     XawselectLine, XawselectParagraph, XawselectAll} XawTextSelectType;
 
 typedef struct {
-    int  firstPos;
-    int  length;
-    char *ptr;
-    unsigned long format;
-    } XawTextBlock, *XawTextBlockPtr;
+  int  firstPos;
+  int  length;        // characters, not bytes
+  char *ptr;
+  XrmQuark format;    // XawFmt8Bit or XawFmtWide internal encoding
+} XawTextBlock, *XawTextBlockPtr;
 
 #define XtEtextScrollNever "never"
 #define XtEtextScrollWhenNeeded "whenneeded"
@@ -157,10 +158,21 @@ typedef struct {
 #define XawPositionError	2
 
 // These identifiers are used to specify the format of internal buffers and
-// XawTextBlocks.  The external encoding is specified by the encoding
-// resource.
-extern unsigned long XawFmt8Bit; // char
-extern unsigned long XawFmtWide; // wchar_t
+// XawTextBlocks within Text and its associates.
+extern XrmQuark XawFmt8Bit; // char
+extern XrmQuark XawFmtWide; // wchar_t
+
+// These Atoms are used to specify the format of strings being transferred
+// through Xlib's selection protocol.  They go with
+//   XA_UTF8_STRING(d)   defined in X11/Xmu/Atoms.h
+//   XA_TEXT(d)          defined in X11/Xmu/Atoms.h
+//   XA_STRING           defined in X11/Xatom.h
+// C_STRING is defined in the ICCCM but no header provides it.
+// If XA = X Atom, XAWA = X Athena Widgets Atom.
+extern AtomPtr _XAWA_UTF32_STRING, _XAWA_8BIT_STRING, _XAWA_C_STRING;
+#define XAWA_UTF32_STRING(d) (XmuInternAtom(d, _XAWA_UTF32_STRING))
+#define XAWA_8BIT_STRING(d)  (XmuInternAtom(d, _XAWA_8BIT_STRING))
+#define XAWA_C_STRING(d)     (XmuInternAtom(d, _XAWA_C_STRING))
 
 /* Class record constants */
 
@@ -174,6 +186,10 @@ _XFUNCPROTOBEGIN
 extern XrmQuark _XawTextFormat(
     TextWidget		/* tw */
 );
+
+// Get an Atom for use with selections that means the internal format used by
+// the Text widget.
+extern Atom _XawTextInternalEncoding (Display *d, TextWidget ctx);
 
 extern void XawTextDisplay(
     Widget		/* w */

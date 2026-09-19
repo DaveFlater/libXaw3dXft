@@ -23,31 +23,38 @@ Except as contained in this notice, the name of the X Consortium shall not be
 used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the X Consortium.
 
+
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
-#include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
-#include <X11/Xmu/Misc.h>
-#include <X11/Xmu/StdSel.h>		/* for XmuConvertStandardSelection */
-#include <X11/Xmu/Atoms.h>		/* for XA_COMPOUND_TEXT */
-#include <X11/Xaw3dXft/TextP.h>
-#include <X11/Xaw3dXft/TextSrc.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <X11/Xaw3dXft/TextSink.h>
 
-#include <X11/Xaw3dXft/MultiSrcP.h>
-#include <X11/Xaw3dXft/XawImP.h>
-#include <X11/Xfuncs.h>
-#include "XawI18n.h"
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
+#include <X11/IntrinsicP.h>
+#include <X11/StringDefs.h>
+#include <X11/Xatom.h>
+#include <X11/Xfuncs.h>
+#include <X11/Xmu/Atoms.h>
+#include <X11/Xmu/Misc.h>
+#include <X11/Xmu/StdSel.h>	 /* for XmuConvertStandardSelection */
+#include <X11/Xutil.h>
+#include "XawI18n.h"
+#include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/Encoding.h>
+#include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/TextSink.h>
+#include <X11/Xaw3dXft/TextSrc.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawImP.h>
 
 #define SrcScan                XawTextSourceScan
 #define FindDist               XawTextSinkFindDistance
@@ -174,153 +181,203 @@ struct _SelectionList {
     String* params;
     Cardinal count;
     Time time;
-    int asked;		/* which selection currently has been asked for:
-			   0 = UTF8_STRING, 1 = COMPOUND_TEXT, 2 = STRING */
-    Atom selection;	/* selection atom when asking XA_COMPOUND_TEXT */
+    uint8_t asked;   /* Which selection encoding currently has been asked for:
+			0 = internal encoding, 1 = UTF8_STRING, 2 = STRING */
+    Atom selection;
 };
 
-// Updated from Xaw as of 2026-09-14
-// Kept two things that were in Xaw3d but not Xaw:
-// - Retained else clause setting text.format = XawFmt8Bit
-// - Retained _XawTextSetScrollBars(ctx) that preceded EndAction
-// But deleted the ProbablyMB hack.
+/*
+  The signature here is as per XtSelectionCallbackPro in Xt docs.
+
+  value:  Specifies a pointer to the selection value. The requesting client
+  owns this storage and is responsible for freeing it by calling XtFree when
+  it is done with it.
+
+  client_data:  This is the struct _SelectionList pointer from GetSelection.
+  We pass it on when applicable and free it at final disposition.
+*/
 static void
 _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
                    XtPointer value, unsigned long *length, int* format) {
-    Display *d = XtDisplay(w);
-    TextWidget ctx = (TextWidget)w;
-    XawTextBlock text;
+  Display *d = XtDisplay(w);
+  TextWidget ctx = (TextWidget)w;
+  XawTextBlock text = {0};
 
-    if (*type == 0 /*XT_CONVERT_FAIL*/ || *length == 0) {
-	struct _SelectionList* list = (struct _SelectionList*)client_data;
+  /*
+    "The special symbolic constant XT_CONVERT_FAIL is used to indicate that
+    the selection conversion failed because the selection owner did not
+    respond within the Intrinsics selection timeout interval."
+    XT_CONVERT_FAIL is #define XT_CONVERT_FAIL (Atom)0x80000001
 
-	if (list != NULL) {
-	    if (list->asked == 0) {
-		/* If we just asked for XA_UTF8_STRING and got no response,
-		   we'll ask again, this time for XA_COMPOUND_TEXT. */
-		list->asked++;
-		XtGetSelectionValue(w, list->selection, XA_COMPOUND_TEXT(d),
-				    _SelectionReceived,
-				    (XtPointer)list, list->time);
-	    } else if (list->asked == 1) {
-		/* If we just asked for XA_COMPOUND_TEXT and got no response,
-		   we'll ask again, this time for XA_STRING. */
-		list->asked++;
-		XtGetSelectionValue(w, list->selection, XA_STRING,
-				    _SelectionReceived,
-				    (XtPointer)list, list->time);
-	    } else {
-		/* We tried all possible text targets in this param.
-		   Recurse on the tail of the params list. */
-		GetSelection(w, list->time, list->params, list->count);
-		XtFree(client_data);
-	    }
+    "If the SelectionNotify event returns a property of None, meaning the
+    conversion has been refused because there is no owner for the specified
+    selection or the owner cannot convert the selection to the requested
+    target for any reason, the procedure is called with a value of NULL and a
+    length of zero."
+
+    That leaves the possibility of a valid zero-length selection (value is
+    not NULL but length is zero).
+  */
+
+  assert(type);
+  #ifdef TEXT_TRACE
+  if (*type == 0)
+    printf("SelectionReceived:  received type == 0\n");
+  else if (*type == XT_CONVERT_FAIL)
+    printf("SelectionReceived:  received type == XT_CONVERT_FAIL\n");
+  else
+    printf("SelectionReceived:  received type %s\n", XGetAtomName(d, *type));
+  #endif
+
+  // Fail block
+  if (!value || *type == XT_CONVERT_FAIL) {
+    struct _SelectionList* list = (struct _SelectionList*)client_data;
+    if (list != NULL) {
+      #ifdef TEXT_TRACE
+      printf("SelectionReceived:  ask %u failed\n", list->asked);
+      #endif
+      if (list->asked < 2) {
+	// Internal encoding > UTF8_STRING > STRING
+	XtGetSelectionValue(w, list->selection, (list->asked++ ? XA_STRING :
+	  XA_UTF8_STRING(d)), _SelectionReceived, (XtPointer)list, list->time);
+	client_data = NULL; // Was freed at final disposition
+      } else {
+	// All supported encodings failed.  Fall back to the next param.
+	if (list->count > 1) {
+	  #ifdef TEXT_TRACE
+	  printf("SelectionReceived:  proceeding to next param\n");
+	  #endif
+	  GetSelection(w, list->time, list->params+1, list->count-1);
+	} else {
+	  // Out of options.
+	  #ifdef TEXT_TRACE
+	  printf("SelectionReceived:  params exhausted\n");
+	  #endif
 	}
-	return;
+      }
+    } else {
+      #ifdef TEXT_TRACE
+      printf("SelectionReceived:  fail block entered with null list\n");
+      #endif
     }
+    goto finish;
+  }
 
-    StartAction(ctx, NULL);
-    if (_XawTextFormat(ctx) == XawFmtWide) {
-	wchar_t **wlist;
-	int count;
-	XTextProperty textprop = {
-	    .encoding = *type,
-	    .value = (unsigned char *)value,
-	    .nitems = strlen(value),
-	    .format = 8
-	};
+  // We got the selection, but its length is 0.
+  assert(length);
+  if (*length == 0) {
+    XtWarning("libXaw3dXft: ignoring received selection of length 0");
+    goto finish;
+  }
 
-	if (XwcTextPropertyToTextList(d, &textprop, &wlist, &count)
-	    !=	Success
-	    || count < 1) {
-	    XwcFreeStringList(wlist);
+  // format Specifies the size in bits of the data in each element of value.
+  // Nobody else uses format != 8.
+  assert(format && (*format == 8 ||
+                    *format == 32 && *type == XAWA_UTF32_STRING(d)));
 
-	    /* Notify the user on strerr and in the insertion :) */
-	    fprintf(stderr, "Xaw Text Widget: An attempt was made to insert "
-		    "an illegal selection.\n");
+  // We got the selection.  Its encoding is in *type.  Get it ready for
+  // ReplaceText.
+  if (*type != _XawTextInternalEncoding(d, ctx) &&
+      *type != XA_UTF8_STRING(d) &&
+      *type != XA_STRING) {
+    XtWarning("libXaw3dXft: ignoring received selection of unexpected type");
+    goto finish;
+  }
 
-	    textprop.value = (unsigned char *)" >> ILLEGAL SELECTION << ";
-	    textprop.nitems = strlen((char *) textprop.value);
-	    if (XwcTextPropertyToTextList(d, &textprop, &wlist, &count)
-		!=  Success
-		|| count < 1)
-		return;
-	}
+  StartAction(ctx, NULL);
 
-	XFree(value);
-	value = (XPointer)wlist[0];
-
-	*length = wcslen(wlist[0]);
-	XtFree((XtPointer)wlist);
-	text.format = XawFmtWide;
-    } else
-      text.format = XawFmt8Bit;
-    text.ptr = (char*)value;
-    text.firstPos = 0;
-    text.length = (int)*length;
-    if (_XawTextReplace(ctx, ctx->text.insertPos, ctx->text.insertPos, &text)) {
-	XBell(d, 0);
-	EndAction(ctx);
-	return;
+  if (*type == _XawTextInternalEncoding(d, ctx)) {
+    // Length should already be in characters rather than bytes.
+    text = (XawTextBlock){0, *length, value, _XawTextFormat(ctx)};
+  } else if (_XawTextFormat(ctx) == XawFmtWide) {
+    const XawTextEncoding receivedEncoding = (*type == XA_STRING ?
+      XawTextEncoding8bit : XawTextEncodingUTF8);
+    Cardinal num_bytes = strlen(value);
+    void *wcs = Xaw3dXftAnyToWcN(receivedEncoding, value, &num_bytes);
+    text = (XawTextBlock){0, num_bytes/sizeof(wchar_t), wcs, XawFmtWide};
+  } else {
+    if (*type == XA_STRING)
+      text = (XawTextBlock){0, *length, value, XawFmt8Bit}; // No conversion
+    else {
+      Cardinal num_bytes = strlen(value);
+      char *cs = Xaw3dXftUTF8To8bit(value, &num_bytes);
+      text = (XawTextBlock){0, num_bytes, cs, XawFmt8Bit};
     }
-    ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.old_insert,
-				  XawstPositions, XawsdRight, text.length, True);
+  }
 
-    _XawTextSetScrollBars(ctx);
+  if (_XawTextReplace(ctx, ctx->text.insertPos, ctx->text.insertPos, &text)) {
+    XBell(d, 0);
     EndAction(ctx);
+    goto finish;
+  }
+  ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.old_insert,
+				XawstPositions, XawsdRight, text.length, True);
+
+  _XawTextSetScrollBars(ctx);
+  EndAction(ctx);
+
+  finish:
+  // Free all the things
+  if (text.ptr && text.ptr != value)
+    free(text.ptr);
+  if (value)
+    XtFree(value);
+  if (client_data)
     XtFree(client_data);
-    XFree(value);	/* the selection value should be freed with XFree */
 }
 
-// Updated from Xaw as of 2026-09-14
-static void
-GetSelection (Widget w, Time timev, String *params, Cardinal num_params) {
-    Display *d = XtDisplay(w);
-    TextWidget ctx = (TextWidget)w;
-    Atom selection;
-    int buffer;
+static void GetSelection (Widget w, Time timev, String *params,
+Cardinal num_params) {
+  Display *d = XtDisplay(w);
+  TextWidget ctx = (TextWidget)w;
+  Atom selection;
+  int buffer;
 
-    selection = XInternAtom(d, *params, False);
-    switch (selection) {
-	case XA_CUT_BUFFER0: buffer = 0; break;
-	case XA_CUT_BUFFER1: buffer = 1; break;
-	case XA_CUT_BUFFER2: buffer = 2; break;
-	case XA_CUT_BUFFER3: buffer = 3; break;
-	case XA_CUT_BUFFER4: buffer = 4; break;
-	case XA_CUT_BUFFER5: buffer = 5; break;
-	case XA_CUT_BUFFER6: buffer = 6; break;
-	case XA_CUT_BUFFER7: buffer = 7; break;
-	default:	     buffer = -1;
-    }
-    if (buffer >= 0) {
-	int nbytes;
-	unsigned long length;
-	int fmt8 = 8;
-	Atom type = XA_STRING;
-	char *line = XFetchBuffer(d, &nbytes, buffer);
+  assert(params && num_params);
+  #ifdef TEXT_TRACE
+  printf("GetSelection num_params = %u\n", num_params);
+  for (unsigned i=0; i<num_params; ++i)
+    printf("  %u:  %s\n", i, params[i]);
+  #endif
 
-	if ((length = (unsigned long)nbytes) != 0L)
-	    _SelectionReceived(w, NULL, &selection, &type, line, &length, &fmt8);
-	else if (num_params > 1)
-	    GetSelection(w, timev, params+1, num_params-1);
+  selection = XInternAtom(d, *params, False);
+  switch (selection) {
+    case XA_CUT_BUFFER0: buffer = 0; break;
+    case XA_CUT_BUFFER1: buffer = 1; break;
+    case XA_CUT_BUFFER2: buffer = 2; break;
+    case XA_CUT_BUFFER3: buffer = 3; break;
+    case XA_CUT_BUFFER4: buffer = 4; break;
+    case XA_CUT_BUFFER5: buffer = 5; break;
+    case XA_CUT_BUFFER6: buffer = 6; break;
+    case XA_CUT_BUFFER7: buffer = 7; break;
+    default:             buffer = -1;
+  }
+  if (buffer >= 0) {
+    // A cut buffer
+    int nbytes;
+    char *line = XFetchBuffer(d, &nbytes, buffer);
+    if (line) {
+      unsigned long length = nbytes;
+      int fmt8 = 8;
+      Atom type = XA_STRING;
+      _SelectionReceived(w, NULL, &selection, &type, line, &length, &fmt8);
+    } else if (num_params > 1) {
+      #ifdef TEXT_TRACE
+      printf("XFetchBuffer %d failed.  Proceeding to next param.\n");
+      #endif
+      GetSelection(w, timev, params+1, num_params-1);
+    } else {
+      #ifdef TEXT_TRACE
+      printf("XFetchBuffer %d failed and there are no more params.\n");
+      #endif
     }
-    else {
-	struct _SelectionList* list;
-
-	if (--num_params) {
-	    list = XtNew(struct _SelectionList);
-	    list->params = params + 1;
-	    list->count = num_params;
-	    list->time = timev;
-	    list->asked = 0;
-	    list->selection = selection;
-	}
-	else
-	    list = NULL;
-	XtGetSelectionValue(w, selection, _XawTextFormat(ctx) == XawFmtWide ?
-			    XA_UTF8_STRING(d) : XA_TEXT(d),
-			    _SelectionReceived, (XtPointer)list, timev);
-    }
+  } else {
+    // A selection, not a cut buffer
+    struct _SelectionList *list = XtNew(struct _SelectionList);
+    *list = (struct _SelectionList){params, num_params, timev, 0, selection};
+    XtGetSelectionValue(w, selection, _XawTextInternalEncoding(d, ctx),
+      _SelectionReceived, (XtPointer)list, timev);
+  }
 }
 
 static void
@@ -572,9 +629,8 @@ LoseSelection(Widget w, Atom *selection)
     }
 }
 
-static void
-_DeleteOrKill(TextWidget ctx, XawTextPosition from, XawTextPosition to, Boolean	kill)
-{
+static void _DeleteOrKill (TextWidget ctx, XawTextPosition from,
+XawTextPosition to, Boolean kill) {
   XawTextBlock text;
 
   if (kill && from < to) {
@@ -591,23 +647,13 @@ _DeleteOrKill(TextWidget ctx, XawTextPosition from, XawTextPosition to, Boolean	
 	XtFree ((char *) salt);
 	return;
     }
+    #ifdef TEXT_TRACE
+    printf("DeleteOrKill:  putting text into salt->contents\n");
+    #endif
     salt->s.left = from;
     salt->s.right = to;
-    salt->contents = (char *)_XawTextGetSTRING(ctx, from, to);
-    if (_XawTextFormat(ctx) == XawFmtWide) {
-	XTextProperty textprop;
-	if (XwcTextListToTextProperty(XtDisplay((Widget)ctx),
-			(wchar_t**)(&(salt->contents)), 1, XCompoundTextStyle,
-			&textprop) <  Success) {
-	    XtFree(salt->contents);
-	    salt->length = 0;
-	    return;
-	}
-	XtFree(salt->contents);
-	salt->contents = (char *)textprop.value;
-	salt->length = textprop.nitems;
-    } else
-       salt->length = strlen (salt->contents);
+    salt->s.type = XawselectNull; // irrelevant I guess
+    salt->contents = _XawTextGetText(ctx, from, to);
     salt->next = ctx->text.salt2;
     ctx->text.salt2 = salt;
     salt->s.selections[0] = selection;
@@ -623,7 +669,7 @@ _DeleteOrKill(TextWidget ctx, XawTextPosition from, XawTextPosition to, Boolean	
   text.firstPos = 0;
 
   text.format = _XawTextFormat(ctx);
-  text.ptr = "";	/* These two lines needed to make legal TextBlock */
+  text.ptr = "";  /* These two lines needed to make legal TextBlock */
 
   if (_XawTextReplace(ctx, from, to, &text)) {
     XBell(XtDisplay(ctx), 50);

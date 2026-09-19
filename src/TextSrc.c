@@ -558,9 +558,7 @@ XawTextSourceSetSelection(Widget w, XawTextPosition left,
  *   returns the format of text: XawFmt8Bit or XawFmtWide.
  *
  */
-XrmQuark
-_XawTextFormat(TextWidget tw)
-{
+XrmQuark _XawTextFormat (TextWidget tw) {
   return (((TextSrcObject)(tw->text.source))->textSrc.text_format);
 }
 

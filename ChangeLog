@@ -61,7 +61,9 @@ Next release, v2.0  Dave Flater
     widgets can use FreeType while others use the original X11 core font
     system, and UTF-8 is always accepted.
   - Handled multi-line text consistently.
-  - Enabled all four configure options by default and put their macros in
+  - Added support for the UTF-8 selection type and deleted support for the
+    compound text type.
+  - Enabled all three configure options by default and put their macros in
     Xaw3d.h.
   - Added version identification mechanisms (see README for details).
   - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).

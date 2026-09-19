@@ -33,20 +33,23 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
-#include <X11/IntrinsicP.h>
-#include <stdio.h>
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <X11/StringDefs.h>
-#include <X11/Xos.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <X11/IntrinsicP.h>
+#include <X11/StringDefs.h>
 #include <X11/Xfuncs.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/AsciiSrcP.h>
-#include <X11/Xmu/Misc.h>
 #include <X11/Xmu/CharSet.h>
+#include <X11/Xmu/Misc.h>
+#include <X11/Xos.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
+#include <X11/Xaw3dXft/AsciiSrcP.h>
 #include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/Text.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/XawInit.h>
 
 #ifdef O_CLOEXEC
 #define FOPEN_CLOEXEC "e"
@@ -223,34 +226,32 @@ static int
 ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
              XawTextBlock *text)
 {
-  AsciiSrcObject src = (AsciiSrcObject) w;
+  AsciiSrcObject src = (AsciiSrcObject)w;
   Piece *start_piece, *end_piece, *temp_piece;
   XawTextPosition start_first = 0, end_first;
-  int length, firstPos;
 
-/*
- * Editing a read only source is not allowed.
- */
+  assert(text && text->length >= 0);
 
+  /*
+   * Editing a read only source is not allowed.
+   */
   if (src->text_src.edit_mode == XawtextRead)
-    return(XawEditError);
+    return XawEditError;
 
   start_piece = FindPiece(src, startPos, &start_first);
   end_piece = FindPiece(src, endPos, &end_first);
 
   src->ascii_src.changes = TRUE; /* We have changed the buffer. */
 
-/*
- * Remove Old Stuff.
- */
-
+  /*
+   * Remove old stuff.
+   */
   if (start_piece != end_piece) {
     temp_piece = start_piece->next;
 
-/*
- * If empty and not the only piece then remove it.
- */
-
+    /*
+     * If empty and not the only piece then remove it.
+     */
     if ( ((start_piece->used = startPos - start_first) == 0) &&
 	 !((start_piece->next == NULL) && (start_piece->prev == NULL)) )
       RemovePiece(src, start_piece);
@@ -263,13 +264,12 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
     if (end_piece->used != 0)
       MyStrncpy(end_piece->text, (end_piece->text + endPos - end_first),
 		(int) end_piece->used);
-  }
-  else {			/* We are fully in one piece. */
+
+  } else { /* We are fully in one piece. */
     if ( (start_piece->used -= endPos - startPos) == 0) {
       if ( !((start_piece->next == NULL) && (start_piece->prev == NULL)) )
 	RemovePiece(src, start_piece);
-    }
-    else {
+    } else {
       MyStrncpy(start_piece->text + (startPos - start_first),
 		start_piece->text + (endPos - start_first),
 		(int) (start_piece->used - (startPos - start_first)) );
@@ -280,48 +280,62 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
     }
   }
 
-  src->ascii_src.length += -(endPos - startPos) + text->length;
+  // Now we need the text to insert in 8bit encoding.
+  XawTextBlock srcTextBlock;
+  if (text->format == XawFmtWide) {
+    // FIXME I think this never happens
+    assert(0);
+    #ifdef TEXT_TRACE
+    printf("AsciiSrc ReplaceText: converting Wc to 8bit\n");
+    #endif
+    Cardinal num_bytes = text->length * sizeof(wchar_t);
+    srcTextBlock.ptr = Xaw3dXftWcToAnyN((wchar_t *)text->ptr + text->firstPos,
+      &num_bytes, XawTextEncoding8bit);
+    srcTextBlock.length = num_bytes;
+    srcTextBlock.firstPos = 0;
+    srcTextBlock.format = XawFmt8Bit;
+  } else
+    srcTextBlock = *text;
 
-  if ( text->length != 0) {
+  src->ascii_src.length += srcTextBlock.length - (endPos - startPos);
 
+  if (srcTextBlock.length > 0) {
     /*
-     * Put in the New Stuff.
+     * Put in the new stuff.
      */
-
     start_piece = FindPiece(src, startPos, &start_first);
-
-    length = text->length;
-    firstPos = text->firstPos;
+    Cardinal length = srcTextBlock.length;
+    int firstPos = srcTextBlock.firstPos;
 
     while (length > 0) {
-      char * ptr;
-      int fill;
-
       if (src->text_src.use_string_in_place) {
 	if (start_piece->used == (src->text_src.piece_size - 1)) {
 	  /*
-	   * If we are in ascii string emulation mode. Then the
+	   * If we are in ascii string emulation mode, the
 	   *  string is not allowed to grow.
 	   */
 	  start_piece->used = src->ascii_src.length =
 	                                         src->text_src.piece_size - 1;
 	  start_piece->text[src->ascii_src.length] = '\0';
-	  return(XawEditError);
+	  if (srcTextBlock.ptr != text->ptr)
+	    free(srcTextBlock.ptr);
+	  return XawEditError;
 	}
       }
-
 
       if (start_piece->used == src->text_src.piece_size) {
 	BreakPiece(src, start_piece);
 	start_piece = FindPiece(src, startPos, &start_first);
       }
 
-      fill = Min((int)(src->text_src.piece_size - start_piece->used), length);
-
-      ptr = start_piece->text + (startPos - start_first);
+      const Cardinal fill = Min(src->text_src.piece_size - start_piece->used,
+	length);
+      char *ptr = start_piece->text + (startPos - start_first);
+      // Make space
       MyStrncpy(ptr + fill, ptr,
 		(int) start_piece->used - (startPos - start_first));
-      strncpy(ptr, text->ptr + firstPos, fill);
+      // Copy in new text
+      strncpy(ptr, srcTextBlock.ptr + firstPos, fill);
 
       startPos += fill;
       firstPos += fill;
@@ -335,8 +349,9 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
 
   XtCallCallbacks(w, XtNcallback, NULL); /* Call callbacks, we have changed
 					    the buffer. */
-
-  return(XawEditDone);
+  if (srcTextBlock.ptr != text->ptr)
+    free(srcTextBlock.ptr);
+  return XawEditDone;
 }
 
 /*	Function Name: Scan

@@ -91,15 +91,12 @@ typedef struct {
     int		     array_size;
 } XawTextSelection;
 
+// Contents is a NUL-terminated string in the internal encoding coming from
+// _XawTextSaltAwaySelection or _DeleteOrKill.
 typedef struct _XawTextSelectionSalt {
-    struct _XawTextSelectionSalt    *next;
-    XawTextSelection	s;
-    /*
-     * The element "contents" stores the CT string which is gotten in the
-     * function _XawTextSaltAwaySelection().
-    */
-    char		*contents;
-    int			length;
+  struct _XawTextSelectionSalt *next;
+  XawTextSelection s;
+  void *contents;
 } XawTextSelectionSalt;
 
 /* Line Tables are n+1 long - last position displayed is in last lt entry */

@@ -294,16 +294,7 @@ InsertFileNamed(Widget tw, char *str)
       XtErrorMsg("readError", "insertFileNamed", "XawError",
                  "fread returned error.", NULL, NULL);
 
- /* DELETE if (text.format == XawFmtWide) {
-     wchar_t* _XawTextMBToWC();
-     wchar_t* wstr;
-     wstr = _XawTextMBToWC(XtDisplay(tw), text.ptr, &(text.length));
-     wstr[text.length] = NULL;
-     XtFree(text.ptr);
-     text.ptr = (char *)wstr;
-  } else {
-     (text.ptr)[text.length] = '\0';
-  }*/
+  // FIXME assumptions about encoding
 
   if (XawTextReplace(tw, pos, pos, &text) != XawEditDone) {
      XtFree(text.ptr);
