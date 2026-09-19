@@ -1510,7 +1510,11 @@ int *format, Boolean SelectionSelect) {
 
   assert(target);
   #ifdef TEXT_TRACE
-  printf("ConvertSelection:  somebody asked for %s\n", XGetAtomName(d, *target));
+  {
+    char *temp = XGetAtomName(d, *target);
+    printf("ConvertSelection:  somebody asked for %s\n", temp);
+    XFree(temp);
+  }
   #endif
 
   // Unless someone subclasses TextSrc, this always returns False.
@@ -1622,15 +1626,16 @@ int *format, Boolean SelectionSelect) {
       *format = 32;
       *length = num_bytes/sizeof(wchar_t);
       return True;
-    } else if (*type == XAWA_8BIT_STRING(d) ||
-               *type == XA_STRING) {
+    } else if (*type == XAWA_8BIT_STRING(d)) {
       if (srcEncoding == XawTextEncodingWc) {
 	char *cs = Xaw3dXftWcToAnyN(srcText, &num_bytes, XawTextEncoding8bit);
 	free(srcText);
 	srcText = cs;
       }
-      if (*type == XA_STRING)
-	Xaw3dXft8bitToSTRING(srcText, &num_bytes);
+    } else if (*type == XA_STRING) {
+      char *cs = Xaw3dXftAnyToSTRINGN(srcEncoding, srcText, &num_bytes);
+      free(srcText);
+      srcText = cs;
     } else { // XA_UTF8_STRING(d) or XAWA_C_STRING(d)
       char *ucs = Xaw3dXftAnyToUTF8N(srcEncoding, srcText, &num_bytes);
       free(srcText);
@@ -1905,19 +1910,17 @@ _SetSelection(TextWidget ctx, XawTextPosition left, XawTextPosition right,
       Atom selection = selections[--count];
 
       if ((buffer = GetCutBufferNumber(selection)) != NOT_A_CUT_BUFFER) {
-	// We need STRING
+	// "The buffers can only contain text, in the STRING encoding."
 	const XawTextEncoding srcEncoding = (_XawTextFormat(ctx) == XawFmtWide
 	  ? XawTextEncodingWc : XawTextEncoding8bit);
 	void *srcText = _XawTextGetText(ctx, ctx->text.s.left,
 	  ctx->text.s.right);
 	Cardinal num_bytes = Xaw3dXftAnyStrlen(srcEncoding, srcText);
-	if (_XawTextFormat(ctx) == XawFmtWide) {
-	  char *cs = Xaw3dXftWcToAnyN(srcText, &num_bytes,
-	    XawTextEncoding8bit);
+	{
+	  char *cs = Xaw3dXftAnyToSTRINGN(srcEncoding, srcText, &num_bytes);
 	  free(srcText);
 	  srcText = cs;
 	}
-	Xaw3dXft8bitToSTRING(srcText, &num_bytes);
 
 	//     max_len = MAX_CUT_LEN(XtDisplay(w));
 	//     #define MAX_CUT_LEN(dpy) (XMaxRequestSize(dpy) - 64)

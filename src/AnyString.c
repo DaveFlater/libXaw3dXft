@@ -1190,9 +1190,9 @@ Boolean Xaw3dXftLocateCharacter (
 // These conversions are never needed by DrawAnyString, only by the special
 // interest functions.
 
-// Convert Wc to 8bit.  num_bytes is updated as applicable.  Caller is
+// Convert UTF-32 to 8bit.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char *Wcto8bit (const wchar_t *text, Cardinal *num_bytes) {
+static char *UTF32to8bit (const char32_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const uint32_t *textp = (uint32_t *)text;
   const uint8_t bogusChar = '?';
@@ -1205,6 +1205,46 @@ static char *Wcto8bit (const wchar_t *text, Cardinal *num_bytes) {
   new[l] = 0;
   *num_bytes = l;
   return (char *)new;
+}
+
+static char *Wcto8bit (const wchar_t *text, Cardinal *num_bytes) {
+  return UTF32to8bit((const char32_t *)text, num_bytes);
+}
+
+// Convert UCS-2 to 8bit.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char *UCS2to8bit (const char16_t *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  const uint16_t *textp = (uint16_t *)text;
+  const uint8_t bogusChar = '?';
+  assert(*num_bytes % 2 == 0); // RULE 3
+  const Cardinal l = checklen(*num_bytes) / 2; // RULE 4
+  uint8_t *new = malloc(l+1);
+  assert(new);
+  for (Cardinal i=0; i<l; ++i)
+    new[i] = (textp[i] < 0x100 ? textp[i] : bogusChar);
+  new[l] = 0;
+  *num_bytes = l;
+  return (char *)new;
+}
+
+// Convert Char2b to 8bit.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char *Char2bto8bit (const XChar2b *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  char16_t *ucs2 = convert16(text, *num_bytes);
+  char *ret = UCS2to8bit(ucs2, num_bytes);
+  free(ucs2);
+  return ret;
+}
+
+// Convert Mb to 8bit.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static char *Mbto8bit (const char *text, Cardinal *num_bytes) {
+  char32_t *utf32 = MbtoUTF32(text, num_bytes);
+  char *ret = UTF32to8bit(utf32, num_bytes);
+  free(utf32);
+  return ret;
 }
 
 // Convert Wc to UCS-2.  num_bytes is updated as applicable.  Caller is
@@ -1353,7 +1393,7 @@ XawTextEncoding encoding) {
   }
 }
 
-char *Xaw3dXftUTF8To8bit (const char *text, Cardinal *num_bytes) {
+char *Xaw3dXftUTF8To8bitN (const char *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const uint8_t *textp = (uint8_t *)text;
   const uint8_t bogusChar = '?';
@@ -1390,11 +1430,15 @@ char *Xaw3dXftUTF8To8bit (const char *text, Cardinal *num_bytes) {
 }
 
 /*
+  Convert IN PLACE from 8bit to ICCCM STRING.  num_bytes is updated
+  accordingly.
+
   The Inter-Client Communication Conventions Manual for X11R7.7 Version 2.0
   says STRING is "ISO Latin-1 (+TAB+NEWLINE) text."  It does not allow ESC,
   DEL, or any C1 control characters.
 */
-void Xaw3dXft8bitToSTRING (char *text, Cardinal *num_bytes) {
+static void inplace8bittoSTRING (char *text, Cardinal *num_bytes) {
+  assert(text && num_bytes);
   unsigned char *s = (unsigned char *)text;
   Cardinal lefty, righty;
   for (lefty=0, righty=0; righty < *num_bytes; ++righty) {
@@ -1422,4 +1466,35 @@ Cardinal *num_bytes) {
     return WctoUTF8(text, num_bytes);
   }
   XtError("libXaw3dXft: unimplemented source encoding in Xaw3dXftAnyToUTF8N");
+}
+
+char *Xaw3dXftAnyToSTRINGN (XawTextEncoding encoding, const void *text,
+Cardinal *num_bytes) {
+  assert(text && num_bytes);
+  char *_8bit = NULL;
+  switch (encoding) {
+  case XawTextEncoding8bit:
+    _8bit = strndup(text, *num_bytes);
+    break;
+  case XawTextEncodingUTF8:
+    _8bit = Xaw3dXftUTF8To8bitN(text, num_bytes);
+    break;
+  case XawTextEncodingChar2b:
+    _8bit = Char2bto8bit(text, num_bytes);
+    break;
+  case XawTextEncodingUCS2:
+    _8bit = UCS2to8bit(text, num_bytes);
+    break;
+  case XawTextEncodingMb:
+    _8bit = Mbto8bit(text, num_bytes);
+    break;
+  case XawTextEncodingUTF32:
+    _8bit = UTF32to8bit(text, num_bytes);
+    break;
+  case XawTextEncodingWc:
+    _8bit = Wcto8bit(text, num_bytes);
+    break;
+  }
+  inplace8bittoSTRING(_8bit, num_bytes);
+  return _8bit;
 }

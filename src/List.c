@@ -823,39 +823,44 @@ Layout(Widget w, Boolean xfree, Boolean yfree, Dimension *width, Dimension *heig
  * calls the callback; if the XtNpasteBuffer resource is true
  * then the name of the item is also put in CUT_BUFFER0.	*/
 
-static void
-Notify(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
-    ListWidget lw = ( ListWidget ) w;
-    int item;
-    XawListReturnStruct ret_value;
+static void Notify (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
+  ListWidget lw = ( ListWidget ) w;
+  int item;
+  XawListReturnStruct ret_value;
 
+  /*
+   * Find item and if out of range then unhighlight and return.
+   *
+   * If the current item is unhighlighted then the user has aborted the
+   * notify, so unhighlight and return.
+   */
+  if ( ((CvtToItem(w, event->xbutton.x, event->xbutton.y, &item))
+	== OUT_OF_RANGE) || (lw->list.want_highlighted != item) ) {
+    XawListUnhighlight(w);
+    return;
+  }
+
+  /* If XtNpasteBuffer is set then put item in cut buffer */
+  if (lw->list.paste) {
     /*
-     * Find item and if out of range then unhighlight and return.
-     *
-     * If the current item is unhighlighted then the user has aborted the
-     * notify, so unhighlight and return.
-     */
+      "The buffers can only contain text, in the STRING encoding."
+      https://xorg.freedesktop.org/releases/current/doc/libX11/libX11/libX11.html#Using_Cut_Buffers
+    */
+    const XawTextEncoding srcEncoding = lw->list.encoding;
+    const void *srcText = lw->list.list[item];
+    Cardinal num_bytes = Xaw3dXftAnyStrlen(srcEncoding, srcText);
+    char *strtext = Xaw3dXftAnyToSTRINGN(srcEncoding, srcText, &num_bytes);
+    XStoreBytes(XtDisplay(w), strtext, num_bytes);
+    free(strtext);
+  }
 
-    if ( ((CvtToItem(w, event->xbutton.x, event->xbutton.y, &item))
-	  == OUT_OF_RANGE) || (lw->list.want_highlighted != item) ) {
-        XawListUnhighlight(w);
-        return;
-    }
-
-    /* If XtNpasteBuffer is set then put item in cut buffer */
-    if (lw->list.paste)
-        XStoreBytes(XtDisplay(w), lw->list.list[item],
-		    Xaw3dXftAnyStrlen(lw->list.encoding, lw->list.list[item]));
-
-    /*
-     * Call Callback function.
-     */
-
-    ret_value.string = lw->list.list[item];
-    ret_value.list_index = item;
-
-    XtCallCallbacks( w, XtNcallback, (XtPointer) &ret_value);
+  /*
+   * Call Callback function.
+   */
+  ret_value.string = lw->list.list[item];
+  ret_value.list_index = item;
+  XtCallCallbacks( w, XtNcallback, (XtPointer) &ret_value);
 }
 
 

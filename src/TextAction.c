@@ -225,8 +225,11 @@ _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
     printf("SelectionReceived:  received type == 0\n");
   else if (*type == XT_CONVERT_FAIL)
     printf("SelectionReceived:  received type == XT_CONVERT_FAIL\n");
-  else
-    printf("SelectionReceived:  received type %s\n", XGetAtomName(d, *type));
+  else {
+    char *temp = XGetAtomName(d, *type);
+    printf("SelectionReceived:  received type %s\n", temp);
+    XFree(temp);
+  }
   #endif
 
   // Fail block
@@ -300,7 +303,7 @@ _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
       text = (XawTextBlock){0, *length, value, XawFmt8Bit}; // No conversion
     else {
       Cardinal num_bytes = strlen(value);
-      char *cs = Xaw3dXftUTF8To8bit(value, &num_bytes);
+      char *cs = Xaw3dXftUTF8To8bitN(value, &num_bytes);
       text = (XawTextBlock){0, num_bytes, cs, XawFmt8Bit};
     }
   }

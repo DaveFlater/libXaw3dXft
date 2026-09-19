@@ -213,19 +213,19 @@ extern void *Xaw3dXftWcToAnyN (const wchar_t *text, Cardinal *num_bytes,
   XawTextEncoding encoding);
 
 // For TextAction
-// Convert UTF-8 to 8bit.  The only time we ever need to do this is when
-// pasting a selection from another app into AsciiSrc.  num_bytes is updated
-// as applicable.  Caller is responsible for freeing the returned string.
-extern char *Xaw3dXftUTF8To8bit (const char *text, Cardinal *num_bytes);
-
-// For Text
-// IN PLACE reduce an 8bit string to ICCCM STRING.  num_bytes is updated as
-// applicable.
-extern void Xaw3dXft8bitToSTRING (char *text, Cardinal *num_bytes);
+// Convert UTF-8 to 8bit.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+extern char *Xaw3dXftUTF8To8bitN (const char *text, Cardinal *num_bytes);
 
 // For Text
 // Convert 8bit or Wc to UTF-8.  Other source encodings are not implemented
 // yet.  num_bytes is updated as applicable.  Caller is responsible for
 // freeing the returned string.
 extern char *Xaw3dXftAnyToUTF8N (XawTextEncoding encoding, const void *text,
+  Cardinal *num_bytes);
+
+// For Text and List
+// Convert any encoding to ICCCM STRING.  num_bytes is updated as applicable.
+// Caller is responsible for freeing the returned string.
+extern char *Xaw3dXftAnyToSTRINGN (XawTextEncoding encoding, const void *text,
   Cardinal *num_bytes);
