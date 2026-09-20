@@ -869,7 +869,7 @@ Xaw | Xaw3dXft
 The encoding of the string or the file is assumed to be Mb if international is true and 8bit otherwise. | The encoding resource specifies the encoding.
 Text exports the selection types COMPOUND_TEXT, STRING, and TEXT.  (UTF8_STRING was added after the fork.)  It responds to a TEXT request with COMPOUND_TEXT or STRING. | Text exports the standard selection types UTF8_STRING, C_STRING, STRING, and TEXT and the nonstandard types UTF32_STRING and 8BIT_STRING.  It responds to a TEXT request with UTF8_STRING.  C_STRING content is UTF-8 encoded.
 All selections discard control characters. | Only the STRING type discards control characters.
-Characters that are not in the character repertoire of the active locale are lost in conversions. | Conversions bypass the locale.  8bit is assumed to be ISO 8859-1.
+Characters that are not in the character repertoire of the active locale are lost in selection conversions. | Selection conversions bypass the locale.  8bit is assumed to be ISO 8859-1.
 The class of the type resource is documented as Type but implemented as AsciiType and MultiType in AsciiSrc and MultiSrc respectively. | These definitions have been merged, and the class is TextType.
 Setting useStringInPlace and international to True at the same time invokes broken code. | Setting useStringInPlace to True is allowed only when encoding is XawTextEncoding8bit and type is XawAsciiString.
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
