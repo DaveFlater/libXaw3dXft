@@ -1166,6 +1166,8 @@ Xaw oddities (inherited by Xaw3dXft):
   functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
   XwcTextPropertyToTextList.  These conversions can be done more obviously
   using C library functions.
+- The search/replace/insert file actions of Text can be used recursively
+  within the blanks of the pop-up dialogs that they launch.
 
 "Internationalized" text support in Xlib:
 

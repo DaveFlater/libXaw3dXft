@@ -49,24 +49,28 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
 #include <X11/Shell.h>
-#include <X11/Xaw3dXft/TextP.h>
+#include <X11/StringDefs.h>
+#include <X11/Xmu/CharSet.h>
+#include <X11/Xos.h>		/* for O_RDONLY */
+#include "XawI18n.h"
+#include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/AsciiText.h>
 #include <X11/Xaw3dXft/Cardinals.h>
 #include <X11/Xaw3dXft/Command.h>
+#include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xaw3dXft/Form.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/TextSrcP.h>
 #include <X11/Xaw3dXft/Toggle.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <X11/Xmu/CharSet.h>
-
-#include "XawI18n.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <X11/Xos.h>		/* for O_RDONLY */
-#include <errno.h>
 
 #ifdef O_CLOEXEC
 #define FOPEN_CLOEXEC "e"
@@ -74,7 +78,7 @@ in this Software without prior written authorization from the X Consortium.
 #define FOPEN_CLOEXEC ""
 #endif
 
-#define INSERT_FILE ("Enter Filename:")
+#define INSERT_FILE ("Enter filename:")
 
 #define SEARCH_LABEL_1  ("Use <Tab> to change fields.")
 #define SEARCH_LABEL_2  ("Use ^q<Tab> for <Tab>.")
@@ -120,7 +124,7 @@ void _XawTextSetField(Widget, XEvent *, String *, Cardinal *);
 
 
 static char radio_trans_string[] =
-    "<Btn1Down>,<Btn1Up>:   set() notify()";
+  "<Btn1Down>,<Btn1Up>:   set() notify()";
 
 static char search_text_trans[] =
   "~Shift<Key>Return:      DoSearchAction(Popdown) \n\
@@ -153,10 +157,9 @@ static char rep_text_trans[] =
  *	Returns:     none.
  */
 
-void
-_XawTextInsertFileAction(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
-  DoInsert(w, (XtPointer) XtParent(XtParent(XtParent(w))), (XtPointer)NULL);
+void _XawTextInsertFileAction (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
+  DoInsert(w, (XtPointer)XtParent(XtParent(XtParent(w))), (XtPointer)NULL);
 }
 
 /*	Function Name: _XawTextInsertFile
@@ -175,9 +178,8 @@ _XawTextInsertFileAction(Widget w, XEvent *event, String *params, Cardinal *num_
  *          file to insert.
  */
 
-void
-_XawTextInsertFile(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
+void _XawTextInsertFile (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
   TextWidget ctx = (TextWidget)w;
   char * ptr;
   XawTextEditType edit_mode;
@@ -194,7 +196,7 @@ _XawTextInsertFile(Widget w, XEvent *event, String *params, Cardinal *num_params
   if (*num_params == 0)
     ptr = "";
   else
-    ptr = params[0];
+    ptr = params[0]; // UTF-8 is assumed
 
   if (!ctx->text.file_insert) {
     ctx->text.file_insert = CreateDialog(w, ptr, "insertFile",
@@ -235,9 +237,8 @@ PopdownFileInsert(Widget w, XtPointer closure, XtPointer call_data)
  *	Returns: none.
  */
 
-static void
-DoInsert(Widget w, XtPointer closure, XtPointer call_data)
-{
+// The file name is assumed to be UTF-8 encoded.
+static void DoInsert (Widget w, XtPointer closure, XtPointer call_data) {
   TextWidget ctx = (TextWidget) closure;
   char buf[BUFSIZ], msg[BUFSIZ];
   Widget temp_widget;
@@ -248,7 +249,7 @@ DoInsert(Widget w, XtPointer closure, XtPointer call_data)
 	   "*** Error: Could not get text widget from file insert popup");
   }
   else
-    if (InsertFileNamed( (Widget) ctx, GetString( temp_widget ))) {
+    if (InsertFileNamed((Widget)ctx, GetString(temp_widget))) {
       PopdownFileInsert(w, closure, call_data);
       return;
     }
@@ -267,45 +268,68 @@ DoInsert(Widget w, XtPointer closure, XtPointer call_data)
  *	Returns: TRUE if the insert was successful, FALSE otherwise.
  */
 
-
-static Boolean
-InsertFileNamed(Widget tw, char *str)
-{
+static Boolean InsertFileNamed (Widget tw, char *str) {
+  TextWidget ctx = (TextWidget)tw;
   FILE *file;
-  XawTextBlock text;
-  XawTextPosition pos;
 
   if ( (str == NULL) || (strlen(str) == 0) ||
        ((file = fopen(str, "r" FOPEN_CLOEXEC)) == NULL))
-    return(FALSE);
+    return False;
 
-  pos = XawTextGetInsertionPoint(tw);
-
-  fseek(file, 0L, SEEK_END);
-
-
-  text.firstPos = 0;
-  text.length = (ftell(file))/sizeof(unsigned char);
-  text.ptr = XtMalloc((text.length + 1) * sizeof(unsigned char));
-  text.format = XawFmt8Bit;
-
-  fseek(file, 0L, SEEK_SET);
-  if (fread(text.ptr, sizeof(unsigned char), text.length, file) != text.length)
-      XtErrorMsg("readError", "insertFileNamed", "XawError",
-                 "fread returned error.", NULL, NULL);
-
-  // FIXME assumptions about encoding
-
-  if (XawTextReplace(tw, pos, pos, &text) != XawEditDone) {
-     XtFree(text.ptr);
-     fclose(file);
-     return(FALSE);
+  if (fseek(file, 0L, SEEK_END) == -1) {
+    perror("fseek");
+    fclose(file);
+    return False;
   }
-  pos += text.length;
-  XtFree(text.ptr);
+  const long fileNumBytes = ftell(file);
+  if (fileNumBytes < 0) {
+    perror("ftell");
+    fclose(file);
+    return False;
+  }
+
+  if (fseek(file, 0, SEEK_SET) == -1) {
+    perror("fseek");
+    fclose(file);
+    return False;
+  }
+  void *srcText = XtMalloc(fileNumBytes + 1);
+  if (fread(srcText, 1, fileNumBytes, file) != fileNumBytes) {
+    XtWarning("libXaw3dXft: file read failed");
+    fclose(file);
+    XtFree(srcText);
+    return False;
+  }
   fclose(file);
+
+  // The text to be inserted has to be in the internal encoding of the Text
+  // widget.  This is why Replace in MultiSrc originally had an up-conversion
+  // from 8bit but there was no corresponding conversion in AsciiSrc.
+  XawTextBlock text;
+  if (_XawTextFormat(ctx) == XawFmtWide) {
+    // File content is assumed to have the same encoding as original text.
+    const XawTextEncoding srcEncoding =
+      ((TextSrcObject)ctx->text.source)->textSrc.encoding;
+    Cardinal num_bytes = fileNumBytes;
+    void *wcs = Xaw3dXftAnyToWcN(srcEncoding, srcText, &num_bytes);
+    text = (XawTextBlock){0, num_bytes/sizeof(wchar_t), wcs, XawFmtWide};
+    XtFree(srcText);
+  } else {
+    // Everything is 8bit.
+    text = (XawTextBlock){0, fileNumBytes, srcText, XawFmt8Bit};
+  }
+  // text.ptr is now the string that needs freeing.  It doesn't actually
+  // matter whether you say XtFree or free.
+
+  XawTextPosition pos = XawTextGetInsertionPoint(tw);
+  if (XawTextReplace(tw, pos, pos, &text) != XawEditDone) {
+     free(text.ptr);
+     return False;
+  }
+  free(text.ptr);
+  pos += text.length;
   XawTextSetInsertionPoint(tw, pos);
-  return(TRUE);
+  return True;
 }
 
 
@@ -317,9 +341,7 @@ InsertFileNamed(Widget tw, char *str)
  *	Returns: none
  */
 
-static void
-AddInsertFileChildren(Widget form, String ptr, Widget tw)
-{
+static void AddInsertFileChildren (Widget form, String ptr, Widget tw) {
   Arg args[10];
   Cardinal num_args;
   Widget label, text, cancel, insert;
@@ -335,6 +357,7 @@ AddInsertFileChildren(Widget form, String ptr, Widget tw)
 				 args, num_args);
 
   num_args = 0;
+  // Orig
   XtSetArg(args[num_args], XtNfromVert, label); num_args++;
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
@@ -342,8 +365,10 @@ AddInsertFileChildren(Widget form, String ptr, Widget tw)
   XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
   XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
   XtSetArg(args[num_args], XtNstring, ptr); num_args++;
+  // New
+  XtSetArg(args[num_args], XtNencoding, XawTextEncodingUTF8); num_args++;
   text = XtCreateManagedWidget(TEXT_NAME, asciiTextWidgetClass, form,
-				args, num_args);
+			       args, num_args);
 
   num_args = 0;
   XtSetArg(args[num_args], XtNlabel, "Insert File"); num_args++;
@@ -397,9 +422,8 @@ AddInsertFileChildren(Widget form, String ptr, Widget tw)
  * search widget.
  */
 
-void
-_XawTextDoSearchAction(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
+void _XawTextDoSearchAction (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
   TextWidget tw = (TextWidget) XtParent(XtParent(XtParent(w)));
   Boolean popdown = FALSE;
 
@@ -434,12 +458,9 @@ _XawTextPopdownSearchAction(Widget w, XEvent *event, String *params, Cardinal *n
  *	Returns: none
  */
 
-static void
-PopdownSearch(Widget w, XtPointer closure, XtPointer call_data)
-{
+static void PopdownSearch(Widget w, XtPointer closure, XtPointer call_data) {
   struct SearchAndReplace * search = (struct SearchAndReplace *) closure;
-
-  XtPopdown( search->search_popup );
+  XtPopdown(search->search_popup);
   SetSearchLabels(search, SEARCH_LABEL_1, SEARCH_LABEL_2, FALSE);
 }
 
@@ -479,21 +500,13 @@ SearchButton(Widget w, XtPointer closure, XtPointer call_data)
 
 #define SEARCH_HEADER ("Text Widget - Search():")
 
-void
-_XawTextSearch(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
+void _XawTextSearch (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
   TextWidget ctx = (TextWidget)w;
   XawTextScanDirection dir;
   char * ptr, buf[BUFSIZ];
   XawTextEditType edit_mode;
   Arg args[1];
-
-#ifdef notdef
-  if (ctx->text.source->Search == NULL) {
-      XBell(XtDisplay(w), 0);
-      return;
-  }
-#endif
 
   if ( (*num_params < 1) || (*num_params > 2) ) {
     (void) sprintf(buf, "%s %s\n%s", SEARCH_HEADER,
@@ -503,9 +516,10 @@ _XawTextSearch(Widget w, XEvent *event, String *params, Cardinal *num_params)
     return;
   }
 
-  if (*num_params == 2 )
+  if (*num_params == 2 ) {
+    assert(0); // FIXME no one ever does this
       ptr = params[1];
-  else if (_XawTextFormat(ctx) == XawFmtWide) {
+  } else if (_XawTextFormat(ctx) == XawFmtWide) {
       /*This just does the equivalent of ptr = ""L, a waste because params[1] isn't W aligned.*/
       ptr = (char *)XtMalloc(sizeof(wchar_t));
       *((wchar_t*)ptr) = (wchar_t)0;
@@ -773,9 +787,7 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
  *	Returns: TRUE if successful.
  */
 
-static Boolean
-DoSearch(struct SearchAndReplace * search)
-{
+static Boolean DoSearch (struct SearchAndReplace * search) {
   char msg[BUFSIZ];
   Widget tw = XtParent(search->search_popup);
   XawTextPosition pos;
@@ -797,9 +809,8 @@ DoSearch(struct SearchAndReplace * search)
 
   pos = XawTextSearch( tw, dir, &text);
 
-
    /* The Raw string in find.ptr may be WC I can't use here, so I re - call
-   GetString to get a tame version. */
+      GetString to get a tame version. */ // FIXME
 
   if (pos == XawTextSearchError)
     (void) sprintf( msg, "Could not find string ``%s''.", GetString( search->search_text ) );
@@ -921,7 +932,6 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
 
   dir = (XawTextScanDirection)(intptr_t) ((XPointer)XawToggleGetCurrent(search->left_toggle) -
 				R_OFFSET);
-  /* CONSTCOND */
   while (TRUE) {
     if (count != 0) {
       new_pos = XawTextSearch( tw, dir, &find);
@@ -931,7 +941,7 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
 	  char msg[BUFSIZ];
 
              /* The Raw string in find.ptr may be WC I can't use here,
-		so I call GetString to get a tame version.*/
+		so I call GetString to get a tame version.*/ // FIXME
 
 	  (void) sprintf( msg, "%s %s %s", "*** Error: Could not find string ``",
 		  GetString( search->search_text ), "''. ***");
@@ -1136,23 +1146,16 @@ SetResource(Widget w, char *res_name, XtArgVal value)
  *
  */
 
-static String
-GetString(Widget text)
-{
+static String GetString (Widget text) {
   String string;
-  Arg args[1];
-
-  XtSetArg( args[0], XtNstring, &string );
-  XtGetValues( text, args, ONE );
-  return(string);
+  Arg args[1] = {{XtNstring, (XtArgVal)&string}};
+  XtGetValues(text, args, ONE);
+  return string;
 }
 
-static String
-GetStringRaw(Widget tw)
-{
+static String GetStringRaw (Widget tw) {
   TextWidget ctx = (TextWidget)tw;
   XawTextPosition last;
-
   last = XawTextSourceScan(ctx->text.source, 0, XawstAll, XawsdRight,
 			     ctx->text.mult, TRUE);
   return (_XawTextGetText(ctx, 0, last));
