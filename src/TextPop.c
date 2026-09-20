@@ -293,7 +293,7 @@ static Boolean InsertFileNamed (Widget tw, char *str) {
     fclose(file);
     return False;
   }
-  void *srcText = XtMalloc(fileNumBytes + 1);
+  void *srcText = XtMalloc(fileNumBytes + 4);
   if (fread(srcText, 1, fileNumBytes, file) != fileNumBytes) {
     XtWarning("libXaw3dXft: file read failed");
     fclose(file);
@@ -301,6 +301,7 @@ static Boolean InsertFileNamed (Widget tw, char *str) {
     return False;
   }
   fclose(file);
+  (void) memset(srcText+fileNumBytes, 0, 4);
 
   // The text to be inserted needs to be in the internal encoding of the Text
   // widget.
