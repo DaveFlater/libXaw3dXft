@@ -80,8 +80,8 @@ in this Software without prior written authorization from the X Consortium.
 
 #define INSERT_FILE ("Enter filename:")
 
-#define SEARCH_LABEL_1  ("Use <Tab> to change fields.")
-#define SEARCH_LABEL_2  ("Use ^q<Tab> for <Tab>.")
+#define SEARCH_LABEL_1  (L"Use <Tab> to change fields.")
+#define SEARCH_LABEL_2  (L"Use ^q<Tab> for <Tab>.")
 #define DISMISS_NAME  ("cancel")
 #define DISMISS_NAME_LEN 6
 #define FORM_NAME     ("form")
@@ -90,8 +90,6 @@ in this Software without prior written authorization from the X Consortium.
 
 #define R_OFFSET      1
 
-extern char *_XawTextGetText(TextWidget, XawTextPosition, XawTextPosition);
-
 static void CenterWidgetOnPoint(Widget, XEvent *);
 static void PopdownSearch(Widget, XtPointer, XtPointer);
 static void DoInsert(Widget, XtPointer, XtPointer);
@@ -99,7 +97,7 @@ static void _SetField(Widget, Widget);
 static void InitializeSearchWidget(struct SearchAndReplace *,
                                    XawTextScanDirection, Boolean);
 static void SetResource(Widget, char *, XtArgVal);
-static void SetSearchLabels(struct SearchAndReplace *, String, String, Boolean);
+static void SetSearchLabels(struct SearchAndReplace *, wchar_t *, wchar_t *, Boolean);
 static void DoReplaceOne(Widget, XtPointer, XtPointer);
 static void DoReplaceAll(Widget, XtPointer, XtPointer);
 static Widget CreateDialog(Widget, String, String, void (*)(Widget, String, Widget));
@@ -109,7 +107,6 @@ static Boolean DoSearch(struct SearchAndReplace *);
 static Boolean SetResourceByName(Widget, char *, char *, XtArgVal);
 static Boolean Replace(struct SearchAndReplace *, Boolean, Boolean);
 static String GetString(Widget);
-static String GetStringRaw(Widget);
 static void AddInsertFileChildren(Widget, String, Widget);
 static Boolean InsertFileNamed(Widget, char *);
 static void AddSearchChildren(Widget, String, Widget);
@@ -141,6 +138,9 @@ static char rep_text_trans[] =
    Ctrl<Key>c:             PopdownSearchAction() \n\
    <Btn1Down>:             select-start() DoSearchAction() SetField(Replace)\n\
    <Key>Tab:               SetField(Search)";
+
+static wchar_t UniversalEmptyString = L'\0';
+static void *universalEmptyString = &UniversalEmptyString;
 
 /************************************************************
  *
@@ -221,11 +221,11 @@ Cardinal *num_params) {
 static void
 PopdownFileInsert(Widget w, XtPointer closure, XtPointer call_data)
 {
-  TextWidget ctx = (TextWidget) closure;
+  TextWidget ctx = (TextWidget)closure;
 
-  XtPopdown( ctx->text.file_insert );
-  (void) SetResourceByName( ctx->text.file_insert, LABEL_NAME,
-			   XtNlabel, (XtArgVal) INSERT_FILE);
+  XtPopdown(ctx->text.file_insert);
+  (void) SetResourceByName(ctx->text.file_insert, LABEL_NAME,
+			   XtNlabel, (XtArgVal)INSERT_FILE);
 }
 
 /*	Function Name: DoInsert
@@ -244,7 +244,7 @@ static void DoInsert (Widget w, XtPointer closure, XtPointer call_data) {
   Widget temp_widget;
 
   (void) sprintf(buf, "%s.%s", FORM_NAME, TEXT_NAME);
-  if ( (temp_widget = XtNameToWidget(ctx->text.file_insert, buf)) == NULL ) {
+  if ((temp_widget = XtNameToWidget(ctx->text.file_insert, buf)) == NULL) {
     (void) strcpy(msg,
 	   "*** Error: Could not get text widget from file insert popup");
   }
@@ -254,10 +254,10 @@ static void DoInsert (Widget w, XtPointer closure, XtPointer call_data) {
       return;
     }
     else
-      (void) sprintf( msg, "*** Error: %s ***", strerror(errno));
+      (void) sprintf(msg, "*** Error: %s ***", strerror(errno));
 
   (void)SetResourceByName(ctx->text.file_insert,
-			  LABEL_NAME, XtNlabel, (XtArgVal) msg);
+			  LABEL_NAME, XtNlabel, (XtArgVal)msg);
   XBell(XtDisplay(w), 0);
 }
 
@@ -302,9 +302,8 @@ static Boolean InsertFileNamed (Widget tw, char *str) {
   }
   fclose(file);
 
-  // The text to be inserted has to be in the internal encoding of the Text
-  // widget.  This is why Replace in MultiSrc originally had an up-conversion
-  // from 8bit but there was no corresponding conversion in AsciiSrc.
+  // The text to be inserted needs to be in the internal encoding of the Text
+  // widget.
   XawTextBlock text;
   if (_XawTextFormat(ctx) == XawFmtWide) {
     // File content is assumed to have the same encoding as original text.
@@ -323,8 +322,8 @@ static Boolean InsertFileNamed (Widget tw, char *str) {
 
   XawTextPosition pos = XawTextGetInsertionPoint(tw);
   if (XawTextReplace(tw, pos, pos, &text) != XawEditDone) {
-     free(text.ptr);
-     return False;
+    free(text.ptr);
+    return False;
   }
   free(text.ptr);
   pos += text.length;
@@ -499,12 +498,11 @@ SearchButton(Widget w, XtPointer closure, XtPointer call_data)
 void _XawTextSearch (Widget w, XEvent *event, String *params,
 Cardinal *num_params) {
   TextWidget ctx = (TextWidget)w;
-  XawTextScanDirection dir;
-  char * ptr, buf[BUFSIZ];
-  XawTextEditType edit_mode;
-  Arg args[1];
 
-  if ( (*num_params < 1) || (*num_params > 2) ) {
+  assert(num_params && params);
+
+  if (*num_params < 1 || *num_params > 2) {
+    char buf[BUFSIZ];
     (void) sprintf(buf, "%s %s\n%s", SEARCH_HEADER,
 	    "This action must have only",
 	    "one or two parameters");
@@ -512,16 +510,7 @@ Cardinal *num_params) {
     return;
   }
 
-  if (*num_params == 2 ) {
-    assert(0); // FIXME no one ever does this
-      ptr = params[1];
-  } else if (_XawTextFormat(ctx) == XawFmtWide) {
-      /*This just does the equivalent of ptr = ""L, a waste because params[1] isn't W aligned.*/
-      ptr = (char *)XtMalloc(sizeof(wchar_t));
-      *((wchar_t*)ptr) = (wchar_t)0;
-  } else
-      ptr = "";
-
+  XawTextScanDirection dir;
   switch(params[0][0]) {
   case 'b':			/* Left. */
   case 'B':
@@ -532,29 +521,45 @@ Cardinal *num_params) {
     dir = XawsdRight;
     break;
   default:
-    (void) sprintf(buf, "%s %s\n%s", SEARCH_HEADER,
-	    "The first parameter must be",
-	    "Either 'backward' or 'forward'");
-    XtAppWarning(XtWidgetToApplicationContext(w), buf);
+    {
+      char buf[BUFSIZ];
+      (void) sprintf(buf, "%s %s\n%s", SEARCH_HEADER,
+	"The first parameter must be",
+	"Either 'backward' or 'forward'");
+      XtAppWarning(XtWidgetToApplicationContext(w), buf);
+    }
     return;
   }
 
-  if (ctx->text.search== NULL) {
+  void *ptr;
+  Bool ptrIsTemp = False;
+  if (*num_params == 2) {
+    if (_XawTextFormat(ctx) == XawFmtWide) { // Assume UTF-8
+      ptrIsTemp = True;
+      Cardinal num_bytes = strlen(params[1]);
+      ptr = Xaw3dXftAnyToWcN(XawTextEncodingUTF8, params[1], &num_bytes);
+    } else
+      ptr = params[1]; // Assume 8bit
+  } else
+    ptr = universalEmptyString;
+
+  if (ctx->text.search == NULL) {
     ctx->text.search = XtNew(struct SearchAndReplace);
     ctx->text.search->search_popup = CreateDialog(w, ptr, "search",
 						  AddSearchChildren);
     XtRealizeWidget(ctx->text.search->search_popup);
     SetWMProtocolTranslations(ctx->text.search->search_popup);
-  }
-  else if (*num_params > 1) {
+  } else if (*num_params > 1) {
     XtVaSetValues(ctx->text.search->search_text, XtNstring, ptr, NULL);
   }
+  if (ptrIsTemp)
+    free(ptr);
 
-  XtSetArg(args[0], XtNeditType,&edit_mode);
+  XawTextEditType edit_mode;
+  Arg args[1] = {{XtNeditType, (XtArgVal)&edit_mode}};
   XtGetValues(ctx->text.source, args, ONE);
 
   InitializeSearchWidget(ctx->text.search, dir, (edit_mode == XawtextEdit));
-
   CenterWidgetOnPoint(ctx->text.search->search_popup, event);
   XtPopup(ctx->text.search->search_popup, XtGrabNone);
 }
@@ -598,20 +603,26 @@ InitializeSearchWidget(struct SearchAndReplace *search, XawTextScanDirection dir
  *	Returns: none.
  */
 
-static void
-AddSearchChildren(Widget form, String ptr, Widget tw)
-{
+static void AddSearchChildren (Widget form, String ptr, Widget tw) {
+  TextWidget ctx = (TextWidget)tw;
   Arg args[12];
   Cardinal num_args;
   Widget cancel, search_button, s_label, s_text, r_text;
   XtTranslations trans;
-  struct SearchAndReplace * search = ((TextWidget) tw)->text.search;
+  struct SearchAndReplace * search = ctx->text.search;
 
+  // We want the results to come back in the internal encoding of the Text.
+  // ptr must match this encoding.
+  const XawTextEncoding srcEncoding = (_XawTextFormat(ctx) == XawFmtWide ?
+    XawTextEncodingWc : XawTextEncoding8bit);
+
+  // label1 and label2 are Wc
   num_args = 0;
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNresizable, TRUE ); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0 ); num_args++;
+  XtSetArg(args[num_args], XtNresizable, True); num_args++;
+  XtSetArg(args[num_args], XtNborderWidth, 0); num_args++;
+  XtSetArg(args[num_args], XtNencoding, XawTextEncodingWc); num_args++;
   search->label1 = XtCreateManagedWidget("label1", labelWidgetClass, form,
 					 args, num_args);
 
@@ -619,16 +630,16 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
   XtSetArg(args[num_args], XtNfromVert, search->label1); num_args++;
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNresizable, TRUE ); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0 ); num_args++;
+  XtSetArg(args[num_args], XtNresizable, True); num_args++;
+  XtSetArg(args[num_args], XtNborderWidth, 0); num_args++;
+  XtSetArg(args[num_args], XtNencoding, XawTextEncodingWc); num_args++;
   search->label2 = XtCreateManagedWidget("label2", labelWidgetClass, form,
 					 args, num_args);
 
-/*
- * We need to add R_OFFSET to the radio_data, because the value zero (0)
- * has special meaning.
- */
-
+  /*
+   * We need to add R_OFFSET to the radio_data because the value zero (0)
+   * has special meaning.
+   */
   num_args = 0;
   XtSetArg(args[num_args], XtNlabel, "Backward"); num_args++;
   XtSetArg(args[num_args], XtNfromVert, search->label2); num_args++;
@@ -671,15 +682,13 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
   num_args = 0;
   XtSetArg(args[num_args], XtNfromVert, search->left_toggle); num_args++;
   XtSetArg(args[num_args], XtNfromHoriz, s_label); num_args++;
-  if (_Xaw3dXft->encoding) {
-      XtSetArg(args[num_args], XtNhorizDistance, 10); num_args++;
-  }
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
   XtSetArg(args[num_args], XtNeditType, XawtextEdit); num_args++;
   XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
   XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
   XtSetArg(args[num_args], XtNstring, ptr); num_args++;
+  XtSetArg(args[num_args], XtNencoding, srcEncoding); num_args++;
   s_text = XtCreateManagedWidget("searchText", asciiTextWidgetClass, form,
 				 args, num_args);
   search->search_text = s_text;
@@ -696,15 +705,13 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
   num_args = 0;
   XtSetArg(args[num_args], XtNfromHoriz, s_label); num_args++;
   XtSetArg(args[num_args], XtNfromVert, s_text); num_args++;
-  if (_Xaw3dXft->encoding) {
-      XtSetArg(args[num_args], XtNhorizDistance, 10); num_args++;
-  }
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
   XtSetArg(args[num_args], XtNeditType, XawtextEdit); num_args++;
   XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
   XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
-  XtSetArg(args[num_args], XtNstring, ""); num_args++;
+  XtSetArg(args[num_args], XtNstring, universalEmptyString); num_args++;
+  XtSetArg(args[num_args], XtNencoding, srcEncoding); num_args++;
   r_text = XtCreateManagedWidget("replaceText", asciiTextWidgetClass,
 				 form, args, num_args);
   search->rep_text = r_text;
@@ -749,10 +756,9 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
   XtAddCallback(search->rep_all, XtNcallback, DoReplaceAll, (XtPointer) search);
   XtAddCallback(cancel, XtNcallback, PopdownSearch, (XtPointer) search);
 
-/*
- * Initialize the text entry fields.
- */
-
+  /*
+   * Initialize the text entry fields.
+   */
   {
     Pixel color;
     num_args = 0;
@@ -766,13 +772,11 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
 
   SetSearchLabels(search, SEARCH_LABEL_1, SEARCH_LABEL_2, FALSE);
 
-/*
- * Bind Extra translations.
- */
-
+  /*
+   * Bind extra translations.
+   */
   trans = XtParseTranslationTable(search_text_trans);
   XtOverrideTranslations(search->search_text, trans);
-
   trans = XtParseTranslationTable(rep_text_trans);
   XtOverrideTranslations(search->rep_text, trans);
 }
@@ -784,46 +788,51 @@ AddSearchChildren(Widget form, String ptr, Widget tw)
  */
 
 static Boolean DoSearch (struct SearchAndReplace * search) {
-  char msg[BUFSIZ];
+  wchar_t msg[BUFSIZ];
   Widget tw = XtParent(search->search_popup);
+  TextWidget ctx = (TextWidget)tw;
   XawTextPosition pos;
   XawTextScanDirection dir;
   XawTextBlock text;
 
-  TextWidget ctx = (TextWidget)tw;
-
-  text.ptr = GetStringRaw(search->search_text);
+  // The external encoding should have been synchronized with the Text.
+  text.ptr = GetString(search->search_text);
   text.format = _XawTextFormat(ctx);
   if (text.format == XawFmtWide)
-      text.length = wcslen((wchar_t*)text.ptr);
+    text.length = wcslen((wchar_t*)text.ptr);
   else
-      text.length = strlen(text.ptr);
+    text.length = strlen(text.ptr);
   text.firstPos = 0;
 
-  dir = (XawTextScanDirection)(intptr_t) ((XPointer)XawToggleGetCurrent(search->left_toggle) -
-				R_OFFSET);
+  dir = (XawTextScanDirection)(intptr_t)(
+    (XPointer)XawToggleGetCurrent(search->left_toggle) - R_OFFSET);
+  pos = XawTextSearch(tw, dir, &text);
 
-  pos = XawTextSearch( tw, dir, &text);
-
-   /* The Raw string in find.ptr may be WC I can't use here, so I re - call
-      GetString to get a tame version. */ // FIXME
-
-  if (pos == XawTextSearchError)
-    (void) sprintf( msg, "Could not find string ``%s''.", GetString( search->search_text ) );
-  else {
+  if (pos == XawTextSearchError) {
+    wchar_t *failstr;
+    if (text.format == XawFmtWide)
+      failstr = (wchar_t *)text.ptr;
+    else {
+      Cardinal num_bytes = text.length;
+      failstr = Xaw3dXftAnyToWcN(XawTextEncoding8bit, text.ptr, &num_bytes);
+    }
+    (void) swprintf(msg, BUFSIZ, L"``%ls''.", failstr);
+    msg[BUFSIZ-1] = 0;
+    SetSearchLabels(search, L"Could not find string", msg, True);
+    if (failstr != (wchar_t *)text.ptr)
+      free(failstr);
+  } else {
     if (dir == XawsdRight)
-      XawTextSetInsertionPoint( tw, pos + text.length);
+      XawTextSetInsertionPoint(tw, pos + text.length);
     else
-      XawTextSetInsertionPoint( tw, pos);
-
-    XawTextSetSelection( tw, pos, pos + text.length);
-    search->selection_changed = FALSE; /* selection is good. */
-    return(TRUE);
+      XawTextSetInsertionPoint(tw, pos);
+    XawTextSetSelection(tw, pos, pos + text.length);
+    search->selection_changed = False; /* selection is good. */
+    return True;
   }
 
   XawTextUnsetSelection(tw);
-  SetSearchLabels(search, msg, "", TRUE);
-  return(FALSE);
+  return False;
 }
 
 /************************************************************
@@ -910,41 +919,47 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
 
   TextWidget ctx = (TextWidget)tw;
 
-  find.ptr = GetStringRaw( search->search_text);
+  find.ptr = GetString(search->search_text);
   find.format = _XawTextFormat(ctx);
   if (find.format == XawFmtWide)
-      find.length = wcslen((wchar_t*)find.ptr);
+    find.length = wcslen((wchar_t*)find.ptr);
   else
-      find.length = strlen(find.ptr);
+    find.length = strlen(find.ptr);
   find.firstPos = 0;
 
-  replace.ptr = GetStringRaw(search->rep_text);
+  replace.ptr = GetString(search->rep_text);
   replace.firstPos = 0;
   replace.format = _XawTextFormat(ctx);
   if (replace.format == XawFmtWide)
-      replace.length = wcslen((wchar_t*)replace.ptr);
+    replace.length = wcslen((wchar_t*)replace.ptr);
   else
-      replace.length = strlen(replace.ptr);
+    replace.length = strlen(replace.ptr);
 
-  dir = (XawTextScanDirection)(intptr_t) ((XPointer)XawToggleGetCurrent(search->left_toggle) -
-				R_OFFSET);
-  while (TRUE) {
+  dir = (XawTextScanDirection)(intptr_t)(
+    (XPointer)XawToggleGetCurrent(search->left_toggle) - R_OFFSET);
+
+  while (True) {
     if (count != 0) {
-      new_pos = XawTextSearch( tw, dir, &find);
+      new_pos = XawTextSearch(tw, dir, &find);
 
       if (new_pos == XawTextSearchError) {
 	if (count == 0) {
-	  char msg[BUFSIZ];
-
-             /* The Raw string in find.ptr may be WC I can't use here,
-		so I call GetString to get a tame version.*/ // FIXME
-
-	  (void) sprintf( msg, "%s %s %s", "*** Error: Could not find string ``",
-		  GetString( search->search_text ), "''. ***");
-	  SetSearchLabels(search, msg, "", TRUE);
-	  return(FALSE);
-	}
-	else
+	  wchar_t msg[BUFSIZ], *failstr;
+	  if (find.format == XawFmtWide)
+	    failstr = (wchar_t *)find.ptr;
+	  else {
+	    Cardinal num_bytes = find.length;
+	    failstr = Xaw3dXftAnyToWcN(XawTextEncoding8bit, find.ptr,
+	      &num_bytes);
+	  }
+	  (void) swprintf(msg, BUFSIZ, L"``%ls''. ***", failstr);
+	  msg[BUFSIZ-1] = 0;
+	  SetSearchLabels(search, L"*** Error: Could not find string", msg,
+	    True);
+	  if (failstr != (wchar_t *)find.ptr)
+	    free(failstr);
+	  return False;
+	} else
 	  break;
       }
       pos = new_pos;
@@ -954,8 +969,8 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
       XawTextGetSelectionPos(tw, &pos, &end_pos);
 
       if (search->selection_changed) {
-	SetSearchLabels(search, "Selection has been modified, aborting.",
-			"", TRUE);
+	SetSearchLabels(search, L"Selection has been modified, aborting.",
+			universalEmptyString, TRUE);
 	return(FALSE);
       }
       if (pos == end_pos)
@@ -963,11 +978,30 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
     }
 
     if (XawTextReplace(tw, pos, end_pos, &replace) != XawEditDone) {
-      char msg[BUFSIZ];
-
-      (void) sprintf( msg, "'%s' with '%s'. ***", find.ptr, replace.ptr);
-      SetSearchLabels(search, "*** Error while replacing", msg, TRUE);
-      return(FALSE);
+      wchar_t msg[BUFSIZ], *failstr1, *failstr2;
+      if (find.format == XawFmtWide)
+	failstr1 = (wchar_t *)find.ptr;
+      else {
+	Cardinal num_bytes = find.length;
+	failstr1 = Xaw3dXftAnyToWcN(XawTextEncoding8bit, find.ptr,
+	  &num_bytes);
+      }
+      if (replace.format == XawFmtWide)
+	failstr2 = (wchar_t *)replace.ptr;
+      else {
+	Cardinal num_bytes = replace.length;
+	failstr2 = Xaw3dXftAnyToWcN(XawTextEncoding8bit, replace.ptr,
+	  &num_bytes);
+      }
+      (void) swprintf(msg, BUFSIZ, L"'%ls' with '%ls'. ***", failstr1,
+	failstr2);
+      msg[BUFSIZ-1] = 0;
+      SetSearchLabels(search, L"*** Error while replacing", msg, True);
+      if (failstr1 != (wchar_t *)find.ptr)
+	free(failstr1);
+      if (failstr2 != (wchar_t *)replace.ptr)
+	free(failstr2);
+      return False;
     }
 
     if (dir == XawsdRight)
@@ -998,15 +1032,15 @@ Replace(struct SearchAndReplace *search, Boolean once_only, Boolean show_current
  *	Description: Sets both the search labels, and also rings the bell
  *	Arguments: search - the search structure.
  *                 msg1, msg2 - message to put in each search label.
- *                 bell - if TRUE then ring bell.
+ *                 bell - if true then ring bell.
  *	Returns: none.
  */
 
 static void
-SetSearchLabels(struct SearchAndReplace *search, String msg1, String msg2, Boolean bell)
-{
-  (void) SetResource( search->label1, XtNlabel, (XtArgVal) msg1);
-  (void) SetResource( search->label2, XtNlabel, (XtArgVal) msg2);
+SetSearchLabels(struct SearchAndReplace *search, wchar_t *msg1, wchar_t *msg2,
+Boolean bell) {
+  (void) SetResource(search->label1, XtNlabel, (XtArgVal)msg1);
+  (void) SetResource(search->label2, XtNlabel, (XtArgVal)msg2);
   if (bell)
     XBell(XtDisplay(search->search_popup), 0);
 }
@@ -1035,8 +1069,8 @@ _XawTextSetField(Widget w, XEvent *event, String *params, Cardinal *num_params)
   search = ((TextWidget) XtParent(XtParent(XtParent(w))))->text.search;
 
   if (*num_params != 1) {
-    SetSearchLabels(search, "*** Error: SetField Action must have",
-		    "exactly one argument. ***", TRUE);
+    SetSearchLabels(search, L"*** Error: SetField Action must have",
+		    L"exactly one argument. ***", TRUE);
     return;
   }
   switch (params[0][0]) {
@@ -1051,8 +1085,8 @@ _XawTextSetField(Widget w, XEvent *event, String *params, Cardinal *num_params)
     new = search->rep_text;
     break;
   default:
-    SetSearchLabels(search, "*** Error: SetField Action's first Argument must",
-		    "be either 'Search' or 'Replace'. ***", TRUE);
+    SetSearchLabels(search, L"*** Error: SetField Action's first Argument must",
+		    L"be either 'Search' or 'Replace'. ***", TRUE);
     return;
   }
   _SetField(new, old);
@@ -1133,13 +1167,12 @@ SetResource(Widget w, char *res_name, XtArgVal value)
   XtSetValues( w, args, ONE );
 }
 
-/*	Function Name: GetString{Raw}
- *	Description:   Gets the value for the string in the popup.
- *	Arguments:     text - the text widget whose string we will get.
+/* Function Name: GetString
+ * Description:   Gets the value for the string in the popup.
+ * Arguments:     text - the text widget whose string we will get.
  *
- *	GetString returns the string as a MB.
- *	GetStringRaw returns the exact buffer contents suitable for a search.
- *
+ * GetString returns the string in the external encoding of the widget.
+ * Text is responsible for freeing it.
  */
 
 static String GetString (Widget text) {
@@ -1147,14 +1180,6 @@ static String GetString (Widget text) {
   Arg args[1] = {{XtNstring, (XtArgVal)&string}};
   XtGetValues(text, args, ONE);
   return string;
-}
-
-static String GetStringRaw (Widget tw) {
-  TextWidget ctx = (TextWidget)tw;
-  XawTextPosition last;
-  last = XawTextSourceScan(ctx->text.source, 0, XawstAll, XawsdRight,
-			     ctx->text.mult, TRUE);
-  return (_XawTextGetText(ctx, 0, last));
 }
 
 /*	Function Name: CenterWidgetOnPoint.

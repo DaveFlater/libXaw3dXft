@@ -494,9 +494,8 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
  *	Returns: the position of the item found.
  */
 
-static XawTextPosition
-Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBlock *text)
-{
+static XawTextPosition Search (Widget w, XawTextPosition position,
+XawTextScanDirection dir, XawTextBlock *text) {
   MultiSrcObject src = (MultiSrcObject) w;
   int inc, count = 0;
   wchar_t * ptr;
@@ -509,6 +508,7 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
 
   /* STEP 1: First, a brief sanity check. */
 
+  assert(text);
   if ( dir == XawsdRight )
     inc = 1;
   else {
@@ -517,39 +517,25 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
       return(XawTextSearchError);	/* scanning left from 0??? */
     position--;
   }
-
+  // Replace all empty strings could do some damage.
+  if (text->length <= 0)
+    return XawTextSearchError;
 
   /* STEP 2: Ensure I have a local wide string.. */
 
-  /* Since this widget stores 32bit chars, I check here to see if
-  I'm being passed a string claiming to be 8bit chars (ie, MB text.)
-  If that is the case, naturally I convert to 32bit format. */
-
-  /*if the block was XawFmt8Bit, length will convert to REAL wchar count
-    below */
+  assert(text->format == XawFmtWide);
   wtarget_len = text->length;
-
-  if ( text->format == XawFmtWide )
-      wtarget = &( ((wchar_t*)text->ptr) [text->firstPos] );
-  else
-  {
-      /* The following converts wtarget_len from byte len to wchar count */
-      wtarget = _XawTextMBToWC( d, &text->ptr[ text->firstPos ], &wtarget_len );
-  }
-
-  /* OK, I can now assert that wtarget holds wide characters, wtarget_len
-  holds an accurate count of those characters, and that firstPos has been
-  effectively factored out of the following computations. */
+  wtarget = &(((wchar_t*)text->ptr)[text->firstPos]);
 
 
   /* STEP 3: SEARCH! */
 
-  buf = (wchar_t *)XtMalloc((unsigned)sizeof(wchar_t) * wtarget_len );
-  (void)wcsncpy(buf, wtarget, wtarget_len );
+  // Unterminated string
+  buf = (wchar_t *)XtMalloc(sizeof(wchar_t) * wtarget_len);
+  (void)wcsncpy(buf, wtarget, wtarget_len);
   piece = FindPiece(src, position, &first);
   ptr = (position - first) + piece->text;
 
-  /* CONSTCOND */
   while (TRUE) {
     if (*ptr == ((dir == XawsdRight) ? *(buf + count)
 		                     : *(buf + wtarget_len - count - 1)) ) {
@@ -560,7 +546,7 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir, XawTextBloc
     }
     else {
       if (count != 0) {
-	position -=inc * count;
+	position -= inc * count;
 	ptr -= inc * count;
       }
       count = 0;
@@ -640,12 +626,12 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 
   if ( !total_reset && (old_src->text_src.piece_size
       != src->text_src.piece_size) ) {
-      String mb_string = StorePiecesInString( old_src );
+      String external_string = StorePiecesInString( old_src );
 
-      if ( mb_string != 0 ) {
+      if ( external_string != 0 ) {
           FreeAllPieces( old_src );
-          LoadPieces( src, NULL, mb_string );
-          XtFree( mb_string );
+          LoadPieces( src, NULL, external_string );
+          XtFree( external_string );
       } else {
           /* If the buffer holds bad chars, don't touch it... */
           XtAppWarningMsg( app_con,
@@ -689,10 +675,8 @@ GetValuesHook(Widget w, ArgList args, Cardinal *num_args)
  *	Returns: none.
  */
 
-static void
-Destroy(Widget w)
-{
-    RemoveOldStringOrFile((MultiSrcObject) w, True);
+static void Destroy(Widget w) {
+  RemoveOldStringOrFile((MultiSrcObject) w, True);
 }
 
 /************************************************************
@@ -735,26 +719,27 @@ _XawMultiSourceFreeString(
 
 Boolean _XawMultiSave (Widget w) {
   MultiSrcObject src = (MultiSrcObject)w;
-  void *mb_string;
+  void *external_string;
   if (src->text_src.type == XawAsciiFile) {
     if (!src->multi_src.changes) /* No changes to save. */
       return True;
-    mb_string = StorePiecesInString(src);
-    assert(mb_string);
-    if (!WriteToFile(src->text_src.encoding, mb_string, src->text_src.string)) {
-      XtFree(mb_string);
+    external_string = StorePiecesInString(src);
+    assert(external_string);
+    if (!WriteToFile(src->text_src.encoding, external_string,
+	src->text_src.string)) {
+      XtFree(external_string);
       return False;
     }
-    XtFree(mb_string);
+    XtFree(external_string);
   } else {
     // This is used in GetValuesHook.
-    mb_string = StorePiecesInString(src);
-    assert(mb_string);
+    external_string = StorePiecesInString(src);
+    assert(external_string);
     if (src->multi_src.allocated_string)
       XtFree(src->text_src.string);
     else
       src->multi_src.allocated_string = True;
-    src->text_src.string = mb_string;
+    src->text_src.string = external_string;
   }
   src->multi_src.changes = False;
   return True;
@@ -775,11 +760,11 @@ _XawMultiSaveAsFile(
     _Xconst char* name)
 {
   MultiSrcObject src = (MultiSrcObject) w;
-  String mb_string = StorePiecesInString( src );
-  assert(mb_string);
+  String external_string = StorePiecesInString( src );
+  assert(external_string);
   const XawTextEncoding encoding = src->text_src.encoding;
-  Boolean ret = WriteToFile(encoding, mb_string, (char *)name);
-  XtFree(mb_string);
+  Boolean ret = WriteToFile(encoding, external_string, (char *)name);
+  XtFree(external_string);
   return ret;
 }
 
@@ -834,7 +819,7 @@ static Boolean WriteToFile (XawTextEncoding encoding, void *string, String name)
  *	Description:   store the pieces in memory into a string in the
  *                     external encoding.
  *	Arguments:     src - the multiSrc to gather data from
- *	Returns:       char *mb_string.     Caller must free.
+ *	Returns:       string.  Caller must free.
  */
 
 static void *StorePiecesInString (MultiSrcObject src) {

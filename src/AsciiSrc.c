@@ -493,6 +493,7 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir,
   char * buf;
   XawTextPosition first = 0;
 
+  assert(text);
   if ( dir == XawsdRight )
     inc = 1;
   else {
@@ -501,13 +502,16 @@ Search(Widget w, XawTextPosition position, XawTextScanDirection dir,
       return(XawTextSearchError);	/* scanning left from 0??? */
     position--;
   }
+  // Replace all empty strings could do some damage.
+  if (text->length <= 0)
+    return XawTextSearchError;
 
-  buf = XtMalloc((unsigned)sizeof(unsigned char) * text->length);
+  // Unterminated string
+  buf = XtMalloc(sizeof(unsigned char) * text->length);
   strncpy(buf, (text->ptr + text->firstPos), text->length);
   piece = FindPiece(src, position, &first);
   ptr = (position - first) + piece->text;
 
-  /* CONSTCOND */
   while (TRUE) {
     if (*ptr == ((dir == XawsdRight) ? *(buf + count)
 		                     : *(buf + text->length - count - 1)) ) {
