@@ -230,7 +230,7 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
   Piece *start_piece, *end_piece, *temp_piece;
   XawTextPosition start_first = 0, end_first;
 
-  assert(text && text->length >= 0);
+  assert(text && text->length >= 0 && text->format == XawFmt8Bit);
 
   /*
    * Editing a read only source is not allowed.
@@ -280,32 +280,15 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
     }
   }
 
-  // Now we need the text to insert in 8bit encoding.
-  XawTextBlock srcTextBlock;
-  if (text->format == XawFmtWide) {
-    // FIXME I think this never happens
-    assert(0);
-    #ifdef TEXT_TRACE
-    printf("AsciiSrc ReplaceText: converting Wc to 8bit\n");
-    #endif
-    Cardinal num_bytes = text->length * sizeof(wchar_t);
-    srcTextBlock.ptr = Xaw3dXftWcToAnyN((wchar_t *)text->ptr + text->firstPos,
-      &num_bytes, XawTextEncoding8bit);
-    srcTextBlock.length = num_bytes;
-    srcTextBlock.firstPos = 0;
-    srcTextBlock.format = XawFmt8Bit;
-  } else
-    srcTextBlock = *text;
+  src->ascii_src.length += text->length - (endPos - startPos);
 
-  src->ascii_src.length += srcTextBlock.length - (endPos - startPos);
-
-  if (srcTextBlock.length > 0) {
+  if (text->length > 0) {
     /*
      * Put in the new stuff.
      */
     start_piece = FindPiece(src, startPos, &start_first);
-    Cardinal length = srcTextBlock.length;
-    int firstPos = srcTextBlock.firstPos;
+    Cardinal length = text->length;
+    int firstPos = text->firstPos;
 
     while (length > 0) {
       if (src->text_src.use_string_in_place) {
@@ -317,8 +300,6 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
 	  start_piece->used = src->ascii_src.length =
 	                                         src->text_src.piece_size - 1;
 	  start_piece->text[src->ascii_src.length] = '\0';
-	  if (srcTextBlock.ptr != text->ptr)
-	    free(srcTextBlock.ptr);
 	  return XawEditError;
 	}
       }
@@ -335,7 +316,7 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
       MyStrncpy(ptr + fill, ptr,
 		(int) start_piece->used - (startPos - start_first));
       // Copy in new text
-      strncpy(ptr, srcTextBlock.ptr + firstPos, fill);
+      strncpy(ptr, text->ptr + firstPos, fill);
 
       startPos += fill;
       firstPos += fill;
@@ -349,8 +330,6 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
 
   XtCallCallbacks(w, XtNcallback, NULL); /* Call callbacks, we have changed
 					    the buffer. */
-  if (srcTextBlock.ptr != text->ptr)
-    free(srcTextBlock.ptr);
   return XawEditDone;
 }
 

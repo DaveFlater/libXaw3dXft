@@ -357,7 +357,6 @@ static void AddInsertFileChildren (Widget form, String ptr, Widget tw) {
 				 args, num_args);
 
   num_args = 0;
-  // Orig
   XtSetArg(args[num_args], XtNfromVert, label); num_args++;
   XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
   XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
@@ -365,7 +364,6 @@ static void AddInsertFileChildren (Widget form, String ptr, Widget tw) {
   XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
   XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
   XtSetArg(args[num_args], XtNstring, ptr); num_args++;
-  // New
   XtSetArg(args[num_args], XtNencoding, XawTextEncodingUTF8); num_args++;
   text = XtCreateManagedWidget(TEXT_NAME, asciiTextWidgetClass, form,
 			       args, num_args);
@@ -392,13 +390,11 @@ static void AddInsertFileChildren (Widget form, String ptr, Widget tw) {
 
   XtSetKeyboardFocus(form, text);
 
-/*
- * Bind <CR> to insert file.
- */
-
+  /*
+   * Bind <CR> to insert file.
+   */
   trans = XtParseTranslationTable("<Key>Return: InsertFileAction()");
   XtOverrideTranslations(text, trans);
-
 }
 
 /************************************************************

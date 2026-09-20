@@ -264,7 +264,7 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
   MultiPiece *start_piece, *end_piece, *temp_piece;
   XawTextPosition start_first = 0, end_first;
 
-  assert(text && text->length >= 0);
+  assert(text && text->length >= 0 && text->format == XawFmtWide);
 
   /*
    * Editing a read only source is not allowed.
@@ -311,32 +311,15 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
     }
   }
 
-  // Now we need the text to insert in Wc encoding.
-  XawTextBlock srcTextBlock;
-  if (text->format == XawFmt8Bit) {
-    // FIXME I think this never happens
-    assert(0);
-    #ifdef TEXT_TRACE
-    printf("MultiSrc ReplaceText: converting 8bit to Wc\n");
-    #endif
-    Cardinal num_bytes = text->length;
-    srcTextBlock.ptr = (char *)Xaw3dXftAnyToWcN(XawTextEncoding8bit,
-      text->ptr + text->firstPos, &num_bytes);
-    srcTextBlock.length = num_bytes / sizeof(wchar_t);
-    srcTextBlock.firstPos = 0;
-    srcTextBlock.format = XawFmtWide;
-  } else
-    srcTextBlock = *text;
+  src->multi_src.length += text->length - (endPos - startPos);
 
-  src->multi_src.length += srcTextBlock.length - (endPos - startPos);
-
-  if (srcTextBlock.length > 0) {
+  if (text->length > 0) {
     /*
      * Put in the new stuff.
      */
     start_piece = FindPiece(src, startPos, &start_first);
-    Cardinal length = srcTextBlock.length;
-    int firstPos = srcTextBlock.firstPos;
+    Cardinal length = text->length;
+    int firstPos = text->firstPos;
 
     while (length > 0) {
       if (start_piece->used == src->text_src.piece_size) {
@@ -351,7 +334,7 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
       MyWStrncpy(ptr + fill, ptr,
 		(int) start_piece->used - (startPos - start_first));
       // Copy in new text
-      (void)wcsncpy(ptr, (wchar_t *)srcTextBlock.ptr + firstPos, fill);
+      (void)wcsncpy(ptr, (wchar_t *)text->ptr + firstPos, fill);
 
       startPos += fill;
       firstPos += fill;
@@ -362,8 +345,6 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
 
   XtCallCallbacks(w, XtNcallback, NULL); /* Call callbacks, we have changed
 					    the buffer. */
-  if (srcTextBlock.ptr != text->ptr)
-    free(srcTextBlock.ptr);
   return XawEditDone;
 }
 
