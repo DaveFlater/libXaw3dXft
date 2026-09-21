@@ -174,8 +174,8 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
       new, args, *num_args);
   }
 
-  // So now we do this, after creating the sink.  tl;dr it defaults to
-  // fontHeight plus vertical margins.
+  // So now we do this, after creating the sink.  It defaults to fontHeight
+  // plus vertical margins.
   if (w->core.height == DEFAULT_TEXT_HEIGHT)
     w->core.height = VMargins(w) + XawTextSinkMaxHeight(w->text.sink, 1);
 
@@ -185,7 +185,9 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     tabs[i] = (tab += 8);
   XawTextSinkSetTabs(w->text.sink, TAB_COUNT, tabs);
 
-  // FIXME what is this about?
+  // These functions are used only here.  The disable/enable flip flop forces
+  // Text.c to initialize some things.  Some of the work is repeated when the
+  // widget is realized, but deleting these calls does break things.
   XawTextDisableRedisplay(new);
   XawTextEnableRedisplay(new);
 
