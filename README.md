@@ -875,7 +875,7 @@ Setting useStringInPlace and international to True at the same time invokes brok
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
 The encoding of a file inserted by the insert-file() action is assumed to be Mb if international is true and 8bit if not. | The encoding of the file is assumed to agree with the encoding resource of the Text widget.
 The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
-The encoding of the optional parameter to the search action is assumed to be 8bit. | The encoding of the optional parameter to the search action is assumed to be 8bit if the Text widget is 8bit and otherwise UTF-8.
+The encoding of the string parameters to the search and insert-string actions is assumed to be Mb if international is true and 8bit otherwise. | The encoding of these parameters is assumed to be 8bit if the encoding resource of the Text widget is 8bit and UTF-8 otherwise.
 
 ### Viewport
 

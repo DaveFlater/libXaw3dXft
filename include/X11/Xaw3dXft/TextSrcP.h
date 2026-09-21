@@ -143,24 +143,6 @@ typedef struct _TextSrcRec {
   TextSrcPart	textSrc;
 } TextSrcRec;
 
-/******************************************************************
- *
- * Semiprivate declarations of functions used in other modules
- *
- ******************************************************************/
-
-char* _XawTextWCToMB(
-    Display* /* d */,
-    wchar_t* /* wstr */,
-    int*     /* len_in_out */
-);
-
-wchar_t* _XawTextMBToWC(
-    Display*  /* d */,
-    char*     /* str */,
-    int*      /* len_in_out */
-);
-
 /************************************************************
  *
  * Private declarations.

@@ -550,7 +550,7 @@ Cardinal *num_params) {
   }
 
   void *ptr;
-  Bool ptrIsTemp = False;
+  Boolean ptrIsTemp = False;
   if (*num_params == 2) {
     if (_XawTextFormat(ctx) == XawFmtWide) { // Assume UTF-8
       ptrIsTemp = True;

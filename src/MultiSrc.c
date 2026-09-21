@@ -794,7 +794,7 @@ static void RemoveOldStringOrFile (MultiSrcObject src, Boolean checkString) {
 static Boolean WriteToFile (XawTextEncoding encoding, void *string, String name)
 {
   int fd;
-  Bool result = True;
+  Boolean result = True;
   const Cardinal num_bytes = Xaw3dXftAnyStrlen(encoding, string);
   if ((fd = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0666)) == -1) {
     perror(name);

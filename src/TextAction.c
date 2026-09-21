@@ -1326,66 +1326,57 @@ IfHexConvertHexElseReturnParam(char *param, int *len_return)
  * characters 0x, followed only by an even number of
  * hexadecimal digits will be converted to characters. */
 
-static void
-InsertString(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
+static void InsertString (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
   TextWidget ctx = (TextWidget) w;
   XtAppContext app_con = XtWidgetToApplicationContext(w);
   XawTextBlock text;
   int	   i;
 
   text.firstPos = 0;
-  text.format = _XawTextFormat( ctx );
+  text.format = _XawTextFormat(ctx);
 
   StartAction(ctx, event);
-  for ( i = *num_params; i; i--, params++ ) { /* DO FOR EACH PARAMETER */
+  for (i = *num_params; i; i--, params++) {
+    /*
+      I did not debug the hex encoding option.  0xAABBCCDDEE becomes the
+      bytes AA, BB, CC, DD, EE in sequence, and so on for any even number of
+      hex chars after the 0x.  The docs say "When the international resource
+      is true, a hexadecimal string is intrepeted as being in a multi-byte
+      encoding."  Now it gets interpreted as UTF-8.  It would be better to
+      have a sequence of Unicode code points, each one introduced by 0x so
+      that you get the byte order correct, and then slam it into 8bit or Wc
+      with no further translation.
+    */
+    text.ptr = IfHexConvertHexElseReturnParam(*params, &text.length);
+    if (text.length == 0) continue;
 
-      text.ptr = IfHexConvertHexElseReturnParam( *params, &text.length );
+    // If Text is not 8bit, assume that the parameters are UTF-8.
+    Boolean ptrIsTemp = False;
+    if (text.format == XawFmtWide) {
+      ptrIsTemp = True;
+      Cardinal num_bytes = text.length;
+      text.ptr = (char *)Xaw3dXftAnyToWcN(XawTextEncodingUTF8, text.ptr,
+	&num_bytes);
+      text.length = num_bytes / sizeof(wchar_t);
+    }
 
-      if ( text.length == 0 ) continue;
+    if (_XawTextReplace(ctx, ctx->text.insertPos,
+			ctx->text.insertPos, &text)) {
+      XBell(XtDisplay(ctx), 50);
+      EndAction(ctx);
+      if (ptrIsTemp)
+	free(text.ptr);
+      return;
+    }
 
-      if ( _XawTextFormat( ctx ) == XawFmtWide ) { /* convert to WC */
-
-          int temp_len;
-          text.ptr = (char*) _XawTextMBToWC( XtDisplay(w), text.ptr,
-					      &text.length );
-
-          if ( text.ptr == NULL ) { /* conversion error */
-              XtAppWarningMsg( app_con,
-		"insertString", "textAction", "XawError",
-		"insert-string()'s parameter contents not legal in this locale.",
-		NULL, NULL );
-              ParameterError( w, *params );
-              continue;
-          }
-
-          /* Double check that the new input is legal: try to convert to MB. */
-
-          temp_len = text.length;      /* _XawTextWCToMB's 3rd arg is in_out */
-          if ( _XawTextWCToMB( XtDisplay(w), (wchar_t*)text.ptr, &temp_len ) == NULL ) {
-              XtAppWarningMsg( app_con,
-		"insertString", "textAction", "XawError",
-		"insert-string()'s parameter contents not legal in this locale.",
-				NULL, NULL );
-              ParameterError( w, *params );
-              continue;
-          }
-      } /* convert to WC */
-
-      if ( _XawTextReplace( ctx, ctx->text.insertPos,
-			    ctx->text.insertPos, &text ) ) {
-          XBell( XtDisplay( ctx ), 50 );
-          EndAction( ctx );
-          return;
-      }
-
-      /* Advance insertPos to the end of the string we just inserted. */
-      ctx->text.insertPos = SrcScan( ctx->text.source, ctx->text.insertPos,
-			    XawstPositions, XawsdRight, text.length, TRUE );
-
-  } /* DO FOR EACH PARAMETER */
-
-  EndAction( ctx );
+    /* Advance insertPos to the end of the string we just inserted. */
+    ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
+			  XawstPositions, XawsdRight, text.length, True);
+    if (ptrIsTemp)
+      free(text.ptr);
+  }
+  EndAction(ctx);
 }
 
 
