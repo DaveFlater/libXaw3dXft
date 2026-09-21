@@ -941,14 +941,6 @@ InsertNewLineAndIndent(Widget w, XEvent *event, String *p, Cardinal *n)
   } else {
      char *ptr;
      length = strlen(line_to_ip);
-     /* The current line + \0 and LF will be copied to this
-	buffer. Before my fix, only length + 1 bytes were
-	allocated, causing on machine with non-wasteful
-	malloc implementation segmentation violations by
-	overwriting the bypte after the allocated area
-
-	-gustaf neumann
-      */
      text.ptr = XtMalloc( ( 2 + length ) * sizeof( char ) );
 
      ptr = text.ptr;
@@ -1140,9 +1132,7 @@ TextLeaveWindow(Widget w, XEvent *event, String *params, Cardinal *num_params)
  *	Returns: none
  */
 
-static void
-AutoFill(TextWidget ctx)
-{
+static void AutoFill (TextWidget ctx) {
   int width, height, x, line_num, max_width;
   XawTextPosition ret_pos;
   XawTextBlock text;
@@ -1164,14 +1154,8 @@ AutoFill(TextWidget ctx)
   if ( ret_pos >= ctx->text.insertPos )
     return;
 
-  text.format = XawFmt8Bit;
-  if (_XawTextFormat(ctx) == XawFmtWide) {
-    text.format = XawFmtWide;
-    text.ptr =  (char *)XtMalloc(sizeof(wchar_t) * 2);
-    ((wchar_t*)text.ptr)[0] = L'\n';
-    ((wchar_t*)text.ptr)[1] = 0;
-  } else
-    text.ptr = "\n";
+  text.format = _XawTextFormat(ctx);
+  text.ptr = (text.format == XawFmtWide ? (char *)L"\n" : "\n");
   text.length = 1;
   text.firstPos = 0;
 
