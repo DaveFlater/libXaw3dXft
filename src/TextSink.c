@@ -261,13 +261,13 @@ XawTextInsertState state) {
     // Text will keep on calling us even when the cursor has scrolled off
     // into space.  Allow the caret to intrude into the margins so that it
     // won't get chopped when it's at the edge of the text area, but don't
-    // draw it at all when it's clearly out of bounds.  The +1 on the right
-    // is deliberate.  Caret is centered on x but goes down from y.
+    // draw it at all when it's way out of bounds and likely to be on top of
+    // the scrollbar or shadow.  Caret is centered on x but goes down from y.
     TextWidget ctx = (TextWidget)text_widget;
     if (x >= ctx->text.margins.left &&
         x <= ctx->core.width - ctx->text.margins.right &&
         y >= ctx->text.margins.top &&
-        y <  ctx->core.height - ctx->text.margins.bottom) {
+        y <= ctx->core.height - ctx->text.margins.bottom) {
       XRectangle rect;
       GetCursorBounds(w, &rect);
       XCopyPlane(XtDisplay(text_widget),

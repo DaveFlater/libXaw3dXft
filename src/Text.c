@@ -769,9 +769,9 @@ static void InsertCursor (Widget w, XawTextInsertState state) {
 
   if ( LineAndXYForPosition(ctx, ctx->text.insertPos, &line, &x, &y) ) {
     if (line < ctx->text.lt.lines)
-      y += (ctx->text.lt.info[line + 1].y - ctx->text.lt.info[line].y) + 1;
+      y += ctx->text.lt.info[line + 1].y - ctx->text.lt.info[line].y;
     else
-      y += (ctx->text.lt.info[line].y - ctx->text.lt.info[line - 1].y) + 1;
+      y += ctx->text.lt.info[line].y - ctx->text.lt.info[line - 1].y;
 
     if (ctx->text.display_caret)
       XawTextSinkInsertCursor(ctx->text.sink, x, y, state);
