@@ -281,9 +281,9 @@ Xaw3dXftInitialize(void)
 
     XftInitFtLibrary();
 
-    // str = (char *) XtMalloc(28);
+    str = (char *) XtMalloc(28);
     _Xaw3dXft = (Xaw3dXftData *) XtMalloc(sizeof(Xaw3dXftData));
-    // sprintf(str, "mem:%lu",  (unsigned long) _Xaw3dXft);
+    sprintf(str, "mem:%lu",  (unsigned long) _Xaw3dXft);
     _Xaw3dXft->encoding  = 0;
     _Xaw3dXft->menu_spacing  = 1;
     _Xaw3dXft->show_tips  = 1;
@@ -306,5 +306,5 @@ Xaw3dXftInitialize(void)
     proc->set_mousewheel_steps = Xaw3dXftSetMouseWheelSteps;
 #endif
     (void) XrmPermStringToQuark(strdup("Xaw3dXftData"));
-    // (void) XrmPermStringToQuark(str);
+    (void) XrmPermStringToQuark(str);
 }

@@ -67,6 +67,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xaw3dXft/Form.h>
 #include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/TextSinkP.h>
 #include <X11/Xaw3dXft/TextSrcP.h>
 #include <X11/Xaw3dXft/Toggle.h>
 #include <X11/Xaw3dXft/Xaw3dP.h>
@@ -141,6 +142,11 @@ static char rep_text_trans[] =
 
 static wchar_t UniversalEmptyString = L'\0';
 static void *universalEmptyString = &UniversalEmptyString;
+
+// Replace the macro XtSetArg from Intrinsic.h with one that does not
+// double-evaluate arg.
+#undef XtSetArg
+#define XtSetArg(arg, n, d) (arg = (Arg){(n), (XtArgVal)(d)})
 
 /************************************************************
  *
@@ -342,46 +348,57 @@ static Boolean InsertFileNamed (Widget tw, char *str) {
  */
 
 static void AddInsertFileChildren (Widget form, String ptr, Widget tw) {
-  Arg args[10];
+  Arg args[14];
   Cardinal num_args;
   Widget label, text, cancel, insert;
   XtTranslations trans;
 
+  // Reuse font args for every widget
+  TextSinkObject sink = (TextSinkObject)XawTextGetSink(tw);
   num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, INSERT_FILE);num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNresizable, TRUE ); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0 ); num_args++;
+  XtSetArg(args[num_args++], XtNfont, sink->text_sink.font);
+  XtSetArg(args[num_args++], XtNfontSet, sink->text_sink.fontset);
+  XtSetArg(args[num_args++], XtNinternational, sink->text_sink.international);
+  XtSetArg(args[num_args++], XtNxftFont, sink->text_sink.xftfontname);
+  const Cardinal restart_args = num_args;
+
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, INSERT_FILE);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNresizable, TRUE);
+  XtSetArg(args[num_args++], XtNborderWidth, 0);
   label = XtCreateManagedWidget (LABEL_NAME, labelWidgetClass, form,
 				 args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNfromVert, label); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
-  XtSetArg(args[num_args], XtNeditType, XawtextEdit); num_args++;
-  XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
-  XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
-  XtSetArg(args[num_args], XtNstring, ptr); num_args++;
-  XtSetArg(args[num_args], XtNencoding, XawTextEncodingUTF8); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNfromVert, label);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainRight);
+  XtSetArg(args[num_args++], XtNeditType, XawtextEdit);
+  XtSetArg(args[num_args++], XtNresizable, TRUE);
+  XtSetArg(args[num_args++], XtNresize, XawtextResizeWidth);
+  XtSetArg(args[num_args++], XtNstring, ptr);
+  XtSetArg(args[num_args++], XtNencoding, XawTextEncodingUTF8);
+  XtSetArg(args[num_args++], XtNhighlight, sink->text_sink.highlight);
+  XtSetArg(args[num_args++], XtNhighlightStyle, sink->text_sink.highlightStyle);
   text = XtCreateManagedWidget(TEXT_NAME, asciiTextWidgetClass, form,
 			       args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Insert File"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, text); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Insert File");
+  XtSetArg(args[num_args++], XtNfromVert, text);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
   insert = XtCreateManagedWidget("insert", commandWidgetClass, form,
 				 args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Cancel"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, text); num_args++;
-  XtSetArg(args[num_args], XtNfromHoriz, insert); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Cancel");
+  XtSetArg(args[num_args++], XtNfromVert, text);
+  XtSetArg(args[num_args++], XtNfromHoriz, insert);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
   cancel = XtCreateManagedWidget(DISMISS_NAME, commandWidgetClass, form,
 				 args, num_args);
 
@@ -606,34 +623,43 @@ InitializeSearchWidget(struct SearchAndReplace *search, XawTextScanDirection dir
 
 static void AddSearchChildren (Widget form, String ptr, Widget tw) {
   TextWidget ctx = (TextWidget)tw;
-  Arg args[12];
+  Arg args[15];
   Cardinal num_args;
   Widget cancel, search_button, s_label, s_text, r_text;
   XtTranslations trans;
-  struct SearchAndReplace * search = ctx->text.search;
+  struct SearchAndReplace *search = ctx->text.search;
 
   // We want the results to come back in the internal encoding of the Text.
   // ptr must match this encoding.
   const XawTextEncoding srcEncoding = (_XawTextFormat(ctx) == XawFmtWide ?
     XawTextEncodingWc : XawTextEncoding8bit);
 
-  // label1 and label2 are Wc
+  // Reuse font args for every widget
+  TextSinkObject sink = (TextSinkObject)XawTextGetSink(tw);
   num_args = 0;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNresizable, True); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0); num_args++;
-  XtSetArg(args[num_args], XtNencoding, XawTextEncodingWc); num_args++;
+  XtSetArg(args[num_args++], XtNfont, sink->text_sink.font);
+  XtSetArg(args[num_args++], XtNfontSet, sink->text_sink.fontset);
+  XtSetArg(args[num_args++], XtNinternational, sink->text_sink.international);
+  XtSetArg(args[num_args++], XtNxftFont, sink->text_sink.xftfontname);
+  const Cardinal restart_args = num_args;
+
+  // label1 and label2 are Wc
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNresizable, True);
+  XtSetArg(args[num_args++], XtNborderWidth, 0);
+  XtSetArg(args[num_args++], XtNencoding, XawTextEncodingWc);
   search->label1 = XtCreateManagedWidget("label1", labelWidgetClass, form,
 					 args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNfromVert, search->label1); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNresizable, True); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0); num_args++;
-  XtSetArg(args[num_args], XtNencoding, XawTextEncodingWc); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNfromVert, search->label1);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNresizable, True);
+  XtSetArg(args[num_args++], XtNborderWidth, 0);
+  XtSetArg(args[num_args++], XtNencoding, XawTextEncodingWc);
   search->label2 = XtCreateManagedWidget("label2", labelWidgetClass, form,
 					 args, num_args);
 
@@ -641,25 +667,23 @@ static void AddSearchChildren (Widget form, String ptr, Widget tw) {
    * We need to add R_OFFSET to the radio_data because the value zero (0)
    * has special meaning.
    */
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Backward"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, search->label2); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNradioData, (XPointer) (XawsdLeft + R_OFFSET));
-  num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Backward");
+  XtSetArg(args[num_args++], XtNfromVert, search->label2);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNradioData, (XPointer) (XawsdLeft + R_OFFSET));
   search->left_toggle = XtCreateManagedWidget("backwards", toggleWidgetClass,
 					      form, args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Forward"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, search->label2); num_args++;
-  XtSetArg(args[num_args], XtNfromHoriz, search->left_toggle); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNradioGroup, search->left_toggle); num_args++;
-  XtSetArg(args[num_args], XtNradioData, (XPointer) (XawsdRight + R_OFFSET));
-  num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Forward");
+  XtSetArg(args[num_args++], XtNfromVert, search->label2);
+  XtSetArg(args[num_args++], XtNfromHoriz, search->left_toggle);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNradioGroup, search->left_toggle);
+  XtSetArg(args[num_args++], XtNradioData, (XPointer) (XawsdRight + R_OFFSET));
   search->right_toggle = XtCreateManagedWidget("forwards", toggleWidgetClass,
 					       form, args, num_args);
 
@@ -671,84 +695,88 @@ static void AddSearchChildren (Widget form, String ptr, Widget tw) {
     XtOverrideTranslations(search->right_toggle, radio_translations);
   }
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNfromVert, search->left_toggle); num_args++;
-  XtSetArg(args[num_args], XtNlabel, "Search for:  ");num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0 ); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNfromVert, search->left_toggle);
+  XtSetArg(args[num_args++], XtNlabel, "Search for:  ");
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNborderWidth, 0 );
   s_label = XtCreateManagedWidget("searchLabel", labelWidgetClass, form,
 				  args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNfromVert, search->left_toggle); num_args++;
-  XtSetArg(args[num_args], XtNfromHoriz, s_label); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
-  XtSetArg(args[num_args], XtNeditType, XawtextEdit); num_args++;
-  XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
-  XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
-  XtSetArg(args[num_args], XtNstring, ptr); num_args++;
-  XtSetArg(args[num_args], XtNencoding, srcEncoding); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNfromVert, search->left_toggle);
+  XtSetArg(args[num_args++], XtNfromHoriz, s_label);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainRight);
+  XtSetArg(args[num_args++], XtNeditType, XawtextEdit);
+  XtSetArg(args[num_args++], XtNresizable, TRUE);
+  XtSetArg(args[num_args++], XtNresize, XawtextResizeWidth);
+  XtSetArg(args[num_args++], XtNstring, ptr);
+  XtSetArg(args[num_args++], XtNencoding, srcEncoding);
+  XtSetArg(args[num_args++], XtNhighlight, sink->text_sink.highlight);
+  XtSetArg(args[num_args++], XtNhighlightStyle, sink->text_sink.highlightStyle);
   s_text = XtCreateManagedWidget("searchText", asciiTextWidgetClass, form,
 				 args, num_args);
   search->search_text = s_text;
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNfromVert, s_text); num_args++;
-  XtSetArg(args[num_args], XtNlabel, "Replace with:");num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, 0 ); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNfromVert, s_text);
+  XtSetArg(args[num_args++], XtNlabel, "Replace with:");
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
+  XtSetArg(args[num_args++], XtNborderWidth, 0 );
   search->rep_label = XtCreateManagedWidget("replaceLabel", labelWidgetClass,
 					    form, args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNfromHoriz, s_label); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, s_text); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainRight); num_args++;
-  XtSetArg(args[num_args], XtNeditType, XawtextEdit); num_args++;
-  XtSetArg(args[num_args], XtNresizable, TRUE); num_args++;
-  XtSetArg(args[num_args], XtNresize, XawtextResizeWidth); num_args++;
-  XtSetArg(args[num_args], XtNstring, universalEmptyString); num_args++;
-  XtSetArg(args[num_args], XtNencoding, srcEncoding); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNfromVert, s_text);
+  XtSetArg(args[num_args++], XtNfromHoriz, search->rep_label);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainRight);
+  XtSetArg(args[num_args++], XtNeditType, XawtextEdit);
+  XtSetArg(args[num_args++], XtNresizable, TRUE);
+  XtSetArg(args[num_args++], XtNresize, XawtextResizeWidth);
+  XtSetArg(args[num_args++], XtNstring, universalEmptyString);
+  XtSetArg(args[num_args++], XtNencoding, srcEncoding);
+  XtSetArg(args[num_args++], XtNhighlight, sink->text_sink.highlight);
+  XtSetArg(args[num_args++], XtNhighlightStyle, sink->text_sink.highlightStyle);
   r_text = XtCreateManagedWidget("replaceText", asciiTextWidgetClass,
 				 form, args, num_args);
   search->rep_text = r_text;
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Search"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, r_text); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Search");
+  XtSetArg(args[num_args++], XtNfromVert, r_text);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
   search_button = XtCreateManagedWidget("search", commandWidgetClass, form,
 					args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Replace"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, r_text); num_args++;
-  XtSetArg(args[num_args], XtNfromHoriz, search_button); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Replace");
+  XtSetArg(args[num_args++], XtNfromVert, r_text);
+  XtSetArg(args[num_args++], XtNfromHoriz, search_button);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
   search->rep_one = XtCreateManagedWidget("replaceOne", commandWidgetClass,
 					  form, args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Replace All"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, r_text); num_args++;
-  XtSetArg(args[num_args], XtNfromHoriz, search->rep_one); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Replace All");
+  XtSetArg(args[num_args++], XtNfromVert, r_text);
+  XtSetArg(args[num_args++], XtNfromHoriz, search->rep_one);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
   search->rep_all = XtCreateManagedWidget("replaceAll", commandWidgetClass,
 					  form, args, num_args);
 
-  num_args = 0;
-  XtSetArg(args[num_args], XtNlabel, "Cancel"); num_args++;
-  XtSetArg(args[num_args], XtNfromVert, r_text); num_args++;
-  XtSetArg(args[num_args], XtNfromHoriz, search->rep_all); num_args++;
-  XtSetArg(args[num_args], XtNleft, XtChainLeft); num_args++;
-  XtSetArg(args[num_args], XtNright, XtChainLeft); num_args++;
+  num_args = restart_args;
+  XtSetArg(args[num_args++], XtNlabel, "Cancel");
+  XtSetArg(args[num_args++], XtNfromVert, r_text);
+  XtSetArg(args[num_args++], XtNfromHoriz, search->rep_all);
+  XtSetArg(args[num_args++], XtNleft, XtChainLeft);
+  XtSetArg(args[num_args++], XtNright, XtChainLeft);
   cancel = XtCreateManagedWidget(DISMISS_NAME, commandWidgetClass, form,
 				 args, num_args);
 
@@ -763,10 +791,10 @@ static void AddSearchChildren (Widget form, String ptr, Widget tw) {
   {
     Pixel color;
     num_args = 0;
-    XtSetArg(args[num_args], XtNbackground, &color); num_args++;
+    XtSetArg(args[num_args++], XtNbackground, &color);
     XtGetValues(search->rep_text, args, num_args);
     num_args = 0;
-    XtSetArg(args[num_args], XtNborderColor, color); num_args++;
+    XtSetArg(args[num_args++], XtNborderColor, color);
     XtSetValues(search->rep_text, args, num_args);
     XtSetKeyboardFocus(form, search->search_text);
   }
@@ -1219,9 +1247,9 @@ CenterWidgetOnPoint(Widget w, XEvent *event)
   }
 
   num_args = 0;
-  XtSetArg(args[num_args], XtNwidth, &width); num_args++;
-  XtSetArg(args[num_args], XtNheight, &height); num_args++;
-  XtSetArg(args[num_args], XtNborderWidth, &b_width); num_args++;
+  XtSetArg(args[num_args++], XtNwidth, &width);
+  XtSetArg(args[num_args++], XtNheight, &height);
+  XtSetArg(args[num_args++], XtNborderWidth, &b_width);
   XtGetValues(w, args, num_args);
 
   width += 2 * b_width;
@@ -1236,8 +1264,8 @@ CenterWidgetOnPoint(Widget w, XEvent *event)
   if ( y > (max_y = (Position) (XtScreen(w)->height - height)) ) y = max_y;
 
   num_args = 0;
-  XtSetArg(args[num_args], XtNx, x); num_args++;
-  XtSetArg(args[num_args], XtNy, y); num_args++;
+  XtSetArg(args[num_args++], XtNx, x);
+  XtSetArg(args[num_args++], XtNy, y);
   XtSetValues(w, args, num_args);
 }
 
@@ -1266,10 +1294,10 @@ CreateDialog(Widget parent, String ptr, String name,
   Arg args[5];
   Cardinal num_args;
   num_args = 0;
-  XtSetArg(args[num_args], XtNiconName, name); num_args++;
-  XtSetArg(args[num_args], XtNgeometry, NULL); num_args++;
-  XtSetArg(args[num_args], XtNallowShellResize, TRUE); num_args++;
-  XtSetArg(args[num_args], XtNtransientFor, (void *)(GetShell(parent))); num_args++;
+  XtSetArg(args[num_args++], XtNiconName, name);
+  XtSetArg(args[num_args++], XtNgeometry, NULL);
+  XtSetArg(args[num_args++], XtNallowShellResize, TRUE);
+  XtSetArg(args[num_args++], XtNtransientFor, (void *)(GetShell(parent)));
 
   popup = XtCreatePopupShell(name, transientShellWidgetClass,
 			     parent, args, num_args);
