@@ -76,6 +76,7 @@ static void FindDistance(Widget, XawTextPosition, int, XawTextPosition,
                          int *, XawTextPosition *, int *);
 static void Resolve(Widget, XawTextPosition, int, int, XawTextPosition *);
 static void SetTabs(Widget, int, short *);
+static void SetTabsLite (TextSinkObject sink, int tab_count, short *tabs);
 static void GetCursorBounds(Widget, XRectangle *);
 static void InsertCursor(Widget, Position, Position, XawTextInsertState);
 static Dimension PaintText (Widget w, Position x, Position y,
@@ -416,9 +417,8 @@ static void Destroy (Widget w) {
  * they set text.redisplay_needed, which triggers a redisplay in Text.
  */
 
-static Boolean
-SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
-{
+static Boolean SetValues (Widget current, Widget request, Widget new,
+ArgList args, Cardinal *num_args) {
   TextSinkObject curts = (TextSinkObject)current;
   TextSinkObject newts = (TextSinkObject)new;
   Boolean redraw = False;
@@ -446,25 +446,32 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     redraw = True;
   }
 
+  // When the font that will be used to render text changes, cached font
+  // metrics and the pixel values of tab stops all need to be updated.
+  // SetTabsLite uses text_sink.fontWidth.  There are no resources for the
+  // tab stops per se.
+  if (curts->text_sink.font->fid     != newts->text_sink.font->fid     ||
+      curts->text_sink.international != newts->text_sink.international ||
+      curts->text_sink.fontset       != newts->text_sink.fontset       ||
+      curts->text_sink.xftfontname   != newts->text_sink.xftfontname) {
+    Xaw3dXftAnyFontMetrics(XtDisplayOfObject(new), newts->text_sink.font,
+      newts->text_sink.fontset, newts->text_sink.xftfont,
+      newts->text_sink.international, &newts->text_sink.fontHeight,
+      &newts->text_sink.fontAscent, &newts->text_sink.fontWidth);
+    SetTabsLite(newts, newts->text_sink.tab_count, newts->text_sink.char_tabs);
+    redraw = True;
+  }
+
   // Notice if other things changed.
   // If encoding changes on a MultiSrc, it'll export to the new encoding.  If
   // encoding changes on an AsciiSrc, it won't notice.
   if (curts->text_sink.echo != newts->text_sink.echo ||
-      curts->text_sink.fontset != newts->text_sink.fontset ||
       curts->text_sink.display_nonprinting !=
         newts->text_sink.display_nonprinting ||
       curts->text_sink.highlightStyle != newts->text_sink.highlightStyle)
     redraw = True;
 
-  // FIXME SetTabs needs to be done in TextSink whenever font changes
-  #if 0
-    if ( w->text_sink.fontset != old_w->text_sink.fontset ) {
-	((TextWidget)XtParent(new))->text.redisplay_needed = True;
-	SetTabs((Widget)w, w->text_sink.tab_count, w->text_sink.char_tabs);
-    }
-  #endif
-
-  // Then pass the buck
+  // Signal Text's SetValues to handle the redisplay.
   if (redraw)
     ((TextWidget)XtParent(new))->text.redisplay_needed = True;
   return False;
@@ -739,17 +746,12 @@ static int MaxHeight (Widget w, int lines) {
   return lines * sink->text_sink.fontHeight;
 }
 
-/*	Function Name: SetTabs
- *	Description: Sets the Tab stops.
- *	Arguments: w - the TextSink Object.
- *                 tab_count - the number of tabs in the list.
- *                 tabs - the text positions of the tabs.
- *	Returns: none
- */
-
-static void SetTabs (Widget w, int tab_count, short *tabs) {
-  TextSinkObject sink = (TextSinkObject)w;
-
+// This lightweight version of SetTabs doesn't trigger a redraw on its own.
+// It is wrapped by the heavy SetTabs function below but called directly by
+// SetValues to avoid redundant redraws.
+static void SetTabsLite (TextSinkObject sink, int tab_count, short *tabs) {
+  assert(tab_count >= 0);
+  assert(tabs || tab_count == 0);
   if (tab_count > sink->text_sink.tab_count) {
     sink->text_sink.tabs = (Position *)
 	XtRealloc((char *) sink->text_sink.tabs,
@@ -765,8 +767,25 @@ static void SetTabs (Widget w, int tab_count, short *tabs) {
   }
 
   sink->text_sink.tab_count = tab_count;
-  // FIXME:  rebuilding the line table here might have been because it includes textWidth for each line....
-  ((TextWidget)XtParent(w))->text.redisplay_needed = True;
+}
+
+/*	Function Name: SetTabs
+ *	Description: Sets the Tab stops.
+ *	Arguments: w - the TextSink Object.
+ *                 tab_count - the number of tabs in the list.
+ *                 tabs - the text positions of the tabs.
+ *	Returns: none
+ */
+
+// This one is linked into the inheritable SetTabs function and the public
+// XawTextSinkSetTabs.  It can be called outside of SetValues and therefore
+// needs to deal with a needed redraw on its own.
+static void SetTabs (Widget w, int tab_count, short *tabs) {
+  SetTabsLite((TextSinkObject)w, tab_count, tabs);
+  // The docs say "The XawTextDisplay function forces any accumulated updates
+  // to be displayed" but from my reading of the code it looks like it will
+  // do the necessary here.
+  XawTextDisplay(XtParent(w));
 }
 
 /************************************************************

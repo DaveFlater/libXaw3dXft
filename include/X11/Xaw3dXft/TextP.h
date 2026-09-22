@@ -207,8 +207,8 @@ typedef struct _TextPart {
     Widget          threeD;	    /* shadow drawing */
 
     /* private state, shared w/Source and Sink */
-    Boolean	    redisplay_needed; /* in SetValues */
-    XawTextSelectionSalt    *salt2;	     /* salted away selections */
+    Boolean	    redisplay_needed; /* signal used only in SetValues */
+    XawTextSelectionSalt    *salt2;   /* other salted away selections */
 } TextPart;
 
 /*************************************************************

@@ -2915,8 +2915,8 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     XawTextSetSource((Widget)newtw, newtw->text.source, newtw->text.lt.top);
 
   newtw->text.redisplay_needed = False;
-  XtSetValues( (Widget)newtw->text.source, args, *num_args );
-  XtSetValues( (Widget)newtw->text.sink, args, *num_args );
+  XtSetValues((Widget)newtw->text.source, args, *num_args);
+  XtSetValues((Widget)newtw->text.sink, args, *num_args);
   // FIXME what about the threeD and shadowWidth?
 
   // The SetValues functions of the source and sink always return False, but
