@@ -1509,13 +1509,6 @@ int *format, Boolean SelectionSelect) {
   XawTextSelection *s = NULL;
 
   assert(target);
-  #ifdef TEXT_TRACE
-  {
-    char *temp = XGetAtomName(d, *target);
-    printf("ConvertSelection:  somebody asked for %s\n", temp);
-    XFree(temp);
-  }
-  #endif
 
   // Unless someone subclasses TextSrc, this always returns False.
   if (SrcCvtSel(src, selection, target, type, value, length, format))
@@ -1599,15 +1592,9 @@ int *format, Boolean SelectionSelect) {
     void *srcText;
     Cardinal num_bytes;
     if (salt) {
-      #ifdef TEXT_TRACE
-      printf("ConvertSelection:  using salt->contents\n");
-      #endif
       num_bytes = Xaw3dXftAnyStrlen(srcEncoding, salt->contents);
       srcText = Xaw3dXftAnyStrdupN(srcEncoding, salt->contents, num_bytes);
     } else {
-      #ifdef TEXT_TRACE
-      printf("ConvertSelection:  using _XawTextGetText\n");
-      #endif
       srcText = _XawTextGetText(ctx, s->left, s->right);
       num_bytes = Xaw3dXftAnyStrlen(srcEncoding, srcText);
     }
@@ -1850,9 +1837,6 @@ void _XawTextSaltAwaySelection (TextWidget ctx, Atom *selections, int num_atoms)
 	XtFree ((char *) salt);
 	return;
     }
-    #ifdef TEXT_TRACE
-    printf("SaltAwaySelection:  putting text into salt->contents\n");
-    #endif
     salt->s.left = ctx->text.s.left;
     salt->s.right = ctx->text.s.right;
     salt->s.type = ctx->text.s.type;

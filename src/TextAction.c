@@ -220,25 +220,11 @@ _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
   */
 
   assert(type);
-  #ifdef TEXT_TRACE
-  if (*type == 0)
-    printf("SelectionReceived:  received type == 0\n");
-  else if (*type == XT_CONVERT_FAIL)
-    printf("SelectionReceived:  received type == XT_CONVERT_FAIL\n");
-  else {
-    char *temp = XGetAtomName(d, *type);
-    printf("SelectionReceived:  received type %s\n", temp);
-    XFree(temp);
-  }
-  #endif
 
   // Fail block
   if (!value || *type == XT_CONVERT_FAIL) {
     struct _SelectionList* list = (struct _SelectionList*)client_data;
     if (list != NULL) {
-      #ifdef TEXT_TRACE
-      printf("SelectionReceived:  ask %u failed\n", list->asked);
-      #endif
       if (list->asked < 2) {
 	// Internal encoding > UTF8_STRING > STRING
 	XtGetSelectionValue(w, list->selection, (list->asked++ ? XA_STRING :
@@ -246,23 +232,12 @@ _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
 	client_data = NULL; // Was freed at final disposition
       } else {
 	// All supported encodings failed.  Fall back to the next param.
-	if (list->count > 1) {
-	  #ifdef TEXT_TRACE
-	  printf("SelectionReceived:  proceeding to next param\n");
-	  #endif
+	if (list->count > 1)
 	  GetSelection(w, list->time, list->params+1, list->count-1);
-	} else {
-	  // Out of options.
-	  #ifdef TEXT_TRACE
-	  printf("SelectionReceived:  params exhausted\n");
-	  #endif
-	}
+	// Else params are exhausted and we are out of options.
       }
-    } else {
-      #ifdef TEXT_TRACE
-      printf("SelectionReceived:  fail block entered with null list\n");
-      #endif
-    }
+    } else
+      XtWarning("libXaw3dXft: SelectionReceived fail block entered with null list");
     goto finish;
   }
 
@@ -337,11 +312,6 @@ Cardinal num_params) {
   int buffer;
 
   assert(params && num_params);
-  #ifdef TEXT_TRACE
-  printf("GetSelection num_params = %u\n", num_params);
-  for (unsigned i=0; i<num_params; ++i)
-    printf("  %u:  %s\n", i, params[i]);
-  #endif
 
   selection = XInternAtom(d, *params, False);
   switch (selection) {
@@ -364,16 +334,9 @@ Cardinal num_params) {
       int fmt8 = 8;
       Atom type = XA_STRING;
       _SelectionReceived(w, NULL, &selection, &type, line, &length, &fmt8);
-    } else if (num_params > 1) {
-      #ifdef TEXT_TRACE
-      printf("XFetchBuffer %d failed.  Proceeding to next param.\n");
-      #endif
+    } else if (num_params > 1)
       GetSelection(w, timev, params+1, num_params-1);
-    } else {
-      #ifdef TEXT_TRACE
-      printf("XFetchBuffer %d failed and there are no more params.\n");
-      #endif
-    }
+    // Else we are out of params
   } else {
     // A selection, not a cut buffer
     struct _SelectionList *list = XtNew(struct _SelectionList);
@@ -650,9 +613,6 @@ XawTextPosition to, Boolean kill) {
 	XtFree ((char *) salt);
 	return;
     }
-    #ifdef TEXT_TRACE
-    printf("DeleteOrKill:  putting text into salt->contents\n");
-    #endif
     salt->s.left = from;
     salt->s.right = to;
     salt->s.type = XawselectNull; // irrelevant I guess
