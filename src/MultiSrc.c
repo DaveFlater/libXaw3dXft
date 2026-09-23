@@ -424,7 +424,7 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
 				break;
 			}
 			else if (type == XawstAlphaNumeric) {
-			    if (!isalnum(c)) {
+			    if (!iswalnum(c)) {
 				if (non_space)
 				    break;
 			    }
@@ -497,7 +497,7 @@ Scan(Widget w, XawTextPosition position, XawTextScanType type,
 				break;
 			}
 			else if (type == XawstAlphaNumeric) {
-			    if (!isalnum(c)) {
+			    if (!iswalnum(c)) {
 				if (non_space)
 				    break;
 			    }
