@@ -207,6 +207,7 @@ ReadText(Widget w, XawTextPosition pos, XawTextBlock *text, int length)
   XawTextPosition count, start = 0;
   Piece * piece = FindPiece(src, pos, &start);
 
+  text->format = XawFmt8Bit;
   text->firstPos = pos;
   text->ptr = piece->text + (pos - start);
   count = piece->used - (pos - start);
