@@ -334,144 +334,203 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
   return XawEditDone;
 }
 
-/*	Function Name: Scan
- *	Description: Scans the text source for the number and type
- *                   of item specified.
- *	Arguments: w - the AsciiSource widget.
- *                 position - the position to start scanning.
- *                 type - type of thing to scan for.
- *                 dir - direction to scan.
- *                 count - which occurrence of this thing to search for.
- *                 include - whether or not to include the character found in
- *                           the position that is returned.
- *	Returns: the position of the item found.
+/*
+ * Function:
+ *	Scan
  *
- * Note: While there are only 'n' characters in the file there are n+1
- *       possible cursor positions (one before the first character and
- *       one after the last character.
+ * Parameters:
+ *	w	 - AsciiSource object
+ *	position - position to start scanning
+ *	type	 - type of thing to scan for
+ *	dir	 - direction to scan
+ *		   count - which occurrence if this thing to search for.
+ *		   include - whether or not to include the character found in
+ *		   the position that is returned
+ *
+ * Description:
+ *	Scans the text source for the number and type of item specified.
+ *
+ * Returns:
+ *	The position of the item found
+ *
+ * Note:
+ *	While there are only 'n' characters in the file, there are n+1
+ *	possible cursor positions (one before the first character and
+ *	one after the last character).
  */
-
-static
-XawTextPosition
-Scan (Widget w, XawTextPosition position, XawTextScanType type,
-      XawTextScanDirection dir, int count, Boolean include)
+static XawTextPosition
+Scan(Widget w, XawTextPosition position, XawTextScanType type,
+     XawTextScanDirection dir, int count, Boolean include)
 {
-  AsciiSrcObject src = (AsciiSrcObject) w;
-  int inc;
-  Piece* piece;
-  XawTextPosition first = 0, first_eol_position = 0;
-  char* ptr;
+    AsciiSrcObject src = (AsciiSrcObject)w;
+    Piece *piece;
+    XawTextPosition first, first_eol_position = 0;
+    char *ptr, *lim;
+    int cnt = count;
+    unsigned char c;
 
-  if (type == XawstAll) {	/* Optomize this common case. */
-    if (dir == XawsdRight)
-      return(src->ascii_src.length);
-    return(0);			/* else. */
-  }
-
-  if (position > src->ascii_src.length)
-    position = src->ascii_src.length;
-
-  if ( dir == XawsdRight ) {
-    if (position == src->ascii_src.length)
-/*
- * Scanning right from src->ascii_src.length???
- */
-      return(src->ascii_src.length);
-    inc = 1;
-  }
-  else {
-    if (position == 0)
-      return(0);		/* Scanning left from 0??? */
-    inc = -1;
-    position--;
-  }
-
-  piece = FindPiece(src, position, &first);
-
-/*
- * If the buffer is empty then return 0.
- */
-
-  if ( piece->used == 0 ) return(0);
-
-  ptr = (position - first) + piece->text;
-
-  switch (type) {
-  case XawstEOL:
-  case XawstParagraph:
-  case XawstWhiteSpace:
-    for ( ; count > 0 ; count-- ) {
-      Boolean non_space = FALSE, first_eol = TRUE;
-      /* CONSTCOND */
-      while (TRUE) {
-	unsigned char c = *ptr;
-
-	ptr += inc;
-	position += inc;
-
-	if (type == XawstWhiteSpace) {
-	  if (isspace(c)) {
-	    if (non_space)
-	      break;
-	  }
-	  else
-	    non_space = TRUE;
-	}
-	else if (type == XawstEOL) {
-	  if (c == '\n') break;
-	}
-	else { /* XawstParagraph */
-	  if (first_eol) {
-	    if (c == '\n') {
-	      first_eol_position = position;
-	      first_eol = FALSE;
-	    }
-	  }
-	  else
-	    if ( c == '\n')
-	      break;
-	    else if ( !isspace(c) )
-	      first_eol = TRUE;
-	}
-
-
-	if ( ptr < piece->text ) {
-	  piece = piece->prev;
-	  if (piece == NULL)	/* Beginning of text. */
-	    return(0);
-	  ptr = piece->text + piece->used - 1;
-	}
-	else if ( ptr >= (piece->text + piece->used) ) {
-	  piece = piece->next;
-	  if (piece == NULL)	/* End of text. */
-	    return(src->ascii_src.length);
-	  ptr = piece->text;
-	}
-      }
+    if (dir == XawsdLeft) {
+	if (position <= 0)
+	    return (0);
+	--position;
     }
-    if (!include) {
-      if ( type == XawstParagraph)
-	position = first_eol_position;
-      position -= inc;
+    else if (position >= src->ascii_src.length)
+	return (src->ascii_src.length);
+
+    piece = FindPiece(src, position, &first);
+    if (piece->used == 0)
+	return (0);
+
+    ptr = (position - first) + piece->text;
+
+    if (dir == XawsdRight) {
+	lim = piece->text + piece->used;
+	switch (type) {
+	    case XawstEOL:
+	    case XawstParagraph:
+	    case XawstWhiteSpace:
+	    case XawstAlphaNumeric:
+		for (; cnt > 0; cnt--) {
+		    Bool non_space = False, first_eol = True;
+
+		    while (True) {
+			if (ptr >= lim) {
+			    piece = piece->next;
+			    if (piece == NULL)	/* End of text */
+				return (src->ascii_src.length);
+			    ptr = piece->text;
+			    lim = piece->text + piece->used;
+			}
+
+			c = (unsigned char)*ptr++;
+			++position;
+
+			if (type == XawstEOL) {
+			    if (c == '\n')
+				break;
+			}
+			else if (type == XawstAlphaNumeric) {
+			    if (!isalnum(c)) {
+				if (non_space)
+				    break;
+			    }
+			    else
+				non_space = True;
+			}
+			else if (type == XawstWhiteSpace) {
+			    if (isspace(c)) {
+				if (non_space)
+				    break;
+			    }
+			    else
+				non_space = True;
+			}
+			else {	/* XawstParagraph */
+			    if (first_eol) {
+				if (c == '\n') {
+				    first_eol_position = position;
+				    first_eol = False;
+				}
+			    }
+			    else if (c == '\n')
+				break;
+			    else if (!isspace(c))
+				first_eol = True;
+			}
+		    }
+		}
+		break;
+	    case XawstPositions:
+		position += count;
+		return (position < src->ascii_src.length ?
+			position : src->ascii_src.length);
+	    case XawstAll:
+		return (src->ascii_src.length);
+	    default:
+		break;
+	}
+	if (!include) {
+	    if (type == XawstParagraph)
+		position = first_eol_position;
+	    if (count)
+		--position;
+	}
     }
-    break;
-  case XawstPositions:
-    position += count * inc;
-    break;
-  case XawstAll:		/* handled in special code above */
-  default:
-    break;
-  }
+    else {
+	lim = piece->text;
+	switch (type) {
+	    case XawstEOL:
+	    case XawstParagraph:
+	    case XawstWhiteSpace:
+	    case XawstAlphaNumeric:
+		for (; cnt > 0; cnt--) {
+		    Bool non_space = False, first_eol = True;
 
-  if ( dir == XawsdLeft )
-    position++;
+		    while (True) {
+			if (ptr < lim) {
+			    piece = piece->prev;
+			    if (piece == NULL)	/* Beginning of text */
+				return (0);
+			    ptr = piece->text + piece->used - 1;
+			    lim = piece->text;
+			}
 
-  if (position >= src->ascii_src.length)
-    return(src->ascii_src.length);
-  if (position < 0)
-    return(0);
+			c = (unsigned char)*ptr--;
+			--position;
 
-  return(position);
+			if (type == XawstEOL) {
+			    if (c == '\n')
+				break;
+			}
+			else if (type == XawstAlphaNumeric) {
+			    if (!isalnum(c)) {
+				if (non_space)
+				    break;
+			    }
+			    else
+				non_space = True;
+			}
+			else if (type == XawstWhiteSpace) {
+			    if (isspace(c)) {
+				if (non_space)
+				    break;
+			    }
+			    else
+				non_space = True;
+			}
+			else {	/* XawstParagraph */
+			    if (first_eol) {
+				if (c == '\n') {
+				    first_eol_position = position;
+				    first_eol = False;
+				}
+			    }
+			    else if (c == '\n')
+				break;
+			    else if (!isspace(c))
+				first_eol = True;
+			}
+		    }
+		}
+		break;
+	    case XawstPositions:
+		position -= count - 1;
+		return (position > 0 ? position : 0);
+	    case XawstAll:
+		return (0);
+	    default:
+		break;
+	}
+	if (!include) {
+	    if (type == XawstParagraph)
+		position = first_eol_position;
+	    if (count)
+		++position;
+	}
+	position++;
+    }
+
+    return (position);
 }
 
 /*	Function Name: Search

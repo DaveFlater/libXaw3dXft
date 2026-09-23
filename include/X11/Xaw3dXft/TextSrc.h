@@ -110,8 +110,8 @@ typedef struct _TextSrcClassRec *TextSrcObjectClass;
 typedef struct _TextSrcRec      *TextSrcObject;
 
 typedef enum {XawstPositions, XawstWhiteSpace, XawstEOL, XawstParagraph,
-              XawstAll} XawTextScanType;
-typedef enum {Normal, Selected }highlightType;
+              XawstAll, XawstAlphaNumeric} XawTextScanType;
+typedef enum {Normal, Selected} highlightType;
 typedef enum {XawsmTextSelect, XawsmTextExtend} XawTextSelectionMode;
 typedef enum {XawactionStart, XawactionAdjust, XawactionEnd}
     XawTextSelectionAction;
