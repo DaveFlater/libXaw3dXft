@@ -107,6 +107,26 @@ void XawVendorShellExtResize(Widget);
 void XawVendorStructureNotifyHandler(Widget, XtPointer, XEvent*, Boolean*);
 
 
+/*
+  Xaw wants to replace the VendorShell that Xt's ApplicationShell et al. are
+  subclasses of.  Xt's Shell.c links those classes to vendorShellClassRec.
+  Vendor.c problematically redefines that symbol to add input method hooks.
+
+  "There may be more than one external definition for the identifier of an
+  object, with or without the explicit use of the keyword extern; if the
+  definitions disagree, or more than one is initialized, the behavior is
+  undefined."  In C++, this would be a violation of the One Definition Rule
+  (ODR), but that term is not used in the C standard.
+
+  This invocation of undefined behavior didn't have the intended effect for
+  Cygwin or MinGW.  The workaround for "wrong linker semantics" instead hooks
+  a platform-specific startup function and goes in and changes the relevant
+  pointers before anyone notices.
+
+  There has to be a better way to hook in the input method.
+*/
+
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 /* to fix the EditRes problem because of wrong linker semantics */
 extern WidgetClass vendorShellWidgetClass; /* from Xt/Vendor.c */
