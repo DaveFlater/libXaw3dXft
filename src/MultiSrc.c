@@ -70,7 +70,8 @@ in this Software without prior written authorization from the X Consortium.
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
-#include "XawI18n.h"
+#include <wchar.h>
+#include <wctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xfuncs.h>

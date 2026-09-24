@@ -59,6 +59,8 @@ X11 license (as per the historical licenses that the package inherits)
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <wctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/Shell.h>
 #include <X11/StringDefs.h>
@@ -70,7 +72,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xmu/Misc.h>
 #include <X11/Xmu/StdSel.h>
 #include <X11/Xutil.h>
-#include "XawI18n.h"
 #include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Cardinals.h>

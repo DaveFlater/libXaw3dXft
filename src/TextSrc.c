@@ -39,20 +39,20 @@ in this Software without prior written authorization from the X Consortium.
 #include "config.h"
 #endif
 
-#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <wchar.h>
+#include <wctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#include <X11/Xutil.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/TextSrcP.h>
-#include <X11/Xaw3dXft/CommonP.h>
-#include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/CharSet.h>
-
-#include "XawI18n.h"
-#include <stdio.h>
-#include <ctype.h>
+#include <X11/Xutil.h>
+#include <X11/Xaw3dXft/CommonP.h>
+#include <X11/Xaw3dXft/Encoding.h>
+#include <X11/Xaw3dXft/TextSrcP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/XawInit.h>
 
 /****************************************************************
  *

@@ -37,6 +37,8 @@ X11 license (as per the historical licenses that the package inherits)
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <wctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Xatom.h>
@@ -45,7 +47,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xmu/Misc.h>
 #include <X11/Xmu/StdSel.h>	 /* for XmuConvertStandardSelection */
 #include <X11/Xutil.h>
-#include "XawI18n.h"
 #include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xaw3dXft/MultiSrcP.h>

@@ -68,9 +68,9 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/ResourceI.h>
 #include <X11/VarargsI.h>
-#include "XawI18n.h"
 #include <ctype.h>
 #include <wchar.h>
+#include <wctype.h>
 
 #include <stdarg.h>
 #define Va_start(a,b) va_start(a,b)

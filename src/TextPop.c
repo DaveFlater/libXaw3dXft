@@ -58,12 +58,13 @@ X11 license (as per the historical licenses that the package inherits)
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <wchar.h>
+#include <wctype.h>
 #include <X11/IntrinsicP.h>
 #include <X11/Shell.h>
 #include <X11/StringDefs.h>
 #include <X11/Xmu/CharSet.h>
 #include <X11/Xos.h>		/* for O_RDONLY */
-#include "XawI18n.h"
 #include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/AsciiText.h>
 #include <X11/Xaw3dXft/Cardinals.h>
