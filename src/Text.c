@@ -649,6 +649,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   ctx->text.single_char = FALSE;
   ctx->text.copy_area_offsets = NULL;
   ctx->text.salt2 = NULL;
+  ctx->text.from_left = -1;
 
   if (ctx->core.height == DEFAULT_TEXT_HEIGHT) {
     ctx->core.height = VMargins(ctx);
@@ -3227,6 +3228,7 @@ XawTextSetInsertionPoint(Widget w, XawTextPosition position)
 
   _XawTextPrepareToUpdate(ctx);
   ctx->text.insertPos = FindGoodPosition(ctx, position);
+  ctx->text.from_left = -1;
   ctx->text.showposition = TRUE;
 
   _XawTextExecuteUpdate(ctx);

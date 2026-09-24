@@ -60,6 +60,8 @@ X11 license (as per the historical licenses that the package inherits)
 #define SrcScan                XawTextSourceScan
 #define FindDist               XawTextSinkFindDistance
 #define FindPos                XawTextSinkFindPosition
+#define MULT(w)		       (w->text.mult == 0 ? 4 :		\
+				w->text.mult == 32767 ? -4 : w->text.mult)
 
 #define XawTextActionMaxHexChars 100
 
@@ -291,7 +293,7 @@ _SelectionReceived(Widget w, XtPointer client_data, Atom *selection, Atom *type,
   }
   ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.old_insert,
 				XawstPositions, XawsdRight, text.length, True);
-
+  ctx->text.from_left = -1;
   _XawTextSetScrollBars(ctx);
   EndAction(ctx);
 
@@ -368,6 +370,7 @@ Move(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
   StartAction(ctx, event);
   ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
 				type, dir, ctx->text.mult, include);
+  ctx->text.from_left = -1;
   EndAction(ctx);
 }
 
@@ -419,50 +422,86 @@ MoveToLineStart(Widget w, XEvent *event, String *p, Cardinal *n)
   Move((TextWidget) w, event, XawsdLeft, XawstEOL, FALSE);
 }
 
-
-static void
-MoveLine(TextWidget ctx, XEvent *event, XawTextScanDirection dir)
+static void MoveLine (TextWidget ctx, XEvent *event, XawTextScanDirection dir)
 {
-  XawTextPosition new, next_line, junk;
-  int from_left, garbage;
+  XawTextPosition ret_pos_ignored;
+  int ret_height_ignored, from_left_after;
+  short mult = MULT(ctx);
+  const Position leftAdj = ctx->text.margins.left -
+                           (Position)ctx->text.hscroll_offset;
 
   StartAction(ctx, event);
-
+  XawTextUnsetSelection((Widget)ctx);
   if (dir == XawsdLeft)
-    ctx->text.mult++;
+    mult = (mult == 0 ? 5 : mult + 1);
 
-  new = SrcScan(ctx->text.source, ctx->text.insertPos,
-		XawstEOL, XawsdLeft, 1, FALSE);
+  XawTextPosition cnew = SrcScan(ctx->text.source, ctx->text.insertPos,
+    XawstEOL, XawsdLeft, 1, False);
 
-  const Position adjLeft = ctx->text.margins.left -
-                           (Position)ctx->text.hscroll_offset;
-  FindDist(ctx->text.sink, new, adjLeft, ctx->text.insertPos,
-	   &from_left, &junk, &garbage);
+  // If we have not saved an original offset, get that now.
+  if (ctx->text.from_left < 0)
+    FindDist(ctx->text.sink, cnew, leftAdj, ctx->text.insertPos,
+      &ctx->text.from_left, &ret_pos_ignored, &ret_height_ignored);
 
-  new = SrcScan(ctx->text.source, ctx->text.insertPos, XawstEOL, dir,
-		ctx->text.mult, (dir == XawsdRight));
+  cnew = SrcScan(ctx->text.source, ctx->text.insertPos, XawstEOL, dir, mult,
+    (dir == XawsdRight));
+  XawTextPosition next_line = SrcScan(ctx->text.source, cnew, XawstEOL,
+    XawsdRight, 1, False);
+  // Find a position that approximates the saved original offset.
+  FindPos(ctx->text.sink, cnew, leftAdj, ctx->text.from_left, False,
+    &ctx->text.insertPos, &from_left_after, &ret_height_ignored);
 
-  next_line = SrcScan(ctx->text.source, new, XawstEOL, XawsdRight, 1, FALSE);
+  // If we hit a tab, skip right.
+  if (from_left_after < ctx->text.from_left) {
+    XawTextBlock block;
+    XawTextSourceRead(ctx->text.source, ctx->text.insertPos, &block, 1);
+    if (block.length) {
+      if (_XawTextFormat(ctx) == XawFmtWide) {
+	if (*(wchar_t *)block.ptr == L'\t')
+	  ++ctx->text.insertPos;
+      } else if (block.ptr[0] == '\t')
+	++ctx->text.insertPos;
+    }
+  }
 
-  FindPos(ctx->text.sink, new, adjLeft, from_left, FALSE,
-	  &(ctx->text.insertPos), &garbage, &garbage);
-
+  // But whatever you do, stay on the same line.
   if (ctx->text.insertPos > next_line)
     ctx->text.insertPos = next_line;
-
   EndAction(ctx);
 }
 
-static void
-MoveNextLine(Widget w, XEvent *event, String *p, Cardinal *n)
-{
-  MoveLine( (TextWidget) w, event, XawsdRight);
+static void MovePreviousLine (Widget w, XEvent *event, String *p, Cardinal *n);
+static void MoveNextLine (Widget w, XEvent *event, String *p, Cardinal *n) {
+  TextWidget ctx = (TextWidget)w;
+  short mult = MULT(ctx);
+
+  if (mult < 0) {
+    ctx->text.mult = (short)(-mult);
+    MovePreviousLine(w, event, p, n);
+    return;
+  }
+
+  if (ctx->text.insertPos < ctx->text.lastPos)
+    MoveLine(ctx, event, XawsdRight);
+  else
+    ctx->text.mult = 1;
 }
 
-static void
-MovePreviousLine(Widget w, XEvent *event, String *p, Cardinal *n)
-{
-  MoveLine( (TextWidget) w, event, XawsdLeft);
+static void MovePreviousLine (Widget w, XEvent *event, String *p, Cardinal *n) {
+  TextWidget ctx = (TextWidget)w;
+  short mult = MULT(ctx);
+
+  if (mult < 0) {
+    ctx->text.mult = (short)(-mult);
+    MoveNextLine(w, event, p, n);
+    return;
+  }
+
+  if (ctx->text.lt.top != 0 || (ctx->text.lt.lines > 1 &&
+      ctx->text.insertPos >= ctx->text.lt.info[1].position))
+    MoveLine(ctx, event, XawsdLeft);
+  else
+    ctx->text.mult = 1;
 }
 
 static void
@@ -513,6 +552,7 @@ MovePage(TextWidget ctx, XEvent *event, XawTextScanDirection dir)
   StartAction(ctx, event);
   _XawTextVScroll(ctx, scroll_val);
   ctx->text.insertPos = ctx->text.lt.top;
+  ctx->text.from_left = -1;
   EndAction(ctx);
 }
 
@@ -640,6 +680,7 @@ XawTextPosition to, Boolean kill) {
     return;
   }
   ctx->text.insertPos = from;
+  ctx->text.from_left = -1;
   ctx->text.showposition = TRUE;
 }
 
@@ -856,6 +897,7 @@ LocalInsertNewLine(TextWidget ctx, XEvent *event)
     return(XawEditError);
   ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
 			     XawstPositions, XawsdRight, ctx->text.mult, TRUE);
+  ctx->text.from_left = -1;
   _XawTextSetScrollBars(ctx);
   EndAction(ctx);
   return(XawEditDone);
@@ -925,6 +967,7 @@ InsertNewLineAndIndent(Widget w, XEvent *event, String *p, Cardinal *n)
   XtFree(text.ptr);
   ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
 				XawstPositions, XawsdRight, text.length, TRUE);
+  ctx->text.from_left = -1;
   _XawTextSetScrollBars(ctx);
   EndAction(ctx);
 }
@@ -966,6 +1009,9 @@ ModifySelection(TextWidget ctx, XEvent *event, XawTextSelectionMode mode,
   StartAction(ctx, event);
   NotePosition(ctx, event);
   _XawTextAlterSelection(ctx, mode, action, params, num_params);
+  /* This is the only place where we wipe out from_left without making a
+     direct assigment to insertPos. */
+  ctx->text.from_left = -1;
   EndAction(ctx);
 }
 
@@ -1169,6 +1215,7 @@ InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
   if (error == XawEditDone) {
       ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
 	      XawstPositions, XawsdRight, text.length, TRUE);
+      ctx->text.from_left = -1;
       AutoFill(ctx);
   }
   else
@@ -1318,6 +1365,7 @@ Cardinal *num_params) {
     /* Advance insertPos to the end of the string we just inserted. */
     ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
 			  XawstPositions, XawsdRight, text.length, True);
+    ctx->text.from_left = -1;
     if (ptrIsTemp)
       free(text.ptr);
   }
@@ -1435,7 +1483,6 @@ StripOutOldCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
   /* Strip out CR's. */
 
   eop_begin = eop_end = startPos = endPos = from;
-  /* CONSTCOND */
   while (TRUE) {
       endPos=SrcScan(src, startPos, XawstEOL, XawsdRight, 1, FALSE);
 
@@ -1524,7 +1571,6 @@ InsertNewCRs(TextWidget ctx, XawTextPosition from, XawTextPosition to)
   }
 
   startPos = from;
-  /* CONSTCOND */
   while (TRUE) {
       XawTextSinkFindPosition( ctx->text.sink, startPos,
 	(int)ctx->text.margins.left - (int)ctx->text.hscroll_offset,
@@ -1578,10 +1624,12 @@ FormRegion(TextWidget ctx, XawTextPosition from, XawTextPosition to)
   if ( ( to = StripOutOldCRs( ctx, from, to ) ) == XawReplaceError )
       return XawReplaceError;
 
-  /* insure that the insertion point is within legal bounds */
-  if ( ctx->text.insertPos > SrcScan( ctx->text.source, 0,
-				       XawstAll, XawsdRight, 1, TRUE ) )
-      ctx->text.insertPos = to;
+  /* Ensure that the insertion point is within legal bounds */
+  if (ctx->text.insertPos > SrcScan(ctx->text.source, 0, XawstAll,
+      XawsdRight, 1, TRUE)) {
+    ctx->text.insertPos = to;
+    ctx->text.from_left = -1;
+  }
 
   InsertNewCRs(ctx, from, to);
   _XawTextBuildLineTable(ctx, ctx->text.lt.top, TRUE);
@@ -1645,6 +1693,7 @@ TransposeCharacters(Widget w, XEvent *event, String *params, Cardinal *num_param
   }
 
   ctx->text.insertPos = end;
+  ctx->text.from_left = -1;
 
   text.firstPos = 0;
   text.format = _XawTextFormat(ctx);

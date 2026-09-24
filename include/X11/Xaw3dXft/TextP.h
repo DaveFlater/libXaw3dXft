@@ -206,6 +206,15 @@ typedef struct _TextPart {
     struct text_move * copy_area_offsets; /* Text offset area (linked list) */
     Widget          threeD;	    /* shadow drawing */
 
+    /* The purpose of from_left is to remember the original pixel offset as
+       you use the up or down arrows to move between lines.  Without it, if
+       you have a variable-width font, the cursor drifts leftward.  Outside
+       of MoveLine, it just gets reset to -1 whenever insertPos is changed in
+       a way that invalidates the scrolling context.  Invalidating it too
+       much causes the leftward drift.  Invalidating it not enough causes the
+       cursor to warp back to a previous spot. */
+    int from_left;
+
     /* private state, shared w/Source and Sink */
     Boolean	    redisplay_needed; /* signal used only in SetValues */
     XawTextSelectionSalt    *salt2;   /* other salted away selections */
