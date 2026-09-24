@@ -757,9 +757,9 @@ static void _CreateCutBuffers (Display *d) {
 
 /*
  * Procedure to manage insert cursor visibility for editable text.  It uses
- * the value of ctx->insertPos and an implicit argument. In the event that
- * position is immediately preceded by an eol graphic, then the insert cursor
- * is displayed at the beginning of the next line.
+ * the value of ctx->insertPos and an implicit argument.  In the event that
+ * the position is immediately preceded by an EOL, the insert cursor is
+ * displayed at the beginning of the next line.
 */
 static void InsertCursor (Widget w, XawTextInsertState state) {
   TextWidget ctx = (TextWidget)w;
@@ -768,12 +768,12 @@ static void InsertCursor (Widget w, XawTextInsertState state) {
 
   if (ctx->text.lt.lines < 1) return;
 
-  if ( LineAndXYForPosition(ctx, ctx->text.insertPos, &line, &x, &y) ) {
+  if (LineAndXYForPosition(ctx, ctx->text.insertPos, &line, &x, &y)) {
+    // y == ctx->text.lt.info[line].y
     if (line < ctx->text.lt.lines)
-      y += ctx->text.lt.info[line + 1].y - ctx->text.lt.info[line].y;
+      y = ctx->text.lt.info[line + 1].y;
     else
       y += ctx->text.lt.info[line].y - ctx->text.lt.info[line - 1].y;
-
     if (ctx->text.display_caret)
       XawTextSinkInsertCursor(ctx->text.sink, x, y, state);
   }
@@ -912,27 +912,26 @@ LineForPosition (TextWidget ctx, XawTextPosition position)
  * NOTE: It is illegal to call this routine unless there is a valid line table!
  */
 
-static Boolean
-LineAndXYForPosition(TextWidget ctx, XawTextPosition pos, int *line,
-                     Position *x, Position *y)
-{
+static Boolean LineAndXYForPosition (TextWidget ctx, XawTextPosition pos,
+int *line, Position *x, Position *y) {
   XawTextPosition linePos, endPos;
   Boolean visible;
   int realW, realH;
 
-  // Initial values here will be returned if the position isn't visible.
+  // These initial values will be returned if the position isn't visible.
   *line = 0;
   *x = ctx->text.margins.left - (Position)ctx->text.hscroll_offset;
   *y = ctx->text.margins.top;
+
   if ((visible = IsPositionVisible(ctx, pos))) {
     *line = LineForPosition(ctx, pos);
     *y = ctx->text.lt.info[*line].y;
     linePos = ctx->text.lt.info[*line].position;
-    XawTextSinkFindDistance( ctx->text.sink, linePos,
-			    *x, pos, &realW, &endPos, &realH);
+    XawTextSinkFindDistance(ctx->text.sink, linePos, *x, pos, &realW, &endPos,
+      &realH);
     *x += realW;
   }
-  return(visible);
+  return visible;
 }
 
 /*
