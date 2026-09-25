@@ -159,22 +159,10 @@ void _XawImSetValues(
     Cardinal /* num_args */
 );
 
-/* DON'T USE THIS FUNCTION -- it's going away in the next release */
-void _XawImVASetValues(
-    Widget,  /* w */
-    ...
-);
-
 void _XawImSetFocusValues(
     Widget,  /* w */
     ArgList, /* args */
     Cardinal /* num_args */
-);
-
-/* DON'T USE THIS FUNCTION -- it's going away in the next release */
-void _XawImVASetFocusValues(
-    Widget,  /* w */
-    ...
 );
 
 void _XawImUnsetFocus(

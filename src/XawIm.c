@@ -1469,56 +1469,12 @@ _XawImSetValues(
 }
 
 void
-_XawImVASetValues( Widget inwidg, ... )
-{
-    va_list  var;
-    ArgList  args = NULL;
-    Cardinal num_args;
-    int	     total_count, typed_count;
-
-    Va_start( var, inwidg );
-    _XtCountVaList( var, &total_count, &typed_count );
-    va_end( var );
-
-    Va_start( var, inwidg );
-
-    _XtVaToArgList( inwidg, var, total_count, &args, &num_args );
-    _XawImSetValues( inwidg, args, num_args );
-    if ( args != NULL ) {
-	XtFree( (XtPointer) args );
-    }
-    va_end( var );
-}
-
-void
 _XawImSetFocusValues(
     Widget inwidg,
     ArgList args,
     Cardinal num_args)
 {
     SetFocusValues(inwidg, args, num_args, TRUE);
-}
-
-void
-_XawImVASetFocusValues(Widget inwidg, ...)
-{
-    va_list		var;
-    ArgList		args = NULL;
-    Cardinal		num_args;
-    int			total_count, typed_count;
-
-    Va_start(var, inwidg);
-    _XtCountVaList(var, &total_count, &typed_count);
-    va_end(var);
-
-    Va_start(var,inwidg);
-
-    _XtVaToArgList(inwidg, var, total_count, &args, &num_args);
-    _XawImSetFocusValues(inwidg, args, num_args);
-    if (args != NULL) {
-	XtFree((XtPointer)args);
-    }
-    va_end(var);
 }
 
 void
