@@ -56,16 +56,10 @@ Then proceed as for building a release.
 
 ## <a name="configopt"></a>Configure options
 
-Effective in version 2.0, the three options below are enabled by default, and
-the option to disable internationalization has been removed.  For version
-1.6.4 and prior versions, only internationalization was enabled by default.
-
-### --enable-multiplane-bitmaps
-
-Enables/disables XPM support and the library dependency on libXpm.  When
-enabled, you may specify either XPM or XBM files for any bitmap resource,
-whether by resource files, with editres, programmatically, etc.  When
-disabled, the Xaw historical limitation to use only XBM remains.
+Effective in version 2.0, the two options below are enabled by default, and
+the options to disable internationalization and XPM support have been
+removed.  For version 1.6.4 and prior versions, only internationalization was
+enabled by default.
 
 ### --enable-arrow-scrollbars
 
@@ -1012,9 +1006,9 @@ xaw3d.pc respectively.
   hook creates a symbolic link from the old name.
 - The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
 
-**Deleted the --enable-internationalization configure option**
+**Deleted the --enable-internationalization and --enable-multiplane-bitmaps configure options**
 
-It is now permanently enabled.
+They are now permanently enabled.
 
 **Retired global struct Xaw3dXftData**
 

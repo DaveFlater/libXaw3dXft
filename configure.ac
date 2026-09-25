@@ -39,15 +39,6 @@ AC_CHECK_HEADERS([wctype.h wchar.h widec.h])
 AC_CHECK_FUNCS([iswspace])
 AC_TYPE_INTPTR_T
 
-AC_ARG_ENABLE([multiplane-bitmaps],
-  [AS_HELP_STRING([--enable-multiplane-bitmaps], [enable XPM support (default: yes)])],
-  [],
-  [enable_multiplane_bitmaps=yes])
-AS_IF([test "x$enable_multiplane_bitmaps" != xno],
-  [AS_VAR_SET([MACRO_MULTIPLANE_PIXMAPS], ["#define XAW_MULTIPLANE_PIXMAPS 1"])
-   PKG_CHECK_MODULES(XPM, xpm)],
-  [AS_VAR_SET([MACRO_MULTIPLANE_PIXMAPS], ["#undef XAW_MULTIPLANE_PIXMAPS"])])
-
 AC_ARG_ENABLE([arrow-scrollbars],
   [AS_HELP_STRING([--enable-arrow-scrollbars], [enable arrow scrollbars (default: yes)])],
   [],
@@ -77,7 +68,6 @@ AC_SUBST([LIBXAW3DXFT_VERSION_MINOR_FUNNAME],
 AC_SUBST([LIBXAW3DXFT_VERSION_PATCH_FUNNAME],
   m4_format('libXaw3dXft_version_patch_%s', LVT_VERSION_PATCH))
 
-AC_SUBST([MACRO_MULTIPLANE_PIXMAPS])
 AC_SUBST([MACRO_ARROW_SCROLLBARS])
 AC_SUBST([MACRO_GRAY_BLKWHT_STIPPLES])
 

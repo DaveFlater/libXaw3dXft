@@ -63,25 +63,19 @@ SOFTWARE.
 
 /* Make sure all wm properties can make it out of the resource manager */
 
-#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
 #include <X11/ShellP.h>
+#include <X11/StringDefs.h>
 #include <X11/VendorP.h>
-#include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Atoms.h>
-#include <X11/Xmu/Editres.h>
-
-static_assert(Got_XAW_defines);
-#include <X11/Xmu/ExtAgent.h>
-#ifdef XAW_MULTIPLANE_PIXMAPS
-#include <X11/xpm.h>
+#include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Drawing.h>
-#endif
-
-/* The following two headers are for the input method. */
+#include <X11/Xmu/Editres.h>
+#include <X11/Xmu/ExtAgent.h>
+#include <X11/xpm.h>
 #include <X11/Xaw3dXft/VendorEP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/Xaw3dXft/XawImP.h>
 
 static XtResource resources[] = {
@@ -324,7 +318,6 @@ Cardinal *num_args, XrmValue *fromVal, XrmValue *toVal, XtPointer *cvt_data) {
   return True;
 }
 
-#ifdef XAW_MULTIPLANE_PIXMAPS
 #define DONE(type, address) \
 	{to->size = sizeof(type); to->addr = (XPointer)address;}
 
@@ -398,7 +391,6 @@ _XawCvtStringToPixmap(Display *dpy, XrmValuePtr args, Cardinal *nargs,
     to->size = sizeof(Pixmap);
     return (True);
 }
-#endif
 
 static void
 XawVendorShellClassInitialize(void)
@@ -407,7 +399,6 @@ XawVendorShellClassInitialize(void)
         {XtWidgetBaseOffset, (XtPointer) XtOffsetOf(WidgetRec, core.screen),
 	     sizeof(Screen *)}
     };
-#ifdef XAW_MULTIPLANE_PIXMAPS
     static XtConvertArgRec _XawCvtStrToPix[] = {
 	{XtWidgetBaseOffset, (XtPointer)XtOffsetOf(WidgetRec, core.screen),
 	     sizeof(Screen *)},
@@ -417,20 +408,14 @@ XawVendorShellClassInitialize(void)
 	     (XtPointer)XtOffsetOf(WidgetRec, core.background_pixel),
 	     sizeof(Pixel)}
     };
-#endif
 
     XtAddConverter(XtRString, XtRCursor, XmuCvtStringToCursor,
 		   screenConvertArg, XtNumber(screenConvertArg));
 
-#ifdef XAW_MULTIPLANE_PIXMAPS
     XtSetTypeConverter(XtRString, XtRBitmap,
 		       (XtTypeConverter)_XawCvtStringToPixmap,
 		       _XawCvtStrToPix, XtNumber(_XawCvtStrToPix),
 		       XtCacheByDisplay, (XtDestructor)NULL);
-#else
-    XtAddConverter(XtRString, XtRBitmap, XmuCvtStringToBitmap,
-		   screenConvertArg, XtNumber(screenConvertArg));
-#endif
 
     XtSetTypeConverter("CompoundText", XtRString, XawCvtCompoundTextToString,
 			NULL, 0, XtCacheNone, NULL);

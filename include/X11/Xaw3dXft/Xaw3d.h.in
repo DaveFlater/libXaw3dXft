@@ -13,16 +13,12 @@ X11 license (as per the historical licenses that the package inherits)
 #define _Xaw3d_h
 
 /*
-  Internationalization is now permanently enabled.  Define the macro for
-  applications that may look for it.
+  Internationalization and XPM support are now permanently enabled.  Define
+  the macros for applications that may look for them, but they do not affect
+  the build of libXaw3dXft.
 */
 #define XAW_INTERNATIONALIZATION 1
-
-/*
-  --enable-multiplane-bitmaps
-  Enables/disables XPM support and the library dependency on libXpm.
-*/
-@MACRO_MULTIPLANE_PIXMAPS@
+#define XAW_MULTIPLANE_PIXMAPS 1
 
 /*
   --enable-arrow-scrollbars
