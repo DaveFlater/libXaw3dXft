@@ -55,25 +55,20 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
-#include <X11/Xos.h>
-#include <X11/Xfuncs.h>
-#include <X11/ShellP.h>
-#include <X11/Xaw3dXft/TextP.h>
-#include <X11/Xaw3dXft/MultiSrc.h>
-#include <X11/Xaw3dXft/MultiSinkP.h>
-#include <X11/Xaw3dXft/XawImP.h>
-#include <X11/Xaw3dXft/VendorEP.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <X11/ResourceI.h>
-#include <X11/VarargsI.h>
 #include <ctype.h>
 #include <wchar.h>
-#include <wctype.h>
-
-#include <stdarg.h>
-#define Va_start(a,b) va_start(a,b)
+#include <X11/IntrinsicP.h>
+#include <X11/ShellP.h>
+#include <X11/StringDefs.h>
+#include <X11/Xfuncs.h>
+#include <X11/Xos.h>
+#include <X11/ResourceI.h>
+#include <X11/Xaw3dXft/MultiSinkP.h>
+#include <X11/Xaw3dXft/MultiSrc.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/VendorEP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawImP.h>
 
 #define maxAscentOfFontSet(fontset)     \
         ( - (XExtentsOfFontSet((fontset)))->max_logical_extent.y)
