@@ -291,36 +291,37 @@ externaldef(vendorshellextclassrec) XawVendorShellExtClassRec
 externaldef(xawvendorshellwidgetclass) WidgetClass
      xawvendorShellExtWidgetClass = (WidgetClass) (&xawvendorShellExtClassRec);
 
+/*
+  This resource type converter for compound text is the only remaining use of
+  a TextPropertyToTextList or TextListToTextProperty function, or compound
+  text for that matter.  Mostly harmless.
+*/
+static Boolean XawCvtCompoundTextToString (Display *dpy, XrmValuePtr args,
+Cardinal *num_args, XrmValue *fromVal, XrmValue *toVal, XtPointer *cvt_data) {
+  XTextProperty prop;
+  char **list;
+  int count;
+  static char *mbs = NULL;
+  int len;
 
-// FIXME:  TextList/TextProperty fns
-static Boolean
-XawCvtCompoundTextToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
-                           XrmValue *fromVal, XrmValue *toVal, XtPointer *cvt_data)
-{
-    XTextProperty prop;
-    char **list;
-    int count;
-    static char *mbs = NULL;
-    int len;
+  prop.value = (unsigned char *)fromVal->addr;
+  prop.encoding = XA_COMPOUND_TEXT(dpy);
+  prop.format = 8;
+  prop.nitems = fromVal->size;
 
-    prop.value = (unsigned char *)fromVal->addr;
-    prop.encoding = XA_COMPOUND_TEXT(dpy);
-    prop.format = 8;
-    prop.nitems = fromVal->size;
-
-    if(XmbTextPropertyToTextList(dpy, &prop, &list, &count) < Success) {
-	XtAppWarningMsg(XtDisplayToApplicationContext(dpy),
-	"converter", "XmbTextPropertyToTextList", "XawError",
-	"conversion from CT to MB failed.", NULL, 0);
-	return False;
-    }
-    len = strlen(*list);
-    toVal->size = len;
-    mbs = XtRealloc(mbs, len + 1); /* keep buffer because no one call free :( */
-    strcpy(mbs, *list);
-    XFreeStringList(list);
-    toVal->addr = (XtPointer)mbs;
-    return True;
+  if(XmbTextPropertyToTextList(dpy, &prop, &list, &count) < Success) {
+    XtAppWarningMsg(XtDisplayToApplicationContext(dpy),
+    "converter", "XmbTextPropertyToTextList", "XawError",
+    "conversion from CT to MB failed.", NULL, 0);
+    return False;
+  }
+  len = strlen(*list);
+  toVal->size = len;
+  mbs = XtRealloc(mbs, len + 1); /* keep buffer because no one call free :( */
+  strcpy(mbs, *list);
+  XFreeStringList(list);
+  toVal->addr = (XtPointer)mbs;
+  return True;
 }
 
 #ifdef XAW_MULTIPLANE_PIXMAPS
