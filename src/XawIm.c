@@ -55,6 +55,7 @@ in this Software without prior written authorization from the X Consortium.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <assert.h>
 #include <ctype.h>
 #include <wchar.h>
 #include <X11/IntrinsicP.h>
@@ -376,102 +377,161 @@ VendorShellDestroyed(Widget w, XtPointer cl_data, XtPointer ca_data)
  * Attempt to open an input method
  */
 
-static void
-OpenIM(XawVendorShellExtPart *ve)
-{
-    int		i;
-    char	*p, *s, *ns, *end, *pbuf, buf[32];
-    XIM		xim = NULL;
-    XIMStyles	*xim_styles;
-    XIMStyle	input_style = 0;
-    Boolean	found;
+static void OpenIM (XawVendorShellExtPart *ve) {
+  int		i;
+  char	*p, *s, *ns, *end, *pbuf, buf[32];
+  XIM		xim = NULL;
+  XIMStyles	*xim_styles;
+  XIMStyle	input_style = 0;
+  Boolean	found;
 
-    if (ve->im.open_im == False) return;
-    ve->im.xim = NULL;
-    if (ve->im.input_method == NULL) {
-	if ((p = XSetLocaleModifiers("@im=none")) != NULL && *p)
-	    xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
-    } else {
-	/* no fragment can be longer than the whole string */
-	int	len = strlen (ve->im.input_method) + 5;
+  if (ve->im.open_im == False) {
+    #ifdef DEBUG_IM
+    printf("OpenIM:  doing nothing because im.open_im == False.\n");
+    #endif
+    return;
+  }
+  #ifdef DEBUG_IM
+  printf("Starting OpenIM\n");
+  #endif
+  ve->im.xim = NULL;
+  if (ve->im.input_method == NULL) {
+    #ifdef DEBUG_IM
+    printf("ve->im.input_method is NULL.  Trying to open IM with locale modifier @im=none.\n");
+    #endif
+    if ((p = XSetLocaleModifiers("@im=none")) != NULL && *p)
+      xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
+  } else {
+    /* no fragment can be longer than the whole string */
+    int	len = strlen(ve->im.input_method) + 5;
 
-	if (len < sizeof buf) pbuf = buf;
-	else pbuf = XtMalloc (len);
+    if (len < sizeof buf) pbuf = buf;
+    else pbuf = XtMalloc(len);
+    assert(pbuf);
 
-	if (pbuf == NULL) return;
+    // input_method is apparently a comma-separated list
+    #ifdef DEBUG_IM
+    printf("ve->im.input_method is %s.\n", ve->im.input_method);
+    #endif
+    for(ns=s=ve->im.input_method; ns && *s;) {
+      /* skip any leading blanks */
+      while (*s && isspace(*s)) s++;
+      if (!*s) break;
+      if ((ns = end = strchr(s, ',')) == NULL)
+	end = s + strlen(s);
+      /* strip any trailing blanks */
+      while (isspace(*end)) end--;
 
-	for(ns=s=ve->im.input_method; ns && *s;) {
-	    /* skip any leading blanks */
-	    while (*s && isspace(*s)) s++;
-	    if (!*s) break;
-	    if ((ns = end = strchr(s, ',')) == NULL)
-		end = s + strlen(s);
-	    /* strip any trailing blanks */
-	    while (isspace(*end)) end--;
+      strcpy (pbuf, "@im=");
+      strncat (pbuf, s, end - s);
+      pbuf[end - s + 4] = '\0';
+      #ifdef DEBUG_IM
+      printf("Trying to open IM with locale modifier %s.\n", pbuf);
+      #endif
 
-	    strcpy (pbuf, "@im=");
-	    strncat (pbuf, s, end - s);
-	    pbuf[end - s + 4] = '\0';
+      if ((p = XSetLocaleModifiers(pbuf)) != NULL && *p
+	    && (xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL)) != NULL)
+	break;
+      #ifdef DEBUG_IM
+      else
+	printf("FAILED\n");
+      #endif
 
-	    if ((p = XSetLocaleModifiers(pbuf)) != NULL && *p
-		&& (xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL)) != NULL)
-		break;
-
-	    s = ns + 1;
-	}
-
-	if (pbuf != buf) XtFree (pbuf);
+      s = ns + 1;
     }
-    if (xim == NULL) {
-	if ((p = XSetLocaleModifiers("")) != NULL) {
-	    xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
-	}
-    }
-    if (xim == NULL) {
-	XtAppWarning(XtWidgetToApplicationContext(ve->parent),
-	    "Input Method Open Failed");
-	return;
-    }
-    if (XGetIMValues(xim, XNQueryInputStyle, &xim_styles, NULL)
-	|| !xim_styles) {
-	XtAppWarning(XtWidgetToApplicationContext(ve->parent),
-	    "input method doesn't support any style");
-	XCloseIM(xim);
-	return;
-    }
-    found = False;
-    for(ns = s = ve->im.preedit_type; s && !found;) {
-	while (*s && isspace(*s)) s++;
-	if (!*s) break;
-	if ((ns = end = strchr(s, ',')) == NULL)
-	    end = s + strlen(s);
-	while (isspace(*end)) end--;
 
-	if (!strncmp(s, "OverTheSpot", end - s)) {
-	    input_style = (XIMPreeditPosition | XIMStatusArea);
-	} else if (!strncmp(s, "OffTheSpot", end - s)) {
-	    input_style = (XIMPreeditArea | XIMStatusArea);
-	} else if (!strncmp(s, "Root", end - s)) {
-	    input_style = (XIMPreeditNothing | XIMStatusNothing);
-	}
-	for (i = 0; (unsigned short)i < xim_styles->count_styles; i++)
-	    if (input_style == xim_styles->supported_styles[i]) {
-		ve->ic.input_style = input_style;
-		SetErrCnxt(ve->parent, xim);
-		ve->im.xim = xim;
-		found = True;
-		break;
-	    }
-
-	s = ns + 1;
+    if (pbuf != buf) XtFree(pbuf);
+  }
+  if (xim == NULL) {
+    #ifdef DEBUG_IM
+    printf("IM is not open.  Trying again with empty string locale modifier.\n");
+    #endif
+    if ((p = XSetLocaleModifiers("")) != NULL) {
+      xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
     }
-    XFree(xim_styles);
+  }
+  if (xim == NULL) {
+    XtAppWarning(XtWidgetToApplicationContext(ve->parent),
+      "Input Method Open Failed");
+    return;
+  }
+  #ifdef DEBUG_IM
+  printf("IM is open.  Requesting input styles.\n");
+  #endif
+  if (XGetIMValues(xim, XNQueryInputStyle, &xim_styles, NULL) || !xim_styles) {
+    XtAppWarning(XtWidgetToApplicationContext(ve->parent),
+      "input method doesn't support any style");
+    XCloseIM(xim);
+    return;
+  }
 
-    if (!found) {
-	XCloseIM(xim);
-	XtAppWarning(XtWidgetToApplicationContext(ve->parent),
-		     "input method doesn't support my input style");
+  #ifdef DEBUG_IM
+  // typedef unsigned long XIMStyle
+  for (i = 0; i < xim_styles->count_styles; ++i) {
+    printf("XIMStyle %d = ", i);
+    const XIMStyle style = xim_styles->supported_styles[i];
+    if (style & XIMPreeditArea) printf("XIMPreeditArea | ");
+    if (style & XIMPreeditCallbacks) printf("XIMPreeditCallbacks | ");
+    if (style & XIMPreeditPosition) printf("XIMPreeditPosition | ");
+    if (style & XIMPreeditNothing) printf("XIMPreeditNothing | ");
+    if (style & XIMPreeditNone) printf("XIMPreeditNone | ");
+
+    if (style & XIMStatusArea) printf("XIMStatusArea\n");
+    if (style & XIMStatusCallbacks) printf("XIMStatusCallbacks\n");
+    if (style & XIMStatusNothing) printf("XIMStatusNothing\n");
+    if (style & XIMStatusNone) printf("XIMStatusNone\n");
+  }
+  #endif
+
+  found = False;
+  //preedit_type is also a comma-separated list
+  #ifdef DEBUG_IM
+  printf("ve->im.preedit_type is %s.\n", ve->im.preedit_type);
+  #endif
+  for(ns = s = ve->im.preedit_type; s && !found;) {
+    while (*s && isspace(*s)) s++;
+    if (!*s) break;
+    if ((ns = end = strchr(s, ',')) == NULL)
+      end = s + strlen(s);
+    while (isspace(*end)) end--;
+
+    if (!strncmp(s, "OverTheSpot", end - s)) {
+      #ifdef DEBUG_IM
+      printf("Looking for IM style OverTheSpot (XIMPreeditPosition | XIMStatusArea)\n");
+      #endif
+      input_style = (XIMPreeditPosition | XIMStatusArea);
+    } else if (!strncmp(s, "OffTheSpot", end - s)) {
+      #ifdef DEBUG_IM
+      printf("Looking for IM style OffTheSpot (XIMPreeditArea | XIMStatusArea)\n");
+      #endif
+      input_style = (XIMPreeditArea | XIMStatusArea);
+    } else if (!strncmp(s, "Root", end - s)) {
+      #ifdef DEBUG_IM
+      printf("Looking for IM style Root (XIMPreeditNothing | XIMStatusNothing)\n");
+      #endif
+      input_style = (XIMPreeditNothing | XIMStatusNothing);
     }
+    for (i = 0; (unsigned short)i < xim_styles->count_styles; i++)
+      if (input_style == xim_styles->supported_styles[i]) {
+	ve->ic.input_style = input_style;
+	SetErrCnxt(ve->parent, xim);
+	ve->im.xim = xim;
+	found = True;
+	#ifdef DEBUG_IM
+	printf("Connected IM with XIMStyle %d\n", i);
+	#endif
+	break;
+      }
+
+    s = ns + 1;
+  }
+  XFree(xim_styles);
+
+  if (!found) {
+    XCloseIM(xim);
+    XtAppWarning(XtWidgetToApplicationContext(ve->parent),
+      "input method doesn't support my input style");
+  }
 }
 
 static Boolean

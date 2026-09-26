@@ -58,7 +58,6 @@ SOFTWARE.
  * This is a copy of Xt/Vendor.c with an additional ClassInitialize
  * procedure to register Xmu resource type converters, and all the
  * monkey business associated with input methods...
- *
  */
 
 /* Make sure all wm properties can make it out of the resource manager */
@@ -66,7 +65,6 @@ SOFTWARE.
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/ShellP.h>
-#include <X11/StringDefs.h>
 #include <X11/VendorP.h>
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/Converters.h>
@@ -75,6 +73,7 @@ SOFTWARE.
 #include <X11/Xmu/ExtAgent.h>
 #include <X11/xpm.h>
 #include <X11/Xaw3dXft/VendorEP.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 #include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/Xaw3dXft/XawImP.h>
 

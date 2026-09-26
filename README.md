@@ -871,6 +871,55 @@ The encoding of a file inserted by the insert-file() action is assumed to be Mb 
 The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
 The encoding of the string parameters to the search and insert-string actions is assumed to be Mb if international is true and 8bit otherwise. | The encoding of these parameters is assumed to be 8bit if the encoding resource of the Text widget is 8bit and UTF-8 otherwise.
 
+### VendorShell
+
+Xaw overrides the VendorShell class of Xt with its own version to integrate
+input method support.  Unfortunately, it is not explained in Xaw documentation.
+
+VendorShell has the following resources in addition to those inherited:
+
+Name      | Class    | RepType  | Default value
+:---      | :---     | :---     | :---
+inputMethod | InputMethod | String | NULL
+preeditType | PreeditType | String | "OverTheSpot,OffTheSpot,Root"
+openIm | OpenIm | Boolean | True
+sharedIc | SharedIc | Boolean | False
+
+The inputMethod resource is a comma-separated list of input method names to
+attempt to use; e.g., "ibus,fcitx,scim,uim".  These names are passed one at a
+time to `XSetLocaleModifiers("@im=%s")` and tried in the order given.  When
+inputMethod is null, an attempt is made with `@im=none`.  If all else fails,
+a final attempt is made with `XSetLocaleModifiers("")`.
+
+VendorShell is inherited by the ApplicationShell class that is normally
+created at the start of an Xaw application.  The way to enable an input
+method is thus:
+
+    Widget appShell = XtVaAppCreateShell("Example", "Example",
+      applicationShellWidgetClass, display,
+      XtNinputMethod, "ibus",
+      NULL);
+
+(N.B., I had no success using the environment variable XMODIFIERS instead of
+the inputMethod resource.  `@im=none` finds something, but XMODIFIERS is
+ignored.)
+
+The preeditType resource is a comma-separated list of input method styles to
+attempt to use.  On-the-spot is not supported; the default value
+"OverTheSpot,OffTheSpot,Root" includes every supported style.  As each input
+method is tried, these styles are tried in the order given.  If no listed
+style is supported by a particular input method, it is declared unusable and
+the next input method is tried.
+
+The openIm resource enables or disables input methods entirely.  When it is
+false, no attempt is made to connect to any input method.
+
+The sharedIc resource controls whether a shared input context table is used.
+(Untested, details not yet determined.)
+
+In Xaw, the macros for the VendorShell resources are defined in the "private"
+header file XawImP.h.  In Xaw3dXft, they are defined in StringDefs.h.
+
 ### Viewport
 
 Viewport has the following extra resources:

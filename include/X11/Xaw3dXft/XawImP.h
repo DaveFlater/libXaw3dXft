@@ -54,15 +54,6 @@ in this Software without prior written authorization from the X Consortium.
 #ifndef _XawImP_h
 #define _XawImP_h
 
-#define XtNinputMethod		"inputMethod"
-#define XtCInputMethod		"InputMethod"
-#define XtNpreeditType		"preeditType"
-#define XtCPreeditType		"PreeditType"
-#define XtNopenIm		"openIm"
-#define XtCOpenIm		"OpenIm"
-#define XtNsharedIc		"sharedIc"
-#define XtCSharedIc		"SharedIc"
-
 #include <X11/Xaw3dXft/Text.h>
 
 #define	CIICFocus	(1 << 0)

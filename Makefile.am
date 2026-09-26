@@ -118,6 +118,7 @@ xaw3dinclude_HEADERS = \
   include/X11/Xaw3dXft/SmeP.h \
   include/X11/Xaw3dXft/SmeThreeD.h \
   include/X11/Xaw3dXft/SmeThreeDP.h \
+  include/X11/Xaw3dXft/StringDefs.h \
   include/X11/Xaw3dXft/StripCharP.h \
   include/X11/Xaw3dXft/StripChart.h \
   include/X11/Xaw3dXft/Text.h \
