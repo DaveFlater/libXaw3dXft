@@ -125,20 +125,4 @@ typedef struct _MultiSinkRec {
   // MultiSinkPart	multi_sink;
 } MultiSinkRec;
 
-
-/********************************************
- *
- * Semi-private functions
- * for use by other Xaw modules only
- *
- *******************************************/
-
-// This is for XawIm.  w is the TextWidget.
-extern void _XawMultiSinkPosToXY(
-    Widget			/* w */,
-    XawTextPosition		/* pos */,
-    Position *			/* x */,
-    Position *			/*y */
-);
-
 #endif /* _XawMultiSinkP_h */

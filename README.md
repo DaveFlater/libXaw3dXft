@@ -228,12 +228,14 @@ proprietary flavors.
 
 ### <a name="locales"></a>Locales
 
-Locales matter to Xaw3dXft for two reasons:
+Locales matter to Xaw3dXft for three reasons:
 
 - Narrow multibyte strings ("Mb" encoding) are interpreted according to the
   locale's codeset;
 - Rendering using [font sets](#fontset) (described below) is limited to the
-  character repertoire of the active locale regardless of the encoding used.
+  character repertoire of the active locale regardless of the encoding used;
+- The X Input Method (XIM) eats characters that are not in the repertoire of
+  the active locale.
 
 Every application starts in the default "C" locale, which allows only ASCII
 characters.  To activate another locale, the application must call
@@ -860,16 +862,17 @@ Other quirks and differences to be aware of:
 
 Xaw | Xaw3dXft
 :-- | :---
-The encoding of the string or the file is assumed to be Mb if international is true and 8bit otherwise. | The encoding resource specifies the encoding.
+The encoding of the string or file supplied as input is assumed to be Mb if international is true and 8bit otherwise. | The encoding resource of the Text widget specifies the encoding of the input.
+The encoding of a file inserted by the insert-file() action is assumed to be Mb if international is true and 8bit if not. | The encoding resource specifies the encoding of the file.
+The encoding of the string parameters to the search and insert-string actions is assumed to be Mb if international is true and 8bit otherwise. | The encoding of these parameters is assumed to be 8bit if the encoding resource is 8bit and UTF-8 otherwise.
+Setting useStringInPlace and international to true at the same time invokes broken code. | Setting useStringInPlace to true is allowed only when encoding is XawTextEncoding8bit and type is XawAsciiString.
+Input methods can be used only if international is true. | Input methods can always be used.
 Text exports the selection types COMPOUND_TEXT, STRING, and TEXT.  (UTF8_STRING was added after the fork.)  It responds to a TEXT request with COMPOUND_TEXT or STRING. | Text exports the standard selection types UTF8_STRING, C_STRING, STRING, and TEXT and the nonstandard types UTF32_STRING and 8BIT_STRING.  It responds to a TEXT request with UTF8_STRING.  C_STRING content is UTF-8 encoded.
 All selections discard control characters. | Only the STRING type discards control characters.
 Characters that are not in the character repertoire of the active locale are lost in selection conversions. | Selection conversions bypass the locale.  8bit is assumed to be ISO 8859-1.
 The class of the type resource is documented as Type but implemented as AsciiType and MultiType in AsciiSrc and MultiSrc respectively. | These definitions have been merged, and the class is TextType.
-Setting useStringInPlace and international to True at the same time invokes broken code. | Setting useStringInPlace to True is allowed only when encoding is XawTextEncoding8bit and type is XawAsciiString.
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
-The encoding of a file inserted by the insert-file() action is assumed to be Mb if international is true and 8bit if not. | The encoding of the file is assumed to agree with the encoding resource of the Text widget.
 The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
-The encoding of the string parameters to the search and insert-string actions is assumed to be Mb if international is true and 8bit otherwise. | The encoding of these parameters is assumed to be 8bit if the encoding resource of the Text widget is 8bit and UTF-8 otherwise.
 
 ### VendorShell
 

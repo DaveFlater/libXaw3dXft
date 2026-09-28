@@ -193,4 +193,24 @@ typedef struct _TextSinkRec {
 #define XtInheritGetCursorBounds   ((_XawSinkGetCursorBoundsProc)_XtInherit)
 #define XtInheritPaintText         ((_XawSinkPaintTextProc)_XtInherit)
 
+/********************************************
+ *
+ * Semi-private functions
+ * for use by other Xaw modules only
+ *
+ *******************************************/
+
+_XFUNCPROTOBEGIN
+
+// This is used by XawIm when the input method style has XIMPreeditPosition.
+// w is the TextWidget.
+extern void _XawTextSinkPosToXY(
+    Widget			/* w */,
+    XawTextPosition		/* pos */,
+    Position *			/* x */,
+    Position *			/*y */
+);
+
+_XFUNCPROTOEND
+
 #endif /* _XawTextSinkP_h */

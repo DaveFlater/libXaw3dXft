@@ -145,12 +145,10 @@ AsciiTextClassRec asciiTextClassRec = {
 WidgetClass asciiTextWidgetClass = (WidgetClass)&asciiTextClassRec;
 
 
-static void
-Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
-{
+static void Initialize (Widget request, Widget new, ArgList args,
+Cardinal *num_args) {
   AsciiWidget w = (AsciiWidget)new;
   int i;
-  MultiSinkObject sink;
 
   /* Superclass Initialize can't set the following as it didn't know the
    * source or sink when it was called. */
@@ -173,17 +171,18 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
     w->text.sink = XtCreateWidget("textSink", multiSinkObjectClass,
       new, args, *num_args);
   }
+  TextSinkObject sink = (TextSinkObject)w->text.sink;
 
   // So now we do this, after creating the sink.  It defaults to fontHeight
   // plus vertical margins.
   if (w->core.height == DEFAULT_TEXT_HEIGHT)
-    w->core.height = VMargins(w) + XawTextSinkMaxHeight(w->text.sink, 1);
+    w->core.height = VMargins(w) + XawTextSinkMaxHeight((Widget)sink, 1);
 
   // Initialize tab stops to multiples of 8.
   int tabs[TAB_COUNT], tab;
   for (i=0, tab=0 ; i < TAB_COUNT ; i++)
     tabs[i] = (tab += 8);
-  XawTextSinkSetTabs(w->text.sink, TAB_COUNT, tabs);
+  XawTextSinkSetTabs((Widget)sink, TAB_COUNT, tabs);
 
   // These functions are used only here.  The disable/enable flip flop forces
   // Text.c to initialize some things.  Some of the work is repeated when the
@@ -191,25 +190,20 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   XawTextDisableRedisplay(new);
   XawTextEnableRedisplay(new);
 
-  /* If we are using a MultiSink we need to tell the input method stuff. */
-  if (w->ascii.encoding != XawTextEncoding8bit) {
-    Arg list[4];
-    Cardinal ac = 0;
-
-    sink = (MultiSinkObject)w->text.sink;
-    _XawImRegister(new);
-    XtSetArg (list[ac], XtNfontSet, sink->text_sink.fontset); ac++;
-    XtSetArg (list[ac], XtNinsertPosition, w->text.insertPos); ac++;
-    XtSetArg (list[ac], XtNforeground, sink->text_sink.foreground); ac++;
-    XtSetArg (list[ac], XtNbackground, sink->text_sink.background); ac++;
-    _XawImSetValues(new, list, ac);
-  }
+  // Input method setup
+  _XawImRegister(new);
+  Arg list[4] = {
+    {XtNinsertPosition, w->text.insertPos},
+    {XtNforeground, sink->text_sink.foreground},
+    {XtNbackground, sink->text_sink.background},
+    {XtNfontSet, (XtArgVal)sink->text_sink.fontset}
+  };
+  _XawImSetValues(new, list, (sink->text_sink.fontset ? 4 : 3));
 }
 
 static void Destroy (Widget w) {
   AsciiWidget aw = (AsciiWidget)w;
-  if (aw->ascii.encoding != XawTextEncoding8bit)
-    _XawImUnregister(w);
+  _XawImUnregister(w);
   if (w == XtParent(aw->text.source))
     XtDestroyWidget(aw->text.source);
   if (w == XtParent(aw->text.sink))

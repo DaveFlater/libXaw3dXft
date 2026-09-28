@@ -849,7 +849,7 @@ CreateIC(Widget w, XawVendorShellExtPart *ve)
 	SetVaArg( &pe_a[pe_cnt], (XPointer) XNArea); pe_cnt++;
 	SetVaArg( &pe_a[pe_cnt], (XPointer) &pe_area); pe_cnt++;
 	if (p->flg & CICursorP) {
-	    _XawMultiSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
+	    _XawTextSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
 	} else {
 	    position.x = position.y = 0;
 	}
@@ -947,16 +947,6 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Boolean focus)
     if (focus == FALSE &&
 	!(p->flg & (CIFontSet | CIFg | CIBg |
 		    CIBgPixmap | CICursorP | CILineS))) return;
-#ifdef SPOT
-    if ((p->input_style & XIMPreeditPosition)
-	&& ((!IsSharedIC(ve) && ((p->flg & ~CIICFocus) == CICursorP))
-	    || (IsSharedIC(ve) && p->flg == CICursorP))) {
-	_XawMultiSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
-	_XipChangeSpot(p->xic, position.x, position.y);
-	p->flg &= ~CICursorP;
-	return;
-    }
-#endif
 
     if (p->input_style & (XIMPreeditArea|XIMPreeditPosition|XIMStatusArea)) {
 	if (p->flg & CIFontSet) {
@@ -996,7 +986,7 @@ SetICValues(Widget w, XawVendorShellExtPart *ve, Boolean focus)
     }
     if (p->input_style & XIMPreeditPosition) {
 	if (p->flg & CICursorP) {
-	    _XawMultiSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
+	    _XawTextSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
 	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNSpotLocation); pe_cnt++;
 	    SetVaArg( &pe_a[pe_cnt], (XPointer) &position); pe_cnt++;
 	}
@@ -1539,36 +1529,55 @@ _XawImUnsetFocus(
     UnsetFocus(inwidg);
 }
 
-int
-_XawImWcLookupString(Widget inwidg, XKeyPressedEvent *event,
-		     wchar_t* buffer_return, int bytes_buffer,
-		     KeySym *keysym_return)
-{
-    XawVendorShellExtPart*	ve;
-    VendorShellWidget		vw;
-    XawIcTableList		p;
-    int				i, ret;
-    char			tmp_buf[64], *tmp_p;
-    wchar_t*			buf_p;
+Boolean _XawImWcLookupString (Widget inwidg, XKeyPressedEvent *event,
+wchar_t *buffer_return, int wchars_buffer, int *chars_out) {
+  XawVendorShellExtPart *ve;
+  VendorShellWidget vw;
+  XawIcTableList p;
+  Status status_return;
 
-    if ((vw = SearchVendorShell(inwidg)) && (ve = GetExtPart(vw)) &&
-	ve->im.xim && (p = GetIcTableShared(inwidg, ve)) && p->xic) {
-	  return(XwcLookupString(p->xic, event, buffer_return,
-				 (int)((size_t)bytes_buffer/sizeof(wchar_t)),
-				 keysym_return, NULL));
+  // The man page for XwcLookupString says "Both XmbLookupString and
+  // XwcLookupString return text in the encoding of the locale bound to the
+  // input method of the specified input context."  When tested with ISO
+  // 8859-7, the wc codepoints were Unicode, but characters not in 8859-7
+  // were eaten.
+
+  if ((vw = SearchVendorShell(inwidg)) && (ve = GetExtPart(vw)) &&
+      ve->im.xim && (p = GetIcTableShared(inwidg, ve)) && p->xic) {
+    *chars_out = XwcLookupString(p->xic, event, buffer_return, wchars_buffer,
+      NULL, &status_return);
+    #ifdef DEBUG_IM
+    switch (status_return) {
+    case XBufferOverflow:
+      printf("XwcLookupString status = XBufferOverflow\n");
+      break;
+    case XLookupNone:
+      printf("XwcLookupString status = XLookupNone\n");
+      break;
+    case XLookupChars:
+      printf("XwcLookupString status = XLookupChars\n");
+      break;
+    case XLookupKeySym:
+      printf("XwcLookupString status = XLookupKeySym\n");
+      break;
+    case XLookupBoth:
+      printf("XwcLookupString status = XLookupBoth\n");
+      break;
+    default:
+      printf("XwcLookupString status = UNDOCUMENTED VALUE\n");
     }
-    ret = XLookupString( event, tmp_buf, sizeof(tmp_buf), keysym_return,
-		         NULL );
-    // FIXME:  Replaced _Xaw_atowc with standard equivalent btowc.  Either
-    // way, you're assuming that the source is in Mb encoding (possibly
-    // ISO-8859 part N) not 8bit.  True?
-    for ( i = 0, tmp_p = tmp_buf, buf_p = buffer_return; i < ret; i++ ) {
-      const wint_t w = btowc((unsigned char)*tmp_p++);
-      if (w == WEOF)
-	XtError("libXaw3dXft: conversion failure in _XawImWcLookupString");
-      *buf_p++ = w;
+    #endif
+    if (status_return == XBufferOverflow) {
+      XtWarning("libXaw3dXft: XwcLookupString reports buffer overflow; discarding keypress");
+      *chars_out = 0;
     }
-    return( ret );
+    return True;
+  } else {
+    #ifdef DEBUG_IM
+    printf("_XawImWcLookupString: not attempting XwcLookupString\n");
+    #endif
+    return False;
+  }
 }
 
 int

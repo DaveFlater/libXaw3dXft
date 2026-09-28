@@ -82,7 +82,6 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xaw3dXft/MultiSrcP.h>
 #include <X11/Xaw3dXft/Text.h>
 #include <X11/Xaw3dXft/Xaw3dP.h>
-#include <X11/Xaw3dXft/XawImP.h>
 #include <X11/Xaw3dXft/XawInit.h>
 
 #ifdef O_CLOEXEC

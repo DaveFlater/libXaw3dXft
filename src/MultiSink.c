@@ -401,13 +401,3 @@ FindPosition(Widget w, XawTextPosition fromPos, int fromx, int width,
     if (resHeight)
       *resHeight = sink->text_sink.fontHeight;
 }
-
-/***** Public routines *****/
-
-// This is for XawIm.  w is the TextWidget.
-void _XawMultiSinkPosToXY (Widget w, XawTextPosition pos, Position *x,
-Position *y) {
-  MultiSinkObject sink = (MultiSinkObject) ((TextWidget)w)->text.sink;
-  _XawTextPosToXY(w, pos, x, y);
-  *y += sink->text_sink.fontAscent;
-}

@@ -794,7 +794,6 @@ static void SetTabs (Widget w, int tab_count, short *tabs) {
  *
  ************************************************************/
 
-
 /*	Function Name: XawTextSinkDisplayText
  *	Description: Stub function that in subclasses will display text.
  *	Arguments: w - the TextSink Object.
@@ -996,4 +995,20 @@ XawTextSinkGetCursorBounds(Widget w, XRectangle *rect)
   TextSinkObjectClass class = (TextSinkObjectClass) w->core.widget_class;
 
   (*class->text_sink_class.GetCursorBounds)(w, rect);
+}
+
+/********************************************
+ *
+ * Semi-private functions
+ * for use by other Xaw modules only
+ *
+ *******************************************/
+
+// This is used by XawIm when the input method style has XIMPreeditPosition.
+// w is the TextWidget.
+void _XawTextSinkPosToXY (Widget w, XawTextPosition pos, Position *x,
+Position *y) {
+  TextSinkObject sink = (TextSinkObject)((TextWidget)w)->text.sink;
+  _XawTextPosToXY(w, pos, x, y);
+  *y += sink->text_sink.fontAscent;
 }

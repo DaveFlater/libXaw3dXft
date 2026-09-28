@@ -50,6 +50,7 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xaw3dXft/MultiSrcP.h>
+#include <X11/Xaw3dXft/Text.h>
 #include <X11/Xaw3dXft/TextP.h>
 #include <X11/Xaw3dXft/TextSink.h>
 #include <X11/Xaw3dXft/TextSrc.h>
@@ -1093,7 +1094,7 @@ TextFocusIn (Widget w, XEvent *event, String *p, Cardinal *n)
   TextWidget ctx = (TextWidget) w;
 
   /* Let the input method know focus has arrived. */
-  _XawImSetFocusValues (w, NULL, 0);
+  _XawImSetFocusValues(w, NULL, 0);
   if ( event->xfocus.detail == NotifyPointer ) return;
 
   ctx->text.hasfocus = TRUE;
@@ -1170,60 +1171,104 @@ static void AutoFill (TextWidget ctx) {
     XBell(XtDisplay((Widget) ctx), 0);	/* Unable to edit, complain. */
 }
 
-static void
-InsertChar(Widget w, XEvent *event, String *p, Cardinal *n)
-{
-  TextWidget ctx = (TextWidget) w;
-  char *ptr, strbuf[BUFSIZ];
-  int count, error;
-  KeySym keysym;
+static void InsertChar (Widget w, XEvent *event,
+[[maybe_unused]] String *ignored_params,
+[[maybe_unused]] Cardinal *ignored_num_params) {
+  TextWidget ctx = (TextWidget)w;
   XawTextBlock text;
-  Status status;
+  Boolean textPtrIsTemp = False;
 
-  if (XtIsSubclass (ctx->text.source, (WidgetClass) multiSrcObjectClass))
-    text.length = _XawImWcLookupString (w, &event->xkey,
-		(wchar_t*) strbuf, BUFSIZ, &keysym);
-  else
-    text.length = XLookupString ((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, NULL);
-
-  if (text.length == 0)
+  #ifdef DEBUG_IM
+  printf("InsertChar\n");
+  #endif
+  wchar_t wcsbuf[BUFSIZ];
+  int chars_out;
+  if (_XawImWcLookupString(w, &event->xkey, wcsbuf, BUFSIZ, &chars_out)) {
+    if (chars_out <= 0) {
+      #ifdef DEBUG_IM
+      printf("_XawImWcLookupString returned empty string; nothing to do\n");
+      #endif
       return;
-
-  text.format = _XawTextFormat( ctx );
-  if ( text.format == XawFmtWide ) {
-      text.ptr = ptr = XtMalloc(sizeof(wchar_t) * text.length * ctx->text.mult );
-      for (count = 0; count < ctx->text.mult; count++ ) {
-          memcpy((char*) ptr, (char *)strbuf, sizeof(wchar_t) * text.length );
-          ptr += sizeof(wchar_t) * text.length;
-      }
-
-  } else { /* == XawFmt8Bit */
-      text.ptr = ptr = XtMalloc( sizeof(char) * text.length * ctx->text.mult );
-      for ( count = 0; count < ctx->text.mult; count++ ) {
-          strncpy( ptr, strbuf, text.length );
-          ptr += text.length;
-      }
+    }
+    if (_XawTextFormat(ctx) == XawFmtWide)
+      text = (XawTextBlock){0, chars_out, (char *)wcsbuf, XawFmtWide};
+    else {
+      Cardinal num_bytes = chars_out * sizeof(wchar_t);
+      char *cs = Xaw3dXftWcToAnyN(wcsbuf, &num_bytes, XawTextEncoding8bit);
+      text = (XawTextBlock){0, num_bytes, cs, XawFmt8Bit};
+      textPtrIsTemp = True;
+    }
+  } else {
+    // Don't know how to reach this block without instrumentation.  Xlib has
+    // some kind of default minimal input method that results in the block
+    // above always being used.
+    #ifdef DEBUG_IM
+    printf("_XawImWcLookupString returned False; trying XLookupString\n");
+    #endif
+    char *csbuf = (char *)wcsbuf;
+    int bytes_buffer = BUFSIZ * sizeof(wchar_t);
+    // "If present (non-NULL), the XComposeStatus structure records the
+    // state, which is private to Xlib, that needs preservation across calls
+    // to XLookupString to implement compose processing.  The creation of
+    // XComposeStatus structures is implementation-dependent; a portable
+    // program must pass NULL for this argument."  🤷
+    chars_out = XLookupString((XKeyEvent*)event, csbuf, bytes_buffer, NULL,
+      NULL);
+    if (chars_out <= 0) {
+      #ifdef DEBUG_IM
+      printf("XLookupString returned empty string; nothing to do\n");
+      #endif
+      return;
+    }
+    if (_XawTextFormat(ctx) == XawFmtWide) {
+      Cardinal num_bytes = chars_out;
+      wchar_t *wcs = Xaw3dXftAnyToWcN(XawTextEncoding8bit, csbuf, &num_bytes);
+      text = (XawTextBlock){0, num_bytes/sizeof(wchar_t), (char *)wcs,
+			    XawFmtWide};
+      textPtrIsTemp = True;
+    } else
+      text = (XawTextBlock){0, chars_out, csbuf, XawFmt8Bit};
   }
 
-  text.length = text.length * ctx->text.mult;
-  text.firstPos = 0;
+  // We now have a text block in the internal encoding, but we might want to
+  // multiply it.
+  assert(ctx->text.mult >= 1);
+  if (ctx->text.mult > 1) {
+    Cardinal bytes_before = text.length;
+    if (text.format == XawFmtWide)
+      bytes_before *= sizeof(wchar_t);
+    Cardinal bytes_after = bytes_before * ctx->text.mult;
+    uint8_t *newstr = XtMalloc(bytes_after + 4);
+    uint8_t *ptr = newstr;
+    for (short count=0; count < ctx->text.mult; ++count) {
+      memcpy(ptr, text.ptr, bytes_before);
+      ptr += bytes_before;
+    }
+    memset(ptr, 0, 4);
+    if (textPtrIsTemp)
+      XtFree(text.ptr);
+    textPtrIsTemp = True;
+    text.ptr = newstr;
+    text.length *= ctx->text.mult;
+  }
 
+  // Finally, do the thing
   StartAction(ctx, event);
-
-  error = _XawTextReplace(ctx, ctx->text.insertPos,ctx->text.insertPos, &text);
+  int error = _XawTextReplace(ctx, ctx->text.insertPos,ctx->text.insertPos,
+    &text);
 
   if (error == XawEditDone) {
-      ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
-	      XawstPositions, XawsdRight, text.length, TRUE);
-      ctx->text.from_left = -1;
-      AutoFill(ctx);
-  }
-  else
-      XBell(XtDisplay(ctx), 50);
+    ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
+      XawstPositions, XawsdRight, text.length, TRUE);
+    ctx->text.from_left = -1;
+    AutoFill(ctx);
+  } else
+    XBell(XtDisplay(ctx), 50);
 
-  XtFree(text.ptr);
   _XawTextSetScrollBars(ctx);
   EndAction(ctx);
+  if (textPtrIsTemp)
+    XtFree(text.ptr);
 }
 
 

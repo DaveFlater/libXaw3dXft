@@ -770,7 +770,6 @@ static void InsertCursor (Widget w, XawTextInsertState state) {
   if (ctx->text.lt.lines < 1) return;
 
   if (LineAndXYForPosition(ctx, ctx->text.insertPos, &line, &x, &y)) {
-    // y == ctx->text.lt.info[line].y
     if (line < ctx->text.lt.lines)
       y = ctx->text.lt.info[line + 1].y;
     else
@@ -781,15 +780,8 @@ static void InsertCursor (Widget w, XawTextInsertState state) {
   ctx->text.ev_x = x;
   ctx->text.ev_y = y;
 
-  /* Keep Input Method up to speed  */
-  // FIXME this is no longer tied to international.  Maybe should be always on.
-
-  if ( ctx->simple.international ) {
-    Arg list[1];
-
-    XtSetArg (list[0], XtNinsertPosition, ctx->text.insertPos);
-    _XawImSetValues (w, list, 1);
-  }
+  Arg list[1] = {{XtNinsertPosition, ctx->text.insertPos}};
+  _XawImSetValues (w, list, 1);
 }
 
 /*
@@ -1282,7 +1274,7 @@ void _XawTextVScroll(TextWidget ctx, int n) {
       DisplayTextWindow((Widget)ctx);  // redraw everything
   }
   Arg list[1] = {{XtNinsertPosition, ctx->text.lt.top+ctx->text.lt.lines}};
-  _XawImSetValues((Widget) ctx, list, 1);
+  _XawImSetValues((Widget)ctx, list, 1);
 }
 
 static void HScroll (Widget w, XtPointer closure, XtPointer callData) {
