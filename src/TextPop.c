@@ -304,7 +304,7 @@ static Boolean InsertFileNamed (Widget tw, char *str) {
     fclose(file);
     return False;
   }
-  void *srcText = XtMalloc(fileNumBytes + 4);
+  uint8_t *srcText = XtMalloc(fileNumBytes + 4);
   if (fread(srcText, 1, fileNumBytes, file) != fileNumBytes) {
     XtWarning("libXaw3dXft: file read failed");
     fclose(file);

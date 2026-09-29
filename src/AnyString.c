@@ -33,6 +33,9 @@ X11 license (as per the historical licenses that the package inherits)
 #define isBigEndian 0
 #endif
 
+// Type used to avoid assuming that sizeof void is 1
+typedef uint8_t byte;
+
 /*
   Commence endless screaming.
 
@@ -656,7 +659,7 @@ void *Xaw3dXftAnyStrdupN (XawTextEncoding encoding, const void *text,
 			  Cardinal num_bytes) {
   assert(text);
   const Cardinal nbytes = num_bytes + nlsize(encoding);
-  void *s = malloc(nbytes);
+  byte *s = malloc(nbytes);
   assert(s);
   (void) memcpy(s, text, num_bytes); // Rules 2 and 3 not enforced
   (void) memset(s+num_bytes, 0, nbytes-num_bytes);
@@ -758,7 +761,6 @@ static void drawOneXmbLine (
 // Xaw3dXftDrawAnyString component for a single line with plain old X font
 static void drawOneLine (
   Display *display, Window window,
-  XFontStruct *font,
   GC gc,
   Position x, Position yadj,
   XawTextEncoding encoding,
@@ -830,10 +832,10 @@ void Xaw3dXftDrawAnyStringN (
     XtWarning("libXaw3dXft: XSetClipRectangles failed");
 
   // Begin line-breaking loop
-  const void *nl = nextnl(encoding, text);
+  const byte *nl = nextnl(encoding, text);
   Position yadj = y + fontAscent;
   while (nl != NULL && num_bytes > 0) {
-    Cardinal line_bytes = nl - text;
+    Cardinal line_bytes = nl - (byte *)text;
     if (line_bytes > num_bytes)
       line_bytes = num_bytes;
 
@@ -844,8 +846,8 @@ void Xaw3dXftDrawAnyStringN (
       drawOneXmbLine(display, window, fontSet, text_gc, x, yadj, encoding, text,
 	             line_bytes);
     else
-      drawOneLine(display, window, font, text_gc, x, yadj, encoding, text,
-		  line_bytes);
+      drawOneLine(display, window, text_gc, x, yadj, encoding, text,
+	          line_bytes);
     yadj += fontHeight;
 
     // End line-breaking loop
@@ -866,8 +868,7 @@ void Xaw3dXftDrawAnyStringN (
     drawOneXmbLine(display, window, fontSet, text_gc, x, yadj, encoding, text,
                    num_bytes);
   else
-    drawOneLine(display, window, font, text_gc, x, yadj, encoding, text,
-                num_bytes);
+    drawOneLine(display, window, text_gc, x, yadj, encoding, text, num_bytes);
   if (clip && !xftFont && !XSetClipMask(display, text_gc, None))
     XtWarning("libXaw3dXft: XSetClipMask failed");
 }
@@ -997,9 +998,9 @@ Dimension *width, Dimension *height) {
     &fontHeight, NULL, NULL);
 
   // Begin line-breaking loop
-  const void *nl = nextnl(encoding, text);
+  const byte *nl = nextnl(encoding, text);
   while (nl != NULL && num_bytes > 0) {
-    Cardinal line_bytes = nl - text;
+    Cardinal line_bytes = nl - (byte *)text;
     if (line_bytes > num_bytes)
       line_bytes = num_bytes;
 
@@ -1156,15 +1157,15 @@ Boolean Xaw3dXftLocateCharacter (
 
     // Get down to the right line.
     Cardinal linesSkipped = 0;
-    const void *line = text, *nl = nextnl(encoding, line);
-    while (nl && text + b2 > nl) {
-      if (text + b1 <= nl) return False;
+    const byte *line = text, *nl = nextnl(encoding, line);
+    while (nl && (byte *)text + b2 > nl) {
+      if ((byte *)text + b1 <= nl) return False;
       ++linesSkipped;
       line = nl + nlsize(encoding);
       nl = nextnl(encoding, line);
     }
     *y = linesSkipped * fontHeight;
-    const Cardinal bytesSkipped = line - text;
+    const Cardinal bytesSkipped = line - (byte *)text;
     assert(bytesSkipped <= b1);
     b1 -= bytesSkipped;
     b2 -= bytesSkipped;

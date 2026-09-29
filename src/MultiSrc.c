@@ -1038,7 +1038,7 @@ static void LoadPieces (MultiSrcObject src, FILE *file, char *string) {
       XtError("libXaw3dXft: file too long in Text widget");
     Cardinal num_bytes = biglen;
     rewind(file);
-    void *slurp = XtMalloc(num_bytes+4);
+    uint8_t *slurp = XtMalloc(num_bytes+4);
     size_t ret = fread(slurp, 1, num_bytes, file);
     if (ret < num_bytes) {
       XtWarning("libXaw3dXft: short file read in Text widget");
