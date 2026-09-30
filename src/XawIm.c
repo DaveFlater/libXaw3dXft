@@ -247,8 +247,8 @@ ConfigureCB(Widget w, XtPointer closure, XEvent *event,
 	margin = &(((TextWidget)w)->text.margins);
 	pe_area.x += margin->left;
 	pe_area.y += margin->top;
-	pe_area.width -= (margin->left + margin->right - 1);
-	pe_area.height -= (margin->top + margin->bottom - 1);
+	pe_area.width -= (margin->left + margin->right);
+	pe_area.height -= (margin->top + margin->bottom);
 
 	pe_attr = XVaCreateNestedList(0, XNArea, &pe_area, NULL);
 	XSetICValues(p->xic, XNPreeditAttributes, pe_attr, NULL);
