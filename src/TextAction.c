@@ -1178,18 +1178,11 @@ static void InsertChar (Widget w, XEvent *event,
   XawTextBlock text;
   Boolean textPtrIsTemp = False;
 
-  #ifdef DEBUG_IM
-  printf("InsertChar\n");
-  #endif
   wchar_t wcsbuf[BUFSIZ];
   int chars_out;
   if (_XawImWcLookupString(w, &event->xkey, wcsbuf, BUFSIZ, &chars_out)) {
-    if (chars_out <= 0) {
-      #ifdef DEBUG_IM
-      printf("_XawImWcLookupString returned empty string; nothing to do\n");
-      #endif
+    if (chars_out <= 0)
       return;
-    }
     if (_XawTextFormat(ctx) == XawFmtWide)
       text = (XawTextBlock){0, chars_out, (char *)wcsbuf, XawFmtWide};
     else {
@@ -1203,7 +1196,7 @@ static void InsertChar (Widget w, XEvent *event,
     // some kind of default minimal input method that results in the block
     // above always being used.
     #ifdef DEBUG_IM
-    printf("_XawImWcLookupString returned False; trying XLookupString\n");
+    printf("_XawImWcLookupString returned False; using XLookupString\n");
     #endif
     char *csbuf = (char *)wcsbuf;
     int bytes_buffer = BUFSIZ * sizeof(wchar_t);
@@ -1214,12 +1207,8 @@ static void InsertChar (Widget w, XEvent *event,
     // program must pass NULL for this argument."  🤷
     chars_out = XLookupString((XKeyEvent*)event, csbuf, bytes_buffer, NULL,
       NULL);
-    if (chars_out <= 0) {
-      #ifdef DEBUG_IM
-      printf("XLookupString returned empty string; nothing to do\n");
-      #endif
+    if (chars_out <= 0)
       return;
-    }
     if (_XawTextFormat(ctx) == XawFmtWide) {
       Cardinal num_bytes = chars_out;
       wchar_t *wcs = Xaw3dXftAnyToWcN(XawTextEncoding8bit, csbuf, &num_bytes);
