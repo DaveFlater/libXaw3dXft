@@ -810,6 +810,9 @@ SizeNegotiation(XawIcTableList p, Dimension width, Dimension height)
     }
 }
 
+/* Noted that the infrastructure is here to set XNLineSpace but it isn't
+   used.  The font height goes only into the geometry of the preedit or
+   status area. */
 static Dimension fontSetHeight (Display *display, XFontSet fontSet) {
   Dimension height;
   Xaw3dXftAnyFontMetrics(display, NULL, fontSet, NULL, True, &height, NULL,
