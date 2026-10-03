@@ -2600,9 +2600,8 @@ UpdateTextInRectangle(TextWidget ctx, XRectangle * rect)
 }
 
 /*
- * This routine processes all "expose region" XEvents. In general, its job
- * is to the best job at minimal re-paint of the text, displayed in the
- * window, that it can.
+ * This routine processes all "expose region" XEvents.  In general, its job
+ * is to do the minimum sufficient repaint.
  */
 
 static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
