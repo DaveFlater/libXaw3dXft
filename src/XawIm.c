@@ -368,6 +368,14 @@ VendorShellDestroyed(Widget w, XtPointer cl_data, XtPointer ca_data)
     return;
 }
 
+static void localeModifiersFail () {
+  static Boolean first = True;
+  if (first) {
+    first = False;
+    XtWarning("libXaw3dXft: XSetLocaleModifiers returned failure.  This can be caused by an\ninvalid value in the XMODIFIERS environment variable, and it prevents any input\nmethod from working.");
+  }
+}
+
 /*
  * Attempt to open an input method
  */
@@ -425,8 +433,7 @@ static void OpenIM (XawVendorShellExtPart *ve) {
 	else
 	  printf("FAILED\n");
 	#endif
-      } else
-	XtWarning("XSetLocaleModifiers failed");
+      } else localeModifiersFail();
 
       next1:
       if (ns)
@@ -438,27 +445,24 @@ static void OpenIM (XawVendorShellExtPart *ve) {
 
   if (xim == NULL) {
     #ifdef DEBUG_IM
+    printf("IM is not open.  Trying empty string locale modifier.\n");
+    #endif
+    strcpy(inputMethodName, "default");
+    if ((p = XSetLocaleModifiers("")) != NULL)
+      xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
+    else localeModifiersFail();
+  }
+  if (xim == NULL) {
+    #ifdef DEBUG_IM
     printf("IM is not open.  Trying @im=none locale modifier.\n");
     #endif
     strcpy(inputMethodName, "none");
     if ((p = XSetLocaleModifiers(localeModifier)) != NULL)
       xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
-    else
-      XtWarning("XSetLocaleModifiers failed");
+    else localeModifiersFail();
   }
   if (xim == NULL) {
-    #ifdef DEBUG_IM
-    printf("IM is not open.  Trying empty string locale modifier.\n");
-    #endif
-    strcpy(inputMethodName, "\"\""); // for printouts below
-    if ((p = XSetLocaleModifiers("")) != NULL)
-      xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
-    else
-      XtWarning("XSetLocaleModifiers failed");
-  }
-  if (xim == NULL) {
-    XtAppWarning(XtWidgetToApplicationContext(ve->parent),
-      "Input method open failed");
+    XtWarning("libXaw3dXft: failed to open input method");
     return;
   }
 
@@ -946,13 +950,17 @@ static void CreateIC (Widget w, XawVendorShellExtPart *ve) {
     }
   }
 
-  // FIXME:  These areas are probably wrong, but I don't yet have an input
-  // method that supports the areas for testing.  Don't know whether it's OK
-  // for them to be the same area.  See also:
-  // ResizeVendorShell_Core
-  // SizeNegotiation
+  // These areas are probably wrong, but I haven't yet succeeded in showing
+  // them in use.  See also ResizeVendorShell_Core, SizeNegotiation
   if (p->input_style & (XIMPreeditArea | XIMStatusArea)) {
-    assert(didSetHeight);
+    if (!didSetHeight) {
+      if (p->font_set)
+	height = fontSetHeight(XtDisplay(w), p->font_set);
+      else
+	height = 24; // arbitrary number
+      height = SetVendorShellHeight(ve, height);
+      didSetHeight = True;
+    }
     pest_area.x = 0;
     pest_area.y = ve->parent->core.height - height;
     pest_area.width = ve->parent->core.width;
@@ -979,8 +987,6 @@ static void CreateIC (Widget w, XawVendorShellExtPart *ve) {
     XNFocusWindow.  If the area specified is NULL or invalid, the results are
     undefined.
   */
-  // This has no effect on the problem of the IBus window appearing in the
-  // completely wrong location.
   if (p->input_style & XIMPreeditPosition) {
     XawTextMargin *margin = &(((TextWidget)w)->text.margins);
     pe_area = (XRectangle){margin->left, margin->top,

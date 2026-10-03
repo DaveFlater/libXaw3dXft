@@ -18,6 +18,7 @@ while some have not yet migrated.
 - [Run-time options](#runtimeopts)
 - [Version 1.x to 2.0 migration](#migration)
 - [Rationale for features removed in 2.0](#rationale)
+- [Input method troubleshooting](#improblems)
 - [Oddities](#oddities)
 - [History](#history)
 - [To do](#todo)
@@ -874,7 +875,7 @@ The class of the type resource is documented as Type but implemented as AsciiTyp
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
 The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
 
-### VendorShell
+### <a name="VendorShell"></a>VendorShell
 
 Xaw overrides the VendorShell class of Xt with its own version to integrate
 input method support.
@@ -891,9 +892,10 @@ sharedIc | SharedIc | Boolean | False
 The inputMethod resource is a comma-separated list of input method names to
 attempt to use; e.g., "ibus,fcitx,scim,uim".  These names are passed one at a
 time to `XSetLocaleModifiers("@im=%s")` and tried in the order given.  When
-the resource is null or if the list was exhausted without success, an attempt
-is made with `@im=none`.  If that too fails, a final attempt is made with
-`XSetLocaleModifiers("")`.
+the inputMethod resource is null or if the list was exhausted without
+success, an attempt is made with `XSetLocaleModifiers("")`, which allows an
+input method specified using the environment variable XMODIFIERS a chance to
+work.  If that too fails, a final attempt is made with `@im=none`.
 
 VendorShell is inherited by the ApplicationShell class that is normally
 created at the start of an Xaw application.  The way to enable an input
@@ -901,11 +903,7 @@ method is thus:
 
     Widget appShell = XtVaAppCreateShell("Example", "Example",
       applicationShellWidgetClass, display,
-      XtNinputMethod, "ibus",
-      NULL);
-
-(N.B., there is lots of advice to use the environment variable XMODIFIERS
-instead of the inputMethod resource.  It doesn't work.)
+      XtNinputMethod, "ibus", NULL);
 
 The preeditType resource is a comma-separated list of input method styles to
 attempt to use.  As each input method is tried, these styles are tried in the
@@ -922,15 +920,16 @@ OffSpot2    | XIMPreeditArea     \| XIMStatusNothing
 Root        | XIMPreeditNothing  \| XIMStatusNothing
 
 The openIm resource enables or disables input methods entirely.  When it is
-false, no attempt is made to connect to any input method, and even Xlib's
-builtin "none" input method is bypassed.  If the default input method is
-opening in the "C" locale and eating characters from an international
-keyboard, use this resource to turn it off.
+false, no attempt is made to connect to any input method, and keyboard input
+is processed as 8bit (Latin-1 plus ASCII control characters).
 
 The sharedIc resource controls whether a shared input context (IC) is used.
 The benefit of a shared IC is that extra resources for the input method need
 to be provided on only the first Text widget.  The cost is that the shared
 resources might be inappropriate for the other Text widgets.
+
+See [Input method troubleshooting](#improblems) for more information on
+using input methods.
 
 In Xaw, the macros for the VendorShell resources are defined in the "private"
 header file XawImP.h.  In Xaw3dXft, they are defined in StringDefs.h.
@@ -1193,6 +1192,73 @@ libmagic file types instead of file name heuristics.  See [Issue
 The flash feature of the Repeater widget does not work in Xaw and has no
 reasonable implementation that works on a modern X server.  It needs
 immediate, synchronous updating of the display.
+
+
+## <a name="improblems"></a>Input method troubleshooting
+
+Input methods are associated with Text widgets and with the VendorShell.
+
+The X Input Method (XIM) protocol involves both Xlib and separate input
+method software.  Misbehavior of either one prevents it from working.
+
+If the XMODIFIERS environment variable is set to a value that is not in the
+expected form `@im=name`, Xlib will not open *any* input method.
+
+Characters that are not in the repertoire of the currently active [C
+locale](#locales) are silently eaten.
+
+Using default values for everything unfortunately does something stupid:  it
+opens a builtin default input method provided by Xlib with the default "C"
+locale.  Since the "C" locale is limited to ASCII, it is better to set openIm
+to False (see [VendorShell](#VendorShell)) and have no input method at all,
+because then at least Latin-1 accented characters from an international
+keyboard will work.
+
+For any input method style other than Root, Xlib requires a font set.  It
+does not matter that the input method is not going to use it.  The default
+font set suffices if Xt actually loaded one.  The problem happens when Xt
+says this:
+
+    Warning: Missing charsets in String to FontSet conversion
+    Warning: Unable to load any usable fontset
+
+Then the default font set is null and XCreateIC will always fail, disabling
+the input method.  This failure happens *after* the input method has been
+successfully opened, at which point it is too late to fall back to Root.
+
+To get around this, provide a font set with XtNfontSet when creating a Text
+widget.  It is not necessary to set international to true—the Text widget can
+go on using a FreeType or core font rather than the font set.  It is not even
+necessary for the font set to cover all of the charsets.  It just has to
+exist.
+
+Proof of concept with IBus 1.5.25:
+
+- Launch:  `ibus-daemon --xim &`
+- Configuration:  IBus Preferences; Emoji tab, Unicode code point = &lt;Control&gt;&lt;Shift&gt;u
+- Compatible styles are OverSpot2 and Root.
+- Control-Shift-u brings up a preedit window.  Enter a hex value and hit Enter
+  or Space.  The corresponding Unicode character is inserted.
+- With style OverSpot2, the preedit window appears in the wrong place and
+  moves to the insert point on the next keypress.
+- With style Root, the preedit window appears in the wrong place and moves to
+  the bottom of the Text window on the next keypress.
+
+Proof of concept with Fcitx 4.2.9.8:
+
+- Launch:  `fcitx -u fcitx-kimpanel-ui`
+- Configuration:
+    - Input Method tab:  + at bottom, add unicode (M17N)
+    - Global Config tab:  Show Advanced Options; Program tab, Default Input Method State = Active
+    - Don't know where the hotkey for Unicode entry is configured
+- Compatible styles are OverTheSpot, OverSpot2, and Root.
+- Control-u brings up a preedit window.  Enter exactly four hex digits and the
+  corresponding Unicode character is inserted.
+- The preedit window appears at the insert point for OverTheSpot and OverSpot2
+  and at the bottom of the Text window for Root.  The initial position glitch
+  that IBus has does not occur.
+- There is no visible difference between OverTheSpot and OverSpot2; no status
+  area appears.
 
 
 ## <a name="oddities"></a>Oddities
