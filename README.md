@@ -1223,14 +1223,11 @@ says this:
     Warning: Unable to load any usable fontset
 
 Then the default font set is null and XCreateIC will always fail, disabling
-the input method.  This failure happens *after* the input method has been
-successfully opened, at which point it is too late to fall back to Root.
-
-To get around this, provide a font set with XtNfontSet when creating a Text
-widget.  It is not necessary to set international to true—the Text widget can
-go on using a FreeType or core font rather than the font set.  It is not even
-necessary for the font set to cover all of the charsets.  It just has to
-exist.
+the input method.  To get around this, provide a font set with XtNfontSet
+when creating a Text widget.  It is not necessary to set international to
+true—the Text widget can go on using a FreeType or core font rather than the
+font set.  It is not even necessary for the font set to cover all of the
+charsets.  It just has to exist.
 
 Proof of concept with IBus 1.5.25:
 
@@ -1259,6 +1256,7 @@ Proof of concept with Fcitx 4.2.9.8:
   that IBus has does not occur.
 - There is no visible difference between OverTheSpot and OverSpot2; no status
   area appears.
+- In the default "C" locale, no characters get through—not even ASCII.
 
 
 ## <a name="oddities"></a>Oddities
