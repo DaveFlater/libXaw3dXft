@@ -1192,11 +1192,12 @@ static void InsertChar (Widget w, XEvent *event,
       textPtrIsTemp = True;
     }
   } else {
-    // Don't know how to reach this block without instrumentation.  Xlib has
-    // some kind of default minimal input method that results in the block
-    // above always being used.
+    // We get here only when something goes wrong (e.g., XCreateIC failed) or
+    // openIm was set to False on the app shell.  Xlib has some kind of
+    // default builtin "none" input method that normally results in the block
+    // above being used even when no real input method is running.
     #ifdef DEBUG_IM
-    printf("_XawImWcLookupString returned False; using XLookupString\n");
+    printf("★ _XawImWcLookupString returned False; using XLookupString\n");
     #endif
     char *csbuf = (char *)wcsbuf;
     int bytes_buffer = BUFSIZ * sizeof(wchar_t);

@@ -877,22 +877,23 @@ The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font p
 ### VendorShell
 
 Xaw overrides the VendorShell class of Xt with its own version to integrate
-input method support.  Unfortunately, it is not explained in Xaw documentation.
+input method support.
 
 VendorShell has the following resources in addition to those inherited:
 
 Name      | Class    | RepType  | Default value
 :---      | :---     | :---     | :---
 inputMethod | InputMethod | String | NULL
-preeditType | PreeditType | String | "OverTheSpot,OffTheSpot,Root"
+preeditType | PreeditType | String | "OverTheSpot,OverSpot2,OffTheSpot,OffSpot2,Root"
 openIm | OpenIm | Boolean | True
 sharedIc | SharedIc | Boolean | False
 
 The inputMethod resource is a comma-separated list of input method names to
 attempt to use; e.g., "ibus,fcitx,scim,uim".  These names are passed one at a
 time to `XSetLocaleModifiers("@im=%s")` and tried in the order given.  When
-inputMethod is null, an attempt is made with `@im=none`.  If all else fails,
-a final attempt is made with `XSetLocaleModifiers("")`.
+the resource is null or if the list was exhausted without success, an attempt
+is made with `@im=none`.  If that too fails, a final attempt is made with
+`XSetLocaleModifiers("")`.
 
 VendorShell is inherited by the ApplicationShell class that is normally
 created at the start of an Xaw application.  The way to enable an input
@@ -903,22 +904,33 @@ method is thus:
       XtNinputMethod, "ibus",
       NULL);
 
-(N.B., I had no success using the environment variable XMODIFIERS instead of
-the inputMethod resource.  `@im=none` finds something, but XMODIFIERS is
-ignored.)
+(N.B., there is lots of advice to use the environment variable XMODIFIERS
+instead of the inputMethod resource.  It doesn't work.)
 
 The preeditType resource is a comma-separated list of input method styles to
-attempt to use.  On-the-spot is not supported; the default value
-"OverTheSpot,OffTheSpot,Root" includes every supported style.  As each input
-method is tried, these styles are tried in the order given.  If no listed
-style is supported by a particular input method, it is declared unusable and
-the next input method is tried.
+attempt to use.  As each input method is tried, these styles are tried in the
+order given.  If no listed style is supported by a particular input method,
+it is declared unusable and the next input method is tried.  The input method
+styles and their meanings are as follows:
+
+IM style    | XIMStyle flags
+:---        | :---
+OverTheSpot | XIMPreeditPosition \| XIMStatusArea
+OverSpot2   | XIMPreeditPosition \| XIMStatusNothing
+OffTheSpot  | XIMPreeditArea     \| XIMStatusArea
+OffSpot2    | XIMPreeditArea     \| XIMStatusNothing
+Root        | XIMPreeditNothing  \| XIMStatusNothing
 
 The openIm resource enables or disables input methods entirely.  When it is
-false, no attempt is made to connect to any input method.
+false, no attempt is made to connect to any input method, and even Xlib's
+builtin "none" input method is bypassed.  If the default input method is
+opening in the "C" locale and eating characters from an international
+keyboard, use this resource to turn it off.
 
-The sharedIc resource controls whether a shared input context table is used.
-(Untested, details not yet determined.)
+The sharedIc resource controls whether a shared input context (IC) is used.
+The benefit of a shared IC is that extra resources for the input method need
+to be provided on only the first Text widget.  The cost is that the shared
+resources might be inappropriate for the other Text widgets.
 
 In Xaw, the macros for the VendorShell resources are defined in the "private"
 header file XawImP.h.  In Xaw3dXft, they are defined in StringDefs.h.

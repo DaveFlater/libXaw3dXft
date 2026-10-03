@@ -50,6 +50,10 @@ Except as contained in this notice, the name of the X Consortium shall not be
 used in advertising or otherwise to promote the sale, use or other dealings
 in this Software without prior written authorization from the X Consortium.
 
+
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+
 */
 
 #ifdef HAVE_CONFIG_H
@@ -64,21 +68,13 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xfuncs.h>
 #include <X11/Xos.h>
 #include <X11/ResourceI.h>
+#include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/MultiSinkP.h>
 #include <X11/Xaw3dXft/MultiSrc.h>
 #include <X11/Xaw3dXft/TextP.h>
 #include <X11/Xaw3dXft/VendorEP.h>
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/XawImP.h>
-
-#define maxAscentOfFontSet(fontset)     \
-        ( - (XExtentsOfFontSet((fontset)))->max_logical_extent.y)
-
-#define maxHeightOfFontSet(fontset) \
-        ((XExtentsOfFontSet((fontset)))->max_logical_extent.height)
-
-#define maxDescentOfFontSet(fontset) \
-        (maxHeightOfFontSet(fontset) - maxAscentOfFontSet(fontset))
 
 #define Offset(field) (XtOffsetOf(XawIcTablePart, field))
 
@@ -120,11 +116,11 @@ static XtResource resources[] =
     },
     {
 	XtNbackgroundPixmap, XtCPixmap, XtRPixmap, sizeof(Pixmap),
-	Offset (bg_pixmap), XtRImmediate, (XtPointer) XtUnspecifiedPixmap
+	Offset (bg_pixmap), XtRImmediate, (XtPointer)XtUnspecifiedPixmap
     },
     {
-	XtNinsertPosition, XtCTextPosition, XtRInt, sizeof (XawTextPosition),
-	Offset (cursor_position), XtRImmediate, (XtPointer) 0
+	XtNinsertPosition, XtCTextPosition, XtRInt, sizeof(XawTextPosition),
+	Offset (cursor_position), XtRImmediate, (XtPointer)0
     }
 };
 #undef Offset
@@ -282,19 +278,15 @@ CloseIM(XawVendorShellExtPart *ve)
 	XCloseIM(ve->im.xim);
 }
 
-static Dimension
-SetVendorShellHeight(XawVendorShellExtPart *ve, Dimension height)
-{
-    Arg			args[2];
-    Cardinal		i = 0;
-
-   if (ve->im.area_height < height || height == 0) {
-       XtSetArg(args[i], XtNheight,
-		(ve->parent->core.height + height - ve->im.area_height));
-       ve->im.area_height = height;
-       XtSetValues(ve->parent, args, 1);
-   }
-   return(ve->im.area_height);
+static Dimension SetVendorShellHeight (XawVendorShellExtPart *ve,
+Dimension height) {
+  if (ve->im.area_height < height || height == 0) {
+    Arg args[1] = {{XtNheight,
+		    ve->parent->core.height + height - ve->im.area_height}};
+    ve->im.area_height = height;
+    XtSetValues(ve->parent, args, 1);
+  }
+  return ve->im.area_height;
 }
 
 static void
@@ -378,12 +370,12 @@ VendorShellDestroyed(Widget w, XtPointer cl_data, XtPointer ca_data)
  */
 
 static void OpenIM (XawVendorShellExtPart *ve) {
-  int		i;
-  char	*p, *s, *ns, *end, *pbuf, buf[32];
-  XIM		xim = NULL;
-  XIMStyles	*xim_styles;
-  XIMStyle	input_style = 0;
-  Boolean	found;
+  int	    i;
+  char	    *p, *s, *ns, *end;
+  XIM	    xim = NULL;
+  XIMStyles *xim_styles;
+  XIMStyle  input_style = 0;
+  Boolean   found;
 
   if (ve->im.open_im == False) {
     #ifdef DEBUG_IM
@@ -391,70 +383,82 @@ static void OpenIM (XawVendorShellExtPart *ve) {
     #endif
     return;
   }
+
   #ifdef DEBUG_IM
   printf("Starting OpenIM\n");
   #endif
+  constexpr uint8_t inputMethodNameLength = 80;
+  char localeModifier[inputMethodNameLength + 5];
+  strcpy(localeModifier, "@im=");
+  char *inputMethodName = localeModifier + 4;
   ve->im.xim = NULL;
-  if (ve->im.input_method == NULL) {
-    #ifdef DEBUG_IM
-    printf("ve->im.input_method is NULL.  Trying to open IM with locale modifier @im=none.\n");
-    #endif
-    if ((p = XSetLocaleModifiers("@im=none")) != NULL && *p)
-      xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
-  } else {
-    /* no fragment can be longer than the whole string */
-    int	len = strlen(ve->im.input_method) + 5;
 
-    if (len < sizeof buf) pbuf = buf;
-    else pbuf = XtMalloc(len);
-    assert(pbuf);
-
-    // input_method is apparently a comma-separated list
+  if (ve->im.input_method) {
+    // input_method is a comma-separated list
     #ifdef DEBUG_IM
     printf("ve->im.input_method is %s.\n", ve->im.input_method);
     #endif
-    for(ns=s=ve->im.input_method; ns && *s;) {
-      /* skip any leading blanks */
+    for(ns=s=ve->im.input_method; s;) {
       while (*s && isspace(*s)) s++;
       if (!*s) break;
       if ((ns = end = strchr(s, ',')) == NULL)
 	end = s + strlen(s);
-      /* strip any trailing blanks */
-      while (isspace(*end)) end--;
-
-      strcpy (pbuf, "@im=");
-      strncat (pbuf, s, end - s);
-      pbuf[end - s + 4] = '\0';
+      if (end == s) goto next1;
+      --end;
+      while (end > s && isspace(*end)) --end;
+      const Cardinal len = end - s + 1;
+      assert(len <= inputMethodNameLength);
+      strncpy(inputMethodName, s, len);
+      inputMethodName[len] = '\0';
       #ifdef DEBUG_IM
-      printf("Trying to open IM with locale modifier %s.\n", pbuf);
+      printf("Next up input method: '%s'\n", inputMethodName);
+      printf("Trying to open IM with locale modifier %s.\n", localeModifier);
       #endif
 
-      if ((p = XSetLocaleModifiers(pbuf)) != NULL && *p
-	    && (xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL)) != NULL)
-	break;
-      #ifdef DEBUG_IM
+      if ((p = XSetLocaleModifiers(localeModifier)) != NULL) {
+	if ((xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL)))
+	  break;
+	#ifdef DEBUG_IM
+	else
+	  printf("FAILED\n");
+	#endif
+      } else
+	XtWarning("XSetLocaleModifiers failed");
+
+      next1:
+      if (ns)
+        s = ns + 1;
       else
-	printf("FAILED\n");
-      #endif
-
-      s = ns + 1;
+	break;
     }
+  }
 
-    if (pbuf != buf) XtFree(pbuf);
+  if (xim == NULL) {
+    #ifdef DEBUG_IM
+    printf("IM is not open.  Trying @im=none locale modifier.\n");
+    #endif
+    strcpy(inputMethodName, "none");
+    if ((p = XSetLocaleModifiers(localeModifier)) != NULL)
+      xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
+    else
+      XtWarning("XSetLocaleModifiers failed");
   }
   if (xim == NULL) {
     #ifdef DEBUG_IM
-    printf("IM is not open.  Trying again with empty string locale modifier.\n");
+    printf("IM is not open.  Trying empty string locale modifier.\n");
     #endif
-    if ((p = XSetLocaleModifiers("")) != NULL) {
+    strcpy(inputMethodName, "\"\""); // for printouts below
+    if ((p = XSetLocaleModifiers("")) != NULL)
       xim = XOpenIM(XtDisplay(ve->parent), NULL, NULL, NULL);
-    }
+    else
+      XtWarning("XSetLocaleModifiers failed");
   }
   if (xim == NULL) {
     XtAppWarning(XtWidgetToApplicationContext(ve->parent),
-      "Input Method Open Failed");
+      "Input method open failed");
     return;
   }
+
   #ifdef DEBUG_IM
   printf("IM is open.  Requesting input styles.\n");
   #endif
@@ -484,34 +488,50 @@ static void OpenIM (XawVendorShellExtPart *ve) {
   #endif
 
   found = False;
-  //preedit_type is also a comma-separated list
+  // preedit_type is also a comma-separated list
   #ifdef DEBUG_IM
   printf("ve->im.preedit_type is %s.\n", ve->im.preedit_type);
   #endif
-  for(ns = s = ve->im.preedit_type; s && !found;) {
+  for (ns = s = ve->im.preedit_type; s && !found;) {
     while (*s && isspace(*s)) s++;
     if (!*s) break;
     if ((ns = end = strchr(s, ',')) == NULL)
       end = s + strlen(s);
-    while (isspace(*end)) end--;
+    if (end == s) goto next2;
+    --end;
+    while (end > s && isspace(*end)) --end;
+    const Cardinal len = end - s + 1;
+    #ifdef DEBUG_IM
+    printf("Next up preedit type: '%.*s'\n", len, s);
+    #endif
 
-    if (!strncmp(s, "OverTheSpot", end - s)) {
+    if (!strncmp(s, "OverTheSpot", len)) {
       #ifdef DEBUG_IM
       printf("Looking for IM style OverTheSpot (XIMPreeditPosition | XIMStatusArea)\n");
       #endif
       input_style = (XIMPreeditPosition | XIMStatusArea);
-    } else if (!strncmp(s, "OffTheSpot", end - s)) {
+    } else if (!strncmp(s, "OverSpot2", len)) {
+      #ifdef DEBUG_IM
+      printf("Looking for IM style OverSpot2 (XIMPreeditPosition | XIMStatusNothing)\n");
+      #endif
+      input_style = (XIMPreeditPosition | XIMStatusNothing);
+    } else if (!strncmp(s, "OffTheSpot", len)) {
       #ifdef DEBUG_IM
       printf("Looking for IM style OffTheSpot (XIMPreeditArea | XIMStatusArea)\n");
       #endif
       input_style = (XIMPreeditArea | XIMStatusArea);
-    } else if (!strncmp(s, "Root", end - s)) {
+    } else if (!strncmp(s, "OffSpot2", len)) {
+      #ifdef DEBUG_IM
+      printf("Looking for IM style OffSpot2 (XIMPreeditArea | XIMStatusNothing)\n");
+      #endif
+      input_style = (XIMPreeditArea | XIMStatusNothing);
+    } else if (!strncmp(s, "Root", len)) {
       #ifdef DEBUG_IM
       printf("Looking for IM style Root (XIMPreeditNothing | XIMStatusNothing)\n");
       #endif
       input_style = (XIMPreeditNothing | XIMStatusNothing);
     }
-    for (i = 0; (unsigned short)i < xim_styles->count_styles; i++)
+    for (i = 0; i < xim_styles->count_styles; ++i)
       if (input_style == xim_styles->supported_styles[i]) {
 	ve->ic.input_style = input_style;
 	SetErrCnxt(ve->parent, xim);
@@ -520,17 +540,26 @@ static void OpenIM (XawVendorShellExtPart *ve) {
 	#ifdef DEBUG_IM
 	printf("Connected IM with XIMStyle %d\n", i);
 	#endif
+	const char *IMlocale = XLocaleOfIM(xim);
+	printf("libXaw3dXft: opened input method %s with style %.*s and locale %s\n",
+	  inputMethodName, len, s, IMlocale);
+	if (!strcmp(IMlocale, "C"))
+	  XtWarning("libXaw3dXft: input method in default C locale will produce only ASCII!");
 	break;
       }
 
-    s = ns + 1;
+    next2:
+    if (ns)
+      s = ns + 1;
+    else
+      break;
   }
   XFree(xim_styles);
 
   if (!found) {
     XCloseIM(xim);
     XtAppWarning(XtWidgetToApplicationContext(ve->parent),
-      "input method doesn't support my input style");
+      "input method doesn't support any style listed in the preeditType resource");
   }
 }
 
@@ -646,38 +675,37 @@ UnregisterFromVendorShell(Widget w, XawVendorShellExtPart *ve)
     return;
 }
 
-static void
-SetICValuesShared(Widget w, XawVendorShellExtPart *ve, XawIcTableList p, Boolean check)
-{
-    XawIcTableList	pp;
+static void SetICValuesShared (Widget w, XawVendorShellExtPart *ve,
+XawIcTableList p, Boolean check) {
+  XawIcTableList pp;
 
-    if ((pp = GetIcTable(w, ve)) == NULL) return;
-    if (check == TRUE && CurrentSharedIcTable(ve) != pp) return;
+  if ((pp = GetIcTable(w, ve)) == NULL) return;
+  if (check == TRUE && CurrentSharedIcTable(ve) != pp) return;
 
-    if (pp->prev_flg & CICursorP && p->cursor_position != pp->cursor_position) {
-	p->cursor_position = pp->cursor_position;
-	p->flg |= CICursorP;
-    }
-    if (pp->prev_flg & CIFontSet && p->font_set != pp->font_set) {
-	p->font_set = pp->font_set;
-	p->flg |= (CIFontSet|CICursorP);
-    }
-    if (pp->prev_flg & CIFg && p->foreground != pp->foreground) {
-	p->foreground = pp->foreground;
-	p->flg |= CIFg;
-    }
-    if (pp->prev_flg & CIBg && p->background != pp->background) {
-	p->background = pp->background;
-	p->flg |= CIBg;
-    }
-    if (pp->prev_flg & CIBgPixmap && p->bg_pixmap != pp->bg_pixmap) {
-	p->bg_pixmap = pp->bg_pixmap;
-	p->flg |= CIBgPixmap;
-    }
-    if (pp->prev_flg & CILineS && p->line_spacing != pp->line_spacing) {
-	p->line_spacing = pp->line_spacing;
-	p->flg |= CILineS;
-    }
+  if (pp->prev_flg & CICursorP && p->cursor_position != pp->cursor_position) {
+    p->cursor_position = pp->cursor_position;
+    p->flg |= CICursorP;
+  }
+  if (pp->prev_flg & CIFontSet && p->font_set != pp->font_set) {
+    p->font_set = pp->font_set;
+    p->flg |= CIFontSet;
+  }
+  if (pp->prev_flg & CIFg && p->foreground != pp->foreground) {
+    p->foreground = pp->foreground;
+    p->flg |= CIFg;
+  }
+  if (pp->prev_flg & CIBg && p->background != pp->background) {
+    p->background = pp->background;
+    p->flg |= CIBg;
+  }
+  if (pp->prev_flg & CIBgPixmap && p->bg_pixmap != pp->bg_pixmap) {
+    p->bg_pixmap = pp->bg_pixmap;
+    p->flg |= CIBgPixmap;
+  }
+  if (pp->prev_flg & CILineS && p->line_spacing != pp->line_spacing) {
+    p->line_spacing = pp->line_spacing;
+    p->flg |= CILineS;
+  }
 }
 
 static Boolean
@@ -702,15 +730,15 @@ SizeNegotiation(XawIcTableList p, Dimension width, Dimension height)
 
     if (p->input_style & XIMPreeditArea) {
 	pe_attr = XVaCreateNestedList(0, XNAreaNeeded, &pe_area_needed, NULL);
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNPreeditAttributes); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) pe_attr); ic_cnt++;
+	SetVaArg(&ic_a[ic_cnt], (XPointer)XNPreeditAttributes); ic_cnt++;
+	SetVaArg(&ic_a[ic_cnt], (XPointer)pe_attr); ic_cnt++;
     }
     if (p->input_style & XIMStatusArea) {
 	st_attr = XVaCreateNestedList(0, XNAreaNeeded, &st_area_needed, NULL);
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNStatusAttributes); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) st_attr); ic_cnt++;
+	SetVaArg(&ic_a[ic_cnt], (XPointer)XNStatusAttributes); ic_cnt++;
+	SetVaArg(&ic_a[ic_cnt], (XPointer)st_attr); ic_cnt++;
     }
-    SetVaArg( &ic_a[ic_cnt], (XPointer) NULL);
+    SetVaArg(&ic_a[ic_cnt], (XPointer)NULL);
 
     if (ic_cnt > 0) {
 	XGetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4], NULL);
@@ -734,8 +762,8 @@ SizeNegotiation(XawIcTableList p, Dimension width, Dimension height)
 
 	    XFree(st_area_needed);
 	    st_attr = XVaCreateNestedList(0, XNArea, &st_area, NULL);
-	    SetVaArg( &ic_a[ic_cnt], (XPointer) XNStatusAttributes); ic_cnt++;
-	    SetVaArg( &ic_a[ic_cnt], (XPointer) st_attr); ic_cnt++;
+	    SetVaArg(&ic_a[ic_cnt], (XPointer)XNStatusAttributes); ic_cnt++;
+	    SetVaArg(&ic_a[ic_cnt], (XPointer)st_attr); ic_cnt++;
 	}
 	if (p->input_style & XIMPreeditArea) {
 	    if (p->input_style & XIMStatusArea) {
@@ -749,10 +777,10 @@ SizeNegotiation(XawIcTableList p, Dimension width, Dimension height)
 	    XFree(pe_area_needed);
 	    pe_area.y = height - pe_area.height;
 	    pe_attr = XVaCreateNestedList(0, XNArea, &pe_area, NULL);
-	    SetVaArg( &ic_a[ic_cnt], (XPointer) XNPreeditAttributes); ic_cnt++;
-	    SetVaArg( &ic_a[ic_cnt], (XPointer) pe_attr); ic_cnt++;
+	    SetVaArg(&ic_a[ic_cnt], (XPointer)XNPreeditAttributes); ic_cnt++;
+	    SetVaArg(&ic_a[ic_cnt], (XPointer)pe_attr); ic_cnt++;
 	}
-	SetVaArg( &ic_a[ic_cnt], (XPointer) NULL);
+	SetVaArg(&ic_a[ic_cnt], (XPointer)NULL);
 	XSetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4], NULL);
 	if (pe_attr) XFree(pe_attr);
 	if (st_attr) XFree(st_attr);
@@ -763,294 +791,414 @@ SizeNegotiation(XawIcTableList p, Dimension width, Dimension height)
     }
 }
 
-static void
-CreateIC(Widget w, XawVendorShellExtPart *ve)
-{
-    XawIcTableList	p;
-    XPoint		position;
-    XRectangle		pe_area, st_area;
-    XVaNestedList	pe_attr = NULL, st_attr = NULL;
-    XPointer		ic_a[20] = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      pe_a[20] = {
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      st_a[20] = {
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    Dimension		height = 0;
-    int			ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
-    XawTextMargin	*margin;
-
-    if (!XtIsRealized(w)) return;
-    if (((ve->im.xim == NULL) || (p = GetIcTableShared(w, ve)) == NULL) ||
-	p->xic || (p->openic_error != FALSE)) return;
-
-    p->input_style = GetInputStyleOfIC(ve);
-
-    if (IsSharedIC(ve)) SetICValuesShared(w, ve, p, FALSE);
-    XFlush(XtDisplay(w));
-
-    if (p->input_style & (XIMPreeditArea|XIMPreeditPosition|XIMStatusArea)) {
-	if (p->flg & CIFontSet) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNFontSet); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->font_set); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNFontSet); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->font_set); st_cnt++;
-	    if (p->font_set)
-	        height = maxAscentOfFontSet(p->font_set)
-		       + maxDescentOfFontSet(p->font_set);
-	    height = SetVendorShellHeight(ve, height);
-	}
-	if (p->flg & CIFg) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNForeground); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->foreground); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNForeground); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->foreground); st_cnt++;
-	}
-	if (p->flg & CIBg) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNBackground); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->background); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNBackground); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->background); st_cnt++;
-	}
-	if (p->flg & CIBgPixmap) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNBackgroundPixmap); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->bg_pixmap); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNBackgroundPixmap); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->bg_pixmap); st_cnt++;
-	}
-	if (p->flg & CILineS) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNLineSpace); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->line_spacing); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNLineSpace); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->line_spacing); st_cnt++;
-	}
-    }
-    if (p->input_style & XIMPreeditArea) {
-	pe_area.x = 0;
-	pe_area.y = ve->parent->core.height - height;
-	pe_area.width = ve->parent->core.width;
-	pe_area.height = height;
-	SetVaArg( &pe_a[pe_cnt], (XPointer) XNArea); pe_cnt++;
-	SetVaArg( &pe_a[pe_cnt], (XPointer) &pe_area); pe_cnt++;
-    }
-    if (p->input_style & XIMPreeditPosition) {
-	pe_area.x = 0;
-	pe_area.y = 0;
-	pe_area.width = w->core.width;
-	pe_area.height = w->core.height;
-	margin = &(((TextWidget)w)->text.margins);
-	pe_area.x += margin->left;
-	pe_area.y += margin->top;
-	pe_area.width -= (margin->left + margin->right - 1);
-	pe_area.height -= (margin->top + margin->bottom - 1);
-	SetVaArg( &pe_a[pe_cnt], (XPointer) XNArea); pe_cnt++;
-	SetVaArg( &pe_a[pe_cnt], (XPointer) &pe_area); pe_cnt++;
-	if (p->flg & CICursorP) {
-	    _XawTextSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
-	} else {
-	    position.x = position.y = 0;
-	}
-	SetVaArg( &pe_a[pe_cnt], (XPointer) XNSpotLocation); pe_cnt++;
-	SetVaArg( &pe_a[pe_cnt], (XPointer) &position); pe_cnt++;
-    }
-    if (p->input_style & XIMStatusArea) {
-	st_area.x = 0;
-	st_area.y = ve->parent->core.height - height;
-	st_area.width = ve->parent->core.width;
-	st_area.height = height;
-	SetVaArg( &st_a[st_cnt], (XPointer) XNArea); st_cnt++;
-	SetVaArg( &st_a[st_cnt], (XPointer) &st_area); st_cnt++;
-    }
-
-    SetVaArg( &ic_a[ic_cnt], (XPointer) XNInputStyle); ic_cnt++;
-    SetVaArg( &ic_a[ic_cnt], (XPointer) p->input_style); ic_cnt++;
-    SetVaArg( &ic_a[ic_cnt], (XPointer) XNClientWindow); ic_cnt++;
-    SetVaArg( &ic_a[ic_cnt], (XPointer) XtWindow(ve->parent)); ic_cnt++;
-    SetVaArg( &ic_a[ic_cnt], (XPointer) XNFocusWindow); ic_cnt++;
-    SetVaArg( &ic_a[ic_cnt], (XPointer) XtWindow(w)); ic_cnt++;
-
-    if (pe_cnt > 0) {
-	SetVaArg( &pe_a[pe_cnt], (XPointer) NULL);
-	pe_attr = XVaCreateNestedList(0, pe_a[0], pe_a[1], pe_a[2], pe_a[3],
-				   pe_a[4], pe_a[5], pe_a[6], pe_a[7], pe_a[8],
-				   pe_a[9], pe_a[10], pe_a[11], pe_a[12],
-				   pe_a[13], pe_a[14], pe_a[15], pe_a[16],
-				   pe_a[17], pe_a[18],  pe_a[19], NULL);
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNPreeditAttributes); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) pe_attr); ic_cnt++;
-    }
-
-    if (st_cnt > 0) {
-	SetVaArg( &st_a[st_cnt], (XPointer) NULL);
-	st_attr = XVaCreateNestedList(0, st_a[0], st_a[1], st_a[2], st_a[3],
-				   st_a[4], st_a[5], st_a[6], st_a[7], st_a[8],
-				   st_a[9], st_a[10], st_a[11], st_a[12],
-				   st_a[13], st_a[14], st_a[15], st_a[16],
-				   st_a[17], st_a[18],  st_a[19], NULL);
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNStatusAttributes); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) st_attr); ic_cnt++;
-    }
-    SetVaArg( &ic_a[ic_cnt], (XPointer) NULL);
-
-    p->xic = XCreateIC(ve->im.xim, ic_a[0], ic_a[1], ic_a[2], ic_a[3],
-		       ic_a[4], ic_a[5], ic_a[6], ic_a[7], ic_a[8], ic_a[9],
-		       ic_a[10], ic_a[11], ic_a[12], ic_a[13], ic_a[14],
-		       ic_a[15], ic_a[16], ic_a[17], ic_a[18], ic_a[19], NULL);
-    if (pe_attr) XtFree(pe_attr);
-    if (st_attr) XtFree(st_attr);
-
-    if (p->xic == NULL) {
-	p->openic_error = True;
-	return;
-    }
-
-    SizeNegotiation(p, ve->parent->core.width, ve->parent->core.height);
-
-    p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS);
-
-    if (!IsSharedIC(ve)) {
-	if (p->input_style & XIMPreeditPosition) {
-	    XtAddEventHandler(w, (EventMask)StructureNotifyMask, FALSE,
-			      (XtEventHandler)ConfigureCB, (Opaque)NULL);
-	}
-    }
+static Dimension fontSetHeight (Display *display, XFontSet fontSet) {
+  Dimension height;
+  Xaw3dXftAnyFontMetrics(display, NULL, fontSet, NULL, True, &height, NULL,
+    NULL);
+  return height;
 }
 
-static void
-SetICValues(Widget w, XawVendorShellExtPart *ve, Boolean focus)
-{
-    XawIcTableList	p;
-    XPoint		position;
-    XRectangle		pe_area;
-    XVaNestedList	pe_attr = NULL, st_attr = NULL;
-    XPointer		ic_a[20] = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      pe_a[20] = {
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-      st_a[20] = {
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-	NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    int			ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
-    XawTextMargin	*margin;
-    int			height = 0;
+static void CreateIC (Widget w, XawVendorShellExtPart *ve) {
+  XawIcTableList    p;
+  XPoint	    position;
+  XRectangle	    pe_area, pest_area;
+  XVaNestedList	    pe_attr = NULL, st_attr = NULL;
+  XPointer	    ic_a[20] = {
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    pe_a[20] = {
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    st_a[20] = {
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+  Dimension	    height = 0;
+  int		    ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
 
-    if ((ve->im.xim == NULL) || ((p = GetIcTableShared(w, ve)) == NULL) ||
-	(p->xic == NULL)) return;
+  #ifdef DEBUG_IM
+  printf("XawIm CreateIC called for widget %s\n", XtName(w));
+  #endif
 
-    if (IsSharedIC(ve)) SetICValuesShared(w, ve, p, TRUE);
-    XFlush(XtDisplay(w));
-    if (focus == FALSE &&
-	!(p->flg & (CIFontSet | CIFg | CIBg |
-		    CIBgPixmap | CICursorP | CILineS))) return;
+  if (!XtIsRealized(w)) {
+    #ifdef DEBUG_IM
+    printf("  Bailed out:  not realized\n");
+    #endif
+    return;
+  }
+  if (((ve->im.xim == NULL) || (p = GetIcTableShared(w, ve)) == NULL) ||
+    p->xic || (p->openic_error != FALSE)) {
+    #ifdef DEBUG_IM
+    printf("  Bailed out:  ");
+    if (!ve->im.xim)
+      printf("ve->im.xim is null\n");
+    else if (!p)
+      printf("GetIcTableShared(w, ve) returned null\n");
+    else if (!p->xic)
+      printf("p->xic is null\n");
+    else if (p->openic_error != FALSE)
+      printf("p->openic_error is true\n");
+    else
+      printf("something impossible happened\n");
+    #endif
+    return;
+  }
 
-    if (p->input_style & (XIMPreeditArea|XIMPreeditPosition|XIMStatusArea)) {
-	if (p->flg & CIFontSet) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNFontSet); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->font_set); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNFontSet); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->font_set); st_cnt++;
-	    if (p->font_set)
-	        height = maxAscentOfFontSet(p->font_set)
-		       + maxDescentOfFontSet(p->font_set);
-	    height = SetVendorShellHeight(ve, height);
-	}
-	if (p->flg & CIFg) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNForeground); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->foreground); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNForeground); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->foreground); st_cnt++;
-	}
-	if (p->flg & CIBg) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNBackground); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->background); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNBackground); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->background); st_cnt++;
-	}
-	if (p->flg & CIBgPixmap) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNBackgroundPixmap); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->bg_pixmap); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNBackgroundPixmap); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->bg_pixmap); st_cnt++;
-	}
-	if (p->flg & CILineS) {
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNLineSpace); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) p->line_spacing); pe_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) XNLineSpace); st_cnt++;
-	    SetVaArg( &st_a[st_cnt], (XPointer) p->line_spacing); st_cnt++;
-	}
-    }
-    if (p->input_style & XIMPreeditPosition) {
-	if (p->flg & CICursorP) {
-	    _XawTextSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNSpotLocation); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) &position); pe_cnt++;
-	}
-    }
-    if (IsSharedIC(ve)) {
-	if (p->input_style & XIMPreeditPosition) {
-	    pe_area.x = 0;
-	    pe_area.y = 0;
-	    pe_area.width = w->core.width;
-	    pe_area.height = w->core.height;
-	    margin = &(((TextWidget)w)->text.margins);
-	    pe_area.x += margin->left;
-	    pe_area.y += margin->top;
-	    pe_area.width -= (margin->left + margin->right - 1);
-	    pe_area.height -= (margin->top + margin->bottom - 1);
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) XNArea); pe_cnt++;
-	    SetVaArg( &pe_a[pe_cnt], (XPointer) &pe_area); pe_cnt++;
-	}
-    }
+  p->input_style = GetInputStyleOfIC(ve);
 
-    if (pe_cnt > 0) {
-	SetVaArg( &pe_a[pe_cnt], (XPointer) NULL);
-	pe_attr = XVaCreateNestedList(0, pe_a[0], pe_a[1], pe_a[2], pe_a[3],
-				      pe_a[4], pe_a[5], pe_a[6], pe_a[7],
-				      pe_a[8], pe_a[9], pe_a[10], pe_a[11],
-				      pe_a[12], pe_a[13], pe_a[14], pe_a[15],
-				      pe_a[16], pe_a[17], pe_a[18],  pe_a[19], NULL);
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNPreeditAttributes); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) pe_attr); ic_cnt++;
-    }
-    if (st_cnt > 0) {
-	SetVaArg( &st_a[st_cnt], (XPointer) NULL);
-	st_attr = XVaCreateNestedList(0, st_a[0], st_a[1], st_a[2], st_a[3],
-				      st_a[4], st_a[5], st_a[6], st_a[7],
-				      st_a[8], st_a[9], st_a[10], st_a[11],
-				      st_a[12], st_a[13], st_a[14], st_a[15],
-				      st_a[16], st_a[17], st_a[18],  st_a[19], NULL);
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNStatusAttributes); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) st_attr); ic_cnt++;
-    }
-    if (focus == TRUE) {
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XNFocusWindow); ic_cnt++;
-	SetVaArg( &ic_a[ic_cnt], (XPointer) XtWindow(w)); ic_cnt++;
-    }
-    if (ic_cnt > 0) {
-	SetVaArg( &ic_a[ic_cnt], (XPointer) NULL);
-	XSetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4],
-		     ic_a[5], ic_a[6], ic_a[7], ic_a[8], ic_a[9], ic_a[10],
-		     ic_a[11], ic_a[12], ic_a[13], ic_a[14], ic_a[15],
-		     ic_a[16], ic_a[17], ic_a[18], ic_a[19], NULL);
-	if (pe_attr) XtFree(pe_attr);
-	if (st_attr) XtFree(st_attr);
-    }
+  if (IsSharedIC(ve)) SetICValuesShared(w, ve, p, FALSE);
+  XFlush(XtDisplay(w));
 
-    if (IsSharedIC(ve) && p->flg & CIFontSet)
-	SizeNegotiation(p, ve->parent->core.width, ve->parent->core.height);
+  Boolean didSetHeight = False;
+  if (p->input_style & (XIMPreeditArea|XIMPreeditPosition)) {
+    if (p->flg & CIFontSet) {
+      if (p->font_set) {
+	#ifdef DEBUG_IM
+	printf("  Setting fontset for preedit\n");
+	#endif
+	SetVaArg(&pe_a[pe_cnt], (XPointer)XNFontSet); pe_cnt++;
+	SetVaArg(&pe_a[pe_cnt], (XPointer)p->font_set); pe_cnt++;
+	height = fontSetHeight(XtDisplay(w), p->font_set);
+	height = SetVendorShellHeight(ve, height);
+	didSetHeight = True;
+      } else
+        XtWarning("libXaw3dXft: CIFontSet was true but font_set was null");
+    } else
+      XtWarning("libXaw3dXft: trying to create preedit area/position IC without specifying a font set");
+    if (p->flg & CIFg) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNForeground); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->foreground); pe_cnt++;
+    }
+    if (p->flg & CIBg) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNBackground); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->background); pe_cnt++;
+    }
+    if (p->flg & CIBgPixmap) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNBackgroundPixmap); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->bg_pixmap); pe_cnt++;
+    }
+    if (p->flg & CILineS) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNLineSpace); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->line_spacing); pe_cnt++;
+    }
+  }
+  if (p->input_style & XIMStatusArea) {
+    if (p->flg & CIFontSet) {
+      if (p->font_set) {
+	#ifdef DEBUG_IM
+	printf("  Setting fontset for status\n");
+	#endif
+	SetVaArg(&st_a[st_cnt], (XPointer)XNFontSet); st_cnt++;
+	SetVaArg(&st_a[st_cnt], (XPointer)p->font_set); st_cnt++;
+	if (!didSetHeight) {
+	  height = fontSetHeight(XtDisplay(w), p->font_set);
+	  height = SetVendorShellHeight(ve, height);
+	  didSetHeight = True;
+	}
+      } else
+        XtWarning("libXaw3dXft: CIFontSet was true but font_set was null");
+    } else
+      XtWarning("libXaw3dXft: trying to create status area IC without specifying a font set");
+    if (p->flg & CIFg) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNForeground); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->foreground); st_cnt++;
+    }
+    if (p->flg & CIBg) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNBackground); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->background); st_cnt++;
+    }
+    if (p->flg & CIBgPixmap) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNBackgroundPixmap); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->bg_pixmap); st_cnt++;
+    }
+    if (p->flg & CILineS) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNLineSpace); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->line_spacing); st_cnt++;
+    }
+  }
 
-    p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS);
+  // FIXME:  These areas are probably wrong, but I don't yet have an input
+  // method that supports the areas for testing.  Don't know whether it's OK
+  // for them to be the same area.  See also:
+  // ResizeVendorShell_Core
+  // SizeNegotiation
+  if (p->input_style & (XIMPreeditArea | XIMStatusArea)) {
+    assert(didSetHeight);
+    pest_area.x = 0;
+    pest_area.y = ve->parent->core.height - height;
+    pest_area.width = ve->parent->core.width;
+    pest_area.height = height;
+    if (p->input_style & XIMPreeditArea) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNArea); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)&pest_area); pe_cnt++;
+    }
+    if (p->input_style & XIMStatusArea) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNArea); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)&pest_area); st_cnt++;
+    }
+  }
+
+  /*
+    If the input method style is XIMPreeditPosition, XNArea specifies the
+    clipping region within which preediting will take place.  If the focus
+    window has been set, the coordinates are assumed to be relative to the
+    focus window.  Otherwise, the coordinates are assumed to be relative to
+    the client window.  If neither has been set, the results are undefined.
+
+    If XNArea is not specified, is set to NULL, or is invalid, the input
+    method will default the clipping region to the geometry of the
+    XNFocusWindow.  If the area specified is NULL or invalid, the results are
+    undefined.
+  */
+  // This has no effect on the problem of the IBus window appearing in the
+  // completely wrong location.
+  if (p->input_style & XIMPreeditPosition) {
+    XawTextMargin *margin = &(((TextWidget)w)->text.margins);
+    pe_area = (XRectangle){margin->left, margin->top,
+      w->core.width - (margin->left + margin->right),
+      w->core.height - (margin->top + margin->bottom)};
+    SetVaArg(&pe_a[pe_cnt], (XPointer)XNArea); pe_cnt++;
+    SetVaArg(&pe_a[pe_cnt], (XPointer)&pe_area); pe_cnt++;
+    if (p->flg & CICursorP)
+      _XawTextSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
+    else
+      position.x = position.y = 0;
+    SetVaArg(&pe_a[pe_cnt], (XPointer)XNSpotLocation); pe_cnt++;
+    SetVaArg(&pe_a[pe_cnt], (XPointer)&position); pe_cnt++;
+  }
+
+  SetVaArg(&ic_a[ic_cnt], (XPointer)XNInputStyle); ic_cnt++;
+  SetVaArg(&ic_a[ic_cnt], (XPointer)p->input_style); ic_cnt++;
+  SetVaArg(&ic_a[ic_cnt], (XPointer)XNClientWindow); ic_cnt++;
+  SetVaArg(&ic_a[ic_cnt], (XPointer)XtWindow(ve->parent)); ic_cnt++;
+  SetVaArg(&ic_a[ic_cnt], (XPointer)XNFocusWindow); ic_cnt++;
+  SetVaArg(&ic_a[ic_cnt], (XPointer)XtWindow(w)); ic_cnt++;
+
+  if (pe_cnt > 0) {
+    SetVaArg(&pe_a[pe_cnt], (XPointer)NULL);
+    pe_attr = XVaCreateNestedList(0, pe_a[0], pe_a[1], pe_a[2], pe_a[3],
+      pe_a[4], pe_a[5], pe_a[6], pe_a[7], pe_a[8],
+      pe_a[9], pe_a[10], pe_a[11], pe_a[12],
+      pe_a[13], pe_a[14], pe_a[15], pe_a[16],
+      pe_a[17], pe_a[18],  pe_a[19], NULL);
+    SetVaArg(&ic_a[ic_cnt], (XPointer)XNPreeditAttributes); ic_cnt++;
+    SetVaArg(&ic_a[ic_cnt], (XPointer)pe_attr); ic_cnt++;
+  }
+
+  if (st_cnt > 0) {
+    SetVaArg(&st_a[st_cnt], (XPointer)NULL);
+    st_attr = XVaCreateNestedList(0, st_a[0], st_a[1], st_a[2], st_a[3],
+      st_a[4], st_a[5], st_a[6], st_a[7], st_a[8],
+      st_a[9], st_a[10], st_a[11], st_a[12],
+      st_a[13], st_a[14], st_a[15], st_a[16],
+      st_a[17], st_a[18],  st_a[19], NULL);
+    SetVaArg(&ic_a[ic_cnt], (XPointer)XNStatusAttributes); ic_cnt++;
+    SetVaArg(&ic_a[ic_cnt], (XPointer)st_attr); ic_cnt++;
+  }
+
+  p->xic = XCreateIC(ve->im.xim, ic_a[0], ic_a[1], ic_a[2], ic_a[3],
+    ic_a[4], ic_a[5], ic_a[6], ic_a[7], ic_a[8], ic_a[9],
+    ic_a[10], ic_a[11], ic_a[12], ic_a[13], ic_a[14],
+    ic_a[15], ic_a[16], ic_a[17], ic_a[18], ic_a[19], NULL);
+  if (pe_attr) XtFree(pe_attr);
+  if (st_attr) XtFree(st_attr);
+
+  if (p->xic == NULL) {
+    /*
+      A null value could be returned for any of the following reasons:
+      - A required argument was not set
+      - A read-only argument was set
+      - The argument name is not recognized
+      - The input method encountered an implementation-dependent error
+      So far it has been a missing font set every time.
+    */
+    char *msgbuf = XtMalloc(strlen(XtName(w)) + 90);
+    sprintf(msgbuf, "libXaw3dXft: XCreateIC failed for widget %s!  Input method is disabled.", XtName(w));
+    XtWarning(msgbuf);
+    XtFree(msgbuf);
+    if (IsSharedIC(ve))
+      XtWarning("libXaw3dXft: The IC is shared, so the input method is disabled for ALL widgets!");
+    p->openic_error = True;
+    return;
+  }
+
+  SizeNegotiation(p, ve->parent->core.width, ve->parent->core.height);
+
+  p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS);
+
+  if (!IsSharedIC(ve) && p->input_style & XIMPreeditPosition)
+    XtAddEventHandler(w, (EventMask)StructureNotifyMask, FALSE,
+      (XtEventHandler)ConfigureCB, (Opaque)NULL);
+}
+
+// Mostly duplicated from CreateIC
+static void SetICValues (Widget w, XawVendorShellExtPart *ve, Boolean focus) {
+  XawIcTableList    p;
+  XPoint	    position;
+  XRectangle	    pe_area;
+  XVaNestedList	    pe_attr = NULL, st_attr = NULL;
+  XPointer	    ic_a[20] = {
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    pe_a[20] = {
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
+    st_a[20] = {
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+  Dimension	    height = 0;
+  int		    ic_cnt = 0, pe_cnt = 0, st_cnt = 0;
+
+  if ((ve->im.xim == NULL) || ((p = GetIcTableShared(w, ve)) == NULL) ||
+    (p->xic == NULL)) {
+    #ifdef DEBUG_IM
+    printf("SetICValues bailed out:  ");
+    if (!ve->im.xim)
+      printf("ve->im.xim is null\n");
+    else if (!p)
+      printf("GetIcTableShared(w, ve) returned null\n");
+    else if (!p->xic)
+      printf("p->xic is null\n");
+    else
+      printf("something impossible happened\n");
+    #endif
+    return;
+  }
+
+  if (IsSharedIC(ve)) SetICValuesShared(w, ve, p, TRUE);
+  XFlush(XtDisplay(w));
+  if (focus == FALSE &&
+    !(p->flg & (CIFontSet | CIFg | CIBg |
+	CIBgPixmap | CICursorP | CILineS)))
+    return;
+
+  Boolean didSetHeight = False;
+  if (p->input_style & (XIMPreeditArea|XIMPreeditPosition)) {
+    if (p->flg & CIFontSet) {
+      if (p->font_set) {
+	#ifdef DEBUG_IM
+	printf("Widget %s: setting fontset for preedit\n", XtName(w));
+	#endif
+	SetVaArg(&pe_a[pe_cnt], (XPointer)XNFontSet); pe_cnt++;
+	SetVaArg(&pe_a[pe_cnt], (XPointer)p->font_set); pe_cnt++;
+	height = fontSetHeight(XtDisplay(w), p->font_set);
+	height = SetVendorShellHeight(ve, height);
+	didSetHeight = True;
+      } else
+        XtWarning("libXaw3dXft: CIFontSet was true but font_set was null");
+    }
+    if (p->flg & CIFg) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNForeground); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->foreground); pe_cnt++;
+    }
+    if (p->flg & CIBg) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNBackground); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->background); pe_cnt++;
+    }
+    if (p->flg & CIBgPixmap) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNBackgroundPixmap); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->bg_pixmap); pe_cnt++;
+    }
+    if (p->flg & CILineS) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNLineSpace); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->line_spacing); pe_cnt++;
+    }
+  }
+  if (p->input_style & XIMStatusArea) {
+    if (p->flg & CIFontSet) {
+      if (p->font_set) {
+	#ifdef DEBUG_IM
+	printf("Widget %s: setting fontset for status\n", XtName(w));
+	#endif
+	SetVaArg(&st_a[st_cnt], (XPointer)XNFontSet); st_cnt++;
+	SetVaArg(&st_a[st_cnt], (XPointer)p->font_set); st_cnt++;
+	if (!didSetHeight) {
+	  height = fontSetHeight(XtDisplay(w), p->font_set);
+	  height = SetVendorShellHeight(ve, height);
+	  didSetHeight = True;
+	}
+      } else
+        XtWarning("libXaw3dXft: CIFontSet was true but font_set was null");
+    }
+    if (p->flg & CIFg) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNForeground); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->foreground); st_cnt++;
+    }
+    if (p->flg & CIBg) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNBackground); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->background); st_cnt++;
+    }
+    if (p->flg & CIBgPixmap) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNBackgroundPixmap); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->bg_pixmap); st_cnt++;
+    }
+    if (p->flg & CILineS) {
+      SetVaArg(&st_a[st_cnt], (XPointer)XNLineSpace); st_cnt++;
+      SetVaArg(&st_a[st_cnt], (XPointer)p->line_spacing); st_cnt++;
+    }
+  }
+  if (p->input_style & XIMPreeditPosition) {
+    // CreateIC sets position to 0 if !(p->flg & CICursorP).  Here we can
+    // just skip it.
+    if (p->flg & CICursorP) {
+      _XawTextSinkPosToXY(w, p->cursor_position, &position.x, &position.y);
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNSpotLocation); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)&position); pe_cnt++;
+    }
+  }
+
+  // If it isn't shared, we need not repeat this.
+  if (IsSharedIC(ve) && p->input_style & XIMPreeditPosition) {
+    XawTextMargin *margin = &(((TextWidget)w)->text.margins);
+    pe_area = (XRectangle){margin->left, margin->top,
+      w->core.width - (margin->left + margin->right),
+      w->core.height - (margin->top + margin->bottom)};
+    SetVaArg(&pe_a[pe_cnt], (XPointer)XNArea); pe_cnt++;
+    SetVaArg(&pe_a[pe_cnt], (XPointer)&pe_area); pe_cnt++;
+  }
+
+  if (focus) {
+    SetVaArg(&ic_a[ic_cnt], (XPointer)XNFocusWindow); ic_cnt++;
+    SetVaArg(&ic_a[ic_cnt], (XPointer)XtWindow(w)); ic_cnt++;
+  }
+
+  if (pe_cnt > 0) {
+    pe_attr = XVaCreateNestedList(0, pe_a[0], pe_a[1], pe_a[2], pe_a[3],
+      pe_a[4], pe_a[5], pe_a[6], pe_a[7],
+      pe_a[8], pe_a[9], pe_a[10], pe_a[11],
+      pe_a[12], pe_a[13], pe_a[14], pe_a[15],
+      pe_a[16], pe_a[17], pe_a[18],  pe_a[19], NULL);
+    SetVaArg(&ic_a[ic_cnt], (XPointer)XNPreeditAttributes); ic_cnt++;
+    SetVaArg(&ic_a[ic_cnt], (XPointer)pe_attr); ic_cnt++;
+  }
+
+  if (st_cnt > 0) {
+    st_attr = XVaCreateNestedList(0, st_a[0], st_a[1], st_a[2], st_a[3],
+      st_a[4], st_a[5], st_a[6], st_a[7],
+      st_a[8], st_a[9], st_a[10], st_a[11],
+      st_a[12], st_a[13], st_a[14], st_a[15],
+      st_a[16], st_a[17], st_a[18],  st_a[19], NULL);
+    SetVaArg(&ic_a[ic_cnt], (XPointer)XNStatusAttributes); ic_cnt++;
+    SetVaArg(&ic_a[ic_cnt], (XPointer)st_attr); ic_cnt++;
+  }
+
+  if (ic_cnt > 0)
+    XSetICValues(p->xic, ic_a[0], ic_a[1], ic_a[2], ic_a[3], ic_a[4],
+      ic_a[5], ic_a[6], ic_a[7], ic_a[8], ic_a[9], ic_a[10],
+      ic_a[11], ic_a[12], ic_a[13], ic_a[14], ic_a[15],
+      ic_a[16], ic_a[17], ic_a[18], ic_a[19], NULL);
+  if (pe_attr) XtFree(pe_attr);
+  if (st_attr) XtFree(st_attr);
+
+  if (IsSharedIC(ve) && p->flg & CIFontSet)
+    SizeNegotiation(p, ve->parent->core.width, ve->parent->core.height);
+
+  p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS);
 }
 
 static void
 SharedICChangeFocusWindow(Widget w, XawVendorShellExtPart *ve, XawIcTableList p)
 {
-    XawIcTableList	pp;
+    XawIcTableList pp;
 
     if (w == NULL) {
 	ve->ic.current_ic_table = NULL;
@@ -1108,51 +1256,44 @@ UnsetICFocus(Widget w, XawVendorShellExtPart *ve)
     }
 }
 
-static void
-SetValues(Widget w, XawVendorShellExtPart *ve, ArgList args, Cardinal num_args)
-{
-    ArgList	arg;
+static void SetValues (Widget w, XawVendorShellExtPart *ve, ArgList args,
+Cardinal num_args) {
+  ArgList arg;
+  XrmName argName;
+  XrmResourceList xrmres;
+  int i;
+  XawIcTablePart *p, save_tbl;
 
-    XrmName	argName;
-    XrmResourceList	xrmres;
-    int	i;
-    XawIcTablePart	*p, save_tbl;
+  if ((p = GetIcTable(w, ve)) == NULL)
+    return;
 
-    if ((p = GetIcTable(w, ve)) == NULL) return;
+  memcpy(&save_tbl, p, sizeof(XawIcTablePart));
 
-    memcpy(&save_tbl, p, sizeof(XawIcTablePart));
-
-    for (arg = args ; num_args != 0; num_args--, arg++) {
-	argName = XrmStringToName(arg->name);
-	for (xrmres = (XrmResourceList)ve->im.resources, i = 0;
-	     i < ve->im.num_resources; i++, xrmres++) {
-            if (argName == xrmres->xrm_name) {
-                _XtCopyFromArg(arg->value,
-			       (char *)p - xrmres->xrm_offset - 1,
-			       xrmres->xrm_size);
-                break;
-            }
-        }
+  for (arg = args ; num_args != 0; num_args--, arg++) {
+    argName = XrmStringToName(arg->name);
+    for (xrmres = (XrmResourceList)ve->im.resources, i = 0;
+	 i < ve->im.num_resources; i++, xrmres++) {
+      if (argName == xrmres->xrm_name) {
+	_XtCopyFromArg(arg->value,
+	  (char *)p - xrmres->xrm_offset - 1,
+	  xrmres->xrm_size);
+	break;
+      }
     }
-    if (p->font_set != save_tbl.font_set) {
-	p->flg |= CIFontSet;
-    }
-    if (p->foreground != save_tbl.foreground) {
-	p->flg |= CIFg;
-    }
-    if (p->background !=save_tbl.background) {
-	p->flg |= CIBg;
-    }
-    if (p->bg_pixmap != save_tbl.bg_pixmap) {
-	p->flg |= CIBgPixmap;
-    }
-    if (p->cursor_position != save_tbl.cursor_position) {
-	p->flg |= CICursorP;
-    }
-    if (p->line_spacing != save_tbl.line_spacing) {
-	p->flg |= CILineS;
-    }
-    p->prev_flg |= p->flg;
+  }
+  if (p->font_set != save_tbl.font_set)
+    p->flg |= CIFontSet;
+  if (p->foreground != save_tbl.foreground)
+    p->flg |= CIFg;
+  if (p->background !=save_tbl.background)
+    p->flg |= CIBg;
+  if (p->bg_pixmap != save_tbl.bg_pixmap)
+    p->flg |= CIBgPixmap;
+  if (p->cursor_position != save_tbl.cursor_position)
+    p->flg |= CICursorP;
+  if (p->line_spacing != save_tbl.line_spacing)
+    p->flg |= CILineS;
+  p->prev_flg |= p->flg;
 }
 
 static void
@@ -1461,7 +1602,7 @@ _XawImInitialize(
     if ((ve = SetExtPart( (VendorShellWidget) w, (XawVendorShellExtWidget)ext)) ) {
 	if ( Initialize( (VendorShellWidget) w, ve ) == FALSE ) return;
 	XtAddCallback( w, XtNdestroyCallback, VendorShellDestroyed,
-		      (XtPointer) NULL );
+		      (XtPointer)NULL );
     }
 }
 
@@ -1574,7 +1715,19 @@ wchar_t *buffer_return, int wchars_buffer, int *chars_out) {
     return True;
   } else {
     #ifdef DEBUG_IM
-    printf("_XawImWcLookupString: not attempting XwcLookupString\n");
+    printf("_XawImWcLookupString preconditions not met:  ");
+    if (!vw)
+      printf("SearchVendorShell(inwidg) returned null\n");
+    else if (!ve)
+      printf("GetExtPart(vw) returned null\n");
+    else if (!ve->im.xim)
+      printf("ve->im.xim is null\n");
+    else if (!p)
+      printf("GetIcTableShared(inwidg, ve) returned null\n");
+    else if (!p->xic)
+      printf("p->xic is null\n");
+    else
+      printf("something impossible happened\n");
     #endif
     return False;
   }

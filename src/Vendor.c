@@ -227,7 +227,7 @@ static XtResource ext_resources[] = {
 		XtRString, (XtPointer)NULL},
   {XtNpreeditType, XtCPreeditType, XtRString, sizeof(String),
 		XtOffsetOf(XawVendorShellExtRec, vendor_ext.im.preedit_type),
-		XtRString, (XtPointer)"OverTheSpot,OffTheSpot,Root"},
+		XtRString, (XtPointer)"OverTheSpot,OverSpot2,OffTheSpot,OffSpot2,Root"},
   {XtNopenIm, XtCOpenIm, XtRBoolean, sizeof(Boolean),
 		XtOffsetOf(XawVendorShellExtRec, vendor_ext.im.open_im),
 		XtRImmediate, (XtPointer)TRUE},
