@@ -63,6 +63,7 @@ in this Software without prior written authorization from the X Consortium.
 #define	CIBgPixmap	(1 << 4)
 #define	CICursorP	(1 << 5)
 #define	CILineS		(1 << 6)
+#define CIColormap      (1 << 7)
 
 typedef	struct _XawImPart
 {
@@ -85,6 +86,7 @@ typedef struct _XawIcTablePart
     unsigned long	prev_flg;
     Boolean		ic_focused;
     XFontSet		font_set;
+    Colormap            colormap;
     Pixel		foreground;
     Pixel		background;
     Pixmap		bg_pixmap;

@@ -76,8 +76,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/XawImP.h>
 
-#define Offset(field) (XtOffsetOf(XawIcTablePart, field))
-
 /*****************************************************
  *
  * Forward reference prototypes
@@ -100,11 +98,16 @@ static void DestroyIC(
     XawVendorShellExtPart* /* ve */
 );
 
+#define Offset(field) (XtOffsetOf(XawIcTablePart, field))
 static XtResource resources[] =
 {
     {
 	XtNfontSet, XtCFontSet, XtRFontSet, sizeof(XFontSet),
 	Offset (font_set), XtRString, XtDefaultFontSet
+    },
+    {
+        XtNcolormap, XtCColormap, XtRColormap, sizeof(Colormap),
+        Offset (colormap), XtRCallProc, (XtPointer)_XtCopyFromParent
     },
     {
 	XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
@@ -544,7 +547,7 @@ static void OpenIM (XawVendorShellExtPart *ve) {
 	printf("libXaw3dXft: opened input method %s with style %.*s and locale %s\n",
 	  inputMethodName, len, s, IMlocale);
 	if (!strcmp(IMlocale, "C"))
-	  XtWarning("libXaw3dXft: input method in default C locale will produce only ASCII!");
+	  XtWarning("libXaw3dXft: input method in default C locale will support only ASCII characters");
 	break;
       }
 
@@ -629,24 +632,36 @@ ResizeVendorShell(VendorShellWidget vw, XawVendorShellExtPart *ve)
     }
 }
 
-static XawIcTableList
-CreateIcTable(Widget w, XawVendorShellExtPart *ve)
-{
-    XawIcTableList	table;
+static XawIcTableList CreateIcTable (Widget w, XawVendorShellExtPart *ve) {
+  XawIcTableList table;
+  table = (XawIcTableList)XtMalloc(sizeof(XawIcTablePart));
+  if (table == NULL) return NULL;
+  table->widget = w;
+  table->xic = NULL;
+  table->input_style = 0;
+  table->flg = table->prev_flg = 0;
+  table->ic_focused = False;
+  table->font_set = NULL;
+  /*
+    It probably doesn't matter which defaults are used here.
 
-    table = (XawIcTableList) XtMalloc(sizeof(XawIcTablePart));
-    if (table == NULL) return(NULL);
-    table->widget = w;
-    table->xic = NULL;
-    table->flg = table->prev_flg = 0;
-    table->font_set = NULL;
-    table->foreground = table->background = 0xffffffff;
-    table->bg_pixmap = 0;
-    table->cursor_position = 0xffff;
-    table->line_spacing = 0;
-    table->ic_focused = FALSE;
-    table->openic_error = FALSE;
-    return(table);
+    Case 1:  AsciiText.c Initialize → _XawImRegister → Register →
+    RegisterToVendorShell → CreateIcTable, we get an AsciiTextWidget that
+    will have the correct Colormap and Pixel resources.
+
+    Case 2:  Vendor.c XawVendorShellExtInitialize → _XawImInitialize →
+    Initialize → CreateIcTable, we get a VendorShellWidget.
+  */
+  Screen *screen = XtScreen(w);
+  table->colormap = DefaultColormapOfScreen(screen);
+  table->foreground = BlackPixelOfScreen(screen);
+  table->background = WhitePixelOfScreen(screen);
+  table->bg_pixmap = 0;
+  table->cursor_position = 0xffff;
+  table->line_spacing = 0;
+  table->openic_error = False;
+  table->next = NULL;
+  return table;
 }
 
 static Boolean
@@ -705,6 +720,10 @@ XawIcTableList p, Boolean check) {
   if (pp->prev_flg & CILineS && p->line_spacing != pp->line_spacing) {
     p->line_spacing = pp->line_spacing;
     p->flg |= CILineS;
+  }
+  if (pp->prev_flg & CIColormap && p->colormap != pp->colormap) {
+    p->colormap = pp->colormap;
+    p->flg |= CIColormap;
   }
 }
 
@@ -880,6 +899,10 @@ static void CreateIC (Widget w, XawVendorShellExtPart *ve) {
       SetVaArg(&pe_a[pe_cnt], (XPointer)XNLineSpace); pe_cnt++;
       SetVaArg(&pe_a[pe_cnt], (XPointer)p->line_spacing); pe_cnt++;
     }
+    if (p->flg & CIColormap) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNColormap); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->colormap); pe_cnt++;
+    }
   }
   if (p->input_style & XIMStatusArea) {
     if (p->flg & CIFontSet) {
@@ -913,6 +936,10 @@ static void CreateIC (Widget w, XawVendorShellExtPart *ve) {
     if (p->flg & CILineS) {
       SetVaArg(&st_a[st_cnt], (XPointer)XNLineSpace); st_cnt++;
       SetVaArg(&st_a[st_cnt], (XPointer)p->line_spacing); st_cnt++;
+    }
+    if (p->flg & CIColormap) {
+      SetVaArg(&st_a[pe_cnt], (XPointer)XNColormap); pe_cnt++;
+      SetVaArg(&st_a[pe_cnt], (XPointer)p->colormap); pe_cnt++;
     }
   }
 
@@ -1023,7 +1050,8 @@ static void CreateIC (Widget w, XawVendorShellExtPart *ve) {
 
   SizeNegotiation(p, ve->parent->core.width, ve->parent->core.height);
 
-  p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS);
+  p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS |
+	      CIColormap);
 
   if (!IsSharedIC(ve) && p->input_style & XIMPreeditPosition)
     XtAddEventHandler(w, (EventMask)StructureNotifyMask, FALSE,
@@ -1068,7 +1096,7 @@ static void SetICValues (Widget w, XawVendorShellExtPart *ve, Boolean focus) {
   XFlush(XtDisplay(w));
   if (focus == FALSE &&
     !(p->flg & (CIFontSet | CIFg | CIBg |
-	CIBgPixmap | CICursorP | CILineS)))
+	CIBgPixmap | CICursorP | CILineS | CIColormap)))
     return;
 
   Boolean didSetHeight = False;
@@ -1102,6 +1130,10 @@ static void SetICValues (Widget w, XawVendorShellExtPart *ve, Boolean focus) {
       SetVaArg(&pe_a[pe_cnt], (XPointer)XNLineSpace); pe_cnt++;
       SetVaArg(&pe_a[pe_cnt], (XPointer)p->line_spacing); pe_cnt++;
     }
+    if (p->flg & CIColormap) {
+      SetVaArg(&pe_a[pe_cnt], (XPointer)XNColormap); pe_cnt++;
+      SetVaArg(&pe_a[pe_cnt], (XPointer)p->colormap); pe_cnt++;
+    }
   }
   if (p->input_style & XIMStatusArea) {
     if (p->flg & CIFontSet) {
@@ -1134,6 +1166,10 @@ static void SetICValues (Widget w, XawVendorShellExtPart *ve, Boolean focus) {
     if (p->flg & CILineS) {
       SetVaArg(&st_a[st_cnt], (XPointer)XNLineSpace); st_cnt++;
       SetVaArg(&st_a[st_cnt], (XPointer)p->line_spacing); st_cnt++;
+    }
+    if (p->flg & CIColormap) {
+      SetVaArg(&st_a[pe_cnt], (XPointer)XNColormap); pe_cnt++;
+      SetVaArg(&st_a[pe_cnt], (XPointer)p->colormap); pe_cnt++;
     }
   }
   if (p->input_style & XIMPreeditPosition) {
@@ -1192,7 +1228,8 @@ static void SetICValues (Widget w, XawVendorShellExtPart *ve, Boolean focus) {
   if (IsSharedIC(ve) && p->flg & CIFontSet)
     SizeNegotiation(p, ve->parent->core.width, ve->parent->core.height);
 
-  p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS);
+  p->flg &= ~(CIFontSet | CIFg | CIBg | CIBgPixmap | CICursorP | CILineS |
+	      CIColormap);
 }
 
 static void
@@ -1293,6 +1330,8 @@ Cardinal num_args) {
     p->flg |= CICursorP;
   if (p->line_spacing != save_tbl.line_spacing)
     p->flg |= CILineS;
+  if (p->colormap != save_tbl.colormap)
+    p->flg |= CIColormap;
   p->prev_flg |= p->flg;
 }
 
