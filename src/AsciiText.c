@@ -134,6 +134,9 @@ AsciiTextClassRec asciiTextClassRec = {
   { /* Simple fields */
     /* change_sensitive	*/	XtInheritChangeSensitive
   },
+  { /* ThreeD fields */
+    /* shadowdraw       */      XtInheritXaw3dShadowDraw
+  },
   { /* text fields */
     /* empty            */      0
   },

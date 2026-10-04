@@ -390,10 +390,10 @@ widget classes to add 3D shadows to them.  Those widgets thus acquire the
 resources of ThreeD in addition to those listed in the Xaw documentation.
 
 ThreeD is inherited by Command, Grip, Label, MenuButton, Repeater, Scrollbar,
-StripChart, and Toggle.  Command widgets receive the ThreeD shadowing
+StripChart, Text, and Toggle.  Command widgets receive the ThreeD shadowing
 treatment only if their shapeStyle is set to XawShapeRectangle =
-XmuShapeRectangle = 1.  SimpleMenu, Text, and Viewport each create and use a
-ThreeD widget internally, but they do not inherit from the class.
+XmuShapeRectangle = 1.  SimpleMenu and Viewport each create and use a ThreeD
+widget internally, but they do not inherit from the class.
 
 ThreeD has the following public resources in addition to those that it
 inherits from Core and Simple:
@@ -874,6 +874,7 @@ Characters that are not in the character repertoire of the active locale are los
 The class of the type resource is documented as Type but implemented as AsciiType and MultiType in AsciiSrc and MultiSrc respectively. | These definitions have been merged, and the class is TextType.
 TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain resources and code that are shared by their subclasses.
 The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
+ThreeD resources are inaccessible except through global resource manager settings. | Text is a subclass of ThreeD.  ThreeD resources can be set on the Text widget.
 
 ### <a name="VendorShell"></a>VendorShell
 

@@ -53,8 +53,9 @@ X11 license (as per the historical licenses that the package inherits)
 #ifndef _XawTextP_h
 #define _XawTextP_h
 
-#include <X11/Xaw3dXft/Text.h>
 #include <X11/Xaw3dXft/SimpleP.h>
+#include <X11/Xaw3dXft/Text.h>
+#include <X11/Xaw3dXft/ThreeDP.h>
 #include <X11/Xaw3dXft/Xaw3dXft.h>
 
 /****************************************************************
@@ -153,6 +154,7 @@ struct text_move {
 typedef struct _TextClassRec {
     CoreClassPart	core_class;
     SimpleClassPart	simple_class;
+    ThreeDClassPart     threeD_class;
     TextClassPart	text_class;
 } TextClassRec;
 
@@ -161,7 +163,6 @@ extern TextClassRec textClassRec;
 /* New fields for the Text widget record */
 typedef struct _TextPart {
     /* resources */
-
     Widget              source, sink;
     XawTextPosition	insertPos;
     XawTextSelection	s;
@@ -204,7 +205,6 @@ typedef struct _TextPart {
     XawTextPosition  old_insert;    /* Last insertPos for batched updates */
     short           mult;	    /* Multiplier. */
     struct text_move * copy_area_offsets; /* Text offset area (linked list) */
-    Widget          threeD;	    /* shadow drawing */
 
     /* The purpose of from_left is to remember the original pixel offset as
        you use the up or down arrows to move between lines.  Without it, if
@@ -239,6 +239,7 @@ typedef struct _TextPart {
 typedef struct _TextRec {
     CorePart	core;
     SimplePart	simple;
+    ThreeDPart  threeD;
     TextPart	text;
 } TextRec;
 

@@ -187,8 +187,7 @@ extern XrmQuark _XawTextFormat(
     TextWidget		/* tw */
 );
 
-// Get an Atom for use with selections that means the internal format used by
-// the Text widget.
+// Preferred encoding for selections
 extern Atom _XawTextInternalEncoding (Display *d, TextWidget ctx);
 
 extern void XawTextDisplay(

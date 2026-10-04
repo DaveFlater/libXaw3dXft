@@ -69,16 +69,18 @@ SOFTWARE.
 #define _AsciiTextP_h
 
 #include "Xaw3dP.h"
-#include <X11/Xaw3dXft/TextP.h>
-#include <X11/Xaw3dXft/AsciiText.h>
 #include <X11/Xaw3dXft/AsciiSrc.h>
+#include <X11/Xaw3dXft/AsciiText.h>
 #include <X11/Xaw3dXft/MultiSrc.h>
+#include <X11/Xaw3dXft/TextP.h>
+#include <X11/Xaw3dXft/ThreeDP.h>
 
 typedef struct {int empty;} AsciiClassPart;
 
 typedef struct _AsciiTextClassRec {
     CoreClassPart	core_class;
     SimpleClassPart	simple_class;
+    ThreeDClassPart     threeD_class;
     TextClassPart	text_class;
     AsciiClassPart	ascii_class;
 } AsciiTextClassRec;
@@ -92,10 +94,11 @@ typedef struct {
 } AsciiPart;
 
 typedef struct _AsciiRec {
-    CorePart		core;
-    SimplePart		simple;
-    TextPart		text;
-    AsciiPart		ascii;
+    CorePart	core;
+    SimplePart	simple;
+    ThreeDPart  threeD;
+    TextPart	text;
+    AsciiPart	ascii;
 } AsciiRec;
 
 #endif /* _AsciiTextP_h */

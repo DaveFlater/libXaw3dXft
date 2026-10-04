@@ -223,7 +223,7 @@ static XtResource resources[] = {
 
 TextClassRec textClassRec = {
   { /* core fields */
-    /* superclass       */      (WidgetClass) &simpleClassRec,
+    /* superclass       */      (WidgetClass) &threeDClassRec,
     /* class_name       */      "Text",
     /* widget_size      */      sizeof(TextRec),
     /* class_initialize */      ClassInitialize,
@@ -233,9 +233,9 @@ TextClassRec textClassRec = {
     /* initialize_hook  */	NULL,
     /* realize          */      Realize,
     /* actions          */      _XawTextActionsTable,
-    /* num_actions      */      0,                /* Set in ClassInitialize. */
+    /* num_actions      */      0,       /* Set in ClassInitialize. */
     /* resources        */      resources,
-    /* num_ resource    */      XtNumber(resources),
+    /* num_resource    */       XtNumber(resources),
     /* xrm_class        */      NULLQUARK,
     /* compress_motion  */      TRUE,
     /* compress_exposure*/      XtExposeGraphicsExpose | XtExposeNoExpose,
@@ -258,6 +258,9 @@ TextClassRec textClassRec = {
   },
   { /* Simple fields */
     /* change_sensitive	*/	ChangeSensitive
+  },
+  { /* ThreeD fields */
+    /* shadowdraw       */      XtInheritXaw3dShadowDraw
   },
   { /* text fields */
     /* empty            */	0
@@ -398,6 +401,7 @@ static void ClassInitialize (void) {
 			(XtConvertArgList)NULL, (Cardinal)0 );
 }
 
+// Preferred encoding for selections
 Atom _XawTextInternalEncoding (Display *d, TextWidget ctx) {
   return (_XawTextFormat(ctx) == XawFmtWide ?
           XAWA_UTF32_STRING(d) : XAWA_8BIT_STRING(d));
@@ -413,7 +417,7 @@ Atom _XawTextInternalEncoding (Display *d, TextWidget ctx) {
 // Otherwise, hbar spans the full width.
 static void PositionHScrollBar (TextWidget ctx) {
   Widget vbar = ctx->text.vbar, hbar = ctx->text.hbar;
-  const Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Dimension s = ctx->threeD.shadow_width;
 
   if (hbar == NULL) return;
 
@@ -439,7 +443,7 @@ static void PositionHScrollBar (TextWidget ctx) {
 
 static void PositionVScrollBar (TextWidget ctx) {
   Widget vbar = ctx->text.vbar;
-  const Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Dimension s = ctx->threeD.shadow_width;
 
   if (vbar == NULL) return;
 
@@ -613,12 +617,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   TextWidget ctx = (TextWidget) new;
   char error_buf[BUFSIZ];
 
-  ctx->text.threeD = XtVaCreateWidget("threeD", threeDWidgetClass, new,
-                                 XtNx, 0, XtNy, 0,
-                                 XtNwidth, 10, XtNheight, 10, /* dummy */
-                                 NULL);
-
-  const Dimension s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  const Dimension s = ctx->threeD.shadow_width;
   ctx->text.margins.left   = ctx->text.res_margins.left   + s;
   ctx->text.margins.right  = ctx->text.res_margins.right  + s;
   ctx->text.margins.top    = ctx->text.res_margins.top    + s;
@@ -1748,9 +1747,9 @@ LoseSelection(Widget w, Atom *selection)
 	 ctx->text.s.selections[ctx->text.s.atom_count-1] == 0)
     ctx->text.s.atom_count--;
 
-/*
- * Must walk the selection list in opposite order from UnsetSelection.
- */
+  /*
+   * Must walk the selection list in opposite order from UnsetSelection.
+   */
 
   atomP = ctx->text.s.selections;
   for (i = 0 ; i < ctx->text.s.atom_count; i++, atomP++)
@@ -2369,7 +2368,7 @@ static void
 ClearWindow (Widget w)
 {
   TextWidget ctx = (TextWidget) w;
-  int s = ((ThreeDWidget)ctx->text.threeD)->threeD.shadow_width;
+  int s = ctx->threeD.shadow_width;
 
   if (XtIsRealized(w)) {
     // This is clearing everything except the shadows.
@@ -2605,7 +2604,7 @@ UpdateTextInRectangle(TextWidget ctx, XRectangle * rect)
  */
 
 static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
-  TextWidget ctx = (TextWidget) w;
+  TextWidget ctx = (TextWidget)w;
   XRectangle expose, cursor;
   Boolean need_to_draw;
 
@@ -2645,9 +2644,9 @@ static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
   _XawTextExecuteUpdate(ctx);
 
   // Draw the shadows.
-  _ShadowSurroundedBox((Widget)ctx, (ThreeDWidget)ctx->text.threeD,
-		0, 0, ctx->core.width, ctx->core.height,
-		((ThreeDWidget)ctx->text.threeD)->threeD.relief, False);
+  TextWidgetClass twclass = (TextWidgetClass)XtClass(ctx);
+  (*twclass->threeD_class.shadowdraw)(w, event, region, ctx->threeD.relief,
+    True);
 }
 
 /*
@@ -2834,60 +2833,50 @@ static void TextDestroy (Widget w) {
  * have both a source and a sink
  */
 
-static void
-Resize(Widget w)
-{
+static void Resize (Widget w) {
   TextWidget ctx = (TextWidget) w;
-
   PositionVScrollBar(ctx);
   PositionHScrollBar(ctx);
-
   _XawTextBuildLineTable(ctx, ctx->text.lt.top, TRUE);
   _XawTextSetScrollBars(ctx);
 }
 
-/*
- * This routine allow the application program to Set attributes.
- */
-
-static Boolean
-SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
-{
-  TextWidget oldtw = (TextWidget)current;
-  TextWidget newtw = (TextWidget)new;
-  Boolean    redisplay = FALSE;
-  Boolean    display_caret = newtw->text.display_caret;
-  Boolean    recomputed_margins = False;
+static Boolean SetValues (Widget current, Widget request, Widget new,
+ArgList args, Cardinal *num_args) {
+  TextWidget oldtw = (TextWidget)current,
+             newtw = (TextWidget)new;
+  Boolean    redisplay = False,
+         display_caret = newtw->text.display_caret;
 
   newtw->text.display_caret = oldtw->text.display_caret;
   _XawTextPrepareToUpdate(newtw);
   newtw->text.display_caret = display_caret;
 
-  // Add or remove scrollbars.
+  // Add or remove scrollbars.  There is some catch-22 with recomputed
+  // margins below.
   if (oldtw->text.scroll_vert != newtw->text.scroll_vert) {
     if (newtw->text.scroll_vert == XawtextScrollNever)
       DestroyVScrollBar(newtw);
     else if (newtw->text.scroll_vert == XawtextScrollAlways)
       CreateVScrollBar(newtw);
-    redisplay = TRUE;
+    redisplay = True;
   }
   if (oldtw->text.scroll_horiz != newtw->text.scroll_horiz) {
     if (newtw->text.scroll_horiz == XawtextScrollNever)
       DestroyHScrollBar(newtw);
     else if (newtw->text.scroll_horiz == XawtextScrollAlways)
       CreateHScrollBar(newtw);
-    redisplay = TRUE;
+    redisplay = True;
   }
 
-  // FIXME allow & handle changes to shadowWidth
-  const Dimension s = ((ThreeDWidget)newtw->text.threeD)->threeD.shadow_width;
-
   // Recompute adjusted margins when necessary.
-  if (oldtw->text.res_margins.left != newtw->text.res_margins.left ||
+  if (oldtw->threeD.shadow_width != newtw->threeD.shadow_width ||
+      oldtw->text.res_margins.left != newtw->text.res_margins.left ||
       oldtw->text.res_margins.right != newtw->text.res_margins.right ||
       oldtw->text.res_margins.top != newtw->text.res_margins.top ||
       oldtw->text.res_margins.bottom != newtw->text.res_margins.bottom ||
       oldtw->text.useright != newtw->text.useright) {
+    const Dimension s = newtw->threeD.shadow_width;
     newtw->text.margins.left = newtw->text.res_margins.left + s;
     newtw->text.margins.right = newtw->text.res_margins.right + s;
     newtw->text.margins.top = newtw->text.res_margins.top + s;
@@ -2900,36 +2889,37 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
       else
 	newtw->text.margins.left += ScrollbarWidth(newtw->text.vbar);
     }
-    redisplay = recomputed_margins = True;
+    redisplay = True;
   }
 
-  if ( oldtw->text.source != newtw->text.source )
+  if (oldtw->text.source != newtw->text.source)
     XawTextSetSource((Widget)newtw, newtw->text.source, newtw->text.lt.top);
 
   newtw->text.redisplay_needed = False;
   XtSetValues((Widget)newtw->text.source, args, *num_args);
   XtSetValues((Widget)newtw->text.sink, args, *num_args);
-  // FIXME what about the threeD and shadowWidth?
 
   // The SetValues functions of the source and sink always return False, but
   // they set text.redisplay_needed, which triggers this.
   if (oldtw->text.wrap != newtw->text.wrap ||
       oldtw->text.lt.top != newtw->text.lt.top ||
       oldtw->text.sink != newtw->text.sink ||
-      newtw->text.redisplay_needed ||
-      recomputed_margins) {
-    _XawTextBuildLineTable(newtw, newtw->text.lt.top, TRUE);
-    redisplay = TRUE;
-  }
+      newtw->text.redisplay_needed)
+    redisplay = True;
 
   if (oldtw->text.insertPos != newtw->text.insertPos) {
-    newtw->text.showposition = TRUE;
-    redisplay = TRUE;
+    newtw->text.showposition = True;
+    redisplay = True;
   }
 
   _XawTextExecuteUpdate(newtw);
+
+  // I escalated this to Resize, making some less serious steps above
+  // redundant, because the scrollbars need to be resized and repositioned
+  // when the shadow width changes (which doesn't count as a "resize" as Xt
+  // sees it).  Prepare/Execute happens again in some paths below Resize.
   if (redisplay)
-    _XawTextSetScrollBars(newtw);
+    Resize(new);
 
   return redisplay;
 }
@@ -2961,15 +2951,12 @@ ChangeSensitive(Widget w)
  *	Returns: none.
  */
 
-static void
-GetValuesHook(Widget w, ArgList args, Cardinal * num_args)
-{
-    TextWidget tw = (TextWidget)w;
-    if (tw->text.source)
-        XtGetValues(tw->text.source, args, *num_args);
-    if (tw->text.sink)
-        XtGetValues(tw->text.sink, args, *num_args);
-    // FIXME what about the ThreeD?
+static void GetValuesHook (Widget w, ArgList args, Cardinal * num_args) {
+  TextWidget tw = (TextWidget)w;
+  if (tw->text.source)
+    XtGetValues(tw->text.source, args, *num_args);
+  if (tw->text.sink)
+    XtGetValues(tw->text.sink, args, *num_args);
 }
 
 /*	Function Name: FindGoodPosition
