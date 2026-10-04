@@ -171,12 +171,16 @@ static Dimension defHeight = DEFAULT_TEXT_HEIGHT;
 
 #define offset(field) XtOffsetOf(TextRec, field)
 static XtResource resources[] = {
+  {XtNborderWidth, XtCBorderWidth, XtRDimension, sizeof(Dimension),
+     offset(core.border_width), XtRImmediate, (XtPointer)1},
+  {XtNheight, XtCHeight, XtRDimension, sizeof(Dimension),
+     offset(core.height), XtRDimension, (XtPointer)&defHeight},
   {XtNwidth, XtCWidth, XtRDimension, sizeof(Dimension),
      offset(core.width), XtRDimension, (XtPointer)&defWidth},
   {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
      offset(simple.cursor), XtRString, "xterm"},
-  {XtNheight, XtCHeight, XtRDimension, sizeof(Dimension),
-     offset(core.height), XtRDimension, (XtPointer)&defHeight},
+  {XtNrelief, XtCRelief, XtRRelief, sizeof(XtRelief),
+     offset(threeD.relief), XtRImmediate, (XtPointer)XtReliefSunken},
   {XtNdisplayPosition, XtCTextPosition, XtRInt, sizeof(XawTextPosition),
      offset(text.lt.top), XtRImmediate, (XtPointer)0},
   {XtNinsertPosition, XtCTextPosition, XtRInt, sizeof(XawTextPosition),
