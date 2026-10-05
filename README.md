@@ -672,18 +672,26 @@ glitch can be reproduced with Xaw.)
 
 Added resources:
 
-Name            | Class                               | RepType | Default value
-:---            | :---                                      | :---    | :---
-leftWhitespace  | LeftWhitespace (or HorizontalWhitespace)  | Dimension | 0
-rightWhitespace | RightWhitespace (or HorizontalWhitespace) | Dimension | 0
+Name            | Class                              | RepType | Default value
+:---            | :---                                      | :---      | :---
 jumpScroll      | JumpScroll                                | Int       | 1
+leftWhitespace  | LeftWhitespace (or HorizontalWhitespace)  | Dimension | 0
+multiColumn     | MultiColumn                               | Boolean   | True
+rightWhitespace | RightWhitespace (or HorizontalWhitespace) | Dimension | 0
 
 The use of these resources is explained in the following subsections.
 
-#### Scrolling
+#### Layout of long menus
 
-The SimpleMenu widget supports scrolling through entries too numerous to fit
-on the screen.  The jumpScroll resource determines the number of entries to
+SimpleMenu supports two separate ways of dealing with menus that are too long
+to fit on the screen.
+
+If the SimpleMenu is resizable and its multiColumn resource is True, the
+layout will expand to include additional columns.  "Resizable" means either
+that the SimpleMenu is not realized or its allowShellResize resource is True.
+
+Otherwise, SimpleMenu allows scrolling through entries in a single long
+column, and the jumpScroll resource determines the number of entries to
 scroll by.
 
 #### Margins / whitespace
@@ -1115,14 +1123,6 @@ The font to be used when no font is specified by the app in a particular
 context.  If this field is null, the font named by default_fontname is loaded
 and stored here for reuse.
 
-### char multi_column_menu = 0
-
-Applicable when:  a SimpleMenu is not realized or its allowShellResize
-resource is true
-
-Determines the behavior of a menu when it doesn't fit on the screen in a
-single column.  1 = multiple columns; 0 = single column with scroll arrows.
-
 ### char show_tips = 1
 
 Globally enable/disable showing tips.
@@ -1198,6 +1198,7 @@ default_font, default_fontname:  use xftFont resource
 encoding:  use encoding resource  
 hilit_color:  use highlight resource  
 menu_spacing:  use SmeBSB.vertSpace resource  
+multi_column_menu:  use SimpleMenu.multiColumn resource  
 no_hilit_reverse:  use highlightStyle resource  
 insensitive_twist:  deleted (all insensitive widgets are stippled)  
 string_use_pixmap:  deleted (workaround not needed anymore)  

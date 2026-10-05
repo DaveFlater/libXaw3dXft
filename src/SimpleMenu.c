@@ -74,6 +74,8 @@ static XtResource resources[] = {
  * Layout Resources.
  */
 
+  {XtNmultiColumn,  XtCMultiColumn, XtRBoolean, sizeof(Boolean),
+     offset(multiColumn), XtRImmediate, (XtPointer)True},
   {XtNrowHeight,  XtCRowHeight, XtRDimension, sizeof(Dimension),
      offset(row_height), XtRImmediate, (XtPointer) 0},
   {XtNtopMargin,  XtCVerticalMargins, XtRDimension, sizeof(Dimension),
@@ -1051,8 +1053,7 @@ Layout(Widget w, Dimension *width_ret, Dimension *height_ret)
         scr_height_max =  HeightOfScreen(XtScreen(smw))
 	  - (smw->simple_menu.top_margin + smw->simple_menu.bottom_margin +
 	     2 * shadowWidth);
-	allow_multi_column = allow_change_size &&
-			     _Xaw3dXft->multi_column_menu;
+	allow_multi_column = allow_change_size && smw->simple_menu.multiColumn;
 
 	ForAllChildren(smw, entry)
 	{

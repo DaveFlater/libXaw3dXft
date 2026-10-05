@@ -33,6 +33,7 @@ Next release, v2.0  Dave Flater
   hilit_color:  use highlight resource
   insensitive_twist:  deleted (all insensitive widgets are stippled)
   menu_spacing:  use SmeBSB.vertSpace resource
+  multi_column_menu:  use SimpleMenu.multiColumn resource
   no_hilit_reverse:  use highlightStyle resource
   string_use_pixmap:  deleted (workaround not needed anymore)
   text_bg_hilight:  use highlightStyle resource
@@ -57,7 +58,7 @@ Next release, v2.0  Dave Flater
   See Issue #29.
 
   Other noteworthy changes:
-  - Fixed many display glitches.
+  - Fixed many glitches.
   - Removed the global switch between the core font system and Xft.  Some
     widgets can use FreeType while others use the original X11 core font
     system, and UTF-8 is always accepted.
@@ -66,6 +67,7 @@ Next release, v2.0  Dave Flater
     compound text type.
   - Enabled all configure options by default and put their macros in
     Xaw3d.h.
+  - Enabled multi-column menus by default.
   - Added version identification mechanisms (see README for details).
   - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
   - Ignored beNiceToColormap when it only makes things look worse.

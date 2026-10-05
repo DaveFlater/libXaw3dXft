@@ -288,7 +288,6 @@ Xaw3dXftInitialize(void)
     _Xaw3dXft->menu_spacing  = 1;
     _Xaw3dXft->show_tips  = 1;
     _Xaw3dXft->tip_do_grab  = 1;
-    _Xaw3dXft->multi_column_menu  = 0;
     _Xaw3dXft->edit_delete_alternative = 0;
     _Xaw3dXft->default_fontname  = NULL;
     _Xaw3dXft->default_font  = NULL;

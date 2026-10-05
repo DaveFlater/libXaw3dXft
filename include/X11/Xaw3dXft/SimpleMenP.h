@@ -74,6 +74,7 @@ typedef struct _SimpleMenuPart {
   SmeObject popup_entry;	/* The entry to position the cursor on for
 				   when using XawPositionSimpleMenu. */
   Boolean      menu_on_screen;	/* Force the menus to be fully on the screen.*/
+  Boolean      multiColumn;
   int          backing_store;	/* What type of backing store to use. */
 
   /* private state */

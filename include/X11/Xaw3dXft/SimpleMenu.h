@@ -73,6 +73,7 @@ in this Software without prior written authorization from the X Consortium.
  labelClass          LabelClass         Pointer         smeBSBObjectClass
  leftWhitespace      LeftWhitespace 	Dimension 	0
  mappedWhenManaged   MappedWhenManaged	Boolean		True
+ multiColumn         MultiColumn        Boolean         True
  rightWhitespace     RightWhitespace 	Dimension 	0
  rowHeight           RowHeight          Dimension       Height of Font
  sensitive	     Sensitive		Boolean		True
@@ -93,6 +94,7 @@ extern WidgetClass simpleMenuWidgetClass;
 #define XtNcolumnWidth "columnWidth"
 #define XtNlabelClass "labelClass"
 #define XtNmenuOnScreen "menuOnScreen"
+#define XtNmultiColumn "multiColumn"
 #define XtNpopupOnEntry "popupOnEntry"
 #define XtNrowHeight "rowHeight"
 #define XtNtopMargin "topMargin"
@@ -103,6 +105,7 @@ extern WidgetClass simpleMenuWidgetClass;
 #define XtCColumnWidth "ColumnWidth"
 #define XtCLabelClass "LabelClass"
 #define XtCMenuOnScreen "MenuOnScreen"
+#define XtCMultiColumn "MultiColumn"
 #define XtCPopupOnEntry "PopupOnEntry"
 #define XtCRowHeight "RowHeight"
 #define XtCVerticalMargins "VerticalMargins"
