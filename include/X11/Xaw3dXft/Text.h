@@ -263,6 +263,10 @@ extern Widget XawTextGetSink(
     Widget		/* w */
 );
 
+extern Widget XawTextGetVbar (Widget w);
+
+extern Widget XawTextGetHbar (Widget w);
+
 extern XawTextPosition XawTextSearch(
     Widget			/* w */,
     XawTextScanDirection	/* dir */,

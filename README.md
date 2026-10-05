@@ -15,10 +15,10 @@ while some have not yet migrated.
 - [Generalities](#generalities)
 - [Classes not present in Athena Widgets](#newclasses)
 - [Alterations to Athena Widgets classes](#alterations)
+- [Notes on known difficulties](#difficulties)
 - [Run-time options](#runtimeopts)
 - [Version 1.x to 2.0 migration](#migration)
 - [Rationale for features removed in 2.0](#rationale)
-- [Input method troubleshooting](#improblems)
 - [Oddities](#oddities)
 - [History](#history)
 - [To do](#todo)
@@ -950,6 +950,121 @@ These are fudge factors for the positions and dimensions of the scrollbars.
 They appeared in Xaw3dXft 1.3.1 without documentation and were probably used
 for debugging.
 
+## <a name="difficulties"></a>Notes on known difficulties
+
+### <a name="improblems"></a>Input method troubleshooting
+
+Input methods are associated with Text widgets and with the VendorShell.
+
+The X Input Method (XIM) protocol involves both Xlib and separate input
+method software.  Misbehavior of either one prevents it from working.
+
+If the XMODIFIERS environment variable is set to a value that is not in the
+expected form `@im=name`, Xlib will not open *any* input method.
+
+Characters that are not in the repertoire of the currently active [C
+locale](#locales) are silently eaten.
+
+Using default values for everything unfortunately does something stupid:  it
+opens a builtin default input method provided by Xlib with the default "C"
+locale.  Since the "C" locale is limited to ASCII, it is better to set openIm
+to False (see [VendorShell](#VendorShell)) and have no input method at all,
+because then at least Latin-1 accented characters from an international
+keyboard will work.
+
+For any input method style other than Root, Xlib requires a font set.  It
+does not matter that the input method is not going to use it.  The default
+font set suffices if Xt actually loaded one.  The problem happens when Xt
+says this:
+
+    Warning: Missing charsets in String to FontSet conversion
+    Warning: Unable to load any usable fontset
+
+Then the default font set is null and XCreateIC will always fail, disabling
+the input method.  To get around this, provide a font set with XtNfontSet
+when creating a Text widget.  It is not necessary to set international to
+true—the Text widget can go on using a FreeType or core font rather than the
+font set.  It is not even necessary for the font set to cover all of the
+charsets.  It just has to exist.
+
+Proof of concept with IBus 1.5.25:
+
+- Launch:  `ibus-daemon --xim &`
+- Configuration:  IBus Preferences; Emoji tab, Unicode code point = &lt;Control&gt;&lt;Shift&gt;u
+- Compatible styles are OverSpot2 and Root.
+- Control-Shift-u brings up a preedit window.  Enter a hex value and hit Enter
+  or Space.  The corresponding Unicode character is inserted.
+- With style OverSpot2, the preedit window appears in the wrong place and
+  moves to the insert point on the next keypress.
+- With style Root, the preedit window appears in the wrong place and moves to
+  the bottom of the Text window on the next keypress.
+
+Proof of concept with Fcitx 4.2.9.8:
+
+- Launch:  `fcitx -u fcitx-kimpanel-ui`
+- Configuration:
+    - Input Method tab:  + at bottom, add unicode (M17N)
+    - Global Config tab:  Show Advanced Options; Program tab, Default Input Method State = Active
+    - Don't know where the hotkey for Unicode entry is configured
+- Compatible styles are OverTheSpot, OverSpot2, and Root.
+- Control-u brings up a preedit window.  Enter exactly four hex digits and the
+  corresponding Unicode character is inserted.
+- The preedit window appears at the insert point for OverTheSpot and OverSpot2
+  and at the bottom of the Text window for Root.  The initial position glitch
+  that IBus has does not occur.
+- There is no visible difference between OverTheSpot and OverSpot2; no status
+  area appears.
+- In the default "C" locale, no characters get through—not even ASCII.
+
+### <a name="subwidgetproblem"></a>Access to contained sub-widgets
+
+The good ways of configuring widgets are:
+
+- Setting global resource defaults in the X resource manager when the
+  configuration should apply to all instances
+- Providing arguments to Xt[Va]CreateManagedWidget when the configuration is
+  intended for specific instances
+- Using Xt[Va]SetValues when needed to make changes after widget creation
+
+The complication happens when a widget automatically creates some contained
+sub-widgets.  Apart from global resource defaults, there isn't a standard way
+for the application to configure those sub-widgets at creation time or
+afterward.  Access to sub-widgets can occur in one of four ways:
+
+1. The parent can forward resource settings to the sub-widgets.
+2. The parent can let the application retrieve the sub-widgets through a
+   resource or arbitrary exported function.
+3. If the parent is a subclass of Composite (from Xt), a child can be
+   retrieved by name using `XtNameToWidget(parent, "name")`.
+4. The application can include the "private" header file for the parent
+   widget and get the widget directly from a private variable.
+
+AsciiText, which is *not* a subclass of Composite, creates a TextSrc, a
+TextSink, and 0 to 2 Scrollbars that are named "textSource", "textSink",
+"hScrollbar", and "vScrollbar" respectively.  It forwards resources to the
+TextSrc and TextSink only.  The sub-widgets can be retrieved using the
+functions XawTextGetSource, XawTextGetSink, XawTextGetVbar, and
+XawTextGetHbar.
+
+Viewport (Composite) creates a ThreeD, 0 to 2 Scrollbars, and a generic
+widget that are named "threeD", "horizontal", "vertical", and "clip"
+respectively.  No resources are forwarded to the sub-widgets, but they can be
+retrieved by name using XtNameToWidget.
+
+SimpleMenu (Composite) creates a ThreeD named "threeD" and optionally an
+smeBSB object named "menuLabel".  No resources are forwarded to the
+sub-widgets, but they can be retrieved by name using XtNameToWidget.
+
+Dialog (Composite) creates a text Label, an optional icon Label, and an
+optional AsciiText named "label", "icon", and "value" respectively.  The
+label, icon, and value resources are forwarded as applicable, but other
+resources are not.  Command widgets that are added using XawDialogAddButton
+are created with application-provided names but null resource lists.  The
+sub-widgets can be retrieved by name using XtNameToWidget.
+
+Paned (Composite) creates any number of Grip widgets, all with the name
+"grip".  It only makes sense to configure them with global defaults.
+
 
 ## <a name="runtimeopts"></a>Run-time options
 
@@ -1193,71 +1308,6 @@ libmagic file types instead of file name heuristics.  See [Issue
 The flash feature of the Repeater widget does not work in Xaw and has no
 reasonable implementation that works on a modern X server.  It needs
 immediate, synchronous updating of the display.
-
-
-## <a name="improblems"></a>Input method troubleshooting
-
-Input methods are associated with Text widgets and with the VendorShell.
-
-The X Input Method (XIM) protocol involves both Xlib and separate input
-method software.  Misbehavior of either one prevents it from working.
-
-If the XMODIFIERS environment variable is set to a value that is not in the
-expected form `@im=name`, Xlib will not open *any* input method.
-
-Characters that are not in the repertoire of the currently active [C
-locale](#locales) are silently eaten.
-
-Using default values for everything unfortunately does something stupid:  it
-opens a builtin default input method provided by Xlib with the default "C"
-locale.  Since the "C" locale is limited to ASCII, it is better to set openIm
-to False (see [VendorShell](#VendorShell)) and have no input method at all,
-because then at least Latin-1 accented characters from an international
-keyboard will work.
-
-For any input method style other than Root, Xlib requires a font set.  It
-does not matter that the input method is not going to use it.  The default
-font set suffices if Xt actually loaded one.  The problem happens when Xt
-says this:
-
-    Warning: Missing charsets in String to FontSet conversion
-    Warning: Unable to load any usable fontset
-
-Then the default font set is null and XCreateIC will always fail, disabling
-the input method.  To get around this, provide a font set with XtNfontSet
-when creating a Text widget.  It is not necessary to set international to
-true—the Text widget can go on using a FreeType or core font rather than the
-font set.  It is not even necessary for the font set to cover all of the
-charsets.  It just has to exist.
-
-Proof of concept with IBus 1.5.25:
-
-- Launch:  `ibus-daemon --xim &`
-- Configuration:  IBus Preferences; Emoji tab, Unicode code point = &lt;Control&gt;&lt;Shift&gt;u
-- Compatible styles are OverSpot2 and Root.
-- Control-Shift-u brings up a preedit window.  Enter a hex value and hit Enter
-  or Space.  The corresponding Unicode character is inserted.
-- With style OverSpot2, the preedit window appears in the wrong place and
-  moves to the insert point on the next keypress.
-- With style Root, the preedit window appears in the wrong place and moves to
-  the bottom of the Text window on the next keypress.
-
-Proof of concept with Fcitx 4.2.9.8:
-
-- Launch:  `fcitx -u fcitx-kimpanel-ui`
-- Configuration:
-    - Input Method tab:  + at bottom, add unicode (M17N)
-    - Global Config tab:  Show Advanced Options; Program tab, Default Input Method State = Active
-    - Don't know where the hotkey for Unicode entry is configured
-- Compatible styles are OverTheSpot, OverSpot2, and Root.
-- Control-u brings up a preedit window.  Enter exactly four hex digits and the
-  corresponding Unicode character is inserted.
-- The preedit window appears at the insert point for OverTheSpot and OverSpot2
-  and at the bottom of the Text window for Root.  The initial position glitch
-  that IBus has does not occur.
-- There is no visible difference between OverTheSpot and OverSpot2; no status
-  area appears.
-- In the default "C" locale, no characters get through—not even ASCII.
 
 
 ## <a name="oddities"></a>Oddities

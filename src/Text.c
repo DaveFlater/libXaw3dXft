@@ -496,7 +496,7 @@ static void CreateVScrollBar (TextWidget ctx) {
     ctx->text.margins.left += ScrollbarWidth(vbar);
     const int clearwidth = (int)ScrollbarWidth(vbar) +
                            (int)ctx->text.res_margins.left;
-    if (clearwidth > 0 && ctx->core.height > VMargins(ctx))
+    if (clearwidth > 0 && ctx->core.height > VMargins(ctx) && ctx->text.sink)
       SinkClearToBG(ctx->text.sink,
 	ctx->text.margins.left - clearwidth,
 	ctx->text.margins.top, clearwidth,
@@ -575,7 +575,7 @@ static void CreateHScrollBar(TextWidget ctx) {
                           ctx->text.margins.bottom;
   const int clearheight = (int)ScrollbarHeight(hbar) +
 		 	  (int)ctx->text.res_margins.bottom;
-  if (clearheight > 0 && ctx->core.width > HMargins(ctx))
+  if (clearheight > 0 && ctx->core.width > HMargins(ctx) && ctx->text.sink)
     SinkClearToBG(ctx->text.sink, clearx, cleary, ScrollbarWidth(hbar),
       clearheight);
 
@@ -3308,6 +3308,14 @@ Widget
 XawTextGetSink(Widget w)
 {
   return (((TextWidget)w)->text.sink);
+}
+
+Widget XawTextGetVbar (Widget w) {
+  return ((TextWidget)w)->text.vbar;
+}
+
+Widget XawTextGetHbar (Widget w) {
+  return ((TextWidget)w)->text.hbar;
 }
 
 void
