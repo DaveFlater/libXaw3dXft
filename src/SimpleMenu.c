@@ -1150,7 +1150,7 @@ FindMenu(Widget widget, String name)
 /*	Function Name: PositionMenu
  *	Description: Places the menu
  *	Arguments: w - the simple menu widget.
- *                 location - a pointer the the position or NULL.
+ *                 location - a pointer to the position or NULL.
  *	Returns: none.
  */
 
@@ -1240,7 +1240,7 @@ MoveMenu(Widget w, Position x, Position y)
 
 /*	Function Name: ChangeCursorOnGrab
  *	Description: Changes the cursor on the active grab to the one
- *                   specified in out resource list.
+ *                   specified in our resource list.
  *	Arguments: w - the widget.
  *                 junk, garbage - ** NOT USED **.
  *	Returns: None.
@@ -1414,89 +1414,83 @@ GetMenuHeight(Widget w)
  *      Returns: the entry that this point is in.
  */
 
-static SmeObject
-GetEventEntry(Widget w, XEvent * event)
-{
-    Position x_loc = 0, y_loc = 0;
-    SimpleMenuWidget smw = (SimpleMenuWidget)w;
-    SmeObject *entry;
-    static XPoint last_pos;
-    XPoint pos;
-    int s = ((ThreeDWidget)smw->simple_menu.threeD)->threeD.shadow_width;
+static SmeObject GetEventEntry (Widget w, XEvent * event) {
+  Position x_loc = 0, y_loc = 0;
+  SimpleMenuWidget smw = (SimpleMenuWidget)w;
+  SmeObject *entry;
+  static XPoint last_pos;
+  XPoint pos;
+  int s = ((ThreeDWidget)smw->simple_menu.threeD)->threeD.shadow_width;
 
-    switch (event->type) {
-	case MotionNotify:
-	    x_loc = event->xmotion.x;
-	    y_loc = event->xmotion.y;
-	    pos.y = event->xmotion.y_root;
-	    break;
-	case EnterNotify:
-	case LeaveNotify:
-	    x_loc = event->xcrossing.x;
-	    y_loc = event->xcrossing.y;
-	    pos.y = event->xcrossing.y_root;
-	    break;
-	case ButtonPress:
-	case ButtonRelease:
-	    x_loc = event->xbutton.x;
-	    y_loc = event->xbutton.y;
-	    pos.y = event->xbutton.y_root;
-	    break;
-	default:
-	    XtAppError(XtWidgetToApplicationContext(w),
-		       "Unknown event type in GetEventEntry().");
-	    pos.y = 0;
-	    break;
-    }
+  switch (event->type) {
+  case MotionNotify:
+    x_loc = event->xmotion.x;
+    y_loc = event->xmotion.y;
+    pos.y = event->xmotion.y_root;
+    break;
+  case EnterNotify:
+  case LeaveNotify:
+    x_loc = event->xcrossing.x;
+    y_loc = event->xcrossing.y;
+    pos.y = event->xcrossing.y_root;
+    break;
+  case ButtonPress:
+  case ButtonRelease:
+    x_loc = event->xbutton.x;
+    y_loc = event->xbutton.y;
+    pos.y = event->xbutton.y_root;
+    break;
+  default:
+    XtAppError(XtWidgetToApplicationContext(w),
+      "Unknown event type in GetEventEntry().");
+    pos.y = 0;
+    break;
+  }
 
-    if (x_loc < 0 || x_loc >= (int)smw->core.width)
-	return NULL;
-    else if (smw->simple_menu.too_tall) {
-	if (pos.y >= smw->simple_menu.last_y && smw->simple_menu.didnt_fit) {
-	    if (last_pos.y && pos.y < last_pos.y) {
-		last_pos.y = pos.y;
-		return NULL;
-	    }
-	    smw->simple_menu.current_first += smw->simple_menu.jump_val;
-	    Redisplay(w, (XEvent *)NULL, (Region)NULL);
-	    last_pos.y = pos.y;
-	    return NULL;
-	} else if (pos.y <= s + SMW_ARROW_SIZE &&
-		smw->simple_menu.first_entry != smw->simple_menu.current_first)
-	{
-	    if (pos.y && (!last_pos.y || pos.y > last_pos.y)) {
-		last_pos.y = pos.y;
-		return NULL;
-	    }
-	    smw->simple_menu.current_first -= smw->simple_menu.jump_val;
-	    Redisplay(w, (XEvent *)NULL, (Region)NULL);
-	    last_pos.y = pos.y;
-	    return NULL;
-	}
-	else
-	    last_pos.y = 0;
-    } else if (y_loc < 0 || y_loc >= (int)smw->core.height)
-	return NULL;
-
-    ForAllChildren(smw, entry) {
-	int tmp_y;
-
-	if (!XtIsManaged((Widget)*entry)) continue;
-
-	tmp_y = (*entry)->rectangle.y - smw->simple_menu.first_y;
-
-	if (tmp_y < y_loc && tmp_y + (int)(*entry)->rectangle.height > y_loc) {
-	    if (*entry == smw->simple_menu.label)
-		return NULL;	/* cannot select the label */
-	    else
-	    if (!smw->simple_menu.multicolumn ||
-		(x_loc >= (*entry)->rectangle.x &&
-		 x_loc <= (*entry)->rectangle.x + (*entry)->rectangle.width))
-		return *entry;
-	}
-    }
-
+  if (x_loc < 0 || x_loc >= (int)smw->core.width)
     return NULL;
+  else if (smw->simple_menu.too_tall) {
+    if (pos.y >= smw->simple_menu.last_y && smw->simple_menu.didnt_fit) {
+      if (last_pos.y && pos.y < last_pos.y) {
+	last_pos.y = pos.y;
+	return NULL;
+      }
+      smw->simple_menu.current_first += smw->simple_menu.jump_val;
+      Redisplay(w, (XEvent *)NULL, (Region)NULL);
+      last_pos.y = pos.y;
+      return NULL;
+    } else if (pos.y <= s + SMW_ARROW_SIZE &&
+      smw->simple_menu.first_entry != smw->simple_menu.current_first)
+      {
+	if (pos.y && (!last_pos.y || pos.y > last_pos.y)) {
+	  last_pos.y = pos.y;
+	  return NULL;
+	}
+	smw->simple_menu.current_first -= smw->simple_menu.jump_val;
+	Redisplay(w, (XEvent *)NULL, (Region)NULL);
+	last_pos.y = pos.y;
+	return NULL;
+      }
+    else
+      last_pos.y = 0;
+  } else if (y_loc < 0 || y_loc >= (int)smw->core.height)
+    return NULL;
+
+  ForAllChildren(smw, entry) {
+    int tmp_y;
+
+    if (!XtIsManaged((Widget)*entry)) continue;
+
+    tmp_y = (*entry)->rectangle.y - smw->simple_menu.first_y;
+
+    if (tmp_y < y_loc && tmp_y + (int)(*entry)->rectangle.height > y_loc &&
+         (!smw->simple_menu.multicolumn ||
+	    x_loc >= (*entry)->rectangle.x &&
+	    x_loc <= (*entry)->rectangle.x + (*entry)->rectangle.width))
+      return (*entry != smw->simple_menu.label ? *entry : NULL);
+  }
+
+  return NULL;
 }
 
 static void

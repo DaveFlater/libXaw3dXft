@@ -60,9 +60,9 @@ typedef struct _SimpleMenuPart {
   /* resources */
 
   String       label_string;	/* The string for the label or NULL. */
-  SmeObject   label;		/* If label_string is non-NULL then this is
+  SmeObject    label;		/* If label_string is non-NULL then this is
 				   the label widget. */
-  WidgetClass  label_class;	/* Widget Class of the menu label object. */
+  WidgetClass  label_class;	/* Widget class of the menu label object. */
 
   Dimension    top_margin;	/* Top and bottom margins. */
   Dimension    bottom_margin;
@@ -71,10 +71,10 @@ typedef struct _SimpleMenuPart {
   Dimension    row_height;	/* height of each row (menu entry) */
 
   Cursor       cursor;		/* The menu's cursor. */
-  SmeObject popup_entry;	/* The entry to position the cursor on for
+  SmeObject    popup_entry;	/* The entry to position the cursor on for
 				   when using XawPositionSimpleMenu. */
   Boolean      menu_on_screen;	/* Force the menus to be fully on the screen.*/
-  Boolean      multiColumn;
+  Boolean      multiColumn;     /* Enable multi-column */
   int          backing_store;	/* What type of backing store to use. */
 
   /* private state */
@@ -97,7 +97,7 @@ typedef struct _SimpleMenuPart {
   int jump_val;                 /* number of entries to scroll by */
   Widget sub_menu;              /* submenu of active SmeBSB object */
   Boolean too_tall;             /* menu doesn't fit on screen */
-  Boolean multicolumn;          /* menu is set as multicolumn */
+  Boolean multicolumn;          /* menu is actually multicolumn */
   Boolean didnt_fit;            /* if some entry didn't fit in the menu */
   unsigned char state;
 } SimpleMenuPart;
