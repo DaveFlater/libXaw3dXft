@@ -548,7 +548,7 @@ static void OpenIM (XawVendorShellExtPart *ve) {
 	printf("Connected IM with XIMStyle %d\n", i);
 	#endif
 	const char *IMlocale = XLocaleOfIM(xim);
-	printf("libXaw3dXft: opened input method %s with style %.*s and locale %s\n",
+	fprintf(stderr, "libXaw3dXft: opened input method %s with style %.*s and locale %s\n",
 	  inputMethodName, len, s, IMlocale);
 	if (!strcmp(IMlocale, "C"))
 	  XtWarning("libXaw3dXft: input method in default C locale will support only ASCII characters");
