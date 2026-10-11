@@ -308,14 +308,14 @@ static void GetTextPosition (SmeBSBObject ent, Position *text_x,
 static void DrawBitmaps (Widget w) {
   SmeBSBObject ent = (SmeBSBObject)w;
   GC gc = ent->sme_bsb.normal_GC;
+  const Dimension s = ent->sme_threeD.shadow_width;
 
   /*
    * Draw left bitmap
    */
 
   if (ent->sme_bsb.left_bitmap && ent->sme_bsb.left_margin > 0) {
-    XRectangle a = {(Position)ent->rectangle.x +
-                    (Position)ent->sme_threeD.shadow_width +
+    XRectangle a = {(Position)ent->rectangle.x + (Position)s +
                     ((Position)ent->sme_bsb.left_margin -
 	             (Position)ent->sme_bsb.left_bitmap_width) / 2,
 		    (Position)ent->rectangle.y +
@@ -323,11 +323,10 @@ static void DrawBitmaps (Widget w) {
                      (Position)ent->sme_bsb.left_bitmap_height) / 2,
 		    ent->sme_bsb.left_bitmap_width,
 		    ent->sme_bsb.left_bitmap_height},
-	       b = {(Position)ent->rectangle.x +
-		    (Position)ent->sme_threeD.shadow_width,
-		    ent->rectangle.y,
+	       b = {(Position)ent->rectangle.x + (Position)s,
+		    ent->rectangle.y + (Position)s,
 		    ent->sme_bsb.left_margin,
-		    ent->rectangle.height};
+		    ent->rectangle.height - 2*s};
     Xaw3dXftCombineClips(&a, &b, &b);
     if (b.width)
       Xaw3dXftCopy(w, ent->sme_bsb.left_bitmap, XtWindowOfObject(w), gc,
@@ -340,8 +339,7 @@ static void DrawBitmaps (Widget w) {
 
   if (ent->sme_bsb.right_bitmap && ent->sme_bsb.right_margin > 0) {
     XRectangle a = {(Position)ent->rectangle.x +
-                    (Position)ent->rectangle.width -
-                    (Position)ent->sme_threeD.shadow_width -
+                    (Position)ent->rectangle.width - (Position)s -
                     (Position)(ent->sme_bsb.right_margin +
 		               ent->sme_bsb.right_bitmap_width) / 2,
 		    (Position)ent->rectangle.y +
@@ -350,12 +348,11 @@ static void DrawBitmaps (Widget w) {
 		    ent->sme_bsb.right_bitmap_width,
 		    ent->sme_bsb.right_bitmap_height},
 	       b = {(Position)ent->rectangle.x +
-		    (Position)ent->rectangle.width -
-		    (Position)ent->sme_threeD.shadow_width -
+		    (Position)ent->rectangle.width - (Position)s -
 		    (Position)ent->sme_bsb.right_margin,
-		    ent->rectangle.y,
+		    ent->rectangle.y + (Position)s,
 		    ent->sme_bsb.right_margin,
-		    ent->rectangle.height};
+		    ent->rectangle.height - 2*s};
     Xaw3dXftCombineClips(&a, &b, &b);
     if (b.width)
       Xaw3dXftCopy(w, ent->sme_bsb.right_bitmap, XtWindowOfObject(w), gc,
