@@ -424,9 +424,9 @@ The userData resource may be used by applications to store
 application-specific data on a widget.  It is not touched by Xaw3dXft code.
 
 XtRelief is an enum {XtReliefNone, XtReliefRaised, XtReliefSunken,
-XtReliefRidge, and XtReliefGroove} defined in ThreeD.h; however, the Text,
-SimpleMenu, Scrollbar, and Viewport widgets ignore this resource and display
-only raised or sunken shadows.
+XtReliefRidge, and XtReliefGroove} defined in ThreeD.h.  The SimpleMenu,
+Scrollbar, and Viewport widgets ignore this resource and display only raised
+or sunken shadows.
 
 The undeclared resources topShadowPixmap and bottomShadowPixmap appear to be
 intended for internal use only.
@@ -666,18 +666,14 @@ may not be modified with XtSetValues.  That restriction has been removed.
 
 ### SimpleMenu
 
-The border width of SimpleMenu widgets is permanently fixed at 0 in Xaw3dXft
-to prevent a blurry text glitch from affecting the pop-up window.  (The
-glitch can be reproduced with Xaw.)
-
 Added resources:
 
 Name            | Class                              | RepType | Default value
 :---            | :---                                      | :---      | :---
-jumpScroll      | JumpScroll                                | Int       | 1
 leftWhitespace  | LeftWhitespace (or HorizontalWhitespace)  | Dimension | 0
-multiColumn     | MultiColumn                               | Boolean   | True
 rightWhitespace | RightWhitespace (or HorizontalWhitespace) | Dimension | 0
+jumpScroll      | JumpScroll                                | Int       | 1
+multiColumn     | MultiColumn                               | Boolean   | True
 
 The use of these resources is explained in the following subsections.
 
@@ -772,6 +768,28 @@ the SmeBSB widget named "page".  A sub-menu will be mapped (or unmapped) when
 the pointer enters (or leaves) the superior SmeBSB widget.  Note that a
 sub-menu's parent must be the superior SimpleMenu widget, not the superior
 SmeBSB widget.
+
+#### Other notes on SimpleMenu
+
+The border width of SimpleMenu widgets is permanently fixed at 0 in Xaw3dXft
+to prevent a blurry text glitch from affecting the pop-up window.  (The
+glitch can be reproduced with Xaw.)
+
+The label and labelClass resources were inherited from Xaw:
+
+Name      | Class     | RepType | Default value
+:---      | :---      | :---    | :---
+label | Label | String | NULL
+labelClass | LabelClass | Pointer | NULL
+
+If label is set and labelClass is left alone, SimpleMenu will add a
+non-selectable SmeBSB with the label provided at the top of the menu.
+However, the only resources that SimpleMenu sets are label and justify (=
+XtJustifyCenter).  The global defaults for encoding, international, fonts,
+colors, etc. will apply.
+
+If labelClass is set, SimpleMenu will attempt to create the label with that
+class; however, it must be a subclass of SmeBSB.
 
 ### SmeBSB
 

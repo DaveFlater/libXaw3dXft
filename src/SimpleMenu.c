@@ -874,6 +874,8 @@ static void CreateLabel (Widget w) {
     XtCreateManagedWidget("menuLabel",
       smw->simple_menu.label_class, w,
       args, TWO);
+  if (!XtIsSubclass((Widget)smw->simple_menu.label, smeBSBObjectClass))
+    XtError("libXaw3dXft: labelClass is not a subclass of SmeBSB");
 
   /*
     We need the ThreeD and the label to be first and second on the list of
