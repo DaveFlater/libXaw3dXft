@@ -306,7 +306,6 @@ static void GetTextPosition (SmeBSBObject ent, Position *text_x,
  */
 
 static void DrawBitmaps (Widget w) {
-  Position x_loc, y_loc;
   SmeBSBObject ent = (SmeBSBObject)w;
   GC gc = ent->sme_bsb.normal_GC;
 
@@ -314,41 +313,53 @@ static void DrawBitmaps (Widget w) {
    * Draw left bitmap
    */
 
-  if (ent->sme_bsb.left_bitmap) {
-    x_loc = (Position)ent->rectangle.x +
-      (Position)ent->sme_threeD.shadow_width +
-      ((Position)ent->sme_bsb.left_margin -
-       (Position)ent->sme_bsb.left_bitmap_width) / 2;
-    y_loc = (Position)ent->rectangle.y +
-      ((Position)ent->rectangle.height -
-       (Position)ent->sme_bsb.left_bitmap_height) / 2;
-    Xaw3dXftCopy(w, ent->sme_bsb.left_bitmap,
-		 XtWindowOfObject(w), gc,
-		 ent->sme_bsb.left_bitmap_width,
-		 ent->sme_bsb.left_bitmap_height,
-		 ent->sme_bsb.left_depth,
-		 x_loc, y_loc);
+  if (ent->sme_bsb.left_bitmap && ent->sme_bsb.left_margin > 0) {
+    XRectangle a = {(Position)ent->rectangle.x +
+                    (Position)ent->sme_threeD.shadow_width +
+                    ((Position)ent->sme_bsb.left_margin -
+	             (Position)ent->sme_bsb.left_bitmap_width) / 2,
+		    (Position)ent->rectangle.y +
+                    ((Position)ent->rectangle.height -
+                     (Position)ent->sme_bsb.left_bitmap_height) / 2,
+		    ent->sme_bsb.left_bitmap_width,
+		    ent->sme_bsb.left_bitmap_height},
+	       b = {(Position)ent->rectangle.x +
+		    (Position)ent->sme_threeD.shadow_width,
+		    ent->rectangle.y,
+		    ent->sme_bsb.left_margin,
+		    ent->rectangle.height};
+    Xaw3dXftCombineClips(&a, &b, &b);
+    if (b.width)
+      Xaw3dXftCopy(w, ent->sme_bsb.left_bitmap, XtWindowOfObject(w), gc,
+		   b.width, b.height, ent->sme_bsb.left_depth, b.x, b.y);
   }
 
   /*
    * Draw right bitmap
    */
 
-  if (ent->sme_bsb.right_bitmap) {
-    x_loc = (Position)ent->rectangle.x +
-      (Position)ent->rectangle.width -
-      (Position)ent->sme_threeD.shadow_width -
-      (Position)(ent->sme_bsb.right_margin +
-		 ent->sme_bsb.right_bitmap_width) / 2;
-    y_loc = (Position)ent->rectangle.y +
-      ((Position)ent->rectangle.height -
-       (Position)ent->sme_bsb.right_bitmap_height) / 2;
-    Xaw3dXftCopy(w, ent->sme_bsb.right_bitmap,
-		 XtWindowOfObject(w), gc,
-		 ent->sme_bsb.right_bitmap_width,
-		 ent->sme_bsb.right_bitmap_height,
-		 ent->sme_bsb.right_depth,
-		 x_loc, y_loc);
+  if (ent->sme_bsb.right_bitmap && ent->sme_bsb.right_margin > 0) {
+    XRectangle a = {(Position)ent->rectangle.x +
+                    (Position)ent->rectangle.width -
+                    (Position)ent->sme_threeD.shadow_width -
+                    (Position)(ent->sme_bsb.right_margin +
+		               ent->sme_bsb.right_bitmap_width) / 2,
+		    (Position)ent->rectangle.y +
+                    ((Position)ent->rectangle.height -
+                     (Position)ent->sme_bsb.right_bitmap_height) / 2,
+		    ent->sme_bsb.right_bitmap_width,
+		    ent->sme_bsb.right_bitmap_height},
+	       b = {(Position)ent->rectangle.x +
+		    (Position)ent->rectangle.width -
+		    (Position)ent->sme_threeD.shadow_width -
+		    (Position)ent->sme_bsb.right_margin,
+		    ent->rectangle.y,
+		    ent->sme_bsb.right_margin,
+		    ent->rectangle.height};
+    Xaw3dXftCombineClips(&a, &b, &b);
+    if (b.width)
+      Xaw3dXftCopy(w, ent->sme_bsb.right_bitmap, XtWindowOfObject(w), gc,
+		   b.width, b.height, ent->sme_bsb.right_depth, b.x, b.y);
   }
 }
 
@@ -401,11 +412,18 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
   Visual *visual = VisualOf(ent);
   Widget parent = ObjParent(ent);
   Colormap cmap = parent->core.colormap;
+  const Dimension s = ent->sme_threeD.shadow_width;
   Position text_x, text_y;
   GetTextPosition(ent, &text_x, &text_y);
+  XRectangle clip = (XRectangle){
+    ent->rectangle.x + s + ent->sme_bsb.left_margin,
+    ent->rectangle.y + s,
+    ent->rectangle.width -
+      (ent->sme_bsb.left_margin + ent->sme_bsb.right_margin + 2*s),
+    ent->rectangle.height - 2*s};
   Xaw3dXftDrawAnyString(display, visual, cmap, window, ent->sme_bsb.font,
     ent->sme_bsb.fontset, ent->sme_bsb.xftfont, ent->sme.international, gc,
-    xfg, text_x, text_y, NULL, ent->sme_bsb.encoding, ent->sme_bsb.label);
+    xfg, text_x, text_y, &clip, ent->sme_bsb.encoding, ent->sme_bsb.label);
   if (ent->sme_bsb.underline >= 0) {
     Position x1, x2, y;
     if (Xaw3dXftLocateCharacter(display, ent->sme_bsb.font,
@@ -431,7 +449,7 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
 	Xaw3dXftDrawAnyStringN(display, visual, cmap,
 	  window, ent->sme_bsb.font, ent->sme_bsb.fontset,
 	  ent->sme_bsb.xftfont, ent->sme.international, gc, xfg, underline_x,
-	  underline_y, NULL, XawTextEncoding8bit, underlineStr, 1);
+	  underline_y, &clip, XawTextEncoding8bit, underlineStr, 1);
       } else {
 	// The underline character is narrower than the target.  Fix it with
 	// double tap.  Clip to avoid thickening/darkening where they overlap
@@ -443,14 +461,20 @@ static void DrawTextAndUnderline (Widget w, GC gc, XftColor *xfg) {
 	                    underline_center - underline_x1, height},
                    clip2 = {underline_center, underline_y,
 	                    text_x + x2 + 1 - underline_center, height};
-	Xaw3dXftDrawAnyStringN(display, visual, cmap,
-	  window, ent->sme_bsb.font, ent->sme_bsb.fontset,
-	  ent->sme_bsb.xftfont, ent->sme.international, gc, xfg, underline_x1,
-	  underline_y, &clip1, XawTextEncoding8bit, underlineStr, 1);
-	Xaw3dXftDrawAnyStringN(display, visual, cmap,
-	  window, ent->sme_bsb.font, ent->sme_bsb.fontset,
-	  ent->sme_bsb.xftfont, ent->sme.international, gc, xfg, underline_x2,
-	  underline_y, &clip2, XawTextEncoding8bit, underlineStr, 1);
+        Xaw3dXftCombineClips(&clip, &clip1, &clip1);
+        Xaw3dXftCombineClips(&clip, &clip2, &clip2);
+	if (clip1.width)
+	  Xaw3dXftDrawAnyStringN(display, visual, cmap,
+	    window, ent->sme_bsb.font, ent->sme_bsb.fontset,
+	    ent->sme_bsb.xftfont, ent->sme.international, gc, xfg,
+	    underline_x1, underline_y, &clip1, XawTextEncoding8bit,
+	    underlineStr, 1);
+	if (clip2.width)
+	  Xaw3dXftDrawAnyStringN(display, visual, cmap,
+	    window, ent->sme_bsb.font, ent->sme_bsb.fontset,
+	    ent->sme_bsb.xftfont, ent->sme.international, gc, xfg,
+	    underline_x2, underline_y, &clip2, XawTextEncoding8bit,
+	    underlineStr, 1);
       }
     }
   }
@@ -630,9 +654,6 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
                new_ent = (SmeBSBObject)new;
   Boolean ret_val = False;
 
-  // Code as incoming from Xaw ignored changes to width and height.  That is
-  // consistent with Xt docs, but we have no resize procedure, either.
-
   // The default lazy policy is to recalculate everything and repaint.
   // rectangle.sensitive:  ancestor_sensitive can't change here.
   if (cur_ent->sme_bsb.underline != new_ent->sme_bsb.underline ||
@@ -701,8 +722,11 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     new_ent->sme_bsb.xorSet = False;
     GetTextDimensions(new_ent);
     GetDefaultSize(new_ent, &new_ent->rectangle.width,
-		   &new_ent->rectangle.height);
+		            &new_ent->rectangle.height);
+    // Direct call of parent's resize procedure...
     (XtParent(new)->core.widget_class->core_class.resize)(new);
+    // Xt then reverts the geometry change and turns it into a request to the
+    // geometry manager.
   }
   return ret_val;
 }

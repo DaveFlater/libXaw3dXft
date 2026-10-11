@@ -123,6 +123,9 @@ static XtResource resources[] = {
     offset(internal_height), XtRImmediate, (XtPointer)2},
   {XtNinternalWidth, XtCWidth, XtRDimension, sizeof(Dimension),
     offset(internal_width), XtRImmediate, (XtPointer)2},
+  // X.h defines NotUseful, WhenMapped, and Always to be 0, 1, and 2
+  // respectively.  The default value of 3 results in the backing store
+  // attribute being left alone, which is probably what we want.
   {XtNbackingStore, XtCBackingStore, XtRBackingStore, sizeof(int),
     offset(backing_store), XtRImmediate,
     (XtPointer)(Always + WhenMapped + NotUseful)},

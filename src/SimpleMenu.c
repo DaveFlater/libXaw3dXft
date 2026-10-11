@@ -54,10 +54,7 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Xmu/Initer.h>
 #include <X11/Xmu/CharSet.h>
 
-#define streq(a, b)        ( strcmp((a), (b)) == 0 )
-
 #define offset(field) XtOffsetOf(SimpleMenuRec, simple_menu.field)
-#define MULTICOLUMN 255
 
 static XtResource resources[] = {
 
@@ -91,15 +88,18 @@ static XtResource resources[] = {
  * Misc. Resources
  */
 
-  { XtNallowShellResize, XtCAllowShellResize, XtRBoolean, sizeof(Boolean),
+  {XtNallowShellResize, XtCAllowShellResize, XtRBoolean, sizeof(Boolean),
       XtOffsetOf(SimpleMenuRec, shell.allow_shell_resize),
-      XtRImmediate, (XtPointer) TRUE },
+      XtRImmediate, (XtPointer) TRUE},
   {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
       offset(cursor), XtRImmediate, (XtPointer) None},
   {XtNmenuOnScreen,  XtCMenuOnScreen, XtRBoolean, sizeof(Boolean),
       offset(menu_on_screen), XtRImmediate, (XtPointer) TRUE},
   {XtNpopupOnEntry,  XtCPopupOnEntry, XtRWidget, sizeof(Widget),
       offset(popup_entry), XtRWidget, NULL},
+  // X.h defines NotUseful, WhenMapped, and Always to be 0, 1, and 2
+  // respectively.  The default value of 3 results in the backing store
+  // attribute being left alone, which is probably what we want.
   {XtNbackingStore, XtCBackingStore, XtRBackingStore, sizeof (int),
       offset(backing_store),
       XtRImmediate, (XtPointer) (Always + WhenMapped + NotUseful)},
@@ -148,13 +148,12 @@ static void Popdown(Widget, XEvent *, String *, Cardinal *);
 
 static void MakeSetValuesRequest(Widget, Dimension, Dimension);
 static void CreateLabel(Widget);
-static void Layout(Widget, Dimension *, Dimension *);
+static void Layout(Widget);
 static void AddPositionAction(XtAppContext, XPointer);
 static void PositionMenu(Widget, XPoint *);
 static void ChangeCursorOnGrab(Widget, XtPointer, XtPointer);
 static void SetMarginWidths(Widget);
 static Dimension GetMenuWidth(Widget);
-static Dimension GetMenuHeight(Widget);
 static Widget FindMenu(Widget, String);
 static SmeObject GetEventEntry(Widget, XEvent *);
 static void MoveMenu(Widget, Position, Position);
@@ -173,6 +172,7 @@ static CompositeClassExtensionRec extension_rec = {
     /* version */         XtCompositeExtensionVersion,
     /* record_size */     sizeof(CompositeClassExtensionRec),
     /* accepts_objects */ TRUE,
+    /* allows_change_managed_set */ True
 };
 
 #define superclass (&overrideShellClassRec)
@@ -232,11 +232,26 @@ WidgetClass simpleMenuWidgetClass = (WidgetClass)&simpleMenuClassRec;
 #define	SMW_UNMAPPING	0x01
 #define SMW_POPLEFT	0x02
 
-#define ForAllChildren(smw, childP) \
-	for ((childP) = (SmeObject *) (smw)->composite.children; \
-	     (childP) < (SmeObject *) ((smw)->composite.children + \
-			(smw)->composite.num_children); \
+// All menu entries are children.  Not all children are menu entries.
+// The first child is always the ThreeD.  Hide its presence.  Previously,
+// every loop was skipping over it with
+//   if (!XtIsManaged((Widget)*entry)) continue;
+// and it was wrongly included in the count when calculating heights.
+
+#define FirstEntry(smw) ((SmeObject *)(smw)->composite.children + 1)
+#define ForAllEntries(smw, childP) \
+	for ((childP) = FirstEntry(smw); \
+	     (childP) < (SmeObject *)((smw)->composite.children + \
+			              (smw)->composite.num_children); \
 	     (childP)++)
+#define NumEntries(smw) ((smw)->composite.num_children > 1 ? \
+    (smw)->composite.num_children - 1 : 0)
+#define LastEntry(smw) ((smw)->composite.num_children > 1 ? \
+    (SmeObject *)((smw)->composite.children + \
+                  (smw)->composite.num_children - 1) : NULL)
+
+// This y coordinate means invalid, not applicable, do not draw.
+static constexpr Position dead_y = -10;
 
 /************************************************************
  *
@@ -317,12 +332,11 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   smw->simple_menu.label = NULL;
   smw->simple_menu.entry_set = NULL;
-  smw->simple_menu.recursive_set_values = FALSE;
-  smw->simple_menu.first_entry = NULL;
-  smw->simple_menu.current_first = NULL;
-  smw->simple_menu.first_y = 0;
-  smw->simple_menu.too_tall = FALSE;
-  smw->simple_menu.multicolumn = FALSE;
+  smw->simple_menu.recursive_set_values = False;
+  smw->simple_menu.current_first = NULL; // children is NULL at this point
+  smw->simple_menu.too_tall =
+    smw->simple_menu.multicolumn =
+    smw->simple_menu.didnt_fit = False;
   smw->simple_menu.sub_menu = NULL;
   smw->simple_menu.state = 0;
 
@@ -331,9 +345,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   if (smw->simple_menu.label_class == NULL)
       smw->simple_menu.label_class = smeBSBObjectClass;
 
-  if (smw->simple_menu.label_string != NULL)
-      CreateLabel(new);
-
+  // First child is ThreeD (unmanaged).
   smw->simple_menu.threeD = XtVaCreateWidget("threeD",
       threeDWidgetClass, new,
       XtNx, 0, XtNy, 0, XtNwidth, /* dummy */ 10, XtNheight, /* dummy */ 10,
@@ -342,6 +354,10 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
   // Otherwise, core.width and height get overwritten later.
   smw->simple_menu.menu_width = (smw->core.width != 0);
   smw->simple_menu.menu_height = (smw->core.height != 0);
+
+  // Second child is optional label.
+  if (smw->simple_menu.label_string != NULL)
+      CreateLabel(new);
 
   /* add a popup_callback routine for changing the cursor */
   XtAddCallback(new, XtNpopupCallback, ChangeCursorOnGrab, (XtPointer)NULL);
@@ -355,107 +371,57 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
  *      Returns: none.
  */
 
-static void
-Redisplay(Widget w, XEvent * event, Region region)
-{
-    SimpleMenuWidget smw = (SimpleMenuWidget)w;
-    SmeObject *entry;
-    SmeObjectClass class;
-    ThreeDWidget tdw = (ThreeDWidget)smw->simple_menu.threeD;
-    int y, max_y, new_y, s = tdw->threeD.shadow_width;
-    Boolean can_paint;
+static void Redisplay (Widget w, XEvent * event, Region region) {
+  SimpleMenuWidget smw = (SimpleMenuWidget)w;
+  ThreeDWidget tdw = (ThreeDWidget)smw->simple_menu.threeD;
+
+  if (!XtIsRealized((Widget)smw))
+    return;
+
+  // Region is never used again.
+  if (region == NULL)
+    XClearWindow(XtDisplay(w), XtWindow(w));
+
+  // Draw shadows.
+  _ShadowSurroundedBox((Widget)smw, tdw, 0, 0, smw->core.width,
+    smw->core.height, tdw->threeD.relief, True);
+
+  // Draw scroll arrows if applicable.
+  if (smw->simple_menu.too_tall) {
+    // SMW_ARROW_SIZE is the height.  The width will be off by one.
     XPoint point[3];
-
-    if (region == NULL)
-	XClearWindow(XtDisplay(w), XtWindow(w));
-
-    if (XtIsRealized((Widget)smw))
-	_ShadowSurroundedBox((Widget)smw, tdw,
-			0, 0, smw->core.width, smw->core.height,
-			tdw->threeD.relief, True);
-
-    smw->simple_menu.didnt_fit = False;
-    y = 0;
-    max_y = HeightOfScreen(XtScreen(w)) - s;
-    new_y = -(*(SmeObject *)(smw)->composite.children)->rectangle.y;
-    can_paint = False;
-
-    /* check and paint each of the entries - including the label */
-    SmeObject *lastEntry = NULL;
-    if (smw->composite.num_children > 0)
-	lastEntry = (SmeObject *) (smw->composite.children +
-				   smw->composite.num_children - 1);
-    ForAllChildren(smw, entry)
-    {
-	if (!XtIsManaged((Widget)*entry)) continue;
-
-	if (smw->simple_menu.first_entry == NULL)
-        {
-	    smw->simple_menu.first_entry = entry;
-	    smw->simple_menu.current_first = entry;
-	}
-
-	const Position old_pos = (*entry)->rectangle.y;
-	if (smw->simple_menu.too_tall)
-	{
-	    if (entry == (smw->simple_menu.current_first))
-	    {
-		new_y = (*entry)->rectangle.y - s;
-
-		if (smw->simple_menu.current_first != smw->simple_menu.first_entry)
-		{
-		    point[0].x = (*entry)->rectangle.x + (*entry)->rectangle.width / 2;
-		    point[0].y = s + 1;
-		    point[1].x = (*entry)->rectangle.x + (*entry)->rectangle.width / 2 - SMW_ARROW_SIZE / 2;
-		    point[1].y = s + SMW_ARROW_SIZE;
-		    point[2].x = (*entry)->rectangle.x + (*entry)->rectangle.width / 2 + SMW_ARROW_SIZE / 2;
-		    point[2].y = s + SMW_ARROW_SIZE;
-		    XFillPolygon(XtDisplay(w), smw->core.window,
-			    tdw->threeD.bot_shadow_GC, point, 3, Convex,
-			    CoordModeOrigin);
-
-		    new_y -= SMW_ARROW_SIZE;
-		}
-
-		smw->simple_menu.first_y = new_y;
-		can_paint = True;
-	    }
-	    else if (!can_paint)
-		continue;
-
-	    (*entry)->rectangle.y -= new_y; // Temporary adjustment
-
-	    // max_y is the limit *without* an arrow.  There is an edge case
-	    // when we are on the last entry, and it'll fit, but there's no
-	    // extra room for an arrow.  (There's also a pathological case
-	    // being ignored when SMW_ARROW_SIZE is taller than the
-	    // rectangles.)
-	    if ((*entry)->rectangle.y + (*entry)->rectangle.height +
-		(entry == lastEntry ? 0 : SMW_ARROW_SIZE) > max_y)
-	    {
-		smw->simple_menu.last_y = (*entry)->rectangle.y;
-		point[0].x = (*entry)->rectangle.x + (*entry)->rectangle.width / 2;
-		point[0].y = max_y - 1;
-		point[1].x = (*entry)->rectangle.x + (*entry)->rectangle.width / 2 - SMW_ARROW_SIZE / 2;
-		point[1].y = max_y - SMW_ARROW_SIZE;
-		point[2].x = (*entry)->rectangle.x + (*entry)->rectangle.width / 2 + SMW_ARROW_SIZE / 2;
-		point[2].y = max_y - SMW_ARROW_SIZE;
-		XFillPolygon(XtDisplay(w), smw->core.window,
-			tdw->threeD.bot_shadow_GC, point, 3, Convex,
-			CoordModeOrigin);
-
-		smw->simple_menu.didnt_fit = True;
-		(*entry)->rectangle.y = old_pos;
-		break;
-	    }
-	}
-
-	class = (SmeObjectClass)(*entry)->object.widget_class;
-	if (class->rect_class.expose != NULL)
-	    (class->rect_class.expose)((Widget)*entry, NULL, NULL);
-	(*entry)->rectangle.y = old_pos;
-	y += (*entry)->rectangle.height;
+    const Position xcenter = smw->core.width / 2;
+    point[0].x = xcenter;
+    point[1].x = xcenter - SMW_ARROW_SIZE / 2;
+    point[2].x = xcenter + SMW_ARROW_SIZE / 2;
+    // Top arrow
+    assert(smw->simple_menu.current_first);
+    if (smw->simple_menu.current_first != FirstEntry(smw)) {
+      const Position ymin = smw->simple_menu.top_margin +
+	tdw->threeD.shadow_width;
+      point[0].y = ymin;
+      point[1].y = point[2].y = ymin + SMW_ARROW_SIZE - 1;
+      XFillPolygon(XtDisplay(w), XtWindow(w), tdw->threeD.bot_shadow_GC,
+	point, 3, Convex, CoordModeOrigin);
     }
+    // Bottom arrow
+    if (smw->simple_menu.didnt_fit) {
+      point[0].y = smw->simple_menu.bottom_y + SMW_ARROW_SIZE - 1;
+      point[1].y = point[2].y = smw->simple_menu.bottom_y;
+      XFillPolygon(XtDisplay(w), XtWindow(w), tdw->threeD.bot_shadow_GC,
+	point, 3, Convex, CoordModeOrigin);
+    }
+  }
+
+  // Draw the entries that are drawable.
+  SmeObject *entry;
+  ForAllEntries(smw, entry) {
+    if ((*entry)->rectangle.y != dead_y) {
+      SmeObjectClass class = (SmeObjectClass)(*entry)->object.widget_class;
+      if (class->rect_class.expose != NULL)
+	(class->rect_class.expose)((Widget)*entry, NULL, NULL);
+    }
+  }
 }
 
 /*      Function Name: Realize
@@ -482,12 +448,6 @@ Realize(Widget w, XtValueMask * mask, XSetWindowAttributes * attrs)
     else
 	*mask &= ~CWBackingStore;
 
-     /* check if the menu is too big */
-     if (smw->core.height >= HeightOfScreen(XtScreen(w))) {
-         smw->simple_menu.too_tall = TRUE;
-         smw->core.height = HeightOfScreen(XtScreen(w));
-     }
-
     (*superclass->core_class.realize) (w, mask, attrs);
 }
 
@@ -497,23 +457,16 @@ Realize(Widget w, XtValueMask * mask, XSetWindowAttributes * attrs)
  *      Returns: none.
  */
 
-static void
-Resize(Widget w)
-{
-    /*
-     * The sole purpose of this function is to force an initial
-     * layout by handling a call from some child widget. Ick.
-     */
-
-    if (XtIsSubclass(w, smeBSBObjectClass))
-    {
-	Widget parent = XtParent(w);
-
-	if (!XtIsRealized(parent))
-	    XtRealizeWidget(parent);
-
-	Layout(w, (Dimension *)NULL, (Dimension *)NULL);
-    }
+static void Resize (Widget w) {
+  // In the irregular geometry management protocol used by SimpleMenu and
+  // SmeBSB, this function's only purpose is to trigger a relayout when it is
+  // called from SmeBSB's SetValues.
+  if (XtIsSubclass(w, smeBSBObjectClass)) {
+    Widget parent = XtParent(w);
+    if (!XtIsRealized(parent))
+      XtRealizeWidget(parent);
+    Layout(w);
+  }
 }
 
 /*      Function Name: SetValues
@@ -527,12 +480,10 @@ Resize(Widget w)
 static Boolean
 SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *num_args)
 {
-    SimpleMenuWidget smw_old = (SimpleMenuWidget) current;
-    SimpleMenuWidget smw_new = (SimpleMenuWidget) new;
+    SimpleMenuWidget smw_old = (SimpleMenuWidget)current;
+    SimpleMenuWidget smw_new = (SimpleMenuWidget)new;
     Boolean ret_val = FALSE, layout = FALSE;
     smw_new->core.border_width = 0; // See Notes 2026-06-19 DWF above
-
-    if (!XtIsRealized(current)) return(FALSE);
 
     if (!smw_new->simple_menu.recursive_set_values) {
 	if (smw_new->core.width != smw_old->core.width) {
@@ -551,15 +502,15 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
 
     if (smw_old->simple_menu.label_string !=smw_new->simple_menu.label_string) {
 	if (smw_new->simple_menu.label_string == NULL)         /* Destroy. */
-	    XtDestroyWidget((Widget) smw_old->simple_menu.label);
+	    XtDestroyWidget((Widget)smw_old->simple_menu.label);
 	else if (smw_old->simple_menu.label_string == NULL)    /* Create. */
 	    CreateLabel(new);
 	else {                                                 /* Change. */
-	    Arg arglist[1];
-
-	    XtSetArg(arglist[0], XtNlabel, smw_new->simple_menu.label_string);
-	    XtSetValues((Widget) smw_new->simple_menu.label, arglist, ONE);
+	    Arg arglist[1] = {{XtNlabel,
+			       (XtArgVal)smw_new->simple_menu.label_string}};
+	    XtSetValues((Widget)smw_new->simple_menu.label, arglist, ONE);
 	}
+	layout = ret_val = True;
     }
 
     if (smw_old->simple_menu.label_class != smw_new->simple_menu.label_class)
@@ -584,7 +535,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     }
 
     if (layout)
-	Layout(new, (Dimension *)NULL, (Dimension *)NULL);
+	Layout(new);
 
     return(ret_val);
 }
@@ -614,9 +565,9 @@ SetValuesHook(Widget w, ArgList arglist, Cardinal *num_args)
     height = w->core.height;
 
     for ( i = 0 ; i < *num_args ; i++) {
-	if ( streq(arglist[i].name, XtNwidth) )
+	if (!strcmp(arglist[i].name, XtNwidth))
 	    width = (Dimension) arglist[i].value;
-	if ( streq(arglist[i].name, XtNheight) )
+	if (!strcmp(arglist[i].name, XtNheight))
 	    height = (Dimension) arglist[i].value;
     }
 
@@ -636,70 +587,31 @@ SetValuesHook(Widget w, ArgList arglist, Cardinal *num_args)
  *	Arguments: w - the Menu Entry making the request.
  *                 request - requested new geometry.
  *                 reply - the allowed geometry.
- *	Returns: XtGeometry{Yes, No, Almost}.
+ *	Returns: XtGeometry{Yes, No, Almost, Done}.
  */
 
-static XtGeometryResult
-GeometryManager(Widget w, XtWidgetGeometry * request, XtWidgetGeometry * reply)
-{
-    SimpleMenuWidget smw = (SimpleMenuWidget) XtParent(w);
-    SmeObject entry = (SmeObject) w;
-    XtGeometryMask mode = request->request_mode;
-    XtGeometryResult answer;
-    Dimension old_height, old_width;
-
-    if ( !(mode & CWWidth) && !(mode & CWHeight) )
-	return(XtGeometryNo);
-
-    reply->width = request->width;
-    reply->height = request->height;
-
-    old_width = entry->rectangle.width;
-    old_height = entry->rectangle.height;
-
-    Layout(w, &(reply->width), &(reply->height) );
-
-/*
- * Since we are an override shell and have no parent there is no one to
- * ask to see if this geom change is okay, so I am just going to assume
- * we can do whatever we want.  If you subclass be very careful with this
- * assumption, it could bite you.
- *
- * Chris D. Peterson - Sept. 1989.
- */
-
-    if ( (reply->width == request->width) &&
-	 (reply->height == request->height) ) {
-
-	if ( mode & XtCWQueryOnly ) {
-	    entry->rectangle.width = old_width;
-	    entry->rectangle.height = old_height;
-	}
-	else {
-	    /* Actually perform the layout */
-	    Layout(( Widget) smw, (Dimension *)NULL, (Dimension *)NULL);
-	}
-	answer = XtGeometryDone;
-    }
-    else {
-	entry->rectangle.width = old_width;
-	entry->rectangle.height = old_height;
-
-	if ( ((reply->width == request->width) && !(mode & CWHeight)) ||
-	      ((reply->height == request->height) && !(mode & CWWidth)) ||
-	      ((reply->width == request->width) &&
-	       (reply->height == request->height)) )
-	    answer = XtGeometryNo;
-	else {
-	    answer = XtGeometryAlmost;
-	    reply->request_mode = 0;
-	    if (reply->width != request->width)
-		reply->request_mode |= CWWidth;
-	    if (reply->height != request->height)
-		reply->request_mode |= CWHeight;
-	}
-    }
-    return(answer);
+// The job of this geometry manager is to stay out of the way.
+static XtGeometryResult GeometryManager (Widget w, XtWidgetGeometry *request,
+XtWidgetGeometry *reply) {
+  XtGeometryMask mode = request->request_mode;
+  if (mode & (CWBorderWidth | CWSibling | CWStackMode))
+    return XtGeometryNo;
+  SmeObject entry = (SmeObject)w;
+  reply->x      = (mode & CWX      ? request->x      : entry->rectangle.x);
+  reply->y      = (mode & CWY      ? request->y      : entry->rectangle.y);
+  reply->width  = (mode & CWWidth  ? request->width  : entry->rectangle.width);
+  reply->height = (mode & CWHeight ? request->height : entry->rectangle.height);
+  if (!(mode & XtCWQueryOnly)) {
+    if (mode & CWX)
+      entry->rectangle.x = request->x;
+    if (mode & CWY)
+      entry->rectangle.y = request->y;
+    if (mode & CWWidth)
+      entry->rectangle.width = request->width;
+    if (mode & CWHeight)
+      entry->rectangle.height = request->height;
+  }
+  return XtGeometryDone;
 }
 
 /*	Function Name: ChangeManaged
@@ -708,10 +620,8 @@ GeometryManager(Widget w, XtWidgetGeometry * request, XtWidgetGeometry * reply)
  *	Returns: none.
  */
 
-static void
-ChangeManaged(Widget w)
-{
-    Layout(w, (Dimension *)NULL, (Dimension *)NULL);
+static void ChangeManaged (Widget w) {
+  Layout(w);
 }
 
 /************************************************************
@@ -800,7 +710,6 @@ Unhighlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
     SimpleMenuWidget sub = (SimpleMenuWidget) smw->simple_menu.sub_menu;
     SmeObject entry = smw->simple_menu.entry_set;
     SmeObjectClass class;
-    int old_pos;
 
     if (entry == NULL || entry == GetEventEntry(w, event)) {
 	smw->simple_menu.entry_set = NULL;
@@ -818,15 +727,8 @@ Unhighlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
 	PopdownSubMenu(smw);
 
     smw->simple_menu.entry_set = NULL;
-    class = (SmeObjectClass) entry->object.widget_class;
-
-    /* backup, then restore, original entry position */
-    old_pos = entry->rectangle.y;
-    entry->rectangle.y -= smw->simple_menu.first_y;
-
-    (class->sme_class.unhighlight) ((Widget) entry);
-
-    entry->rectangle.y = old_pos;
+    class = (SmeObjectClass)entry->object.widget_class;
+    (class->sme_class.unhighlight) ((Widget)entry);
 }
 
 /*      Function Name: Highlight
@@ -843,7 +745,6 @@ Highlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
     SimpleMenuWidget smw = (SimpleMenuWidget) w;
     SmeObject entry;
     SmeObjectClass class;
-    int old_pos;
 
     if (!XtIsSensitive(w)) return;
 
@@ -863,17 +764,10 @@ Highlight(Widget w, XEvent * event, String * params, Cardinal * num_params)
 
     if (!(smw->simple_menu.state & SMW_UNMAPPING)) {
 	smw->simple_menu.entry_set = entry;
-	class = (SmeObjectClass) entry->object.widget_class;
-
-	/* backup, then restore, original entry position */
-	old_pos = entry->rectangle.y;
-	entry->rectangle.y -= smw->simple_menu.first_y;
-
-	(class->sme_class.highlight) ((Widget) entry);
+	class = (SmeObjectClass)entry->object.widget_class;
+	(class->sme_class.highlight) ((Widget)entry);
 	if (XtIsSubclass((Widget)entry, smeBSBObjectClass))
 	    PopupSubMenu(smw);
-
-	entry->rectangle.y = old_pos;
     }
 }
 
@@ -957,158 +851,203 @@ XawSimpleMenuClearActiveEntry(Widget w)
  *	Arguments: w - the smw widget.
  *	Returns: none.
  *
- * Creates the label object and makes sure it is the first child in
+ * Creates the label object and makes sure it is the second child in
  * in the list.
  */
 
-static void
-CreateLabel(Widget w)
-{
-    SimpleMenuWidget smw = (SimpleMenuWidget) w;
-    Widget * child, * next_child;
-    int i;
-    Arg args[2];
+static void CreateLabel (Widget w) {
+  SimpleMenuWidget smw = (SimpleMenuWidget)w;
+  Arg args[2];
 
-    if ( (smw->simple_menu.label_string == NULL) ||
-	 (smw->simple_menu.label != NULL) ) {
-	char error_buf[BUFSIZ];
+  if (!smw->simple_menu.label_string || smw->simple_menu.label) {
+    char error_buf[BUFSIZ];
+    (void) sprintf(error_buf, "Xaw Simple Menu Widget: %s or %s, %s",
+      "label string is NULL", "label already exists",
+      "no label is being created.");
+    XtAppWarning(XtWidgetToApplicationContext(w), error_buf);
+    return;
+  }
 
-	(void) sprintf(error_buf, "Xaw Simple Menu Widget: %s or %s, %s",
-		"label string is NULL", "label already exists",
-		"no label is being created.");
-	XtAppWarning(XtWidgetToApplicationContext(w), error_buf);
-	return;
-    }
+  XtSetArg(args[0], XtNlabel, smw->simple_menu.label_string);
+  XtSetArg(args[1], XtNjustify, XtJustifyCenter);
+  smw->simple_menu.label = (SmeObject)
+    XtCreateManagedWidget("menuLabel",
+      smw->simple_menu.label_class, w,
+      args, TWO);
 
-    XtSetArg(args[0], XtNlabel, smw->simple_menu.label_string);
-    XtSetArg(args[1], XtNjustify, XtJustifyCenter);
-    smw->simple_menu.label = (SmeObject)
-	                      XtCreateManagedWidget("menuLabel",
-					    smw->simple_menu.label_class, w,
-					    args, TWO);
+  /*
+    We need the ThreeD and the label to be first and second on the list of
+    children.  If a label is added after the menu entries, it will appear at
+    the end of the list and needs to be moved up.
 
-    next_child = NULL;
-    for (child = smw->composite.children + smw->composite.num_children,
-	 i = smw->composite.num_children ; i > 0 ; i--, child--) {
-	if (next_child != NULL)
-	    *next_child = *child;
-	next_child = child;
-    }
-    *child = (Widget) smw->simple_menu.label;
+    Another way to control placement is provided by the Xt Composite
+    insert_position procedure, which is intended for use by the application.
+    If the application actually uses that, we'll get an assertion failure
+    here.
+  */
+  const Cardinal nc = smw->composite.num_children;
+  assert(nc >= 2);
+  assert(smw->composite.children[0] != (Widget)smw->simple_menu.label);
+  if (smw->composite.children[1] != (Widget)smw->simple_menu.label) {
+    assert(smw->composite.children[nc-1] == (Widget)smw->simple_menu.label);
+    (void)memmove(smw->composite.children+2, smw->composite.children+1,
+      (nc-2)*sizeof(Widget));
+    smw->composite.children[1] = (Widget)smw->simple_menu.label;
+  }
 }
 
-/*	Function Name: Layout
- *	Description: lays the menu entries out all nice and neat.
- *	Arguments: w - See below (+++)
- *                 width_ret, height_ret - The returned width and
- *                                         height values.
- *	Returns: none.
- *
- * if width == NULL || height == NULL then it assumes the you do not care
- * about the return values, and just want a relayout.
- *
- * if this is not the case then it will set width_ret and height_ret
- * to be width and height that the child would get if it were laid out
- * at this time.
- *
- * +++ "w" can be the simple menu widget or any of its object children.
+/* Function Name: Layout
+ * Description: Determines geometry; sets positions and sizes of entries.
+ * Arguments: w - The SimpleMenu or any of its SmeBSB children.
  */
 
-static void
-Layout(Widget w, Dimension *width_ret, Dimension *height_ret)
-{
-    SmeObject current_entry, *entry;
-    SimpleMenuWidget smw;
-    ThreeDWidget tdw;
-    Dimension width, height, height_max = 0, scr_height_max, column = 0;
-    Boolean do_layout = (height_ret == NULL || width_ret == NULL);
-    Boolean allow_change_size, allow_multi_column;
+static void Layout (Widget w) {
+  SimpleMenuWidget smw;
+  SmeObject *entry;
 
-    height = 0;
+  if (XtIsSubclass(w, simpleMenuWidgetClass))
+    smw = (SimpleMenuWidget)w;
+  else
+    smw = (SimpleMenuWidget)XtParent(w);
+  ThreeDWidget tdw = (ThreeDWidget)smw->simple_menu.threeD;
 
-    if (XtIsSubclass(w, simpleMenuWidgetClass))
-    {
-	smw = (SimpleMenuWidget)w;
-	current_entry = NULL;
+  const Dimension shadowWidth = tdw->threeD.shadow_width;
+  const Boolean canResize = !XtIsRealized((Widget)smw) ||
+                              smw->shell.allow_shell_resize,
+              fixedHeight = smw->simple_menu.menu_height || !canResize,
+               fixedWidth = smw->simple_menu.menu_width || !canResize;
+  const Dimension heightLimit = (fixedHeight ? smw->core.height :
+    HeightOfScreen(XtScreen(smw)) - 2*smw->core.border_width);
+  const SmeObject *lastEntry = LastEntry(smw);
+  const Position y_cutoff = heightLimit - smw->simple_menu.bottom_margin -
+    shadowWidth;
+
+  smw->simple_menu.too_tall = False;    // Is scrolling needed?
+  smw->simple_menu.didnt_fit = False;   // Is there a *bottom* scroll arrow?
+  smw->simple_menu.multicolumn = False; // Is there more than one column?
+
+  Boolean repeat = True;
+  Dimension height;
+  Cardinal column;
+  while (repeat) {
+    repeat = False;
+    column = 0;
+    height = smw->simple_menu.top_margin + shadowWidth;
+    Dimension height_max = height;
+    Boolean header = smw->simple_menu.too_tall, trailer = False;
+
+    // Include top arrow when applicable.
+    if (smw->simple_menu.too_tall) {
+      if (smw->simple_menu.current_first) {
+	if (smw->simple_menu.current_first != FirstEntry(smw))
+	  height += SMW_ARROW_SIZE;
+      } else
+	smw->simple_menu.current_first = FirstEntry(smw);
     }
-    else
-    {
-	smw = (SimpleMenuWidget)XtParent(w);
-	current_entry = (SmeObject)w;
-    }
-    tdw = (ThreeDWidget)smw->simple_menu.threeD;
-    const Dimension shadowWidth = tdw->threeD.shadow_width;
 
-    do_layout |= (current_entry != NULL);
-    allow_change_size =
-		(!XtIsRealized((Widget)smw) || smw->shell.allow_shell_resize);
+    ForAllEntries(smw, entry) {
+      assert(XtIsManaged((Widget)*entry));
 
-    if (smw->simple_menu.menu_height)
-	height = smw->core.height;
-    else if (do_layout)
-    {
-        /* width still unset, using it as place holder */
-	width = smw->simple_menu.top_margin + shadowWidth;
-	height = width;
-        scr_height_max =  HeightOfScreen(XtScreen(smw))
-	  - (smw->simple_menu.top_margin + smw->simple_menu.bottom_margin +
-	     2 * shadowWidth);
-	allow_multi_column = allow_change_size && smw->simple_menu.multiColumn;
+      // If row height was set, apply it to everything except the label.
+      if (smw->simple_menu.row_height != 0 &&
+	*entry != smw->simple_menu.label)
+	(*entry)->rectangle.height = smw->simple_menu.row_height;
 
-	ForAllChildren(smw, entry)
-	{
-	    if (!XtIsManaged((Widget)*entry)) continue;
+      if (entry == smw->simple_menu.current_first)
+	header = False;
+      if (header || trailer) {
+	// This entry will not be displayed.
+	(*entry)->rectangle.x = column;
+	(*entry)->rectangle.y = dead_y;
+	continue;
+      }
 
-	    if (smw->simple_menu.row_height != 0 &&
-			*entry != smw->simple_menu.label)
-		(*entry)->rectangle.height = smw->simple_menu.row_height;
-            if (allow_multi_column &&
-		height > scr_height_max - (*entry)->rectangle.height) {
-                column += 1;
-                height = width;
-		smw->simple_menu.multicolumn = TRUE;
-	    }
-	    (*entry)->rectangle.y = height;
-	    (*entry)->rectangle.x = column;
-	    height += (*entry)->rectangle.height;
-	    if (height > height_max)
-	        height_max = height;
+      // There is an edge case when we are on the last entry, and it'll
+      // fit, but there's no extra room for an arrow.  (There's also a
+      // pathological case being ignored when SMW_ARROW_SIZE is taller than
+      // the rectangles.)
+      if (height + (*entry)->rectangle.height +
+	(entry == lastEntry ? 0 : SMW_ARROW_SIZE) >= y_cutoff) {
+	// Vertical space exceeded.
+	if (smw->simple_menu.multiColumn) {
+	  // Start a new column.
+	  smw->simple_menu.multicolumn = True;
+	  column += 1;
+	  height = smw->simple_menu.top_margin + shadowWidth;
+	} else if (smw->simple_menu.too_tall) {
+	  smw->simple_menu.didnt_fit = trailer = True;
+	  (*entry)->rectangle.x = column;
+	  (*entry)->rectangle.y = dead_y;
+	  // Mark where the bottom scrolling zone begins.
+	  smw->simple_menu.bottom_y = height;
+	  // Add the bottom arrow so that height is computed correctly
+	  // after the loop.
+	  height_max = height + SMW_ARROW_SIZE;
+	  continue;
+	} else {
+	  // Restart with scroll arrows.
+	  smw->simple_menu.too_tall = True;
+	  repeat = True;
+	  break;
 	}
+      }
+      (*entry)->rectangle.x = column;
+      (*entry)->rectangle.y = height;
+      height += (*entry)->rectangle.height;
+      if (height > height_max)
+	height_max = height;
+    }
+    if (!repeat) {
+      // If we finished the all entries loop without finding current_first,
+      // it is invalid and must be reset.  This could happen if somebody
+      // deletes a menu entry.
+      if (header) {
+	smw->simple_menu.current_first = FirstEntry(smw);
+	repeat = True;
+      } else
+        // Finalize height.
+        height = (fixedHeight ? smw->core.height :
+	  height_max + smw->simple_menu.bottom_margin + shadowWidth);
+    }
+  }
 
-	height = height_max + smw->simple_menu.bottom_margin + shadowWidth;
-    }
-    else if (smw->simple_menu.row_height != 0 &&
-		current_entry != smw->simple_menu.label)
-    {
-	height = smw->simple_menu.row_height * smw->composite.num_children;
-	height += 2*shadowWidth;
-    }
+  // Reset current_first if we aren't scrolling anymore.
+  if (!smw->simple_menu.too_tall)
+    smw->simple_menu.current_first = FirstEntry(smw);
 
-    SetMarginWidths((Widget)smw);
-    if (!smw->simple_menu.menu_width && allow_change_size)
-	width = GetMenuWidth((Widget)smw);
-    else
-	width = smw->core.width;
+  SetMarginWidths((Widget)smw);
+  Dimension width, columnWidth;
+  if (fixedWidth) {
+    width = smw->core.width;
+    columnWidth = (width - 2*shadowWidth) / (column+1);
+  } else {
+    // GetMenuWidth does not result in calling Xaw3dXftSizeAnyString on every
+    // entry label again.  That happens only if and when the SmeBSB gets a
+    // relevant SetValue.
+    columnWidth = GetMenuWidth((Widget)smw);
+    width = columnWidth * (column+1) + 2*shadowWidth;
+    const Dimension maxWidth = WidthOfScreen(XtScreen(w)) -
+                               2 * w->core.border_width;
+    if (width > maxWidth) {
+      width = maxWidth;
+      columnWidth = (width - 2*shadowWidth) / (column+1);
+    }
+  }
+  // All the x were set to column number.  Finalize their values.
+  ForAllEntries(smw, entry) {
+    (*entry)->rectangle.x = (*entry)->rectangle.x * columnWidth
+      + shadowWidth;
+    (*entry)->rectangle.width = columnWidth;
+  }
 
-    assert(width > 0 && height > 0);
-    if (do_layout)
-    {
-        ForAllChildren(smw, entry) {
-	    (*entry)->rectangle.x = (*entry)->rectangle.x * width
-		+ shadowWidth;
-	    if (XtIsManaged((Widget)*entry))
-		(*entry)->rectangle.width = width;
-	}
-	if (allow_change_size) {
-	    width = width*(column+1) + 2*shadowWidth;
-	    MakeSetValuesRequest((Widget) smw, width, height);
-	}
-    }
-    else
-    {
-        if (width_ret) *width_ret = width;
-        if (height_ret) *height_ret = height;
-    }
+  // Maybe resize, maybe move.
+  assert(!fixedHeight || height == smw->core.height);
+  assert(!fixedWidth || width == smw->core.width);
+  if (width != smw->core.width || height != smw->core.height) {
+    MakeSetValuesRequest((Widget)smw, width, height);
+    if (smw->simple_menu.menu_on_screen)
+      MoveMenu((Widget)smw, smw->core.x, smw->core.y);
+  }
 }
 
 /*	Function Name: AddPositionAction
@@ -1154,9 +1093,7 @@ FindMenu(Widget widget, String name)
  *	Returns: none.
  */
 
-static void
-PositionMenu(Widget w, XPoint * location)
-{
+static void PositionMenu (Widget w, XPoint *location) {
     SimpleMenuWidget smw = (SimpleMenuWidget) w;
     SmeObject entry;
     XPoint t_point;
@@ -1308,9 +1245,9 @@ SetMarginWidths(Widget w)
     {
 	/* determine the widest bitmaps */
 	l_bmw = r_bmw = (Dimension)0;
-	ForAllChildren(smw, entry)
+	ForAllEntries(smw, entry)
 	{
-	    if (!XtIsManaged((Widget)*entry)) continue;
+	    assert(XtIsManaged((Widget)*entry));
 	    if (*entry == smw->simple_menu.label) continue;
 	    if (XtIsSubclass((Widget)*entry, smeLineObjectClass))
 		continue;
@@ -1331,9 +1268,8 @@ SetMarginWidths(Widget w)
 			(smw->simple_menu.right_whitespace * ((r_bmw) ? 2 : 1));
 
 	/* make all the margins uniform */
-	ForAllChildren(smw, entry)
+	ForAllEntries(smw, entry)
 	{
-	    if (!XtIsManaged((Widget)*entry)) continue;
 	    if (*entry == smw->simple_menu.label) continue;
 	    if (XtIsSubclass((Widget)*entry, smeLineObjectClass))
 		continue;
@@ -1363,9 +1299,9 @@ GetMenuWidth(Widget w)
     if ( smw->simple_menu.menu_width )
 	return(smw->core.width);
 
-    ForAllChildren(smw, entry) {
+    ForAllEntries(smw, entry) {
 	XtWidgetGeometry preferred;
-	if (!XtIsManaged( (Widget) *entry)) continue;
+	assert(XtIsManaged((Widget)*entry));
 	XtQueryGeometry((Widget) *entry, (XtWidgetGeometry *)NULL, &preferred);
 	if (preferred.request_mode & CWWidth)
 	    width = preferred.width;
@@ -1375,36 +1311,6 @@ GetMenuWidth(Widget w)
 	    widest = width;
     }
     return(widest);
-}
-
-/*      Function Name: GetMenuHeight
- *      Description: Sets the height to all the entries in pixels.
- *      Arguments: w - the simple menu widget.
- *      Returns: height of menu.
- */
-
-static Dimension
-GetMenuHeight(Widget w)
-{
-    SimpleMenuWidget smw = (SimpleMenuWidget) w;
-    ThreeDWidget tdw = (ThreeDWidget) smw->simple_menu.threeD;
-    SmeObject * entry;
-    Dimension height;
-
-    if (smw->simple_menu.menu_height)
-	return(smw->core.height);
-
-    height = smw->simple_menu.top_margin + smw->simple_menu.bottom_margin;
-    height += tdw->threeD.shadow_width * 2;
-
-    if (smw->simple_menu.row_height == 0) {
-	ForAllChildren(smw, entry)
-	    if (XtIsManaged ((Widget) *entry))
-		height += (*entry)->rectangle.height;
-    } else
-	height += smw->simple_menu.row_height * smw->composite.num_children;
-
-    return(height);
 }
 
 /*      Function Name: GetEventEntry
@@ -1418,75 +1324,75 @@ static SmeObject GetEventEntry (Widget w, XEvent * event) {
   Position x_loc = 0, y_loc = 0;
   SimpleMenuWidget smw = (SimpleMenuWidget)w;
   SmeObject *entry;
-  static XPoint last_pos;
-  XPoint pos;
+  static Position last_y = dead_y;
   int s = ((ThreeDWidget)smw->simple_menu.threeD)->threeD.shadow_width;
 
   switch (event->type) {
   case MotionNotify:
     x_loc = event->xmotion.x;
     y_loc = event->xmotion.y;
-    pos.y = event->xmotion.y_root;
     break;
   case EnterNotify:
   case LeaveNotify:
     x_loc = event->xcrossing.x;
     y_loc = event->xcrossing.y;
-    pos.y = event->xcrossing.y_root;
     break;
   case ButtonPress:
   case ButtonRelease:
     x_loc = event->xbutton.x;
     y_loc = event->xbutton.y;
-    pos.y = event->xbutton.y_root;
     break;
   default:
     XtAppError(XtWidgetToApplicationContext(w),
       "Unknown event type in GetEventEntry().");
-    pos.y = 0;
-    break;
   }
 
-  if (x_loc < 0 || x_loc >= (int)smw->core.width)
+  // Impossible coordinates are impossible
+  if (x_loc < 0 || x_loc >= smw->core.width ||
+      y_loc < 0 || y_loc >= smw->core.height)
     return NULL;
-  else if (smw->simple_menu.too_tall) {
-    if (pos.y >= smw->simple_menu.last_y && smw->simple_menu.didnt_fit) {
-      if (last_pos.y && pos.y < last_pos.y) {
-	last_pos.y = pos.y;
-	return NULL;
+
+  // Scrolling is triggered by trying to get an entry that does not exist.
+  if (smw->simple_menu.too_tall) {
+    assert(smw->simple_menu.current_first);
+    assert(NumEntries(smw) > 0);
+    // Bottom scrolling zone
+    if (y_loc >= smw->simple_menu.bottom_y && smw->simple_menu.didnt_fit) {
+      // If pointer is moving upward, don't scroll.
+      if (last_y == dead_y || y_loc >= last_y) {
+	smw->simple_menu.current_first += smw->simple_menu.jump_val;
+	if (smw->simple_menu.current_first > LastEntry(smw))
+	  smw->simple_menu.current_first = LastEntry(smw);
+	Layout(w);
+	Redisplay(w, NULL, NULL);
       }
-      smw->simple_menu.current_first += smw->simple_menu.jump_val;
-      Redisplay(w, (XEvent *)NULL, (Region)NULL);
-      last_pos.y = pos.y;
+      last_y = y_loc;
       return NULL;
-    } else if (pos.y <= s + SMW_ARROW_SIZE &&
-      smw->simple_menu.first_entry != smw->simple_menu.current_first)
-      {
-	if (pos.y && (!last_pos.y || pos.y > last_pos.y)) {
-	  last_pos.y = pos.y;
-	  return NULL;
-	}
+    // Top scrolling zone
+    } else if (y_loc < smw->simple_menu.top_margin + s + SMW_ARROW_SIZE &&
+    smw->simple_menu.current_first != FirstEntry(smw)) {
+      // If pointer is moving downward, don't scroll.
+      if (last_y == dead_y || y_loc <= last_y) {
 	smw->simple_menu.current_first -= smw->simple_menu.jump_val;
-	Redisplay(w, (XEvent *)NULL, (Region)NULL);
-	last_pos.y = pos.y;
-	return NULL;
+	if (smw->simple_menu.current_first < FirstEntry(smw))
+	  smw->simple_menu.current_first = FirstEntry(smw);
+	Layout(w);
+	Redisplay(w, NULL, NULL);
       }
-    else
-      last_pos.y = 0;
-  } else if (y_loc < 0 || y_loc >= (int)smw->core.height)
-    return NULL;
+      last_y = y_loc;
+      return NULL;
+    } else
+      last_y = dead_y; // Reset latch
+  }
 
-  ForAllChildren(smw, entry) {
-    int tmp_y;
-
-    if (!XtIsManaged((Widget)*entry)) continue;
-
-    tmp_y = (*entry)->rectangle.y - smw->simple_menu.first_y;
-
-    if (tmp_y < y_loc && tmp_y + (int)(*entry)->rectangle.height > y_loc &&
-         (!smw->simple_menu.multicolumn ||
-	    x_loc >= (*entry)->rectangle.x &&
-	    x_loc <= (*entry)->rectangle.x + (*entry)->rectangle.width))
+  // The normal case:  figure out which entry the pointer is at.
+  ForAllEntries(smw, entry) {
+    if ((*entry)->rectangle.y != dead_y &&
+	y_loc >= (*entry)->rectangle.y &&
+        y_loc <  (*entry)->rectangle.y + (*entry)->rectangle.height &&
+        (!smw->simple_menu.multicolumn ||
+	  x_loc >= (*entry)->rectangle.x &&
+	  x_loc <  (*entry)->rectangle.x + (*entry)->rectangle.width))
       return (*entry != smw->simple_menu.label ? *entry : NULL);
   }
 

@@ -537,33 +537,11 @@ Boolean highlight) {
 		     corewidth - HMargins(ctx), coreheight - VMargins(ctx)};
 
   // Pre-clipped area for the other functions
-  // (surely there is an existing function that does this longwinded thing‽)
   // Declare success and bail out if the net area is 0.
   XRectangle textrec = {x, y, width, height};
-  if (clip.x > textrec.x) {
-    const int shrinkage = clip.x - textrec.x;
-    if (textrec.width <= shrinkage) return width;
-    textrec.width -= shrinkage;
-    textrec.x += shrinkage;
-  }
-  if ((int)clip.x + (int)clip.width < (int)textrec.x + (int)textrec.width) {
-    const int shrinkage = (int)textrec.x + (int)textrec.width -
-                          ((int)clip.x + (int)clip.width);
-    if (textrec.width <= shrinkage) return width;
-    textrec.width -= shrinkage;
-  }
-  if (clip.y > textrec.y) {
-    const int shrinkage = clip.y - textrec.y;
-    if (textrec.height <= shrinkage) return width;
-    textrec.height -= shrinkage;
-    textrec.y += shrinkage;
-  }
-  if ((int)clip.y + (int)clip.height < (int)textrec.y + (int)textrec.height) {
-    const int shrinkage = (int)textrec.y + (int)textrec.height -
-                          ((int)clip.y + (int)clip.height);
-    if (textrec.height <= shrinkage) return width;
-    textrec.height -= shrinkage;
-  }
+  Xaw3dXftCombineClips(&clip, &textrec, &textrec);
+  if (!textrec.width)
+    return width;
 
   // The text arrives here in little pieces, and every little piece has to
   // clear its own background and apply its own highlighting or stipple.

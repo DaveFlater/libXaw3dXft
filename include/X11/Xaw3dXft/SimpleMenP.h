@@ -60,8 +60,6 @@ typedef struct _SimpleMenuPart {
   /* resources */
 
   String       label_string;	/* The string for the label or NULL. */
-  SmeObject    label;		/* If label_string is non-NULL then this is
-				   the label widget. */
   WidgetClass  label_class;	/* Widget class of the menu label object. */
 
   Dimension    top_margin;	/* Top and bottom margins. */
@@ -76,9 +74,12 @@ typedef struct _SimpleMenuPart {
   Boolean      menu_on_screen;	/* Force the menus to be fully on the screen.*/
   Boolean      multiColumn;     /* Enable multi-column */
   int          backing_store;	/* What type of backing store to use. */
+  int          jump_val;        /* number of entries to scroll by */
 
   /* private state */
 
+  SmeObject label;		/* If label_string is non-NULL then this is
+				   the label widget. */
   Boolean recursive_set_values;	/* contain a possible infinite loop. */
 
   Boolean menu_width;		/* If true then force width to remain
@@ -90,15 +91,12 @@ typedef struct _SimpleMenuPart {
 
   Widget threeD;                /* 3d drawing stuff */
 
-  SmeObject *first_entry;       /* the first entry */
   SmeObject *current_first;     /* the first entry displayed */
-  Dimension last_y;
-  int first_y;                  /* Dimension doesn't do negatives! */
-  int jump_val;                 /* number of entries to scroll by */
   Widget sub_menu;              /* submenu of active SmeBSB object */
-  Boolean too_tall;             /* menu doesn't fit on screen */
-  Boolean multicolumn;          /* menu is actually multicolumn */
-  Boolean didnt_fit;            /* if some entry didn't fit in the menu */
+  Boolean too_tall;             // Is scrolling needed?
+  Boolean didnt_fit;            // Is there a *bottom* scroll arrow?
+  Boolean multicolumn;          // Is there more than one column?
+  Position bottom_y;            // >= bottom_y is bottom scroll arrow zone
   unsigned char state;
 } SimpleMenuPart;
 

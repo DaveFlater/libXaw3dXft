@@ -684,15 +684,13 @@ The use of these resources is explained in the following subsections.
 #### Layout of long menus
 
 SimpleMenu supports two separate ways of dealing with menus that are too long
-to fit on the screen.
+to fit on the screen.  If the multiColumn resource is True, SimpleMenu
+expands the layout to include additional columns.  Otherwise, SimpleMenu
+allows scrolling through entries in a single long column, and the jumpScroll
+resource determines the number of entries to scroll by.
 
-If the SimpleMenu is resizable and its multiColumn resource is True, the
-layout will expand to include additional columns.  "Resizable" means either
-that the SimpleMenu is not realized or its allowShellResize resource is True.
-
-Otherwise, SimpleMenu allows scrolling through entries in a single long
-column, and the jumpScroll resource determines the number of entries to
-scroll by.
+The scroll arrows react to mouse movement.  To scroll a long time, you have
+to wiggle the mouse over the arrow.
 
 #### Margins / whitespace
 

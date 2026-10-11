@@ -64,3 +64,10 @@ extern void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest, GC gc,
 // set is going to be used, but allow a specified encoding to override it.
 extern void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
   Boolean international, unsigned char *encoding);
+
+// Find the intersection of two clipping rectangles.  If they don't intersect
+// or the intersection has zero area, the fields of the result will all be
+// zeroed out.  The result struct can be the same struct as one or both of
+// the inputs.
+extern void Xaw3dXftCombineClips (const XRectangle *a, const XRectangle *b,
+  XRectangle *out);

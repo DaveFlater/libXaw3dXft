@@ -263,3 +263,23 @@ Boolean international, unsigned char *encoding) {
   !SpecifiedEncoding(args, num_args))
     *encoding = XawTextEncodingMb;
 }
+
+#define Max(a,b) ((a) > (b) ? (a) : (b))
+#define Min(a,b) ((a) < (b) ? (a) : (b))
+void Xaw3dXftCombineClips (const XRectangle *a, const XRectangle *b,
+XRectangle *out) {
+  assert(a && b && out);
+  const Position ax2 = a->x + a->width,
+		 ay2 = a->y + a->height,
+                 bx2 = b->x + b->width,
+		 by2 = b->y + b->height;
+  if (a->x < bx2 && b->x < ax2 && a->y < by2 && b->y < ay2 &&
+      a->width && a->height && b->width && b->height) {
+    const Position ox = Max(a->x, b->x),
+                   oy = Max(a->y, b->y),
+                  ox2 = Min(ax2, bx2),
+                  oy2 = Min(ay2, by2);
+    *out = (XRectangle){ox, oy, ox2-ox, oy2-oy};
+  } else
+    *out = (XRectangle){0, 0, 0, 0};
+}
