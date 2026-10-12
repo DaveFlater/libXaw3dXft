@@ -34,25 +34,27 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <X11/IntrinsicP.h>
 
 #ifndef XtX
-#define XtX(w)			(((RectObj)w)->rectangle.x)
+#define XtX(w)		    (((RectObj)w)->rectangle.x)
 #endif
 #ifndef XtY
-#define XtY(w)			(((RectObj)w)->rectangle.y)
+#define XtY(w)		    (((RectObj)w)->rectangle.y)
 #endif
 #ifndef XtWidth
-#define XtWidth(w)		(((RectObj)w)->rectangle.width)
+#define XtWidth(w)	    (((RectObj)w)->rectangle.width)
 #endif
 #ifndef XtHeight
-#define XtHeight(w)		(((RectObj)w)->rectangle.height)
+#define XtHeight(w)	    (((RectObj)w)->rectangle.height)
 #endif
 #ifndef XtBorderWidth
-#define XtBorderWidth(w)	(((RectObj)w)->rectangle.border_width)
+#define XtBorderWidth(w)    (((RectObj)w)->rectangle.border_width)
 #endif
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_GRAY_BLKWHT_STIPPLES
+_XFUNCPROTOBEGIN
 // p is unused by this function; it is used only by the macro below.
 extern unsigned long grayPixel (unsigned long p, Display *dpy, Screen *scn);
+_XFUNCPROTOEND
 #else
 #define grayPixel(p, dpy, scn)	(p)
 #endif

@@ -50,6 +50,7 @@ SOFTWARE.
 #define _XawForm_h
 
 #include <X11/Constraint.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /***********************************************************************
  *
@@ -91,25 +92,6 @@ SOFTWARE.
 
 */
 
-
-#ifndef _XtStringDefs_h_
-#define XtNtop "top"
-#define XtRWidget "Widget"
-#endif
-
-#define XtNdefaultDistance "defaultDistance"
-#define XtNbottom "bottom"
-#define XtNleft "left"
-#define XtNright "right"
-#define XtNfromHoriz "fromHoriz"
-#define XtNfromVert "fromVert"
-#define XtNhorizDistance "horizDistance"
-#define XtNvertDistance "vertDistance"
-#define XtNresizable "resizable"
-
-#define XtCEdge "Edge"
-#define XtCWidget "Widget"
-
 #ifndef _XawEdgeType_e
 #define _XawEdgeType_e
 typedef enum {
@@ -134,12 +116,11 @@ typedef enum {
  * Chris D. Peterson - 3/23/90.
  */
 
-#define XtEdgeType XawEdgeType
-
-#define XtChainTop XawChainTop
 #define XtChainBottom XawChainBottom
 #define XtChainLeft XawChainLeft
 #define XtChainRight XawChainRight
+#define XtChainTop XawChainTop
+#define XtEdgeType XawEdgeType
 #define XtRubber XawRubber
 
 typedef struct _FormClassRec	*FormWidgetClass;

@@ -68,13 +68,14 @@ typedef struct _TreeClassRec {
 extern TreeClassRec treeClassRec;
 
 typedef struct {
-    /* fields available through resources */
+    /* resources */
     Dimension hpad;			/* hSpace/HSpace */
     Dimension vpad;			/* vSpace/VSpace */
     Dimension line_width;		/* lineWidth/LineWidth */
     Pixel foreground;			/* foreground/Foreground */
     XtGravity gravity;			/* gravity/Gravity */
     Boolean auto_reconfigure;		/* autoReconfigure/AutoReconfigure */
+
     /* private fields */
     GC gc;				/* used to draw lines */
     Widget tree_root;			/* hidden root off all children */

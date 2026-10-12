@@ -50,6 +50,7 @@ SOFTWARE.
 #define _Simple_h
 
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /****************************************************************
  *
@@ -78,18 +79,6 @@ SOFTWARE.
  y		     Position		Position	0
 
 */
-
-#define XtNcursor "cursor"
-#define XtNcursorName "cursorName"
-#define XtNinsensitiveBorder "insensitiveBorder"
-#ifndef XtNinternational
-#define XtNinternational "international"
-#endif
-
-#define XtCInsensitive "Insensitive"
-#ifndef XtCInternational
-#define XtCInternational "International"
-#endif
 
 typedef struct _SimpleClassRec	*SimpleWidgetClass;
 typedef struct _SimpleRec	*SimpleWidget;

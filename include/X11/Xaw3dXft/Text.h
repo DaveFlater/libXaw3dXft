@@ -106,46 +106,6 @@ typedef struct {
   XrmQuark format;    // XawFmt8Bit or XawFmtWide internal encoding
 } XawTextBlock, *XawTextBlockPtr;
 
-#define XtEtextScrollNever "never"
-#define XtEtextScrollWhenNeeded "whenneeded"
-#define XtEtextScrollAlways "always"
-
-#define XtEtextWrapNever "never"
-#define XtEtextWrapLine "line"
-#define XtEtextWrapWord "word"
-
-#define XtEtextResizeNever "never"
-#define XtEtextResizeWidth "width"
-#define XtEtextResizeHeight "height"
-#define XtEtextResizeBoth "both"
-
-#define XtNautoFill "autoFill"
-#define XtNbottomMargin "bottomMargin"
-#define XtNdialogHOffset "dialogHOffset"
-#define XtNdialogVOffset "dialogVOffset"
-#define XtNdisplayCaret "displayCaret"
-#define XtNdisplayPosition "displayPosition"
-#define XtNleftMargin "leftMargin"
-#define XtNrightMargin "rightMargin"
-#define XtNscrollVertical "scrollVertical"
-#define XtNscrollHorizontal "scrollHorizontal"
-#define XtNselectTypes "selectTypes"
-#define XtNtopMargin "topMargin"
-#define XtNwrap "wrap"
-
-#define XtCAutoFill "AutoFill"
-#define XtCScroll "Scroll"
-#define XtCSelectTypes "SelectTypes"
-#define XtCWrap "Wrap"
-
-#ifndef _XtStringDefs_h_
-#define XtNinsertPosition "insertPosition"
-#define XtNresize "resize"
-#define XtNselection "selection"
-#define XtNuseRight "useRight"
-#define XtCResize "Resize"
-#endif
-
 /* Return Error code for XawTextSearch */
 
 #define XawTextSearchError      (-12345L)

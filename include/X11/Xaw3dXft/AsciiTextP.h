@@ -68,12 +68,8 @@ SOFTWARE.
 #ifndef _AsciiTextP_h
 #define _AsciiTextP_h
 
-#include "Xaw3dP.h"
-#include <X11/Xaw3dXft/AsciiSrc.h>
 #include <X11/Xaw3dXft/AsciiText.h>
-#include <X11/Xaw3dXft/MultiSrc.h>
 #include <X11/Xaw3dXft/TextP.h>
-#include <X11/Xaw3dXft/ThreeDP.h>
 
 typedef struct {int empty;} AsciiClassPart;
 

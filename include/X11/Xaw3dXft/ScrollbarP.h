@@ -54,7 +54,6 @@ SOFTWARE.
 #ifndef _ScrollbarP_h
 #define _ScrollbarP_h
 
-#include "Xaw3dP.h"
 #include <X11/Xaw3dXft/Scrollbar.h>
 #include <X11/Xaw3dXft/ThreeDP.h>
 
@@ -82,7 +81,6 @@ typedef struct {
     Dimension	  min_thumb;	/* minimum size for the thumb. */
     float         picked;       /* How much of the thumb is picked *
 				 * when scrolling starts */
-
      /* private */
 #ifdef XAW_ARROW_SCROLLBARS
     XtIntervalId  timer_id;     /* autorepeat timer; remove on destruction */

@@ -51,12 +51,6 @@ in this Software without prior written authorization from the X Consortium.
 
 */
 
-/* define any special resource names here that are not in <X11/StringDefs.h> */
-
-#define XtNtemplateResource "templateResource"
-
-#define XtCTemplateResource "TemplateResource"
-
 /* declare specific TemplateWidget class and instance datatypes */
 
 typedef struct _TemplateClassRec*	TemplateWidgetClass;

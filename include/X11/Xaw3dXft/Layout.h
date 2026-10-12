@@ -27,6 +27,7 @@
 
 #include <X11/Constraint.h>
 #include <X11/Xfuncproto.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /****************************************************************
  *
@@ -76,14 +77,6 @@
  * be set 10 pixels from the right edge, and take up half of the remaining
  * space to 10 pixels from the right edge of label-1.
  */
-
-/* New Fields */
-#define XtNlayout "layout"
-#define XtCLayout "Layout"
-#define XtRLayout "Layout"
-#define XtNdebug  "debug"
-
-/* Class record constant */
 
 extern WidgetClass layoutWidgetClass;
 

@@ -108,15 +108,6 @@ SOFTWARE.
 
 */
 
-#define XtNhighlightDashed    "highlightDashed"
-#define XtNhighlightThickness "highlightThickness"
-
-#define XtNshapeStyle "shapeStyle"
-#define XtCShapeStyle "ShapeStyle"
-#define XtRShapeStyle "ShapeStyle"
-#define XtNcornerRoundPercent "cornerRoundPercent"
-#define XtCCornerRoundPercent "CornerRoundPercent"
-
 #define XawShapeRectangle XmuShapeRectangle
 #define XawShapeOval XmuShapeOval
 #define XawShapeEllipse XmuShapeEllipse

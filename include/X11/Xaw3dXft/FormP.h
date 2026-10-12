@@ -53,8 +53,6 @@ SOFTWARE.
 
 #include <X11/Xaw3dXft/Form.h>
 
-#define XtREdgeType "EdgeType"
-
 typedef enum {LayoutPending, LayoutInProgress, LayoutDone} LayoutState;
 #define XtInheritLayout \
 ((Boolean (*)(FormWidget, Dimension, Dimension, Boolean))_XtInherit)

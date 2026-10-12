@@ -53,7 +53,6 @@ X11 license (as per the historical licenses that the package inherits)
 #ifndef _XawTextP_h
 #define _XawTextP_h
 
-#include <X11/Xaw3dXft/SimpleP.h>
 #include <X11/Xaw3dXft/Text.h>
 #include <X11/Xaw3dXft/ThreeDP.h>
 #include <X11/Xaw3dXft/Xaw3dXft.h>
@@ -63,6 +62,7 @@ X11 license (as per the historical licenses that the package inherits)
  * Text widget private
  *
  ****************************************************************/
+
 #define MAXCUT	30000	/* Maximum number of characters that can be cut. */
 
 #define GETLASTPOS  XawTextSourceScan(ctx->text.source, 0, \
@@ -219,16 +219,6 @@ typedef struct _TextPart {
     Boolean	    redisplay_needed; /* signal used only in SetValues */
     XawTextSelectionSalt    *salt2;   /* other salted away selections */
 } TextPart;
-
-/*************************************************************
- *
- * Resource types private to Text widget.
- *
- *************************************************************/
-
-#define XtRScrollMode "ScrollMode"
-#define XtRWrapMode "WrapMode"
-#define XtRResizeMode "ResizeMode"
 
 /****************************************************************
  *

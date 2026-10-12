@@ -78,6 +78,7 @@ typedef struct _ViewportPart {
     Boolean usebottom;		/* True iff horiz bars appear at bottom. */
     Boolean useright;		/* True iff vert bars appear at right. */
     XtCallbackList report_callbacks;	/* when size/position changes */
+
     /* private state */
     Widget clip, child;		/* The clipping and (scrolled) child widgets */
     Widget  horiz_bar, vert_bar;/* What scrollbars we currently have. */
@@ -89,16 +90,14 @@ typedef struct _ViewportPart {
 } ViewportPart;
 
 typedef struct _ViewportRec {
-    CorePart	core;
-    CompositePart	composite;
-    ConstraintPart	constraint;
-    FormPart		form;
-    ViewportPart	viewport;
+    CorePart	   core;
+    CompositePart  composite;
+    ConstraintPart constraint;
+    FormPart	   form;
+    ViewportPart   viewport;
 } ViewportRec;
 
 typedef struct {
-    /* resources */
-
     /* private state */
     Boolean		reparented; /* True if child has been re-parented */
 } ViewportConstraintsPart;

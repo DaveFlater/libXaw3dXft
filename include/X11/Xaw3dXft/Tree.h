@@ -53,6 +53,7 @@ in this Software without prior written authorization from the X Consortium.
 #define _XawTree_h
 
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /******************************************************************************
  *
@@ -82,29 +83,6 @@ in this Software without prior written authorization from the X Consortium.
  *
  *****************************************************************************/
 
-                                        /* new instance field names */
-#ifndef _XtStringDefs_h_
-#define XtNhSpace "hSpace"
-#define XtNvSpace "vSpace"
-#define XtCHSpace "HSpace"
-#define XtCVSpace "VSpace"
-#endif
-
-#define XtNautoReconfigure "autoReconfigure"
-#define XtNlineWidth "lineWidth"
-#define XtNtreeGC "treeGC"
-#define XtNtreeParent "treeParent"
-#define XtNgravity "gravity"
-
-                                        /* new class field names */
-#define XtCAutoReconfigure "AutoReconfigure"
-#define XtCLineWidth "LineWidth"
-#define XtCTreeGC "TreeGC"
-#define XtCTreeParent "TreeParent"
-#define XtCGravity "Gravity"
-
-#define XtRGC "GC"
-                                        /* external declarations */
 extern WidgetClass treeWidgetClass;
 
 typedef struct _TreeClassRec *TreeWidgetClass;

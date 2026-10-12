@@ -29,6 +29,7 @@ in this Software without prior written authorization from the X Consortium.
 #define _XawPanner_h
 
 #include <X11/Xaw3dXft/Reports.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /*****************************************************************************
  *
@@ -62,42 +63,6 @@ in this Software without prior written authorization from the X Consortium.
  *
  *****************************************************************************/
 
-					/* new instance and class names */
-#ifndef _XtStringDefs_h_
-#define XtNresize "resize"
-#define XtCResize "Resize"
-#endif
-
-#define XtNallowOff "allowOff"
-#define XtCAllowOff "AllowOff"
-#define XtNbackgroundStipple "backgroundStipple"
-#define XtCBackgroundStipple "BackgroundStipple"
-#define XtNdefaultScale "defaultScale"
-#define XtCDefaultScale "DefaultScale"
-#define XtNcanvasWidth "canvasWidth"
-#define XtCCanvasWidth "CanvasWidth"
-#define XtNcanvasHeight "canvasHeight"
-#define XtCCanvasHeight "CanvasHeight"
-#define XtNinternalSpace "internalSpace"
-#define XtCInternalSpace "InternalSpace"
-#define XtNlineWidth "lineWidth"
-#define XtCLineWidth "LineWidth"
-#define XtNrubberBand "rubberBand"
-#define XtCRubberBand "RubberBand"
-#define XtNshadowThickness "shadowThickness"
-#define XtCShadowThickness "ShadowThickness"
-#define XtNshadowColor "shadowColor"
-#define XtCShadowColor "ShadowColor"
-#define XtNsliderX "sliderX"
-#define XtCSliderX "SliderX"
-#define XtNsliderY "sliderY"
-#define XtCSliderY "SliderY"
-#define XtNsliderWidth "sliderWidth"
-#define XtCSliderWidth "SliderWidth"
-#define XtNsliderHeight "sliderHeight"
-#define XtCSliderHeight "SliderHeight"
-
-					/* external declarations */
 extern WidgetClass pannerWidgetClass;
 
 typedef struct _PannerClassRec *PannerWidgetClass;

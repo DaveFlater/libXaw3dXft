@@ -74,7 +74,6 @@ SOFTWARE.
  *
  ****************************************************************/
 
-#include <X11/Xaw3dXft/Text.h>		/* AsciiText is a subclass of Text */
 #include <X11/Xaw3dXft/AsciiSrc.h>
 #include <X11/Xaw3dXft/MultiSrc.h>
 
@@ -123,10 +122,6 @@ SOFTWARE.
 
  (see also *Src.h and *Sink.h)
 */
-
-/*
- * Everything else we need is in StringDefs.h or Text.h
- */
 
 typedef struct _AsciiTextClassRec	*AsciiTextWidgetClass;
 typedef struct _AsciiRec	        *AsciiWidget;

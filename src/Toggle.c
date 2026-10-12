@@ -191,9 +191,9 @@ ClassInit(void)
   XtGetActionList(commandWidgetClass, &actions, &num_actions);
 
   for (i = 0 ; i < num_actions ; i++) {
-    if (streq(actions[i].string, "set"))
+    if (!strcmp(actions[i].string, "set"))
 	class->toggle_class.Set = actions[i].proc;
-    if (streq(actions[i].string, "unset"))
+    if (!strcmp(actions[i].string, "unset"))
 	class->toggle_class.Unset = actions[i].proc;
 
     if ( (class->toggle_class.Set != NULL) &&

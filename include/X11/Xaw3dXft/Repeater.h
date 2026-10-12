@@ -51,22 +51,6 @@ in this Software without prior written authorization from the X Consortium.
  *
  *****************************************************************************/
 
-					/* new instance and class names */
-#define XtNdecay "decay"
-#define XtCDecay "Decay"
-#define XtNinitialDelay "initialDelay"
-#define XtCDelay "Delay"
-#define XtNminimumDelay "minimumDelay"
-#define XtCMinimumDelay "MinimumDelay"
-#define XtNrepeatDelay "repeatDelay"
-#define XtNflash "flash"
-#define XtNstartCallback "startCallback"
-#define XtCStartCallback "StartCallback"
-#define XtNstopCallback "stopCallback"
-#define XtCStopCallback "StopCallback"
-
-
-					/* external declarations */
 extern WidgetClass repeaterWidgetClass;
 
 typedef struct _RepeaterClassRec *RepeaterWidgetClass;

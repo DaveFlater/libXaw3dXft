@@ -33,6 +33,7 @@ SOFTWARE.
  ***********************************************************************/
 
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /* Parameters:
 
@@ -48,25 +49,6 @@ SOFTWARE.
  relief               Relief               XtRelief      XtReliefRaised
 
 */
-
-#define XtNshadowWidth "shadowWidth"
-#define XtCShadowWidth "ShadowWidth"
-#define XtNtopShadowPixel "topShadowPixel"
-#define XtCTopShadowPixel "TopShadowPixel"
-#define XtNbottomShadowPixel "bottomShadowPixel"
-#define XtCBottomShadowPixel "BottomShadowPixel"
-#define XtNtopShadowContrast "topShadowContrast"
-#define XtCTopShadowContrast "TopShadowContrast"
-#define XtNbottomShadowContrast "bottomShadowContrast"
-#define XtCBottomShadowContrast "BottomShadowContrast"
-#define XtNbeNiceToColormap "beNiceToColormap"
-#define XtCBeNiceToColormap "BeNiceToColormap"
-#define XtNbeNiceToColourmap "beNiceToColormap"
-#define XtCBeNiceToColourmap "BeNiceToColormap"
-#define XtNuserData "userData"
-#define XtCUserData "UserData"
-#define XtNrelief "relief"
-#define XtCRelief "Relief"
 
 typedef enum {
     XtReliefNone,

@@ -48,8 +48,6 @@ in this Software without prior written authorization from the X Consortium.
  *
  ***********************************************************************/
 
-#define streq(a, b) ( strcmp((a), (b)) == 0 )
-
 typedef struct _RadioGroup {
   struct _RadioGroup *prev, *next; /* Pointers to other elements in group. */
   Widget widget;		  /* Widget corrosponding to this element. */

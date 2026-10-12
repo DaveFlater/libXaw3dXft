@@ -17,6 +17,7 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Shell.h>
 #include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/Encoding.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 // FIXME lingering dependency on global struct for default font
 #include <X11/Xaw3dXft/Xaw3dXft.h>

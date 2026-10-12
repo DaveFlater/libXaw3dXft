@@ -88,9 +88,6 @@ in this Software without prior written authorization from the X Consortium.
 
 */
 
-#define XtNmenuName "menuName"
-#define XtCMenuName "MenuName"
-
 extern WidgetClass     menuButtonWidgetClass;
 
 typedef struct _MenuButtonClassRec   *MenuButtonWidgetClass;

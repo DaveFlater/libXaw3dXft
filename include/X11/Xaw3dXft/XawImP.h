@@ -117,6 +117,8 @@ typedef	struct _contextErrDataRec
     XIM			xim;
 } contextErrDataRec;
 
+_XFUNCPROTOBEGIN
+
 void _XawImResizeVendorShell(
     Widget /* w */
 );
@@ -177,5 +179,7 @@ void _XawImDestroy(
     Widget,  /* w */
     Widget   /* ext */
 );
+
+_XFUNCPROTOEND
 
 #endif	/* _XawImP_h */

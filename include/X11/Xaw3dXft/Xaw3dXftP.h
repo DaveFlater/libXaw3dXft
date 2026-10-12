@@ -44,9 +44,7 @@ SOFTWARE.
 #ifndef _Xaw3dXftP_h
 #define _Xaw3dXftP_h
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+_XFUNCPROTOBEGIN
 
 extern Xaw3dXftData * _Xaw3dXft;
 
@@ -67,8 +65,6 @@ extern void Xaw3dXftSetMouseWheelSteps (Widget w, XtPointer ptr, int n);
 
 extern void Xaw3dXftInitialize(void);
 
-#ifdef __cplusplus
-}
-#endif
+_XFUNCPROTOEND
 
 #endif

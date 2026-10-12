@@ -47,15 +47,9 @@ SOFTWARE.
 
 #ifdef __cplusplus
 #include <cstdint>
-extern "C" {
 #else
 #include <stdint.h>  
 #endif
-
-extern const uint16_t libXaw3dXft_version_major,
-                      libXaw3dXft_version_minor,
-                      libXaw3dXft_version_patch;
-extern const char     libXaw3dXft_version[];
 
 #include <X11/Xlib.h>
 #include <X11/Intrinsic.h>
@@ -63,6 +57,8 @@ extern const char     libXaw3dXft_version[];
 #include <X11/Xft/Xft.h>
 #include <X11/Xaw3dXft/XawInit.h>
 #include <X11/Xaw3dXft/Xaw3d.h>
+
+// FIXME the following should go away
 
 #define GET_XAW3DXFT_DATA(x) XawInitializeWidgetSet(); \
     x = (Xaw3dXftData *)XrmQuarkToString(XrmStringToQuark("Xaw3dXftData")+1); \
@@ -94,8 +90,13 @@ typedef struct _Xaw3dXftData {
     XftFont * default_font;
 } Xaw3dXftData;
 
-#ifdef __cplusplus
-}
-#endif
+_XFUNCPROTOBEGIN
+
+extern const uint16_t libXaw3dXft_version_major,
+                      libXaw3dXft_version_minor,
+                      libXaw3dXft_version_patch;
+extern const char     libXaw3dXft_version[];
+
+_XFUNCPROTOEND
 
 #endif

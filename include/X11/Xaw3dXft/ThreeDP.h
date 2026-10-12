@@ -30,8 +30,6 @@ SOFTWARE.
 #include <X11/Xaw3dXft/ThreeD.h>
 #include <X11/Xaw3dXft/SimpleP.h>
 
-#define XtRRelief "Relief"
-
 typedef struct {
     /* resources */
     Dimension	shadow_width;
@@ -74,6 +72,5 @@ typedef struct _ThreeDClassRec {
 
 /* Class pointer. */
 extern ThreeDClassRec threeDClassRec;
-
 
 #endif /* _ThreeDP_h */

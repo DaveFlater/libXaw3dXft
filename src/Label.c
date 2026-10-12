@@ -73,9 +73,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <ctype.h>
 #include <assert.h>
 
-#define streq(a,b) (strcmp( (a), (b) ) == 0)
-
-
 /****************************************************************
  *
  * Full class record constant
@@ -411,9 +408,9 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     for (c = 0; c < NUM_CHECKS; c++)
       checks[c] = False;
     for (c = 0; c < *num_args; c++) {
-      if (streq(XtNwidth, args[c].name))
+      if (!strcmp(XtNwidth, args[c].name))
 	checks[WIDTH] = True;
-      if (streq(XtNheight, args[c].name))
+      if (!strcmp(XtNheight, args[c].name))
 	checks[HEIGHT] = True;
     }
   }

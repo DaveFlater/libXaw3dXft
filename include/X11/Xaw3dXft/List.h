@@ -115,7 +115,6 @@ in this Software without prior written authorization from the X Consortium.
 
 */
 
-
 typedef enum {
   ListHighlightReverse=0,    // Reverse foreground and background colors
   ListHighlightBackground=1  // Paint background with highlight color
@@ -125,40 +124,6 @@ typedef enum {
  * Value returned when there are no highlighted objects.
  */
 #define XAW_LIST_NONE -1
-
-#define XtCColumns "Columns"
-#define XtCList "List"
-#define XtCListHighlightStyle "ListHighlightStyle"
-#define XtCLongest "Longest"
-#define XtCNumberStrings "NumberStrings"
-#define XtCSpacing "Spacing"
-#define XtCXftFont "XftFont"
-#ifndef XtCFontSet
-#define XtCFontSet "FontSet"
-#endif
-
-// XtNhighlight is in StringDefs.h
-#ifndef XtNhighlight
-#define XtNhighlight "highlight"
-#endif
-
-#define XtNcolumnSpacing "columnSpacing"
-#define XtNcursor "cursor"
-#define XtNdefaultColumns "defaultColumns"
-#define XtNforceColumns "forceColumns"
-#define XtNhighlightStyle "highlightStyle"
-#define XtNlist "list"
-#define XtNlongest "longest"
-#define XtNnumberStrings "numberStrings"
-#define XtNpasteBuffer "pasteBuffer"
-#define XtNrowSpacing "rowSpacing"
-#define XtNverticalList "verticalList"
-#define XtNxftFont "xftFont"
-#ifndef XtNfontSet
-#define XtNfontSet "fontSet"
-#endif
-
-/* Class record constants */
 
 extern WidgetClass listWidgetClass;
 

@@ -60,7 +60,6 @@ SOFTWARE.
  *
  ***********************************************************************/
 
-#include <X11/Xft/Xft.h>
 #include <X11/Xaw3dXft/TextSinkP.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
 
@@ -84,11 +83,6 @@ typedef struct _AsciiSinkClassRec {
 
 extern AsciiSinkClassRec asciiSinkClassRec;
 
-/* New fields for the AsciiSink object record */
-// Everything went up to TextSink
-// typedef struct {
-// } AsciiSinkPart;
-
 /****************************************************************
  *
  * Full instance record declaration
@@ -98,7 +92,6 @@ extern AsciiSinkClassRec asciiSinkClassRec;
 typedef struct _AsciiSinkRec {
     ObjectPart          object;
     TextSinkPart	text_sink;
-  // AsciiSinkPart	ascii_sink;
 } AsciiSinkRec;
 
 #endif /* _XawAsciiSinkP_h */

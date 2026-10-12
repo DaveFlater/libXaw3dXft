@@ -85,5 +85,3 @@ not for strong proprietary flavors.
 
 */
 
-#define XtNencoding "encoding"
-#define XtCEncoding "Encoding"

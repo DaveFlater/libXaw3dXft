@@ -46,8 +46,6 @@ in this Software without prior written authorization from the X Consortium.
 
 #include <X11/Xaw3dXft/TextSrc.h>
 
-/* Class record constants */
-
 extern WidgetClass asciiSrcObjectClass;
 
 typedef struct _AsciiSrcClassRec *AsciiSrcObjectClass;

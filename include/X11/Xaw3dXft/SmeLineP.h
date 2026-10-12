@@ -69,7 +69,6 @@ typedef struct {
     Dimension line_width;	/* Width of the line. */
 
     /* private data.  */
-
     GC gc;			/* Graphics context for drawing line. */
 } SmeLinePart;
 

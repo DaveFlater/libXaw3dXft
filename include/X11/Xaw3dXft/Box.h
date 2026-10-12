@@ -50,6 +50,7 @@ SOFTWARE.
 #define _XawBox_h
 
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /***********************************************************************
  *
@@ -75,15 +76,6 @@ SOFTWARE.
  y		     Position		Position	0
 
 */
-
-
-/* New fields */
-#ifndef _XtStringDefs_h_
-#define XtNhSpace "hSpace"
-#define XtNvSpace "vSpace"
-#endif
-
-/* Class record constants */
 
 extern WidgetClass boxWidgetClass;
 

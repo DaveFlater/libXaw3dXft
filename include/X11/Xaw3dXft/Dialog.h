@@ -77,9 +77,6 @@ SOFTWARE.
 
 */
 
-#define XtCIcon "Icon"
-#define XtNicon "icon"
-
 typedef struct _DialogClassRec	*DialogWidgetClass;
 typedef struct _DialogRec	*DialogWidget;
 

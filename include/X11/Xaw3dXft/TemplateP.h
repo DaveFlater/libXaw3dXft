@@ -33,10 +33,6 @@ in this Software without prior written authorization from the X Consortium.
 /* include superclass private header file */
 #include <X11/CoreP.h>
 
-/* define unique representation types not found in <X11/StringDefs.h> */
-
-#define XtRTemplateResource "TemplateResource"
-
 typedef struct {
     int empty;
 } TemplateClassPart;

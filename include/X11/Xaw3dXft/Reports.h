@@ -47,7 +47,4 @@ typedef struct {
 #define XawPRCanvasHeight	(1 << 5)
 #define XawPRAll		(63)	/* union of above */
 
-#define XtNreportCallback "reportCallback"
-#define XtCReportCallback "reportCallback"
-
 #endif /* _Xaw_Reports_h */

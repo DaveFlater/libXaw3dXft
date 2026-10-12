@@ -80,22 +80,6 @@ SOFTWARE.
 
 */
 
-/* fields added to Form */
-#ifndef _XtStringDefs_h_
-#define XtNforceBars "forceBars"
-#define XtNallowHoriz "allowHoriz"
-#define XtNallowVert "allowVert"
-#define XtNuseBottom "useBottom"
-#define XtNuseRight "useRight"
-#endif
-
-#ifndef XtNsbShiftX1
-#define XtNsbShiftX1 "sbShiftX1"
-#define XtNsbShiftX2 "sbShiftX2"
-#define XtNsbShiftY1 "sbShiftY1"
-#define XtNsbShiftY2 "sbShiftY2"
-#endif
-
 extern WidgetClass viewportWidgetClass;
 
 typedef struct _ViewportClassRec *ViewportWidgetClass;

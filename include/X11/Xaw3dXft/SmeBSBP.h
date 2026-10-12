@@ -39,7 +39,6 @@ in this Software without prior written authorization from the X Consortium.
  *
  ***********************************************************************/
 
-#include "Xaw3dP.h"
 #include <X11/Xft/Xft.h>
 #include <X11/Xaw3dXft/SmeThreeDP.h>
 #include <X11/Xaw3dXft/SmeBSB.h>

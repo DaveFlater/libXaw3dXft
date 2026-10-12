@@ -108,11 +108,6 @@ typedef struct _MultiSinkClassRec {
 
 extern MultiSinkClassRec multiSinkClassRec;
 
-/* New fields for the MultiSink object record */
-// Everything went up to TextSink
-// typedef struct {
-// } MultiSinkPart;
-
 /****************************************************************
  *
  * Full instance record declaration
@@ -122,7 +117,6 @@ extern MultiSinkClassRec multiSinkClassRec;
 typedef struct _MultiSinkRec {
     ObjectPart          object;
     TextSinkPart	text_sink;
-  // MultiSinkPart	multi_sink;
 } MultiSinkRec;
 
 #endif /* _XawMultiSinkP_h */

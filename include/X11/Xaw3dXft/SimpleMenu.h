@@ -47,6 +47,7 @@ in this Software without prior written authorization from the X Consortium.
 
 #include <X11/Shell.h>
 #include <X11/Xmu/Converters.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /****************************************************************
  *
@@ -88,31 +89,6 @@ typedef struct _SimpleMenuClassRec*	SimpleMenuWidgetClass;
 typedef struct _SimpleMenuRec*		SimpleMenuWidget;
 
 extern WidgetClass simpleMenuWidgetClass;
-
-#define XtNcursor "cursor"
-#define XtNbottomMargin "bottomMargin"
-#define XtNcolumnWidth "columnWidth"
-#define XtNlabelClass "labelClass"
-#define XtNmenuOnScreen "menuOnScreen"
-#define XtNmultiColumn "multiColumn"
-#define XtNpopupOnEntry "popupOnEntry"
-#define XtNrowHeight "rowHeight"
-#define XtNtopMargin "topMargin"
-#define XtNjumpScroll "jumpScroll"
-#define XtNleftWhitespace "leftWhitespace"
-#define XtNrightWhitespace "rightWhitespace"
-
-#define XtCColumnWidth "ColumnWidth"
-#define XtCLabelClass "LabelClass"
-#define XtCMenuOnScreen "MenuOnScreen"
-#define XtCMultiColumn "MultiColumn"
-#define XtCPopupOnEntry "PopupOnEntry"
-#define XtCRowHeight "RowHeight"
-#define XtCVerticalMargins "VerticalMargins"
-#define XtCJumpScroll "JumpScroll"
-#define XtCLeftWhitespace "LeftWhitespace"
-#define XtCRightWhitespace "RightWhitespace"
-#define XtCHorizontalWhitespace "HorizontalWhitespace"
 
 /************************************************************
  *

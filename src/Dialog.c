@@ -71,8 +71,6 @@ SOFTWARE.
 
 #define MAGIC_VALUE ((char *) 3)
 
-#define streq(a,b) (strcmp( (a), (b) ) == 0)
-
 static XtResource resources[] = {
   {XtNlabel, XtCLabel, XtRString, sizeof(String),
      XtOffsetOf(DialogRec, dialog.label), XtRString, NULL},
@@ -235,9 +233,9 @@ SetValues(Widget current, Widget request, Widget new, ArgList in_args, Cardinal 
 	checks[i] = FALSE;
 
     for (i = 0; i < *in_num_args; i++) {
-	if (streq(XtNicon, in_args[i].name))
+	if (!strcmp(XtNicon, in_args[i].name))
 	    checks[ICON] = TRUE;
-	if (streq(XtNlabel, in_args[i].name))
+	if (!strcmp(XtNlabel, in_args[i].name))
 	    checks[LABEL] = TRUE;
     }
 
@@ -326,7 +324,7 @@ GetValuesHook(Widget w, ArgList args, Cardinal *num_args)
   int i;
 
   for (i=0; i < *num_args; i++)
-    if (streq(args[i].name, XtNvalue)) {
+    if (!strcmp(args[i].name, XtNvalue)) {
       XtSetArg(a[0], XtNstring, &s);
       XtGetValues(src->dialog.valueW, a, 1);
       *((char **) args[i].value) = s;

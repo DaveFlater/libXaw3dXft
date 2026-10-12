@@ -98,36 +98,4 @@ typedef enum {
   MenuHighlightShadow=2      // Add shadows, do not change colors
 } MenuHighlightStyle;
 
-// XtNhighlight is in StringDefs.h
-#ifndef XtNhighlight
-#define XtNhighlight "highlight"
-#endif
-
-#define XtNleftBitmap "leftBitmap"
-#define XtNleftMargin "leftMargin"
-#define XtNleftWhitespace "leftWhitespace"
-#define XtNrightBitmap "rightBitmap"
-#define XtNrightMargin "rightMargin"
-#define XtNrightWhitespace "rightWhitespace"
-#define XtNvertSpace "vertSpace"
-#define XtNmenuName "menuName"
-#define XtNunderline "underline"
-#define XtNxftFont "xftFont"
-#define XtNhighlightStyle "highlightStyle"
-#ifndef XtNfontSet
-#define XtNfontSet		"fontSet"
-#endif
-
-#define XtCLeftBitmap "LeftBitmap"
-#define XtCRightBitmap "RightBitmap"
-#define XtCHorizontalMargins "HorizontalMargins"
-#define XtCVertSpace "VertSpace"
-#define XtCMenuName "MenuName"
-#define XtCUnderline "Underline"
-#define XtCXftFont "XftFont"
-#define XtCMenuHighlightStyle "MenuHighlightStyle"
-#ifndef XtCFontSet
-#define XtCFontSet		"FontSet"
-#endif
-
 #endif /* _SmeBSB_h */

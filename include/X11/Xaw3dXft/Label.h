@@ -102,32 +102,6 @@ SOFTWARE.
 
 */
 
-#define XtNleftBitmap "leftBitmap"
-#define XtNxftFont "xftFont"
-#ifndef XtNfontSet
-#define XtNfontSet "fontSet"
-#endif
-
-#define XtCLeftBitmap "LeftBitmap"
-#define XtCXftFont "XftFont"
-#ifndef XtCFontSet
-#define XtCFontSet "FontSet"
-#endif
-
-#ifndef _XtStringDefs_h_
-#define XtNbitmap "bitmap"
-#define XtNforeground "foreground"
-#define XtNlabel "label"
-#define XtNfont "font"
-#define XtNinternalWidth "internalWidth"
-#define XtNinternalHeight "internalHeight"
-#define XtNresize "resize"
-#define XtCResize "Resize"
-#define XtCBitmap "Bitmap"
-#endif
-
-/* Class record constants */
-
 extern WidgetClass labelWidgetClass;
 
 typedef struct _LabelClassRec *LabelWidgetClass;

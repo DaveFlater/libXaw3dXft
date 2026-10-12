@@ -57,8 +57,6 @@ SOFTWARE.
 
 #include <X11/Xaw3dXft/TextSink.h>
 
-/* Class record constants */
-
 extern WidgetClass asciiSinkObjectClass;
 
 typedef struct _AsciiSinkClassRec *AsciiSinkObjectClass;

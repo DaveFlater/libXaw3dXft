@@ -40,6 +40,7 @@ in this Software without prior written authorization from the X Consortium.
 #define _Sme_h
 
 #include <X11/RectObj.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /****************************************************************
  *
@@ -60,13 +61,6 @@ in this Software without prior written authorization from the X Consortium.
  y		     Position		Position	0
 
 */
-
-#ifndef XtCInternational
-#define XtCInternational	"International"
-#endif
-#ifndef XtNinternational
-#define XtNinternational	"international"
-#endif
 
 typedef struct _SmeClassRec*	SmeObjectClass;
 typedef struct _SmeRec*	        SmeObject;

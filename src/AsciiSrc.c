@@ -643,7 +643,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args,
   }
 
   for (i = 0; i < *num_args ; i++ )
-      if (streq(args[i].name, XtNstring)) {
+      if (!strcmp(args[i].name, XtNstring)) {
 	  string_set = TRUE;
 	  break;
       }
@@ -689,7 +689,7 @@ GetValuesHook(Widget w, ArgList args, Cardinal * num_args)
 
   if (src->text_src.type == XawAsciiString) {
     for (i = 0; i < *num_args ; i++ )
-      if (streq(args[i].name, XtNstring)) {
+      if (!strcmp(args[i].name, XtNstring)) {
 	  if (src->text_src.use_string_in_place) {
 	      *((char **) args[i].value) = src->ascii_src.first_piece->text;
 	  }

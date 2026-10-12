@@ -40,7 +40,6 @@ typedef struct _PortholeClassRec {	/* Porthole widget class */
     PortholeClassPart porthole_class;
 } PortholeClassRec;
 
-
 typedef struct {			/* new fields in widget */
     /* resources... */
     XtCallbackList report_callbacks;	/* callback/Callback */
@@ -53,11 +52,9 @@ typedef struct _PortholeRec {
     PortholePart porthole;
 } PortholeRec;
 
-
 /*
  * external declarations
  */
 extern PortholeClassRec portholeClassRec;
-
 
 #endif /* _XawPortholeP_h */

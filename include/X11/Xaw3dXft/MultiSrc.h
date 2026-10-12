@@ -59,9 +59,6 @@ in this Software without prior written authorization from the X Consortium.
 #define _XawMultiSrc_h
 
 #include <X11/Xaw3dXft/TextSrc.h>
-/*Xfuncproto.h included by Intrinsic.h*/
-
-/* Class record constants */
 
 extern WidgetClass multiSrcObjectClass;
 
@@ -78,17 +75,13 @@ typedef struct _MultiSrcRec      *MultiSrcObject;
 /************************************************************
  *
  * THESE ROUTINES ARE NOT PUBLIC: Source should call
- *
  * the AsciiSrc API which currently forwards requests here.
- *
  * future versions (like there's going to be an R7 Xaw!) may
- *
  * eliminate this file or at least these functions entirely.
  *
  ************************************************************/
 
 _XFUNCPROTOBEGIN
-
 
 extern void XawMultiSourceFreeString(
     Widget		/* w */
@@ -102,7 +95,6 @@ extern Boolean _XawMultiSaveAsFile(
     Widget		/* w */,
     _Xconst char*	/* name */
 );
-
 
 _XFUNCPROTOEND
 

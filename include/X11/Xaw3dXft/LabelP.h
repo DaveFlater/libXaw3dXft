@@ -60,7 +60,6 @@ SOFTWARE.
  *
  ***********************************************************************/
 
-#include "Xaw3dP.h"
 #include <X11/Xft/Xft.h>
 #include <X11/Xaw3dXft/Label.h>
 #include <X11/Xaw3dXft/ThreeDP.h>
@@ -108,7 +107,6 @@ typedef struct {
     Visual      *visual;
     XftColor    xftfg;
 } LabelPart;
-
 
 /****************************************************************
  *

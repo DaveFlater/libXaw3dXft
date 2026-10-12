@@ -57,6 +57,7 @@ SOFTWARE.
 
 #include <X11/Xmu/Converters.h>
 #include <X11/Xfuncproto.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 #include <X11/Xaw3dXft/Xaw3d.h>
 
 /* Scrollbar resources:
@@ -115,19 +116,6 @@ SOFTWARE.
  relief               Relief               XtRelief     XtReliefRaised
 
 */
-
-/*
- * Most things we need are in StringDefs.h
- */
-
-#define XtCMinimumThumb "MinimumThumb"
-#define XtCShown "Shown"
-#define XtCTopOfThumb "TopOfThumb"
-#define XtCPickTop "PickTop"
-
-#define XtNminimumThumb "minimumThumb"
-#define XtNtopOfThumb "topOfThumb"
-#define XtNpickTop "pickTop"
 
 typedef struct _ScrollbarRec	  *ScrollbarWidget;
 typedef struct _ScrollbarClassRec *ScrollbarWidgetClass;

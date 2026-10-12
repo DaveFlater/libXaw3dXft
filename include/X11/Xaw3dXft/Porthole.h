@@ -29,6 +29,7 @@ in this Software without prior written authorization from the X Consortium.
 #define _XawPorthole_h
 
 #include <X11/Xaw3dXft/Reports.h>
+#include <X11/Xaw3dXft/StringDefs.h>
 
 /*****************************************************************************
  *
@@ -52,8 +53,6 @@ in this Software without prior written authorization from the X Consortium.
  *  y			Position	Position	0
  *
  *****************************************************************************/
-
-					/* external declarations */
 
 extern WidgetClass portholeWidgetClass;
 typedef struct _PortholeClassRec *PortholeWidgetClass;

@@ -54,7 +54,6 @@ in this Software without prior written authorization from the X Consortium.
  *
  ***********************************/
 
-
    /* New fields for the MenuButton widget class record */
 typedef struct _MenuButtonClass
 {

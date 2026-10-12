@@ -81,29 +81,6 @@ SOFTWARE.
 
 */
 
-/*
- * Resource Definitions.
- */
-
-#define XtCDataCompression "DataCompression"
-#define XtCPieceSize "PieceSize"
-#define XtCType "Type"
-#define XtCUseStringInPlace "UseStringInPlace"
-#define XtCXftFont "XftFont"
-
-#define XtNdataCompression "dataCompression"
-#define XtNpieceSize "pieceSize"
-#define XtNtype "type"
-#define XtNuseStringInPlace "useStringInPlace"
-#define XtNxftFont "xftFont"
-
-#define XtRTextType "TextType"
-
-#define XtEstring "string"
-#define XtEfile "file"
-
-/* Class record constants */
-
 extern WidgetClass textSrcObjectClass;
 
 typedef struct _TextSrcClassRec *TextSrcObjectClass;
@@ -243,4 +220,3 @@ extern void XawTextSourceSetSelection(
 _XFUNCPROTOEND
 
 #endif /* _XawTextSrc_h */
-/* DON'T ADD STUFF AFTER THIS #endif */

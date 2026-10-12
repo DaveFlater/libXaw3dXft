@@ -187,4 +187,3 @@ typedef struct _PanedRec {
 } PanedRec;
 
 #endif /* _XawPanedP_h */
-/* DON'T ADD STUFF AFTER THIS #endif */

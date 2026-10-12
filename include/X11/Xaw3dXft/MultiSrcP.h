@@ -115,8 +115,6 @@ SOFTWARE.
 #define TMPSIZ 32		/* bytes to allocate for tmpnam */
 #endif
 
-#define streq(a, b)        ( strcmp((a), (b)) == 0 )
-
 typedef struct _MultiPiece {	/* Piece of the text file of BUFSIZ allocated
 				   characters. */
   wchar_t* text;		/* The text in this buffer. */

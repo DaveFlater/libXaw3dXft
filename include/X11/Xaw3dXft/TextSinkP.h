@@ -61,7 +61,6 @@ SOFTWARE.
  ***********************************************************************/
 
 #include <X11/Xaw3dXft/TextSink.h>
-#include <X11/Xaw3dXft/TextP.h>
 #include <X11/Xaw3dXft/TextSrcP.h>
 #include <X11/Xaw3dXft/Encoding.h>
 

@@ -94,25 +94,6 @@ in this Software without prior written authorization from the X Consortium.
 
 */
 
-/*
- * These should be in StringDefs.h but aren't so we will define
- * them here if they are needed.
- */
-
-
-#define XtCWidget "Widget"
-#define XtCState "State"
-#define XtCRadioGroup "RadioGroup"
-#define XtCRadioData "RadioData"
-
-#ifndef _XtStringDefs_h_
-#define XtRWidget "Widget"
-#endif
-
-#define XtNstate "state"
-#define XtNradioGroup "radioGroup"
-#define XtNradioData "radioData"
-
 extern WidgetClass               toggleWidgetClass;
 
 typedef struct _ToggleClassRec   *ToggleWidgetClass;

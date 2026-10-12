@@ -61,7 +61,7 @@ SOFTWARE.
  ***********************************************************************/
 
 #include <X11/Xaw3dXft/TextSrc.h>
-#include <X11/Xaw3dXft/TextP.h>	/* This source works with the Text widget. */
+#include <X11/Xaw3dXft/TextP.h>
 
 #define MAGIC_VALUE ((XawTextPosition) -1) /* Magic value. */
 
@@ -149,14 +149,14 @@ typedef struct _TextSrcRec {
  *
  ************************************************************/
 
-#define XtInheritInput                ((_XawTextPositionFunc) _XtInherit)
-#define XtInheritRead                 ((_XawSrcReadProc) _XtInherit)
-#define XtInheritReplace              ((_XawSrcReplaceProc) _XtInherit)
-#define XtInheritScan                 ((_XawSrcScanProc) _XtInherit)
-#define XtInheritSearch               ((_XawSrcSearchProc) _XtInherit)
-#define XtInheritSetSelection         ((_XawSrcSetSelectionProc) _XtInherit)
-#define XtInheritConvertSelection     ((_XawSrcConvertSelectionProc) _XtInherit)
-#define XtTextSrcExtVersion	      1
-#define XtTextSrcExtTypeString        "XT_TEXTSRC_EXT"
+#define XtInheritInput            ((_XawTextPositionFunc) _XtInherit)
+#define XtInheritRead             ((_XawSrcReadProc) _XtInherit)
+#define XtInheritReplace          ((_XawSrcReplaceProc) _XtInherit)
+#define XtInheritScan             ((_XawSrcScanProc) _XtInherit)
+#define XtInheritSearch           ((_XawSrcSearchProc) _XtInherit)
+#define XtInheritSetSelection     ((_XawSrcSetSelectionProc) _XtInherit)
+#define XtInheritConvertSelection ((_XawSrcConvertSelectionProc) _XtInherit)
+#define XtTextSrcExtVersion	  1
+#define XtTextSrcExtTypeString    "XT_TEXTSRC_EXT"
 
 #endif /* _XawTextSrcP_h */

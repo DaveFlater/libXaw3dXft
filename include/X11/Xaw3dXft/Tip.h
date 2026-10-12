@@ -70,32 +70,11 @@ typedef struct _TipRec *TipWidget;
 
 extern WidgetClass tipWidgetClass;
 
-#define XtNtimeout "timeout"
-#define XtNtip "tip"
-#define XtNxftFont "xftFont"
-
-#ifndef XtNfontSet
-#define XtNfontSet "fontSet"
-#endif
-#ifndef XtCFontSet
-#define XtCFontSet "FontSet"
-#endif
-
-#define XtCTimeout "Timeout"
-#define XtCTip "Tip"
-#define XtCXftFont "XftFont"
-
-#ifndef _XtStringDefs_h_
-#define XtNforeground "foreground"
-#define XtNlabel "label"
-#define XtNfont "font"
-#define XtNinternalWidth "internalWidth"
-#define XtNinternalHeight "internalHeight"
-#endif
-
 /*
  * Public Functions
  */
+
+_XFUNCPROTOBEGIN
 
 /*
  * Function:
@@ -126,5 +105,7 @@ void XawTipEnable(
 void XawTipDisable(
  Widget
 );
+
+_XFUNCPROTOEND
 
 #endif /* _XawTip_h */
