@@ -61,7 +61,7 @@ typedef struct _TipPart {
     GC gc;
     XtIntervalId timer;
     Boolean international;
-    unsigned char encoding;
+    XtEnum encoding;
     XftFont *xftfont;
     Visual *visual;
 } TipPart;

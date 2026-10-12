@@ -141,8 +141,8 @@ typedef struct {
     XFontSet fontset;
     Boolean international;
     char *xftfontname;
-    unsigned char encoding;
-    unsigned char highlightStyle;
+    XtEnum encoding;
+    XtEnum highlightStyle;
 
     /* private state. */
     GC normal_GC;               // fg, font

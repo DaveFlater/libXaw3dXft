@@ -88,8 +88,8 @@ typedef struct {
     String *    list;		/* for i18n, always in multibyte format */
     XtCallbackList callback;
     char *	xftfontname;
-    unsigned char highlightStyle;
-    unsigned char encoding;
+    XtEnum highlightStyle;
+    XtEnum encoding;
 
     /* private state */
     GC normal_GC;               // fg, font

@@ -64,7 +64,7 @@ SOFTWARE.
  callback	     Callback		Callback	(none)
  dataCompression     DataCompression	Boolean		True
  editType	     EditType	      XawTextEditType	XawtextRead
- encoding            Encoding           unsigned char   XawTextEncoding8bit
+ encoding            Encoding           XtEnum          XawTextEncoding8bit
                                       if international, XawTextEncodingMb
  international       International      Boolean         False
  length		     Length		int		(internal)

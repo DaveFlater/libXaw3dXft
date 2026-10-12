@@ -335,7 +335,7 @@ following resources related to fonts and encodings:
 
 Name          | Class         | RepType      | Default value
 :---          | :----         | :---         | :---
-encoding      | Encoding      | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
+encoding      | Encoding      | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
 font          | Font          | XFontStruct\* | XtDefaultFont
 fontSet       | FontSet       | XFontSet     | XtDefaultFontSet
 international | International | Boolean      | False
@@ -373,9 +373,9 @@ right after opening the display:
 
     XrmDatabase database = XrmGetDatabase(display);
     XrmPutStringResource(&database, "*xftFont", "Libertinus Serif-16");
-    unsigned char encoding = XawTextEncodingUTF8;
-    XrmValue rmval = {sizeof(unsigned char), &encoding};
-    XrmPutResource(&database, "*encoding", XtRUnsignedChar, &rmval);
+    XtEnum encoding = XawTextEncodingUTF8;
+    XrmValue rmval = {sizeof(XtEnum), &encoding};
+    XrmPutResource(&database, "*encoding", XtREnum, &rmval);
 
 Of course, the resources can also be set on an individual basis when widgets
 are created using XtCreateManagedWidget or XtVaCreateManagedWidget.
@@ -492,7 +492,7 @@ Core:
 Name           | Class        | RepType      | Default value
 :---           | :----        | :---         | :---
 backingStore   | BackingStore | BackingStore | Always + WhenMapped + NotUseful
-encoding       | Encoding     | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
+encoding       | Encoding     | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
 font           | Font         | XFontStruct* | XtDefaultFont
 fontSet        | FontSet      | XFontSet     | XtDefaultFontSet
 foreground     | Foreground   | Pixel        | XtDefaultForeground
@@ -609,9 +609,9 @@ Added resources:
 
 Name        | Class       | RepType | Default value
 :---        | :---        | :---    | :---
-encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
+encoding  | Encoding  | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight | Background | Pixel | XtDefaultBackground
-highlightStyle | ListHighlightStyle | UnsignedChar | ListHighlightReverse
+highlightStyle | ListHighlightStyle | XtEnum | ListHighlightReverse
 xftFont | XftFont | String  | NULL
 
 Resources related to fonts, encodings, and text rendering are as described
@@ -797,9 +797,9 @@ Added resources:
 
 Name      | Class     | RepType | Default value
 :---      | :---      | :---    | :---
-encoding  | Encoding  | UnsignedChar | XawTextEncoding8bit (XawTextEncodingMb if international)
+encoding  | Encoding  | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight | Background | Pixel | XtDefaultBackground
-highlightStyle | MenuHighlightStyle | UnsignedChar | MenuHighlightReverse
+highlightStyle | MenuHighlightStyle | XtEnum | MenuHighlightReverse
 menuName  | MenuName  | String  | NULL
 underline | Underline | Int     | -1
 xftFont | XftFont | String  | NULL
@@ -852,9 +852,9 @@ Added resources:
 
 Name    | Class   | RepType | Default value
 :---    | :----   | :---    | :---
-encoding           | Encoding           | unsigned char | XawTextEncoding8bit (XawTextEncodingMb if international)
+encoding           | Encoding           | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight          | Background         | Pixel         | XtDefaultBackground
-highlightStyle     | TextHighlightStyle | unsigned char | TextHighlightReverse
+highlightStyle     | TextHighlightStyle | XtEnum | TextHighlightReverse
 useRight | Boolean | Boolean | False
 xftFont            | XftFont            | String        | NULL
 

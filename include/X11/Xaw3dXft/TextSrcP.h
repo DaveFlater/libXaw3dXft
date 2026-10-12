@@ -127,7 +127,7 @@ typedef struct {
   // TextSrc needs international to determine the default encoding (see
   // Xaw3dXftFixDefaultEncoding).  The alternative is to dig it out of
   // AsciiText.
-  unsigned char encoding;
+  XtEnum encoding;
   Boolean international;
 
 } TextSrcPart;

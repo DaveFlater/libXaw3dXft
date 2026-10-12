@@ -122,10 +122,10 @@ static XtResource resources[] = {
         offset(list.callback), XtRCallback, NULL},
     {XtNhighlight, XtCBackground, XtRPixel, sizeof(Pixel),
         offset(list.highlight), XtRString, (XtPointer)XtDefaultBackground},
-    {XtNhighlightStyle, XtCListHighlightStyle, XtRUnsignedChar,
-        sizeof(unsigned char), offset(list.highlightStyle), XtRImmediate,
+    {XtNhighlightStyle, XtCListHighlightStyle, XtREnum,
+        sizeof(XtEnum), offset(list.highlightStyle), XtRImmediate,
         (XtPointer)ListHighlightReverse},
-    {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+    {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
         offset(list.encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit}
 };
 

@@ -55,14 +55,14 @@ in this Software without prior written authorization from the X Consortium.
  ----		     -----		-------		-------------
  callback            Callback           Callback        NULL
  destroyCallback     Callback		Pointer		NULL
- encoding	     Encoding		unsigned char	XawTextEncoding8bit
+ encoding	     Encoding		XtEnum       	XawTextEncoding8bit
                                       if international, XawTextEncodingMb
  font                Font               XFontStruct *   XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
  foreground          Foreground         Pixel           XtDefaultForeground
  height		     Height		Dimension	0
  highlight           Background         Pixel           XtDefaultBackground
- highlightStyle      MenuHighlightStyle unsigned char   MenuHighlightReverse
+ highlightStyle      MenuHighlightStyle XtEnum          MenuHighlightReverse
  label               Label              String          Name of entry
  leftBitmap          LeftBitmap         Pixmap          None
  leftMargin          HorizontalMargins  Dimension       4

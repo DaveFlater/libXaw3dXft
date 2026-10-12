@@ -90,7 +90,7 @@ extern AsciiTextClassRec asciiTextClassRec;
 typedef struct {
   // Resources
   char *xftfontname;
-  unsigned char encoding;
+  XtEnum encoding;
 } AsciiPart;
 
 typedef struct _AsciiRec {

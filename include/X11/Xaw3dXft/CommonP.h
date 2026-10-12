@@ -63,7 +63,7 @@ extern void Xaw3dXftCopy (Widget w, Drawable src, Drawable dest, GC gc,
 // Maintain Xaw compatibility by changing the default encoding when a font
 // set is going to be used, but allow a specified encoding to override it.
 extern void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
-  Boolean international, unsigned char *encoding);
+  Boolean international, XtEnum *encoding);
 
 // Find the intersection of two clipping rectangles.  If they don't intersect
 // or the intersection has zero area, the fields of the result will all be

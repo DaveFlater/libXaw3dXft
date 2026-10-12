@@ -72,7 +72,7 @@ static XtResource resources[] = {
        offset(string), XtRString, NULL},
     {XtNlength, XtCLength, XtRInt, sizeof (int),
        offset(string_length), XtRInt, (XtPointer) &magic_value},
-    {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+    {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
        offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
     {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
        offset(international), XtRImmediate, (XtPointer) FALSE},

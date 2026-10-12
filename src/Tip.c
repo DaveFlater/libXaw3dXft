@@ -117,7 +117,7 @@ static XtResource resources[] = {
     offset(fontset), XtRString, XtDefaultFontSet},
   {XtNlabel, XtCLabel, XtRString, sizeof(String),
     offset(label), XtRString, NULL},
-  {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+  {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
     offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
   {XtNinternalHeight, XtCHeight, XtRDimension, sizeof(Dimension),
     offset(internal_height), XtRImmediate, (XtPointer)2},

@@ -79,8 +79,8 @@ typedef struct {
     XtJustify justify;		/* Justification for the label. */
     int underline;		/* index of letter to underline in label. */
     char *xftfontname;
-    unsigned char highlightStyle;
-    unsigned char encoding;
+    XtEnum highlightStyle;
+    XtEnum encoding;
 
     /* private resources. */
     // Unlike Command/Toggle, we never have to deal with reverse color &

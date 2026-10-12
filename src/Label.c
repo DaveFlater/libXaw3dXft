@@ -96,7 +96,7 @@ static XtResource resources[] = {
         offset(label.fontset),XtRString, XtDefaultFontSet},
     {XtNlabel,  XtCLabel, XtRString, sizeof(String),
 	offset(label.label), XtRString, NULL},
-    {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+    {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
 	offset(label.encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
     {XtNjustify, XtCJustify, XtRJustify, sizeof(XtJustify),
 	offset(label.justify), XtRImmediate, (XtPointer)XtJustifyCenter},

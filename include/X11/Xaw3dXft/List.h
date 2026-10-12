@@ -57,7 +57,7 @@ in this Software without prior written authorization from the X Consortium.
  cursorName	     Cursor		String		NULL
  defaultColumns      Columns            int             2          **5
  destroyCallback     Callback		Pointer		NULL
- encoding	     Encoding		unsigned char	XawTextEncoding8bit
+ encoding	     Encoding		XtEnum       	XawTextEncoding8bit
                                       if international, XawTextEncodingMb
  font		     Font		XFontStruct*	XtDefaultFont
  fontSet             FontSet            XFontSet        XtDefaultFontSet
@@ -65,7 +65,7 @@ in this Software without prior written authorization from the X Consortium.
  foreground	     Foreground		Pixel		XtDefaultForeground
  height		     Height		Dimension	0          **1
  highlight           Background         Pixel           XtDefaultBackground
- highlightStyle      ListHighlightStyle unsigned char   ListHighlightReverse
+ highlightStyle      ListHighlightStyle XtEnum          ListHighlightReverse
  insensitiveBorder   Insensitive	Pixmap		Gray
  internalHeight	     Height		Dimension	2
  internalWidth	     Width		Dimension	4

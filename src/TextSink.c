@@ -101,12 +101,12 @@ static XtResource resources[] = {
      offset(international), XtRImmediate, (XtPointer) FALSE},
   {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
      offset(xftfontname), XtRString, NULL},
-  {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+  {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
      offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
   {XtNhighlight, XtCBackground, XtRPixel, sizeof(Pixel),
      offset(highlight), XtRString, (XtPointer)XtDefaultBackground},
-  {XtNhighlightStyle, XtCTextHighlightStyle, XtRUnsignedChar,
-     sizeof(unsigned char), offset(highlightStyle), XtRImmediate,
+  {XtNhighlightStyle, XtCTextHighlightStyle, XtREnum,
+     sizeof(XtEnum), offset(highlightStyle), XtRImmediate,
      (XtPointer)TextHighlightReverse}
 };
 #undef offset

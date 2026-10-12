@@ -88,7 +88,7 @@ SOFTWARE.
 
 #define offset(field) XtOffsetOf(AsciiRec, ascii.field)
 static XtResource resources[] = {
-  {XtNencoding, XtCEncoding, XtRUnsignedChar, sizeof(unsigned char),
+  {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
     offset(encoding), XtRImmediate, (XtPointer)XawTextEncoding8bit},
   {XtNxftFont, XtCXftFont, XtRString, sizeof(String),
     offset(xftfontname), XtRString, NULL}

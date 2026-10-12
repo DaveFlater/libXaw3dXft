@@ -64,13 +64,13 @@ SOFTWARE.
  background          Background          Pixel          XtDefaultBackground
  displayNonprinting  Output              Boolean        True
  echo                Output              Boolean        True
- encoding            Encoding            unsigned char  XawTextEncoding8bit
+ encoding            Encoding            XtEnum         XawTextEncoding8bit
                                       if international, XawTextEncodingMb
  font                Font                XFontStruct*   XtDefaultFont
  fontSet             FontSet             XFontSet       XtDefaultFontSet
  foreground          Foreground          Pixel          XtDefaultForeground
  highlight           Background          Pixel          XtDefaultBackground
- highlightStyle      TextHighlightStyle  unsigned char  TextHighlightReverse
+ highlightStyle      TextHighlightStyle  XtEnum         TextHighlightReverse
  international       International       Boolean        False
  xftFont             XftFont             String         NULL
 
