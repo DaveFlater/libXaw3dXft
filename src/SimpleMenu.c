@@ -33,26 +33,29 @@ in this Software without prior written authorization from the X Consortium.
  *          kit@expo.lcs.mit.edu
  */
 
+/*********************************************************************
+Copyright © 2026 David Flater
+X11 license (as per the historical licenses that the package inherits)
+*********************************************************************/
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <stdio.h>
-#include <limits.h>
 #include <assert.h>
+#include <limits.h>
+#include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-
-#include <X11/Xaw3dXft/Xaw3dP.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xmu/CharSet.h>
+#include <X11/Xmu/Initer.h>
+#include <X11/Xaw3dXft/Cardinals.h>
 #include <X11/Xaw3dXft/SimpleMenP.h>
 #include <X11/Xaw3dXft/SmeBSBP.h>
 #include <X11/Xaw3dXft/SmeLine.h>
-#include <X11/Xaw3dXft/Cardinals.h>
 #include <X11/Xaw3dXft/ThreeDP.h>
-
-#include <X11/Xmu/Initer.h>
-#include <X11/Xmu/CharSet.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
 
 #define offset(field) XtOffsetOf(SimpleMenuRec, simple_menu.field)
 
@@ -88,6 +91,8 @@ static XtResource resources[] = {
  * Misc. Resources
  */
 
+  {XtNscrollArrowSize, XtCScrollArrowSize, XtRDimension, sizeof(Dimension),
+      offset(arrow_size), XtRImmediate, (XtPointer)8},
   {XtNallowShellResize, XtCAllowShellResize, XtRBoolean, sizeof(Boolean),
       XtOffsetOf(SimpleMenuRec, shell.allow_shell_resize),
       XtRImmediate, (XtPointer) TRUE},
@@ -228,7 +233,7 @@ SimpleMenuClassRec simpleMenuClassRec = {
 
 WidgetClass simpleMenuWidgetClass = (WidgetClass)&simpleMenuClassRec;
 
-#define SMW_ARROW_SIZE	8
+#define SMW_ARROW_SIZE	(smw->simple_menu.arrow_size)
 #define	SMW_UNMAPPING	0x01
 #define SMW_POPLEFT	0x02
 

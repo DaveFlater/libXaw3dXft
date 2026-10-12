@@ -67,6 +67,7 @@ typedef struct _SimpleMenuPart {
   Dimension    left_whitespace;	/* Space between BSB elements */
   Dimension    right_whitespace;
   Dimension    row_height;	/* height of each row (menu entry) */
+  Dimension    arrow_size;      /* Height of scroll arrows in 1-col menus */
 
   Cursor       cursor;		/* The menu's cursor. */
   SmeObject    popup_entry;	/* The entry to position the cursor on for

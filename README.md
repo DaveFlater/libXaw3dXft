@@ -674,6 +674,7 @@ leftWhitespace  | LeftWhitespace (or HorizontalWhitespace)  | Dimension | 0
 rightWhitespace | RightWhitespace (or HorizontalWhitespace) | Dimension | 0
 jumpScroll      | JumpScroll                                | Int       | 1
 multiColumn     | MultiColumn                               | Boolean   | True
+scrollArrowSize | ScrollArrowSize                           | Dimension | 8
 
 The use of these resources is explained in the following subsections.
 
@@ -682,8 +683,10 @@ The use of these resources is explained in the following subsections.
 SimpleMenu supports two separate ways of dealing with menus that are too long
 to fit on the screen.  If the multiColumn resource is True, SimpleMenu
 expands the layout to include additional columns.  Otherwise, SimpleMenu
-allows scrolling through entries in a single long column, and the jumpScroll
-resource determines the number of entries to scroll by.
+allows scrolling through entries in a single long column, the scrollArrowSize
+resource determines the height in pixels of the scroll arrows, and the
+jumpScroll resource determines the number of entries to scroll by at one
+time.
 
 The scroll arrows react to mouse movement.  To scroll a long time, you have
 to wiggle the mouse over the arrow.
