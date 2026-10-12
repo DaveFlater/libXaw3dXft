@@ -41,6 +41,9 @@ SOFTWARE.
 
 /* Initialization of defaults */
 
+// That these are defined here instead of in the header is a sign that those
+// resources were intended for internal use only, but it does not prevent an
+// application from using them.
 #define XtNtopShadowPixmap "topShadowPixmap"
 #define XtCTopShadowPixmap "TopShadowPixmap"
 #define XtNbottomShadowPixmap "bottomShadowPixmap"
