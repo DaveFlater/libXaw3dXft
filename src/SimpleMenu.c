@@ -379,13 +379,15 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 static void Redisplay (Widget w, XEvent * event, Region region) {
   SimpleMenuWidget smw = (SimpleMenuWidget)w;
   ThreeDWidget tdw = (ThreeDWidget)smw->simple_menu.threeD;
+  Display *display = XtDisplay(w);
+  Window window = XtWindow(w);
 
   if (!XtIsRealized((Widget)smw))
     return;
 
   // Region is never used again.
   if (region == NULL)
-    XClearWindow(XtDisplay(w), XtWindow(w));
+    XClearWindow(display, window);
 
   // Draw shadows.
   _ShadowSurroundedBox((Widget)smw, tdw, 0, 0, smw->core.width,
@@ -393,10 +395,16 @@ static void Redisplay (Widget w, XEvent * event, Region region) {
 
   // Draw scroll arrows if applicable.
   if (smw->simple_menu.too_tall) {
-    // SMW_ARROW_SIZE is the height.  The width will be off by one.
-    XPoint point[3];
+    // 1. SMW_ARROW_SIZE is the height.  The width will be off by one.
+    // 2. XFillPolygon follows an arcane algorithm (EvenOddRule or
+    // WindingRule) to decide whether border pixels are included, producing
+    // off-by-one anomalies.  Cover that up by drawing the border lines on
+    // top.
+    // 3. Someone opportunistically chose ThreeD's bottom shadow GC for this.
+    // That GC might be a stipple.  Its line width is default (0).
+    XPoint point[4];
     const Position xcenter = smw->core.width / 2;
-    point[0].x = xcenter;
+    point[0].x = point[3].x = xcenter;
     point[1].x = xcenter - SMW_ARROW_SIZE / 2;
     point[2].x = xcenter + SMW_ARROW_SIZE / 2;
     // Top arrow
@@ -404,17 +412,21 @@ static void Redisplay (Widget w, XEvent * event, Region region) {
     if (smw->simple_menu.current_first != FirstEntry(smw)) {
       const Position ymin = smw->simple_menu.top_margin +
 	tdw->threeD.shadow_width;
-      point[0].y = ymin;
+      point[0].y = point[3].y = ymin;
       point[1].y = point[2].y = ymin + SMW_ARROW_SIZE - 1;
-      XFillPolygon(XtDisplay(w), XtWindow(w), tdw->threeD.bot_shadow_GC,
-	point, 3, Convex, CoordModeOrigin);
+      XFillPolygon(display, window, tdw->threeD.bot_shadow_GC,
+	point, 4, Convex, CoordModeOrigin);
+      XDrawLines(display, window, tdw->threeD.bot_shadow_GC,
+	point, 4, CoordModeOrigin);
     }
     // Bottom arrow
     if (smw->simple_menu.didnt_fit) {
-      point[0].y = smw->simple_menu.bottom_y + SMW_ARROW_SIZE - 1;
+      point[0].y = point[3].y = smw->simple_menu.bottom_y + SMW_ARROW_SIZE - 1;
       point[1].y = point[2].y = smw->simple_menu.bottom_y;
-      XFillPolygon(XtDisplay(w), XtWindow(w), tdw->threeD.bot_shadow_GC,
-	point, 3, Convex, CoordModeOrigin);
+      XFillPolygon(display, window, tdw->threeD.bot_shadow_GC,
+	point, 4, Convex, CoordModeOrigin);
+      XDrawLines(display, window, tdw->threeD.bot_shadow_GC,
+	point, 4, CoordModeOrigin);
     }
   }
 
