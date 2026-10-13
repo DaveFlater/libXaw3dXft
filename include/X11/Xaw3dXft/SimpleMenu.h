@@ -77,6 +77,7 @@ in this Software without prior written authorization from the X Consortium.
  multiColumn         MultiColumn        Boolean         True
  rightWhitespace     RightWhitespace 	Dimension 	0
  rowHeight           RowHeight          Dimension       Height of Font
+ scrollArrowSize     ScrollArrowSize    Dimension       8
  sensitive	     Sensitive		Boolean		True
  topMargin           VerticalMargins    Dimension       VerticalSpace
  width		     Width		Dimension	0

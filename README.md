@@ -1079,8 +1079,9 @@ respectively.  No resources are forwarded to the sub-widgets, but they can be
 retrieved by name using XtNameToWidget.
 
 SimpleMenu (Composite) creates a ThreeD named "threeD" and optionally an
-smeBSB object named "menuLabel".  No resources are forwarded to the
-sub-widgets, but they can be retrieved by name using XtNameToWidget.
+smeBSB object named "menuLabel".  No resources are forwarded to the ThreeD.
+The menu label receives only the label text and a hardcoded justify (=
+XtJustifyCenter).  They can be retrieved by name using XtNameToWidget.
 
 Dialog (Composite) creates a text Label, an optional icon Label, and an
 optional AsciiText named "label", "icon", and "value" respectively.  The
