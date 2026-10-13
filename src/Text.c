@@ -215,7 +215,9 @@ static XtResource resources[] = {
   {XtNunrealizeCallback, XtCCallback, XtRCallback, sizeof(XtPointer),
      offset(text.unrealize_callbacks), XtRCallback, (XtPointer) NULL},
   {XtNuseRight, XtCBoolean, XtRBoolean, sizeof(Boolean),
-     offset(text.useright), XtRImmediate, (XtPointer)False}
+     offset(text.useright), XtRImmediate, (XtPointer)False},
+  {XtNeditSelect, XtCEditSelect, XtRUnsignedChar, sizeof(unsigned char),
+     offset(text.editSelect), XtRImmediate, (XtPointer)3}
 };
 #undef offset
 

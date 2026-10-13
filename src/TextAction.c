@@ -719,13 +719,12 @@ DeleteOrKill(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
   EndAction(ctx);
 }
 
-static void
-KillSelection(TextWidget ctx, XEvent *event)
-{
+// FIXME how did we get back to XLookupString
+static void KillSelection (TextWidget ctx, XEvent *event) {
   char strbuf[BUFSIZ];
   KeySym keysym;
   /* Option to delete selection, if any */
-  if ( (_Xaw3dXft->edit_delete_alternative >= 2) &&
+  if (ctx->text.editSelect & 2 &&
     XLookupString((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, NULL))
   {
     if (keysym != XK_BackSpace && keysym != XK_Delete &&
@@ -740,15 +739,14 @@ DeleteForwardChar(Widget w, XEvent *event, String *p, Cardinal *n)
   DeleteOrKill((TextWidget) w, event, XawsdRight, XawstPositions, TRUE, FALSE);
 }
 
-static void
-DeleteBackwardChar(Widget w, XEvent *event, String *p, Cardinal *n)
-{
+static void DeleteBackwardChar (Widget w, XEvent *event, String *p,
+Cardinal *n) {
   TextWidget ctx = (TextWidget) w;
-  if ( _Xaw3dXft->edit_delete_alternative &&
-      (ctx->text.s.left != ctx->text.s.right))
-  	_XawTextZapSelection( (TextWidget) w, event, TRUE);
+  if (ctx->text.editSelect & 1 &&
+      ctx->text.s.left != ctx->text.s.right)
+    _XawTextZapSelection( (TextWidget) w, event, TRUE);
   else
-  	DeleteOrKill((TextWidget) w, event, XawsdLeft, XawstPositions, TRUE, FALSE);
+    DeleteOrKill((TextWidget) w, event, XawsdLeft, XawstPositions, TRUE, FALSE);
 }
 
 static void

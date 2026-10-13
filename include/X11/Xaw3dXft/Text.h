@@ -67,6 +67,7 @@ SOFTWARE.
  bottomMargin	    Margin	     Position		2
  displayCaret       Output           Boolean            True
  displayPosition    TextPosition     XawTextPosition	0
+ editSelect         EditSelect       unsigned char      3
  insertPosition	    TextPosition     XawTextPosition	0
  leftMargin	    Margin	     Position		2
  resize		    Resize	     XawTextResizeMode	XawTextResizeNever

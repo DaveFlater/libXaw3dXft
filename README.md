@@ -855,6 +855,7 @@ Added resources:
 
 Name    | Class   | RepType | Default value
 :---    | :----   | :---    | :---
+editSelect | EditSelect | unsigned char | 3
 encoding           | Encoding           | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
 highlight          | Background         | Pixel         | XtDefaultBackground
 highlightStyle     | TextHighlightStyle | XtEnum | TextHighlightReverse
@@ -863,6 +864,16 @@ xftFont            | XftFont            | String        | NULL
 
 Resources related to fonts, encodings, and text rendering are as described
 under [Generalities](#generalities).  Multi-line text is allowed.
+
+The editSelect resource determines what happens when Delete or another key is
+pressed while editable text is selected:
+
+editSelect | Delete action | Other key action
+:---: | :--- | :---
+0 | Backward delete 1 char | Insert char
+1 | Delete selected text   | Insert char
+2 | Backward delete 1 char | Replace selected text with char
+3 | Delete selected text   | Replace selected text with char
 
 The values of the highlightStyle resource are as follows:
 
@@ -1151,17 +1162,6 @@ Globally enable/disable showing tips.
 
 Grab or don't grab while showing a tip.
 
-### char edit_delete_alternative = 0
-
-Determines what happens when Delete or another key is pressed while editable
-text is selected.
-
-Value | Delete action | Other key action
-:---: | :---: | :---:
-0 | Backward delete 1 char | Insert char
-1 | Delete selected text | Insert char
-2 | Delete selected text | Replace selected text with char
-
 ### Xaw3dXftProc * <a name="proc"></a>proc = ...
 
 The Xaw3dXftProc struct contains pointers to [in]convenience functions.
@@ -1216,6 +1216,7 @@ button_dashed:  use Command.highlightDashed resource
 button_inverse:  deleted (button presses always get inverse)  
 default_font, default_fontname:  use xftFont resource  
 encoding:  use encoding resource  
+edit_delete_alternative:  use Text.editSelect resource  
 hilit_color:  use highlight resource  
 menu_spacing:  use SmeBSB.vertSpace resource  
 multi_column_menu:  use SimpleMenu.multiColumn resource  

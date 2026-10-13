@@ -179,6 +179,7 @@ typedef struct _TextPart {
     XawTextResizeMode   resize;	             /* what to resize */
     XawTextMargin       res_margins;         /* Original resource margins */
     XtCallbackList	unrealize_callbacks; /* used for scrollbars */
+    unsigned char       editSelect;          // Selection editing behavior
 
     /* private state */
     XawTextMargin       margins;    /* Includes shadow and scrollbar widths */

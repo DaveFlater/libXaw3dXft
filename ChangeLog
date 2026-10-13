@@ -29,6 +29,7 @@ Next release, v2.0  Dave Flater
   button_dashed:  use Command.highlightDashed resource
   button_inverse:  deleted (button presses always get inverse)
   default_font, default_fontname:  use xftFont resource
+  edit_delete_alternative:  use Text.editSelect resource
   encoding:  use encoding resource
   hilit_color:  use highlight resource
   insensitive_twist:  deleted (all insensitive widgets are stippled)
@@ -67,7 +68,7 @@ Next release, v2.0  Dave Flater
     compound text type.
   - Enabled all configure options by default and put their macros in
     Xaw3d.h.
-  - Enabled multi-column menus by default.
+  - Enabled multi-column menus and editSelect = 3 by default.
   - Added version identification mechanisms (see README for details).
   - Plugged a minor memory leak (pull request #18 thanks Tim Hentenaar).
   - Ignored beNiceToColormap when it only makes things look worse.
