@@ -101,7 +101,6 @@ extern int _XawTextReplace(TextWidget, XawTextPosition, XawTextPosition, XawText
  */
 
 static void GetSelection(Widget, Time, String *, Cardinal);
-static void KillSelection(TextWidget, XEvent *);
 void _XawTextZapSelection(TextWidget, XEvent *, Boolean);
 
 static void
@@ -130,7 +129,6 @@ StartAction(TextWidget ctx, XEvent *event)
       ctx->text.time = event->xbutton.time;
       break;
     case KeyPress:
-      KillSelection(ctx, event);
     case KeyRelease:
       ctx->text.time = event->xkey.time;
       break;
@@ -719,53 +717,38 @@ DeleteOrKill(TextWidget ctx, XEvent *event, XawTextScanDirection dir,
   EndAction(ctx);
 }
 
-// FIXME how did we get back to XLookupString
-static void KillSelection (TextWidget ctx, XEvent *event) {
-  char strbuf[BUFSIZ];
-  KeySym keysym;
-  /* Option to delete selection, if any */
-  if (ctx->text.editSelect & 2 &&
-    XLookupString((XKeyEvent*)event, strbuf, BUFSIZ, &keysym, NULL))
-  {
-    if (keysym != XK_BackSpace && keysym != XK_Delete &&
-	(ctx->text.s.left != ctx->text.s.right))
-        _DeleteOrKill(ctx, ctx->text.s.left, ctx->text.s.right, 1);
-  }
-}
-
 static void
 DeleteForwardChar(Widget w, XEvent *event, String *p, Cardinal *n)
 {
-  DeleteOrKill((TextWidget) w, event, XawsdRight, XawstPositions, TRUE, FALSE);
+  DeleteOrKill((TextWidget)w, event, XawsdRight, XawstPositions, TRUE, FALSE);
 }
 
 static void DeleteBackwardChar (Widget w, XEvent *event, String *p,
 Cardinal *n) {
   TextWidget ctx = (TextWidget) w;
-  if (ctx->text.editSelect & 1 &&
-      ctx->text.s.left != ctx->text.s.right)
-    _XawTextZapSelection( (TextWidget) w, event, TRUE);
+  if (ctx->text.editSelect & 1 && ctx->text.s.left != ctx->text.s.right)
+    _XawTextZapSelection((TextWidget)w, event, TRUE);
   else
-    DeleteOrKill((TextWidget) w, event, XawsdLeft, XawstPositions, TRUE, FALSE);
+    DeleteOrKill((TextWidget)w, event, XawsdLeft, XawstPositions, TRUE, FALSE);
 }
 
 static void
 DeleteBackwardCharOnly(Widget w, XEvent *event, String *p, Cardinal *n)
 {
-  DeleteOrKill((TextWidget) w, event, XawsdLeft, XawstPositions, TRUE, FALSE);
+  DeleteOrKill((TextWidget)w, event, XawsdLeft, XawstPositions, TRUE, FALSE);
 }
 
 static void
 DeleteForwardWord(Widget w, XEvent *event, String *p, Cardinal *n)
 {
-  DeleteOrKill((TextWidget) w, event,
+  DeleteOrKill((TextWidget)w, event,
 	       XawsdRight, XawstWhiteSpace, FALSE, FALSE);
 }
 
 static void
 DeleteBackwardWord(Widget w, XEvent *event, String *p, Cardinal *n)
 {
-  DeleteOrKill((TextWidget) w, event,
+  DeleteOrKill((TextWidget)w, event,
 	       XawsdLeft, XawstWhiteSpace, FALSE, FALSE);
 }
 
@@ -1218,43 +1201,58 @@ static void InsertChar (Widget w, XEvent *event,
       text = (XawTextBlock){0, chars_out, csbuf, XawFmt8Bit};
   }
 
-  // We now have a text block in the internal encoding, but we might want to
-  // multiply it.
-  assert(ctx->text.mult >= 1);
-  if (ctx->text.mult > 1) {
-    Cardinal bytes_before = text.length;
-    if (text.format == XawFmtWide)
-      bytes_before *= sizeof(wchar_t);
-    Cardinal bytes_after = bytes_before * ctx->text.mult;
-    uint8_t *newstr = XtMalloc(bytes_after + 4);
-    uint8_t *ptr = newstr;
-    for (short count=0; count < ctx->text.mult; ++count) {
-      memcpy(ptr, text.ptr, bytes_before);
-      ptr += bytes_before;
+  if (text.length > 0) {
+    // We now have a text block in the internal encoding, but we might want
+    // to multiply it.
+    assert(ctx->text.mult >= 1);
+    if (ctx->text.mult > 1) {
+      Cardinal bytes_before = text.length;
+      if (text.format == XawFmtWide)
+	bytes_before *= sizeof(wchar_t);
+      Cardinal bytes_after = bytes_before * ctx->text.mult;
+      uint8_t *newstr = XtMalloc(bytes_after + 4);
+      uint8_t *ptr = newstr;
+      for (short count=0; count < ctx->text.mult; ++count) {
+	memcpy(ptr, text.ptr, bytes_before);
+	ptr += bytes_before;
+      }
+      memset(ptr, 0, 4);
+      if (textPtrIsTemp)
+	XtFree(text.ptr);
+      textPtrIsTemp = True;
+      text.ptr = newstr;
+      text.length *= ctx->text.mult;
     }
-    memset(ptr, 0, 4);
-    if (textPtrIsTemp)
-      XtFree(text.ptr);
-    textPtrIsTemp = True;
-    text.ptr = newstr;
-    text.length *= ctx->text.mult;
+
+    // Finally, do the thing.
+    StartAction(ctx, event);
+    int error;
+    if (ctx->text.editSelect & 2 && ctx->text.s.left != ctx->text.s.right) {
+      // The previous implementation, where KillSelection was wedged into
+      // StartAction, called _DeleteOrKill, which saves the selection in
+      // SECONDARY.  Not sure whether that is good or bad for this
+      // interaction, but it's not being done now.
+      const XawTextPosition afterPos = ctx->text.s.left;
+      error = _XawTextReplace(ctx, ctx->text.s.left,
+	ctx->text.s.right, &text);
+      if (error == XawEditDone)
+	ctx->text.insertPos = afterPos;
+    } else
+	error = _XawTextReplace(ctx, ctx->text.insertPos,
+	  ctx->text.insertPos, &text);
+
+    if (error == XawEditDone) {
+      ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
+	XawstPositions, XawsdRight, text.length, TRUE);
+      ctx->text.from_left = -1;
+      AutoFill(ctx);
+    } else
+      XBell(XtDisplay(ctx), 50);
+
+    _XawTextSetScrollBars(ctx);
+    EndAction(ctx);
   }
 
-  // Finally, do the thing
-  StartAction(ctx, event);
-  int error = _XawTextReplace(ctx, ctx->text.insertPos,ctx->text.insertPos,
-    &text);
-
-  if (error == XawEditDone) {
-    ctx->text.insertPos = SrcScan(ctx->text.source, ctx->text.insertPos,
-      XawstPositions, XawsdRight, text.length, TRUE);
-    ctx->text.from_left = -1;
-    AutoFill(ctx);
-  } else
-    XBell(XtDisplay(ctx), 50);
-
-  _XawTextSetScrollBars(ctx);
-  EndAction(ctx);
   if (textPtrIsTemp)
     XtFree(text.ptr);
 }
