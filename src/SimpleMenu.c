@@ -482,7 +482,7 @@ static void Resize (Widget w) {
     Widget parent = XtParent(w);
     if (!XtIsRealized(parent))
       XtRealizeWidget(parent);
-    Layout(w);
+    Layout(parent);
   }
 }
 
@@ -917,17 +917,18 @@ static void CreateLabel (Widget w) {
 
 /* Function Name: Layout
  * Description: Determines geometry; sets positions and sizes of entries.
- * Arguments: w - The SimpleMenu or any of its SmeBSB children.
+ * Arguments: w - The SimpleMenu.
  */
 
 static void Layout (Widget w) {
-  SimpleMenuWidget smw;
   SmeObject *entry;
 
-  if (XtIsSubclass(w, simpleMenuWidgetClass))
-    smw = (SimpleMenuWidget)w;
-  else
-    smw = (SimpleMenuWidget)XtParent(w);
+  // This function historically allowed one of the SmeBSB children to be
+  // passed instead of the SimpleMenu.  Resize still does because it is
+  // called directly by children, but there's no reason to amplify that
+  // confusion.
+  assert(XtIsSubclass(w, simpleMenuWidgetClass));
+  SimpleMenuWidget smw = (SimpleMenuWidget)w;
   ThreeDWidget tdw = (ThreeDWidget)smw->simple_menu.threeD;
 
   const Dimension shadowWidth = tdw->threeD.shadow_width;
@@ -1045,8 +1046,8 @@ static void Layout (Widget w) {
     // relevant SetValue.
     columnWidth = GetMenuWidth((Widget)smw);
     width = columnWidth * (column+1) + 2*shadowWidth;
-    const Dimension maxWidth = WidthOfScreen(XtScreen(w)) -
-                               2 * w->core.border_width;
+    const Dimension maxWidth = WidthOfScreen(XtScreen(smw)) -
+                               2 * smw->core.border_width;
     if (width > maxWidth) {
       width = maxWidth;
       columnWidth = (width - 2*shadowWidth) / (column+1);
