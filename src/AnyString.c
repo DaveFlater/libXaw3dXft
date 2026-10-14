@@ -14,7 +14,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include "config.h"
 #endif
 #include <assert.h>
-#include <byteswap.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +34,9 @@ X11 license (as per the historical licenses that the package inherits)
 
 // Type used to avoid assuming that sizeof void is 1
 typedef uint8_t byte;
+
+// byteswap.h with bswap_16 is a GNU extension.  This will suffice.
+#define bswap16(x) ((uint16_t)((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 
 /*
   Commence endless screaming.
@@ -352,7 +354,7 @@ static void *convert16 (const void *text, Cardinal num_bytes) {
     #if isBigEndian
       t[i] = s[i];
     #else
-      t[i] = bswap_16(s[i]);
+      t[i] = bswap16(s[i]);
     #endif
   }
   t[num_chars] = 0;
@@ -368,7 +370,7 @@ static void inplacecvt16 (void *text, Cardinal num_bytes) {
   const Cardinal num_chars = checklen(num_bytes)/2; // RULE 4
   for (Cardinal i=0; i<num_chars; ++i) {
     assert(s[i]); // RULE 2
-    s[i] = bswap_16(s[i]);
+    s[i] = bswap16(s[i]);
   }
 #endif
 }
