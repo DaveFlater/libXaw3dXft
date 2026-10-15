@@ -132,6 +132,12 @@ typedef uint8_t byte;
   C library
   ---------
 
+  According to C11, charN_t are typedefs for uint_leastN_t and uintN_t are
+  optional.  So, in principle, charN_t are not fixed-size types.  In
+  practice, uintN_t are always there now, but uchar.h and thus charN_t are
+  still missing on macOS 15 years after the standard.  The result is that
+  using charN_t when not forced to is a net negative.
+
   As of C23, there is no standard, direct conversion between Wc and UTF-
   anything.  You have to convert Wc to Mb first, which causes you to lose any
   characters that don't exist in the locale's codeset (which might be ASCII).
@@ -162,8 +168,9 @@ typedef uint8_t byte;
   Latin-1 characters only).
 */
 
-static_assert(sizeof(XChar2b) == sizeof(char16_t));
-static_assert(sizeof(wchar_t) == sizeof(char32_t));
+static_assert(sizeof(XChar2b) == 2);
+static_assert(sizeof(wchar_t) == 4);
+static_assert(sizeof(char32_t) == 4);
 
 // ---- Basics ----
 
@@ -425,7 +432,7 @@ static XChar2b *UTF8toChar2b (const char *text, Cardinal *num_bytes) {
 
 // Convert UTF-8 to UTF-32.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char32_t *UTF8toUTF32 (const char *text, Cardinal *num_bytes) {
+static uint32_t *UTF8toUTF32 (const char *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   const uint8_t *textp = (uint8_t *)text;
   const uint32_t bogusChar = '?';
@@ -480,44 +487,71 @@ static char32_t *UTF8toUTF32 (const char *text, Cardinal *num_bytes) {
   }
   *newp = 0;
   *num_bytes = checklen((newp - new) * 4); // RULE 4
-  return (char32_t *)new;
+  return new;
 }
 
 // Reduce UTF-32 to UCS-2.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char16_t *UTF32toUCS2 (const char32_t *text, Cardinal *num_bytes) {
+static uint16_t *UTF32toUCS2 (const uint32_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  const uint32_t *textp = (uint32_t *)text;
   const uint16_t bogusChar = '?';
   assert(*num_bytes % 4 == 0); // RULE 3
   const Cardinal l = checklen(*num_bytes) / 4; // RULE 4
   uint16_t *new = calloc(l+1, sizeof(uint16_t));
   assert(new);
   for (Cardinal i=0; i<l; ++i)
-    new[i] = (textp[i] < 0x10000 ? textp[i] : bogusChar);
+    new[i] = (text[i] < 0x10000 ? text[i] : bogusChar);
   new[l] = 0;
   *num_bytes = l*2;
-  return (char16_t *)new;
+  return new;
 }
 
 // Reduce UTF-32 to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static XChar2b *UTF32toChar2b (const char32_t *text, Cardinal *num_bytes) {
+static XChar2b *UTF32toChar2b (const uint32_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   XChar2b *new = (XChar2b *)UTF32toUCS2(text, num_bytes);
   inplacecvt16(new, *num_bytes);
   return new;
 }
 
-// Convert Mb to UTF-32.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-// Based on https://en.cppreference.com/c/string/multibyte/mbrtoc32
-static char32_t *MbtoUTF32 (const char *text, Cardinal *num_bytes) {
+/*
+  Convert Mb to UTF-32.  num_bytes is updated as applicable.  Caller is
+  responsible for freeing the returned string.
+
+  mbrtowc:          mbrtoc32:
+  - C95             - C11
+  - wchar.h         - uchar.h
+  - wchar_t out     - char32_t out
+  - No −3 return    - Has −3 return
+
+  A −3 return means that the next char32_t from a multi-char32_t character
+  has been written and no bytes were processed from the input [1].  This has
+  nothing to do with surrogate pairs.  [2] cites "Big5-HKSCS needing to
+  output 2 different UTF-32 code points for some of its input characters (4
+  specific input sequences of them result in two UTF-32 code point outputs,
+  to be precise)."  Those four examples can be found on page 2-55 of [3].
+  Their translations consist of a base character followed by a combining
+  diacritic (U+00CA U+0304, U+00CA U+030C, U+00EA U+0304, and U+00EA U+030C).
+  Ê̄Ê̌ê̄ê̌
+
+  In practice:
+  GNU libc implements mbrtoc32 by calling mbrtowc and never returns −3.
+  macOS libc has neither uchar.h nor mbrtoc32.
+
+  [1] mbrtoc32, in C reference
+      https://en.cppreference.com/c/string/multibyte/mbrtoc32
+  [2] Restartable Functions for Efficient Character Conversions
+      https://www.open-std.org/JTC1/SC22/WG14/www/docs/n3366.htm
+  [3] Hong Kong Supplementary Character Set — 2004
+      https://www.ccli.gov.hk/doc/e_hkscs_2004.pdf
+*/
+static uint32_t *MbtoUTF32 (const char *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  const char32_t bogusChar = '?';
-  char32_t *new = calloc(checklen(*num_bytes) + 1, sizeof(char32_t)); // RULE 4
+  const uint32_t bogusChar = '?';
+  uint32_t *new = calloc(checklen(*num_bytes) + 1, sizeof(uint32_t)); // RULE 4
   assert(new);
-  char32_t *p_out = new;
+  uint32_t *p_out = new;
   const char *p_in = text,
               *end = text + *num_bytes;
   mbstate_t state = {0};
@@ -546,10 +580,6 @@ static char32_t *MbtoUTF32 (const char *text, Cardinal *num_bytes) {
     case -3:
       // The next char32_t from a multi-char32_t character has now been
       // written.  No bytes are processed from the input in this case.
-      // "e.g. Big5-HKSCS needing to output 2 different UTF-32 code points
-      // for some of its input characters (4 specific input sequences of them
-      // result in two UTF-32 code point outputs, to be precise)" — N3366
-      // GNU libc never returns -3.
       ++p_out;
       break;
     default:
@@ -564,29 +594,21 @@ static char32_t *MbtoUTF32 (const char *text, Cardinal *num_bytes) {
   return new;
 }
 
-// Convert UTF-8 to Wc.  num_bytes is updated as applicable.  Caller is
-// responsible for freeing the returned string.
-static wchar_t *UTF8toWc (const char *text, Cardinal *num_bytes) {
-  return (wchar_t *)UTF8toUTF32(text, num_bytes);
-}
-
 /*
   Convert Mb to Wc.  num_bytes is updated as applicable.  Caller is
   responsible for freeing the returned string.
-
-  This function could be implemented with mbrtowc to remove one use of the
-  unsafe assumption, but it's pointless.
-
-  In theory, C99's mbrtowc is the safe conversion from Mb to Wc.  But,
-  mbrtowc lacks the -3 return of mbrtoc32.
-
-  glibc implements mbrtoc32 by calling mbrtowc.  It never returns -3.
 
   Collision with libc's mbtowc on the naming of this function is why I
   started capitalizing Mb and Wc.
 */
 static wchar_t *MbtoWc (const char *text, Cardinal *num_bytes) {
   return (wchar_t *)MbtoUTF32(text, num_bytes);
+}
+
+// Convert UTF-8 to Wc.  num_bytes is updated as applicable.  Caller is
+// responsible for freeing the returned string.
+static wchar_t *UTF8toWc (const char *text, Cardinal *num_bytes) {
+  return (wchar_t *)UTF8toUTF32(text, num_bytes);
 }
 
 // Convert 8bit to Wc.  num_bytes is updated as applicable.  Caller is
@@ -608,16 +630,15 @@ static wchar_t *_8bittoWc (const char *text, Cardinal *num_bytes) {
 
 // Convert UCS-2 to Wc.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static wchar_t *UCS2toWc (const char16_t *text, Cardinal *num_bytes) {
+static wchar_t *UCS2toWc (const uint16_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
   assert(*num_bytes % 2 == 0); // RULE 3
   const Cardinal l = checklen(*num_bytes) / 2; // RULE 4
   wchar_t *new = calloc(l+1, sizeof(wchar_t));
   assert(new);
-  uint16_t *src = (uint16_t *)text;
   for (Cardinal i=0; i<l; ++i) {
-    assert(src[i]); // RULE 2
-    new[i] = src[i];
+    assert(text[i]); // RULE 2
+    new[i] = text[i];
   }
   new[l] = 0;
   *num_bytes = checklen(l * sizeof(wchar_t)); // RULE 4
@@ -639,7 +660,7 @@ static wchar_t *Char2btoWc (const XChar2b *text, Cardinal *num_bytes) {
 // Note:  mbrtoc16 implements UTF-16 with surrogate pairs, which we don't
 // want.  UTF32toChar2b will instead put '?' for characters that don't fit.
 static XChar2b *MbtoChar2b (const char *text, Cardinal *num_bytes) {
-  char32_t *utf32 = MbtoUTF32(text, num_bytes);
+  uint32_t *utf32 = MbtoUTF32(text, num_bytes);
   XChar2b *c2b = UTF32toChar2b(utf32, num_bytes);
   free(utf32);
   return c2b;
@@ -648,8 +669,7 @@ static XChar2b *MbtoChar2b (const char *text, Cardinal *num_bytes) {
 // Convert Wc to Char2b.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
 static XChar2b *WctoChar2b (const wchar_t *text, Cardinal *num_bytes) {
-  const char32_t *utf32 = (const char32_t *)text;
-  XChar2b *c2b = UTF32toChar2b(utf32, num_bytes);
+  XChar2b *c2b = UTF32toChar2b((const uint32_t *)text, num_bytes);
   return c2b;
 }
 
@@ -702,14 +722,14 @@ static void drawOneXftLine (
       break;
     case XawTextEncodingChar2b:
       {
-	char16_t *cvt16 = convert16(text, num_bytes);
+	uint16_t *cvt16 = convert16(text, num_bytes);
 	XftDrawString16(xftDraw, fg, xftFont, x, yadj, cvt16, num_bytes/2);
 	free(cvt16);
       }
       break;
     case XawTextEncodingMb:
       {
-	char32_t *cvt32 = MbtoUTF32(text, &num_bytes);
+	uint32_t *cvt32 = MbtoUTF32(text, &num_bytes);
 	XftDrawString32(xftDraw, fg, xftFont, x, yadj, cvt32, num_bytes/4);
 	free(cvt32);
       }
@@ -906,14 +926,14 @@ static Dimension sizeOneXftLine (Display *display, XftFont *xftFont,
     break;
   case XawTextEncodingChar2b:
     {
-      char16_t *cvt16 = convert16(text, num_bytes);
+      uint16_t *cvt16 = convert16(text, num_bytes);
       XftTextExtents16(display, xftFont, cvt16, num_bytes/2, &extents);
       free(cvt16);
     }
     break;
   case XawTextEncodingMb:
     {
-      char32_t *cvt32 = MbtoUTF32(text, &num_bytes);
+      uint32_t *cvt32 = MbtoUTF32(text, &num_bytes);
       XftTextExtents32(display, xftFont, cvt32, num_bytes/4, &extents);
       free(cvt32);
     }
@@ -1195,37 +1215,35 @@ Boolean Xaw3dXftLocateCharacter (
 
 // Convert UTF-32 to 8bit.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char *UTF32to8bit (const char32_t *text, Cardinal *num_bytes) {
+static char *UTF32to8bit (const uint32_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  const uint32_t *textp = (uint32_t *)text;
   const uint8_t bogusChar = '?';
   assert(*num_bytes % 4 == 0); // RULE 3
   const Cardinal l = checklen(*num_bytes) / 4; // RULE 4
   uint8_t *new = malloc(l+1);
   assert(new);
   for (Cardinal i=0; i<l; ++i)
-    new[i] = (textp[i] < 0x100 ? textp[i] : bogusChar);
+    new[i] = (text[i] < 0x100 ? text[i] : bogusChar);
   new[l] = 0;
   *num_bytes = l;
   return (char *)new;
 }
 
 static char *Wcto8bit (const wchar_t *text, Cardinal *num_bytes) {
-  return UTF32to8bit((const char32_t *)text, num_bytes);
+  return UTF32to8bit((const uint32_t *)text, num_bytes);
 }
 
 // Convert UCS-2 to 8bit.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char *UCS2to8bit (const char16_t *text, Cardinal *num_bytes) {
+static char *UCS2to8bit (const uint16_t *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  const uint16_t *textp = (uint16_t *)text;
   const uint8_t bogusChar = '?';
   assert(*num_bytes % 2 == 0); // RULE 3
   const Cardinal l = checklen(*num_bytes) / 2; // RULE 4
   uint8_t *new = malloc(l+1);
   assert(new);
   for (Cardinal i=0; i<l; ++i)
-    new[i] = (textp[i] < 0x100 ? textp[i] : bogusChar);
+    new[i] = (text[i] < 0x100 ? text[i] : bogusChar);
   new[l] = 0;
   *num_bytes = l;
   return (char *)new;
@@ -1235,7 +1253,7 @@ static char *UCS2to8bit (const char16_t *text, Cardinal *num_bytes) {
 // responsible for freeing the returned string.
 static char *Char2bto8bit (const XChar2b *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
-  char16_t *ucs2 = convert16(text, *num_bytes);
+  uint16_t *ucs2 = convert16(text, *num_bytes);
   char *ret = UCS2to8bit(ucs2, num_bytes);
   free(ucs2);
   return ret;
@@ -1244,7 +1262,7 @@ static char *Char2bto8bit (const XChar2b *text, Cardinal *num_bytes) {
 // Convert Mb to 8bit.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
 static char *Mbto8bit (const char *text, Cardinal *num_bytes) {
-  char32_t *utf32 = MbtoUTF32(text, num_bytes);
+  uint32_t *utf32 = MbtoUTF32(text, num_bytes);
   char *ret = UTF32to8bit(utf32, num_bytes);
   free(utf32);
   return ret;
@@ -1252,8 +1270,8 @@ static char *Mbto8bit (const char *text, Cardinal *num_bytes) {
 
 // Convert Wc to UCS-2.  num_bytes is updated as applicable.  Caller is
 // responsible for freeing the returned string.
-static char16_t *WctoUCS2 (const wchar_t *text, Cardinal *num_bytes) {
-  return UTF32toUCS2((const char32_t *)text, num_bytes);
+static uint16_t *WctoUCS2 (const wchar_t *text, Cardinal *num_bytes) {
+  return UTF32toUCS2((const uint32_t *)text, num_bytes);
 }
 
 // Convert Wc to Mb.  num_bytes is updated as applicable.  Caller is
