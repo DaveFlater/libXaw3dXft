@@ -1356,8 +1356,6 @@ Xaw oddities (inherited by Xaw3dXft):
 - The international resource and callbacks list that logically belong to
   SmeBSB are instead placed in a vacuous superclass, Sme.  The SmeLine
   subclass has no use for them.
-- Most widgets have pointerColor and pointerColorBackground resources that
-  they inherit from Simple, but these resources are completely unused.
 - Xaw implemented conversions between Mb and Wc using the esoteric Xlib
   functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
   XwcTextPropertyToTextList.  These conversions can be done more obviously

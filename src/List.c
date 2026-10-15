@@ -88,7 +88,7 @@ static char defaultTranslations[] =
 static XtResource resources[] = {
     {XtNforeground, XtCForeground, XtRPixel, sizeof(Pixel),
 	offset(list.foreground), XtRString, XtDefaultForeground},
-    {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),   // unused
+    {XtNcursor, XtCCursor, XtRCursor, sizeof(Cursor),
        offset(simple.cursor), XtRString, "left_ptr"},
     {XtNfont,  XtCFont, XtRFontStruct, sizeof(XFontStruct *),
 	offset(list.font),XtRString, XtDefaultFont},
