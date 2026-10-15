@@ -23,6 +23,7 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_REQUIRE_CPP
 LT_INIT
 AC_C_BIGENDIAN
+AC_TYPE_INTPTR_T
 
 # [Unhelpful X.Org boilerplate deleted]
 # https://www.x.org/wiki/NewModuleGuidelines/ recommends some boilerplate
@@ -35,8 +36,16 @@ AC_C_BIGENDIAN
 # PKG_CHECK_MODULES is a pkg-config thing.  Testable modules are just
 # whatever has a .pc file in PKG_CONFIG_PATH.  See man pkg-config.
 PKG_CHECK_MODULES(X11, [xproto x11 xt xmu xext xft])
+
+# Short form for headers that include their prerequisites
 AC_CHECK_HEADERS_ONCE([uchar.h])
-AC_TYPE_INTPTR_T
+
+# Long form for headers that don't
+AC_CHECK_HEADER([X11/Xmu/Editres.h],
+  [AC_DEFINE([HAVE_X11_XMU_EDITRES_H], [1],
+             [Define to 1 if you have the <X11/Xmu/Editres.h> header file.])],
+  [],
+  [#include <X11/Intrinsic.h>])
 
 AC_ARG_ENABLE([arrow-scrollbars],
   [AS_HELP_STRING([--enable-arrow-scrollbars], [enable arrow scrollbars (default: yes)])],

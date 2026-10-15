@@ -46,9 +46,6 @@ SOFTWARE.
 
 ******************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 /*
  * Portions Copyright (c) 1996 Alfredo Kojima
  * Rights, permissions, and disclaimer per the above X Consortium license.
@@ -62,6 +59,9 @@ SOFTWARE.
 
 /* Make sure all wm properties can make it out of the resource manager */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <stdio.h>
 #include <X11/IntrinsicP.h>
 #include <X11/ShellP.h>
@@ -69,13 +69,20 @@ SOFTWARE.
 #include <X11/Xmu/Atoms.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/Drawing.h>
-#include <X11/Xmu/Editres.h>
 #include <X11/Xmu/ExtAgent.h>
 #include <X11/xpm.h>
 #include <X11/Xaw3dXft/VendorEP.h>
 #include <X11/Xaw3dXft/StringDefs.h>
 #include <X11/Xaw3dXft/Xaw3dP.h>
 #include <X11/Xaw3dXft/XawImP.h>
+
+// macOS is missing Editres.h (X11R5) but it has the function.
+#ifdef HAVE_X11_XMU_EDITRES_H
+#include <X11/Xmu/Editres.h>
+#else
+extern void _XEditResCheckMessages (Widget w, XtPointer data, XEvent *event,
+  Boolean *cont);
+#endif
 
 static XtResource resources[] = {
   {XtNinput, XtCInput, XtRBool, sizeof(Bool),
