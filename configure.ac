@@ -35,8 +35,7 @@ AC_C_BIGENDIAN
 # PKG_CHECK_MODULES is a pkg-config thing.  Testable modules are just
 # whatever has a .pc file in PKG_CONFIG_PATH.  See man pkg-config.
 PKG_CHECK_MODULES(X11, [xproto x11 xt xmu xext xft])
-AC_CHECK_HEADERS([wctype.h wchar.h widec.h])
-AC_CHECK_FUNCS([iswspace])
+AC_CHECK_HEADERS_ONCE([uchar.h])
 AC_TYPE_INTPTR_T
 
 AC_ARG_ENABLE([arrow-scrollbars],

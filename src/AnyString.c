@@ -18,11 +18,15 @@ X11 license (as per the historical licenses that the package inherits)
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
-#include <uchar.h>
 #include <wchar.h>
 #include <X11/Xaw3dXft/AnyStringP.h>
 
 // For the RULEs, see AnyStringP.h.
+
+// macOS is missing uchar.h (C11).  We'll use mbrtoc32 if we have it.
+#ifdef HAVE_UCHAR_H
+#include <uchar.h>
+#endif
 
 // Autoconf test AC_C_BIGENDIAN defines or undefines WORDS_BIGENDIAN in
 // config.h
@@ -170,7 +174,9 @@ typedef uint8_t byte;
 
 static_assert(sizeof(XChar2b) == 2);
 static_assert(sizeof(wchar_t) == 4);
+#ifdef HAVE_UCHAR_H
 static_assert(sizeof(char32_t) == 4);
+#endif
 
 // ---- Basics ----
 
@@ -557,7 +563,12 @@ static uint32_t *MbtoUTF32 (const char *text, Cardinal *num_bytes) {
   mbstate_t state = {0};
   Boolean done = False;
   while (!done && p_in < end) {
-    size_t rc = mbrtoc32(p_out, p_in, end - p_in, &state);
+    size_t rc =
+      #ifdef HAVE_UCHAR_H
+        mbrtoc32(p_out, p_in, end - p_in, &state);
+      #else
+        mbrtowc(p_out, p_in, end - p_in, &state);
+      #endif
     switch (rc) {
     case 0:
       // The character converted and stored was the NUL character.
