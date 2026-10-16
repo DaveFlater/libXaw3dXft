@@ -325,13 +325,12 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
     The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
     window's border width to 0 after the fact and then artificially drew a
-    black border.  In Xaw3dXft v2 I removed that hack and set border width
-    to 0 here.
+    black border.  In Xaw3dXft v2 I removed that hack and set border width to
+    0 here.
 
-    The only two widgets with border_hack code were Tip and SimpleMenu.
-    Tip is the only widget directly creating a child of the root window
-    using XCreateWindow.  SimpleMenu is the only widget inheriting from
-    Shell.
+    The only two widgets with border_hack code were Tip and SimpleMenu.  The
+    common factor is they both pop up independent windows instead of fitting
+    within a composite parent.
   */
   smw->core.border_width = 0;
 

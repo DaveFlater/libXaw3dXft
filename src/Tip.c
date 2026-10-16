@@ -346,9 +346,8 @@ XawTipRealize(Widget w, Mask *mask, XSetWindowAttributes *attr)
       to 0 here.
 
       The only two widgets with border_hack code were Tip and SimpleMenu.
-      Tip is the only widget directly creating a child of the root window
-      using XCreateWindow.  SimpleMenu is the only widget inheriting from
-      Shell.
+      The common factor is they both pop up independent windows instead of
+      fitting within a composite parent.
     */
 
     XtWindow(w) = XCreateWindow(DisplayOfScreen(XtScreen(w)),
