@@ -30,6 +30,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef _Xaw3dP_h
 #define _Xaw3dP_h
 
+#include <assert.h>
 #include <X11/Xaw3dXft/Xaw3d.h>
 #include <X11/IntrinsicP.h>
 

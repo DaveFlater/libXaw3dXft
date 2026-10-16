@@ -55,6 +55,7 @@ SOFTWARE.
  *
  ****************************************************************/
 
+#include <assert.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xfuncproto.h>
 #include <X11/Xaw3dXft/StringDefs.h>
