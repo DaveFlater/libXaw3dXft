@@ -90,7 +90,7 @@ Disabled:  ![Scrollbar stippled with only black and white pixels](README_pics/gr
 ## <a name="linking"></a>Linking with libXaw3dXft
 
 To link with libXaw3dXft, an application using the GNU autotools build system
-would include this in configure.ac:
+would include at least this in configure.ac:
 
     PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft])
 
@@ -98,6 +98,10 @@ And this in Makefile.am:
 
     AM_CFLAGS = $(XAW3DXFT_CFLAGS)
     LDADD     = $(XAW3DXFT_LIBS)
+
+Add more dependencies to PKG_CHECK_MODULES if the application needs them:
+
+    PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft xpm xft])
 
 
 ## <a name="version"></a>Version identification
