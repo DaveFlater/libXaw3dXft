@@ -1190,9 +1190,6 @@ void _XawTextVScroll(TextWidget ctx, int n) {
   if (abs(n) > ctx->text.lt.lines)
     n = (n > 0) ? ctx->text.lt.lines : -ctx->text.lt.lines;
 
-  // HScroll does _XawTextPrepareToUpdate ... _XawTextExecuteUpdate.
-  // VScroll doesn't.  What does this mean‽
-
   const Dimension corewidth = ctx->core.width,
                  coreheight = ctx->core.height;
   // Get rid of degenerate cases.
@@ -1209,6 +1206,7 @@ void _XawTextVScroll(TextWidget ctx, int n) {
   if (ctx->text.res_margins.right > 0)
     scrollWidth += ctx->text.res_margins.right;
 
+  _XawTextPrepareToUpdate(ctx);
   if (n > 0) {
     if ( IsValidLine(ctx, n) )
       top = Min(lt->info[n].position, ctx->text.lastPos);
@@ -1278,6 +1276,9 @@ void _XawTextVScroll(TextWidget ctx, int n) {
     else if (lt->top != old_top)       // Unless it's a no-op,
       DisplayTextWindow((Widget)ctx);  // redraw everything
   }
+  _XawTextExecuteUpdate(ctx);
+
+  // FIXME this text position makes no sense:
   Arg list[1] = {{XtNinsertPosition, ctx->text.lt.top+ctx->text.lt.lines}};
   _XawImSetValues((Widget)ctx, list, 1);
 }
