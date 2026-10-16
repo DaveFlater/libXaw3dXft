@@ -8,6 +8,7 @@
 #undef unput
 #endif
 
+#include    <assert.h>
 #include    <X11/Xlib.h>
 #include    <X11/Xresource.h>
 #include    <X11/IntrinsicP.h>
@@ -28,7 +29,7 @@ static char *yysourcebase, *yysource;
 #define unput(c)    (--yysource)
 #else
 #include <string.h>
-static void my_yyinput(char *buf, int *result, int max_size);
+static void my_yyinput (char *buf, int *result, int max_size);
 #define YY_INPUT(buf, res, max) my_yyinput(buf, &(res), max)
 #endif
 
@@ -117,13 +118,15 @@ void yyerror(char *s)
 }
 
 #ifdef FLEX_SCANNER
-static void
-my_yyinput(char *buf, int *result, int max_size)
-{
-    int size = max_size < strlen(yysource) ? max_size : strlen(yysource);
-
-    strncpy(buf, yysource, size);
-    yysource += size;
-    *result = size;
+// In laylex.c as generated, YY_INPUT is called exactly once.  The signature
+// here matches the types of the arguments passed there.
+static void my_yyinput (char *buf, int *result, int max_size) {
+  assert(buf && result && max_size >= 0);
+  const size_t srclen = strlen(yysource),
+               maxlen = (size_t)max_size,
+                 size = maxlen < srclen ? maxlen : srclen;
+  (void)strncpy(buf, yysource, size);
+  yysource += size;
+  *result = (int)size;
 }
 #endif
