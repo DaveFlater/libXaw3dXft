@@ -430,7 +430,6 @@ static void MoveLine (TextWidget ctx, XEvent *event, XawTextScanDirection dir)
                            (Position)ctx->text.hscroll_offset;
 
   StartAction(ctx, event);
-  XawTextUnsetSelection((Widget)ctx);
   if (dir == XawsdLeft)
     mult = (mult == 0 ? 5 : mult + 1);
 
