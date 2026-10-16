@@ -536,10 +536,14 @@ static XChar2b *UTF32toChar2b (const uint32_t *text, Cardinal *num_bytes) {
   nothing to do with surrogate pairs.  [2] cites "Big5-HKSCS needing to
   output 2 different UTF-32 code points for some of its input characters (4
   specific input sequences of them result in two UTF-32 code point outputs,
-  to be precise)."  Those four examples can be found on page 2-55 of [3].
-  Their translations consist of a base character followed by a combining
-  diacritic (U+00CA U+0304, U+00CA U+030C, U+00EA U+0304, and U+00EA U+030C).
-  Ê̄Ê̌ê̄ê̌
+  to be precise)."  Those four characters in the Hong Kong Supplementary
+  Character Set (HKSCS) are H-8862, H-8864, H-88A3, and H-88A5, which
+  translate to the Unicode pairs U+00CA U+0304, U+00CA U+030C, U+00EA U+0304,
+  and U+00EA U+030C, respectively [3].  Each pair consists of a Latin-1
+  letter followed by a combining diacritic:  Ê̄Ê̌ê̄ê̌.  Equivalent precomposed
+  characters are not included in Unicode 18.  Previous versions of the HKSCS
+  specification assigned them the Private Use Area code points U+F325,
+  U+F327, U+F344, and U+F346 [4]:  
 
   In practice:
   GNU libc implements mbrtoc32 by calling mbrtowc and never returns −3.
@@ -549,8 +553,11 @@ static XChar2b *UTF32toChar2b (const uint32_t *text, Cardinal *num_bytes) {
       https://en.cppreference.com/c/string/multibyte/mbrtoc32
   [2] Restartable Functions for Efficient Character Conversions
       https://www.open-std.org/JTC1/SC22/WG14/www/docs/n3366.htm
-  [3] Hong Kong Supplementary Character Set — 2004
-      https://www.ccli.gov.hk/doc/e_hkscs_2004.pdf
+  [3] Hong Kong Supplementary Character Set — 2016
+      https://www.ccli.gov.hk/doc/e_hkscs_2016.pdf
+      See terms of use at https://www.ccli.gov.hk/en/download/terms01.html
+  [4] Hong Kong Supplementary Character Set — 2008
+      https://www.ccli.gov.hk/doc/e_hkscs_2008.pdf
 */
 static uint32_t *MbtoUTF32 (const char *text, Cardinal *num_bytes) {
   assert(text && num_bytes);
