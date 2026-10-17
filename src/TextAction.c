@@ -397,16 +397,25 @@ MoveBackwardWord(Widget w, XEvent *event, String *p, Cardinal *n)
   Move((TextWidget) w, event, XawsdLeft, XawstWhiteSpace, FALSE);
 }
 
-static void
-MoveForwardParagraph(Widget w, XEvent *event, String *p, Cardinal *n)
-{
-  Move((TextWidget) w, event, XawsdRight, XawstParagraph, FALSE);
+static void MoveForwardParagraph (Widget w, XEvent *event, String *p,
+Cardinal *n) {
+  TextWidget ctx = (TextWidget)w;
+  // Get to the end of this paragraph
+  Move(ctx, event, XawsdRight, XawstParagraph, False);
+  // Advance to the start of the blank line, if applicable
+  // (No effect at the end of text)
+  Move(ctx, event, XawsdRight, XawstPositions, True);
 }
 
-static void
-MoveBackwardParagraph(Widget w, XEvent *event, String *p, Cardinal *n)
-{
-  Move((TextWidget) w, event, XawsdLeft, XawstParagraph, FALSE);
+static void MoveBackwardParagraph (Widget w, XEvent *event, String *p,
+Cardinal *n) {
+  TextWidget ctx = (TextWidget)w;
+  // Get to the end of the previous paragraph or the start of the text
+  Move(ctx, event, XawsdLeft, XawstParagraph, True);
+  // Advance to the start of the blank line, if applicable.  This skips line
+  // 1 if the text begins with \n\n but is correct in the normal case.
+  if (ctx->text.insertPos > 0)
+    Move(ctx, event, XawsdRight, XawstPositions, True);
 }
 
 static void
