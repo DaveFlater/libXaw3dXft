@@ -75,6 +75,7 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/AsciiSink.h>
 #include <X11/Xaw3dXft/Cardinals.h>
+#include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/MultiSinkP.h>
 #include <X11/Xaw3dXft/Scrollbar.h>
 #include <X11/Xaw3dXft/TextP.h>
@@ -2376,12 +2377,10 @@ ExtendSelection (TextWidget ctx, XawTextPosition pos, Boolean motion)
  * Clear the window to background color.
  */
 
-static void
-ClearWindow (Widget w)
-{
-  TextWidget ctx = (TextWidget) w;
+static void ClearWindow (Widget w) {
+  TextWidget ctx = (TextWidget)w;
+  assert(ctx->text.old_insert >= 0); // Not outside a transaction
   int s = ctx->threeD.shadow_width;
-
   if (XtIsRealized(w)) {
     // This is clearing everything except the shadows.
     // Scrollbars gone.
@@ -2411,7 +2410,8 @@ void _XawTextClearAndCenterDisplay(TextWidget ctx) {
  */
 
 static void DisplayTextWindow (Widget w) {
-  TextWidget ctx = (TextWidget) w;
+  TextWidget ctx = (TextWidget)w;
+  assert(ctx->text.old_insert >= 0); // Not outside a transaction
   ClearWindow(w);
   _XawTextBuildLineTable(ctx, ctx->text.lt.top, FALSE);
   _XawTextNeedsUpdating(ctx, zeroPosition, ctx->text.lastPos);
@@ -2575,21 +2575,6 @@ _XawTextAlterSelection (TextWidget ctx, XawTextSelectionMode mode,
 			 params, *num_params);
 }
 
-/*	Function Name: RectanglesOverlap
- *	Description: Returns TRUE if two rectangles overlap.
- *	Arguments: rect1, rect2 - the two rectangles to check.
- *	Returns: TRUE iff these rectangles overlap.
- */
-
-static Boolean
-RectanglesOverlap(XRectangle *rect1, XRectangle *rect2)
-{
-  return ( (rect1->x < rect2->x + (short) rect2->width) &&
-	   (rect2->x < rect1->x + (short) rect1->width) &&
-	   (rect1->y < rect2->y + (short) rect2->height) &&
-	   (rect2->y < rect1->y + (short) rect1->height) );
-}
-
 /*	Function Name: UpdateTextInRectangle.
  *	Description: Updates the text in a rectangle.
  *	Arguments: ctx - the text widget.
@@ -2621,44 +2606,65 @@ static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
   Boolean need_to_draw;
 
   if (event->type == Expose) {
-      expose.x = event->xexpose.x;
-      expose.y = event->xexpose.y;
-      expose.width = event->xexpose.width;
-      expose.height = event->xexpose.height;
+    expose.x = event->xexpose.x;
+    expose.y = event->xexpose.y;
+    expose.width = event->xexpose.width;
+    expose.height = event->xexpose.height;
   }
   else if (event->type == GraphicsExpose) {
-      expose.x = event->xgraphicsexpose.x;
-      expose.y = event->xgraphicsexpose.y;
-      expose.width = event->xgraphicsexpose.width;
-      expose.height = event->xgraphicsexpose.height;
+    expose.x = event->xgraphicsexpose.x;
+    expose.y = event->xgraphicsexpose.y;
+    expose.width = event->xgraphicsexpose.width;
+    expose.height = event->xgraphicsexpose.height;
   }
   else { /* No Expose */
-      PopCopyQueue(ctx);
-      return;			/* no more processing necessary. */
+    PopCopyQueue(ctx);
+    return;			/* no more processing necessary. */
   }
 
   need_to_draw = TranslateExposeRegion(ctx, &expose);
-  if ((event->type == GraphicsExpose) && (event->xgraphicsexpose.count == 0))
-      PopCopyQueue(ctx);
+  if (event->type == GraphicsExpose && event->xgraphicsexpose.count == 0)
+    PopCopyQueue(ctx);
 
   if (!need_to_draw)
-      return;			/* don't draw if we don't need to. */
+    return;			/* don't draw if we don't need to. */
+
+  // - If the cursor was off or is outside of the exposed region, nothing
+  //   needs doing.
+  // - If the cursor was on and is inside of the exposed region, it is now
+  //   off.  The state must be fixed.
+  // - If the cursor was on and otherwise overlaps the exposed region, clear
+  //   the site and redraw the text therein.
+  Bool worstcase = False;
+  TextSinkObject sink = (TextSinkObject)ctx->text.sink;
+  if (sink->text_sink.laststate == XawisOn) {
+    XawTextSinkGetCursorBounds((Widget)sink, &cursor);
+    const int8_t situation = Xaw3dXftCompareRectangles(&cursor, &expose);
+    switch (situation) {
+    case -1: // Non-overlapping or the intersection has zero area
+      break;
+    case 1: // Cursor is fully contained in the expose area
+    case 3: // Or they're the same
+      sink->text_sink.laststate = XawisOff;
+      break;
+    default: // Otherwise they overlap in a troublesome way
+      worstcase = True;
+    }
+  }
 
   _XawTextPrepareToUpdate(ctx);
   UpdateTextInRectangle(ctx, &expose);
-  XawTextSinkGetCursorBounds(ctx->text.sink, &cursor);
-  if (RectanglesOverlap(&cursor, &expose)) {
-      // I guess it's a problem when the cursor is on the edge of the box
-      SinkClearToBG(ctx->text.sink, (Position) cursor.x, (Position) cursor.y,
-		    (Dimension) cursor.width, (Dimension) cursor.height);
-      UpdateTextInRectangle(ctx, &cursor);
+  if (worstcase) {
+    SinkClearToBG((Widget)sink, cursor.x, cursor.y, cursor.width,
+      cursor.height);
+    UpdateTextInRectangle(ctx, &cursor);
   }
-  _XawTextExecuteUpdate(ctx);
-
-  // Draw the shadows.
+  // Draw the shadows, which can be overlapped by the cursor if margins are
+  // zero.  The vbar stays on top of the cursor.
   TextWidgetClass twclass = (TextWidgetClass)XtClass(ctx);
   (*twclass->threeD_class.shadowdraw)(w, event, region, ctx->threeD.relief,
     True);
+  _XawTextExecuteUpdate(ctx);
 }
 
 /*
@@ -3278,16 +3284,16 @@ XawTextInvalidate(Widget w, XawTextPosition from, XawTextPosition to)
   _XawTextExecuteUpdate(ctx);
 }
 
-void
-XawTextDisableRedisplay(Widget w)
-{
-  ((TextWidget) w)->text.update_disabled = True;
-  _XawTextPrepareToUpdate( (TextWidget) w);
+// This is never called outside of AsciiText Initialize, but it is in the
+// documented API.
+void XawTextDisableRedisplay (Widget w) {
+  ((TextWidget)w)->text.update_disabled = True;
+  _XawTextPrepareToUpdate((TextWidget)w);
 }
 
-void
-XawTextEnableRedisplay(Widget w)
-{
+// This is never called outside of AsciiText Initialize, but it is in the
+// documented API.
+void XawTextEnableRedisplay (Widget w) {
   TextWidget ctx = (TextWidget)w;
   XawTextPosition lastPos;
 
@@ -3301,7 +3307,7 @@ XawTextEnableRedisplay(Widget w)
     ctx->text.s.left = ctx->text.s.right = 0;
 
   _XawTextBuildLineTable(ctx, ctx->text.lt.top, TRUE);
-  if (XtIsRealized(w))
+  if (XtIsRealized(w)) // Not applicable to AsciiText Initialize
     DisplayTextWindow(w);
   _XawTextExecuteUpdate(ctx);
 }

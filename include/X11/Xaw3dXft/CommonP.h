@@ -71,3 +71,12 @@ extern void Xaw3dXftFixDefaultEncoding (ArgList args, Cardinal num_args,
 // the inputs.
 extern void Xaw3dXftCombineClips (const XRectangle *a, const XRectangle *b,
   XRectangle *out);
+
+// Determine the relation of two rectangles.
+// -1  Non-overlapping or the intersection has zero area
+//  0  Overlapping, but neither is contained in the other
+//  1  a is fully contained in b
+//  2  b is fully contained in a
+//  3  a == b
+extern int8_t Xaw3dXftCompareRectangles (const XRectangle *a,
+  const XRectangle *b);

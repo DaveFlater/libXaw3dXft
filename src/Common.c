@@ -284,3 +284,22 @@ XRectangle *out) {
   } else
     *out = (XRectangle){0, 0, 0, 0};
 }
+
+int8_t Xaw3dXftCompareRectangles (const XRectangle *a, const XRectangle *b) {
+  assert(a && b);
+  const Position ax2 = a->x + a->width,
+                 ay2 = a->y + a->height,
+                 bx2 = b->x + b->width,
+                 by2 = b->y + b->height;
+  if (a->x < bx2 && b->x < ax2 && a->y < by2 && b->y < ay2 &&
+      a->width && a->height && b->width && b->height) {
+    if (a->x == b->x && a->y == b->y && ax2 == bx2 && ay2 == by2)
+      return 3;
+    if (a->x >= b->x && ax2 <= bx2 && a->y >= b->y && ay2 <= by2)
+      return 1;
+    if (b->x >= a->x && bx2 <= ax2 && b->y >= a->y && by2 <= ay2)
+      return 2;
+    return 0;
+  }
+  return -1;
+}
