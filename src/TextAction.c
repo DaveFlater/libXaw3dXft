@@ -118,10 +118,7 @@ ParameterError(Widget w, String param)
     XBell( XtDisplay( w ), 50 );
 }
 
-static void
-StartAction(TextWidget ctx, XEvent *event)
-{
-  _XawTextPrepareToUpdate(ctx);
+static void NoteEventTime (TextWidget ctx, XEvent *event) {
   if (event != NULL) {
     switch (event->type) {
     case ButtonPress:
@@ -140,6 +137,11 @@ StartAction(TextWidget ctx, XEvent *event)
       ctx->text.time = event->xcrossing.time;
     }
   }
+}
+
+static void StartAction (TextWidget ctx, XEvent *event) {
+  _XawTextPrepareToUpdate(ctx);
+  NoteEventTime(ctx, event);
 }
 
 static void
@@ -348,12 +350,11 @@ Cardinal num_params) {
   }
 }
 
-static void
-InsertSelection(Widget w, XEvent *event, String *params, Cardinal *num_params)
-{
-  StartAction((TextWidget)w, event); /* Get Time. */
+static void InsertSelection (Widget w, XEvent *event, String *params,
+Cardinal *num_params) {
+  // Transaction is down in _SelectionReceived
+  NoteEventTime((TextWidget)w, event);
   GetSelection(w, ((TextWidget)w)->text.time, params, *num_params);
-  EndAction((TextWidget)w);
 }
 
 /************************************************************

@@ -1206,7 +1206,9 @@ void _XawTextVScroll(TextWidget ctx, int n) {
   if (ctx->text.res_margins.right > 0)
     scrollWidth += ctx->text.res_margins.right;
 
-  _XawTextPrepareToUpdate(ctx);
+  const Boolean haveOuterTransaction = (ctx->text.old_insert >= 0);
+  if (!haveOuterTransaction)
+    _XawTextPrepareToUpdate(ctx);
   if (n > 0) {
     if ( IsValidLine(ctx, n) )
       top = Min(lt->info[n].position, ctx->text.lastPos);
@@ -1276,7 +1278,8 @@ void _XawTextVScroll(TextWidget ctx, int n) {
     else if (lt->top != old_top)       // Unless it's a no-op,
       DisplayTextWindow((Widget)ctx);  // redraw everything
   }
-  _XawTextExecuteUpdate(ctx);
+  if (!haveOuterTransaction)
+    _XawTextExecuteUpdate(ctx);
 
   // FIXME this text position makes no sense:
   Arg list[1] = {{XtNinsertPosition, ctx->text.lt.top+ctx->text.lt.lines}};
@@ -1742,7 +1745,9 @@ LoseSelection(Widget w, Atom *selection)
   int i;
   XawTextSelectionSalt	*salt, *prevSalt, *nextSalt;
 
-  _XawTextPrepareToUpdate(ctx);
+  const Boolean haveOuterTransaction = (ctx->text.old_insert >= 0);
+  if (!haveOuterTransaction)
+    _XawTextPrepareToUpdate(ctx);
 
   atomP = ctx->text.s.selections;
   for (i = 0 ; i < ctx->text.s.atom_count; i++, atomP++)
@@ -1770,7 +1775,7 @@ LoseSelection(Widget w, Atom *selection)
   if (ctx->text.s.atom_count == 0)
     ModifySelection(ctx, ctx->text.insertPos, ctx->text.insertPos);
 
-  if (ctx->text.old_insert >= 0) /* Update in progress. */
+  if (!haveOuterTransaction)
     _XawTextExecuteUpdate(ctx);
 
   prevSalt = 0;
@@ -2660,15 +2665,13 @@ static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
  * This routine does all setup required to synchronize batched screen updates
  */
 
-void
-_XawTextPrepareToUpdate(TextWidget ctx)
-{
-  if (ctx->text.old_insert < 0) {
-    InsertCursor((Widget)ctx, XawisOff);
-    ctx->text.numranges = 0;
-    ctx->text.showposition = FALSE;
-    ctx->text.old_insert = ctx->text.insertPos;
-  }
+void _XawTextPrepareToUpdate(TextWidget ctx) {
+  // Every attempt at a nested transaction is a fault.
+  assert(ctx->text.old_insert < 0);
+  InsertCursor((Widget)ctx, XawisOff);
+  ctx->text.numranges = 0;
+  ctx->text.showposition = False;
+  ctx->text.old_insert = ctx->text.insertPos;
 }
 
 /*
@@ -2811,16 +2814,18 @@ void _XawTextShowPosition(TextWidget ctx) {
  * This routine causes all batched screen updates to be performed
  */
 
-void _XawTextExecuteUpdate(TextWidget ctx) {
-  if ( ctx->text.update_disabled || (ctx->text.old_insert < 0) )
-    return;
-  if((ctx->text.old_insert != ctx->text.insertPos) || (ctx->text.showposition))
-    _XawTextShowPosition(ctx);
-  FlushUpdate(ctx);
-  InsertCursor((Widget)ctx, XawisOn);
+void _XawTextExecuteUpdate (TextWidget ctx) {
+  // Every attempt at a nested transaction is a fault.
+  assert(ctx->text.old_insert >= 0);
+  if (!ctx->text.update_disabled) {
+    if (ctx->text.old_insert != ctx->text.insertPos ||
+        ctx->text.showposition)
+      _XawTextShowPosition(ctx);
+    FlushUpdate(ctx);
+    InsertCursor((Widget)ctx, XawisOn);
+  }
   ctx->text.old_insert = -1;
 }
-
 
 static void TextDestroy (Widget w) {
   TextWidget ctx = (TextWidget)w;
