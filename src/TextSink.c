@@ -278,8 +278,8 @@ XawTextInsertState state) {
 	  0, 0, (unsigned int) rect.width, (unsigned int) rect.height,
 	  (int) rect.x, (int) rect.y, 1);
       }
+      sink->text_sink.laststate = state;
     }
-    sink->text_sink.laststate = state;
   } else
     sink->text_sink.laststate = XawisOff; // Not realized
 }

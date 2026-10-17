@@ -2641,14 +2641,14 @@ static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
     XawTextSinkGetCursorBounds((Widget)sink, &cursor);
     const int8_t situation = Xaw3dXftCompareRectangles(&cursor, &expose);
     switch (situation) {
-    case -1: // Non-overlapping or the intersection has zero area
-      break;
+    case 0: // Cursor crosses the expose boundary
+    case 2: // Expose area is fully contained in the cursor
+      worstcase = True;
+      // Fall through because there's no point in having PrepareToUpdate
+      // toggle the cursor.
     case 1: // Cursor is fully contained in the expose area
     case 3: // Or they're the same
       sink->text_sink.laststate = XawisOff;
-      break;
-    default: // Otherwise they overlap in a troublesome way
-      worstcase = True;
     }
   }
 
