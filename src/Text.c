@@ -2635,7 +2635,7 @@ static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
   //   off.  The state must be fixed.
   // - If the cursor was on and otherwise overlaps the exposed region, clear
   //   the site and redraw the text therein.
-  Bool worstcase = False;
+  Boolean worstcase = False;
   TextSinkObject sink = (TextSinkObject)ctx->text.sink;
   if (sink->text_sink.laststate == XawisOn) {
     XawTextSinkGetCursorBounds((Widget)sink, &cursor);
