@@ -2033,14 +2033,24 @@ _XawTextReplace (TextWidget ctx, XawTextPosition pos1, XawTextPosition pos2,
   }
 
   /*
-   * Now process the line table and fixup in case edits caused
-   * changes in line breaks. If we are breaking on word boundaries,
-   * this code checks for moving words to and from lines.
+   * Now process the line table and fixup in case edits caused changes in
+   * line breaks.  If we are breaking on word boundaries, this code checks
+   * for moving words to and from lines.
    */
-
   if (IsPositionVisible(ctx, updateFrom)) {
-    updateTo = _BuildLineTable(ctx,
-			       ctx->text.lt.info[line1].position, pos1, line1);
+    // updateFrom is the start of the word that pos1 was in.
+    // line1 is the original line of updateFrom.
+    // Because this line table rebuild is starting at the beginning of the
+    // original line, it will never unwrap a shortened word back to the
+    // previous line.  But scroll down and come back, and you find that it
+    // happened while you weren't looking.
+    updateTo = _BuildLineTable(ctx, ctx->text.lt.info[line1].position, pos1,
+      line1);
+    // If updateFrom got wrapped to the next line, the end of the previous
+    // line still needs to be cleared.
+    const int line2 = LineForPosition(ctx, updateFrom);
+    if (line1 < line2)
+      updateFrom = ctx->text.lt.info[line2].position - 1;
     _XawTextNeedsUpdating(ctx, updateFrom, updateTo);
   }
 
