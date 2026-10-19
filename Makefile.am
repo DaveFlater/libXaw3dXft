@@ -182,12 +182,6 @@ dist_olddocsxaw_DATA = \
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = xaw3dxft.pc
 
-# Backward compatibility
-install-data-hook:
-	if [ -e "$(DESTDIR)$(xaw3dincludedir)" -a ! -e "$(DESTDIR)$(includedir)/X11/Xaw3dxft" ]; then ln -s Xaw3dXft "$(DESTDIR)$(includedir)/X11/Xaw3dxft"; fi
-uninstall-hook:
-	rm -f "$(DESTDIR)$(includedir)/X11/Xaw3dxft"
-
 # -version-info current:revision:age
 
 # Shared lib versions are almost, but not quite, completely unlike

@@ -1189,25 +1189,30 @@ set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | scroll_steps = value
 
 Summary of backward-incompatible changes:
 
-**Renamed pkg-config file to xaw3dxft.pc**
+**Improved naming consistency**
 
-Dependents of libXaw3dXft that use pkg-config to find the library must look
-for xaw3dxft where previously they looked for libxaw3dxft.  For example,
-in configure.ac:
+In general, the name is styled as [lib]Xaw3dXft.  The pkg-config file is an
+exception:  for consistency with Xaw and Xaw3d, which use xaw7.pc and
+xaw3d.pc respectively, it's xaw3dxft.pc.  The following table shows the
+resulting changes.
 
-    PKG_CHECK_MODULES(XAW3DXFT, [xaw3dxft])
+Context                 | 1.x                   | 2.x
+:---                    | :---                  | :---
+pkg-config package name | libxaw3dxft           | xaw3dxft
+include path            | X11/Xaw3dxft          | X11/Xaw3dXft
+docs path               | share/doc/libxaw3dxft | share/doc/libXaw3dXft
+library file name       | libXaw3dxft (.a, .so) | libXaw3dXft (.a, .so)
 
-This renaming was for consistency with Xaw and Xaw3d, which use xaw7.pc and
-xaw3d.pc respectively.
+Those name changes fortuitously allow versions 1.x and 2.x of the library
+to coexist without conflict.  However, all references to the old names must
+be updated to use the new library:
 
-**Harmonized spelling to [lib]Xaw3dXft elsewhere**
-
-- The library changes from libXaw3dxft to libXaw3dXft (.a, .so).
-  Dependents using pkg-config will get this change automatically.  Others
-  will need to modify their link lines.
-- The include path changes from X11/Xaw3dxft to X11/Xaw3dXft.  An install
-  hook creates a symbolic link from the old name.
-- The docs move from share/doc/libxaw3dxft to share/doc/libXaw3dXft.
+Context                 | Where relevant
+:---                    | :---
+pkg-config package name | configure.ac PKG_CHECK_MODULES
+include path            | Source code #includes; CPPFLAGS
+docs path               | Doesn't matter
+library file name       | If not using pkg-config, Makefile LIBS
 
 **Deleted the --enable-internationalization and --enable-multiplane-bitmaps configure options**
 
