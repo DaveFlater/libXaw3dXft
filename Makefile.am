@@ -1,13 +1,13 @@
-# X11_CFLAGS, XPM_CFLAGS, X11_LIBS, and XPM_LIBS come from the two
-# invocations of PKG_CHECK_MODULES in configure.ac.  All of the flags for all
-# of the modules listed in an invocation are piled into the _CFLAGS and _LIBS
-# of the prefix specified as the first argument.
+# X11_CFLAGS and X11_LIBS come from the invocation of PKG_CHECK_MODULES in
+# configure.ac.  All of the flags for all of the modules listed in an
+# invocation are piled into the _CFLAGS and _LIBS of the prefix specified as
+# the first argument.
 AM_YFLAGS = -d -p LayYY
-AM_CFLAGS = $(X11_CFLAGS) $(XPM_CFLAGS)
+AM_CFLAGS = $(X11_CFLAGS)
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 ACLOCAL_AMFLAGS = -I m4
 lib_LTLIBRARIES = libXaw3dXft.la
-libXaw3dXft_la_LIBADD = $(X11_LIBS) $(XPM_LIBS)
+libXaw3dXft_la_LIBADD = $(X11_LIBS)
 docdir = $(datarootdir)/doc/libXaw3dXft
 
 libXaw3dXft_la_SOURCES = \
