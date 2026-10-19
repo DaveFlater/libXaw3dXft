@@ -34,22 +34,28 @@ Next release, v2.0  Dave Flater
   They are now permanently enabled.
 
   - Retired global struct Xaw3dXftData.
-  border_hack:  deleted (necessary workaround always on)
-  button_dashed:  use Command.highlightDashed resource
-  button_inverse:  deleted (button presses always get inverse)
-  default_font, default_fontname:  use xftFont resource
-  edit_delete_alternative:  use Text.editSelect resource
-  encoding:  use encoding resource
-  hilit_color:  use highlight resource
-  insensitive_twist:  deleted (all insensitive widgets are stippled)
-  menu_spacing:  use SmeBSB.vertSpace resource
-  multi_column_menu:  use SimpleMenu.multiColumn resource
-  no_hilit_reverse:  use highlightStyle resource
-  string_use_pixmap:  deleted (workaround not needed anymore)
-  text_bg_hilight:  use highlightStyle resource
-  text_bg_hilight_color:  use highlight resource
-  text_sb_right:  use Text.useRight resource
-  tip_background_color:  use Tip.background resource
+
+  Applications no longer do GET_XAW3DXFT_DATA and modify a global struct.
+  All features are now accessed through normal Xt widget resources.
+
+  1.x struct Xaw3dXftData field  | 2.x replacement
+  :----------------------------  | :--------------
+  border_hack                    | deleted (necessary workaround always on)
+  button_dashed                  | use Command.highlightDashed resource
+  button_inverse                 | deleted (button presses always get inverse)
+  default_font, default_fontname | use xftFont resource
+  edit_delete_alternative        | use Text.editSelect resource
+  encoding                       | use encoding resource
+  hilit_color                    | use highlight resource
+  insensitive_twist              | deleted (all insensitive widgets are stippled)
+  menu_spacing                   | use SmeBSB.vertSpace resource
+  multi_column_menu              | use SimpleMenu.multiColumn resource
+  no_hilit_reverse               | use highlightStyle resource
+  string_use_pixmap              | deleted (workaround not needed anymore)
+  text_bg_hilight                | use highlightStyle resource
+  text_bg_hilight_color          | use highlight resource
+  text_sb_right                  | use Text.useRight resource
+  tip_background_color           | use Tip.background resource
 
   - Changed signatures of semi-private functions.
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object

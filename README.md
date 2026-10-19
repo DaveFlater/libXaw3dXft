@@ -1220,22 +1220,27 @@ They are now permanently enabled.
 
 **Retired global struct Xaw3dXftData**
 
-border_hack:  deleted (necessary workaround always on)  
-button_dashed:  use Command.highlightDashed resource  
-button_inverse:  deleted (button presses always get inverse)  
-default_font, default_fontname:  use xftFont resource  
-encoding:  use encoding resource  
-edit_delete_alternative:  use Text.editSelect resource  
-hilit_color:  use highlight resource  
-menu_spacing:  use SmeBSB.vertSpace resource  
-multi_column_menu:  use SimpleMenu.multiColumn resource  
-no_hilit_reverse:  use highlightStyle resource  
-insensitive_twist:  deleted (all insensitive widgets are stippled)  
-string_use_pixmap:  deleted (workaround not needed anymore)  
-text_bg_hilight:  use highlightStyle resource  
-text_bg_hilight_color:  use highlight resource  
-text_sb_right:  use Text.useRight resource  
-tip_background_color:  use Tip.background resource
+Applications no longer do GET_XAW3DXFT_DATA and modify a global struct.
+All features are now accessed through normal Xt widget resources.
+
+1.x struct Xaw3dXftData field  | 2.x replacement
+:----------------------------  | :--------------
+border_hack                    | deleted (necessary workaround always on)
+button_dashed                  | use Command.highlightDashed resource
+button_inverse                 | deleted (button presses always get inverse)
+default_font, default_fontname | use xftFont resource
+edit_delete_alternative        | use Text.editSelect resource
+encoding                       | use encoding resource
+hilit_color                    | use highlight resource
+insensitive_twist              | deleted (all insensitive widgets are stippled)
+menu_spacing                   | use SmeBSB.vertSpace resource
+multi_column_menu              | use SimpleMenu.multiColumn resource
+no_hilit_reverse               | use highlightStyle resource
+string_use_pixmap              | deleted (workaround not needed anymore)
+text_bg_hilight                | use highlightStyle resource
+text_bg_hilight_color          | use highlight resource
+text_sb_right                  | use Text.useRight resource
+tip_background_color           | use Tip.background resource
 
 **Changed signatures of semi-private functions**
 
@@ -1357,20 +1362,21 @@ Xaw3dXft oddities:
   the horizontal scrollbar goes, it's a catch-22.  Either you need a
   horizontal scrollbar and don't have it or you have it and don't need it.
 
-Xaw oddities (inherited by Xaw3dXft):
+Xaw/Xaw3d oddities inherited by Xaw3dXft:
 
 - Label and SmeBSB have different options for pixmaps and text for no reason.
   Label can have a left pixmap but not a right one.  SmeBSB can have both
   left and right pixmaps but not a primary one that replaces the text.
+- The layout of lists and menus is completely different.
 - The international resource and callbacks list that logically belong to
   SmeBSB are instead placed in a vacuous superclass, Sme.  The SmeLine
   subclass has no use for them.
-- Xaw implemented conversions between Mb and Wc using the esoteric Xlib
-  functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
-  XwcTextPropertyToTextList.  These conversions can be done more obviously
-  using C library functions.
 - The search/replace/insert file actions of Text can be used recursively
   within the blanks of the pop-up dialogs that they launch.
+- Xaw implemented conversions between Mb and Wc using the esoteric Xlib
+  functions XwcTextListToTextProperty, XmbTextListToTextProperty, and
+  XwcTextPropertyToTextList.  Xaw3dXft uses the C library for these
+  conversions.
 
 "Internationalized" text support in Xlib:
 
