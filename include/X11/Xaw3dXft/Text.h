@@ -84,6 +84,10 @@ SOFTWARE.
 
 */
 
+/*
+  For a source of length n characters, text positions range from 0 to n and
+  are logically situated *between* the characters.
+*/
 typedef long XawTextPosition;
 
 typedef enum { XawtextScrollNever,

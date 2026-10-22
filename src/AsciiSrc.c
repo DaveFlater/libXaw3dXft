@@ -343,8 +343,8 @@ ReplaceText (Widget w, XawTextPosition startPos, XawTextPosition endPos,
  *	position - position to start scanning
  *	type	 - type of thing to scan for
  *	dir	 - direction to scan
- *		   count - which occurrence if this thing to search for.
- *		   include - whether or not to include the character found in
+ *	count    - which occurrence of this thing to search for.
+ *	include  - whether or not to include the character found in
  *		   the position that is returned
  *
  * Description:

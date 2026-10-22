@@ -78,6 +78,16 @@ extern Cardinal _XawTextActionsTableCount;
 
 /* displayable text management data structures */
 
+/*
+  The text position between the last character in one line and the first
+  character in the next canonically belongs to the next line.  Nevertheless,
+  the logical end of the first line is specified by that position.
+
+  The last legitimate text position is stored in text.lastPos and is equal to
+  the number of characters in the source.  However, _BuildLineTable adds two
+  "special lines" at the end of the line table with position lastPos + 100
+  and width 0.
+*/
 typedef struct {
   XawTextPosition position;
   Position y;

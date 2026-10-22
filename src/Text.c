@@ -859,31 +859,38 @@ _XawTextGetText(TextWidget ctx, XawTextPosition left, XawTextPosition right)
  * NOTE: it is illegal to call this routine unless there is a valid line table!
  */
 
-/*** figure out what line it is on ***/
-
-static XawTextPosition
-PositionForXY (TextWidget ctx, Position x, Position y)
-{
+static XawTextPosition PositionForXY (TextWidget ctx, Position x, Position y,
+				      int *line_out) {
   int fromx, line, width, height;
   XawTextPosition position;
 
+  if (line_out) *line_out = 0;
   if (ctx->text.lt.lines == 0) return 0;
 
   for (line = 0; line < ctx->text.lt.lines - 1; line++) {
     if (y <= ctx->text.lt.info[line + 1].y)
       break;
   }
+  if (line_out) *line_out = line;
   position = ctx->text.lt.info[line].position;
   if (position >= ctx->text.lastPos)
-    return(ctx->text.lastPos);
+    return ctx->text.lastPos;
   fromx = (int)ctx->text.margins.left - (int)ctx->text.hscroll_offset;
-  XawTextSinkFindPosition( ctx->text.sink, position, fromx, x - fromx,
-			  FALSE, &position, &width, &height);
-  if (position > ctx->text.lastPos) return(ctx->text.lastPos);
-  if (position >= ctx->text.lt.info[line + 1].position)
-    position = SrcScan(ctx->text.source, ctx->text.lt.info[line + 1].position,
-		       XawstPositions, XawsdLeft, 1, TRUE);
-  return(position);
+  XawTextSinkFindPosition(ctx->text.sink, position, fromx, x - fromx,
+			  False, &position, &width, &height);
+  if (position > ctx->text.lastPos)
+    return ctx->text.lastPos;
+
+  // FindPosition is oblivious to the line wrapping that appears only in the
+  // line table, so a position past the end of a wrapped line can come back
+  // somewhere in the next line or, theoretically, an arbitrary subsequent
+  // line.  In that case, we want the end of the original line.  Returning
+  // line_out avoids ambiguity with that position canonically belonging to
+  // the next line.
+  const XawTextPosition startNextLine = ctx->text.lt.info[line + 1].position;
+  if (position > startNextLine)
+    position = startNextLine;
+  return position;
 }
 
 /*
@@ -1092,10 +1099,11 @@ static void CheckVBarScrolling (TextWidget ctx) {
       XawTextPosition last_pos;
       Position y = ctx->core.height - ctx->text.margins.bottom;
 
-      last_pos = PositionForXY(ctx, (Position) ctx->core.width, y);
-      line = LineForPosition(ctx, last_pos);
+      last_pos = PositionForXY(ctx, (Position)ctx->core.width, y, &line);
+      // line may be less than LineForPosition(ctx, last_pos); see comments
+      // in PositionForXY.
 
-      if ( (y < ctx->text.lt.info[line + 1].y) || ((last - first) < 1.0) )
+      if (y < ctx->text.lt.info[line + 1].y || last - first < 1.0)
 	CreateVScrollBar(ctx);
       else
 	DestroyVScrollBar(ctx);
@@ -1105,9 +1113,11 @@ static void CheckVBarScrolling (TextWidget ctx) {
       XawScrollbarSetThumb(ctx->text.vbar, first, last - first);
 
     if ((ctx->text.vbar != NULL) != previousVbar) {
+      // Width has changed.  Everything needs redrawing.
       _XawTextNeedsUpdating(ctx, zeroPosition, ctx->text.lastPos);
+      // If vbar went away, it all fits on one screen, so warp to the top.
       if (ctx->text.vbar == NULL)
-	_XawTextBuildLineTable (ctx, zeroPosition, FALSE);
+	_XawTextBuildLineTable(ctx, zeroPosition, False);
     }
   }
   else if (ctx->text.vbar != NULL) {
@@ -1374,12 +1384,11 @@ static void HJump (Widget w, XtPointer closure, XtPointer callData) {
  *	Returns: none.
  */
 
-static void
-UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
-{
+static void UpdateTextInLine (TextWidget ctx, int line, Position left,
+Position right) {
   XawTextPosition pos1, pos2;
   int width, height, local_left, local_width;
-  XawTextLineTableEntry * lt = ctx->text.lt.info + line;
+  XawTextLineTableEntry *lt = ctx->text.lt.info + line;
   const Position leftAdj = ctx->text.margins.left -
                            (Position)ctx->text.hscroll_offset;
 
@@ -1387,29 +1396,26 @@ UpdateTextInLine(TextWidget ctx, int line, Position left, Position right)
     return;			/* no need to update. */
 
   local_width = left - leftAdj;
-  XawTextSinkFindPosition(ctx->text.sink, lt->position,
-			  leftAdj,
+  XawTextSinkFindPosition(ctx->text.sink, lt->position, leftAdj,
 			  local_width, FALSE, &pos1, &width, &height);
 
   if (right >= (Position)lt->textWidth - leftAdj)
-    if ( (IsValidLine(ctx, line + 1)) &&
-	 (ctx->text.lt.info[line + 1].position <= ctx->text.lastPos) )
-      pos2 = SrcScan( ctx->text.source, (lt + 1)->position, XawstPositions,
-			   XawsdLeft, 1, TRUE);
+    // _BuildLineTable "special lines" have position > text.lastPos.
+    if (IsValidLine(ctx, line + 1) && (lt + 1)->position <= ctx->text.lastPos)
+      pos2 = (lt + 1)->position;
     else
-      pos2 = GETLASTPOS;
+      pos2 = ctx->text.lastPos;
   else {
-    XawTextPosition t_pos;
-
     local_left = leftAdj + width;
     local_width = right  - local_left;
     XawTextSinkFindPosition(ctx->text.sink, pos1, local_left,
-			    local_width, FALSE, &pos2, &width, &height);
-
-    t_pos = SrcScan( ctx->text.source, pos2,
-		     XawstPositions, XawsdRight, 1, TRUE);
-    if (t_pos < (lt + 1)->position)
-      pos2 = t_pos;
+			    local_width, False, &pos2, &width, &height);
+    // stopAtWordBreak is False, so FindPosition returns either the position
+    // before the target or the position after a LF.  In the first case, we
+    // need to advance so that the last char will be updated.
+    if (!IsValidLine(ctx, line + 1) || (lt + 1)->position > pos2)
+      pos2 = SrcScan(ctx->text.source, pos2, XawstPositions, XawsdRight, 1,
+	True);
   }
 
   _XawTextNeedsUpdating(ctx, pos1, pos2);
@@ -2572,13 +2578,13 @@ _XawTextAlterSelection (TextWidget ctx, XawTextSelectionMode mode,
   if (ctx->text.search != NULL)
     ctx->text.search->selection_changed = TRUE;
 
-  position = PositionForXY (ctx, (int) ctx->text.ev_x, (int) ctx->text.ev_y);
+  position = PositionForXY(ctx, (int)ctx->text.ev_x, (int)ctx->text.ev_y, NULL);
 
   flag = (action != XawactionStart);
   if (mode == XawsmTextSelect)
-    DoSelection (ctx, position, ctx->text.time, flag);
+    DoSelection(ctx, position, ctx->text.time, flag);
   else			/* mode == XawsmTextExtend */
-   ExtendSelection (ctx, position, flag);
+    ExtendSelection(ctx, position, flag);
 
   if (action == XawactionEnd)
     _XawTextSetSelection(ctx, ctx->text.s.left, ctx->text.s.right,
@@ -2681,7 +2687,7 @@ static void ProcessExposeRegion (Widget w, XEvent *event, Region region) {
  * This routine does all setup required to synchronize batched screen updates
  */
 
-void _XawTextPrepareToUpdate(TextWidget ctx) {
+void _XawTextPrepareToUpdate (TextWidget ctx) {
   // Every attempt at a nested transaction is a fault.
   assert(ctx->text.old_insert < 0);
   InsertCursor((Widget)ctx, XawisOff);
@@ -2736,7 +2742,7 @@ static void FlushUpdate (TextWidget ctx) {
  * generalization to allow more options.
  */
 
-void _XawTextShowPosition(TextWidget ctx) {
+void _XawTextShowPosition (TextWidget ctx) {
   int lines, number;
   XawTextPosition max_pos, top;
 
@@ -2746,18 +2752,18 @@ void _XawTextShowPosition(TextWidget ctx) {
     return;
 
   #if 0
-  // Old code saved for future reference
-  /*
-   * Find out the bottom the visible window, and make sure that the
-   * cursor does not go past the end of this space.
-   *
-   * This makes sure that the cursor does not go past the end of the
-   * visible window.
-   */
-  int x = ctx->core.width;
-  int y = ctx->core.height - ctx->text.margins.bottom;
-  max_pos = PositionForXY(ctx, x, y);
-  lines = LineForPosition(ctx, max_pos) + 1; /* number of visible lines. */
+    // Old code saved for future reference
+    /*
+     * Find out the bottom the visible window, and make sure that the
+     * cursor does not go past the end of this space.
+     *
+     * This makes sure that the cursor does not go past the end of the
+     * visible window.
+     */
+    int x = ctx->core.width;
+    int y = ctx->core.height - ctx->text.margins.bottom;
+    max_pos = PositionForXY(ctx, x, y);
+    lines = LineForPosition(ctx, max_pos) + 1; /* number of visible lines. */
   #endif
 
   // If we are drawing a partial line at the bottom, exclude that from the
