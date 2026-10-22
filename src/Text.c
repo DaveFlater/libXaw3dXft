@@ -2056,7 +2056,8 @@ _XawTextReplace (TextWidget ctx, XawTextPosition pos1, XawTextPosition pos2,
     // line still needs to be cleared.
     const int line2 = LineForPosition(ctx, updateFrom);
     if (line1 < line2)
-      updateFrom = ctx->text.lt.info[line2].position - 1;
+      updateFrom = SrcScan(src, ctx->text.lt.info[line2].position,
+	XawstPositions, XawsdLeft, 1, True);
     _XawTextNeedsUpdating(ctx, updateFrom, updateTo);
   }
 
