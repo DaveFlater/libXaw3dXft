@@ -383,8 +383,6 @@ FindPosition(Widget w,
 	    *resWidth = whiteSpaceWidth;
 	}
     }
-    if (index == lastPos && c != '\n')
-      index = lastPos + 1;  // FIXME wat?
     *resPos = index;
     if (resHeight)
       *resHeight = sink->text_sink.fontHeight;

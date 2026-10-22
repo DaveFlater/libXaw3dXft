@@ -395,8 +395,6 @@ FindPosition(Widget w, XawTextPosition fromPos, int fromx, int width,
 	    *resWidth = whiteSpaceWidth;
 	}
     }
-    if (index == lastPos && c != L'\n')
-      index = lastPos + 1;  // FIXME wat?
     *resPos = index;
     if (resHeight)
       *resHeight = sink->text_sink.fontHeight;
