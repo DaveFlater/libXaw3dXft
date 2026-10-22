@@ -1256,14 +1256,16 @@ void _XawTextVScroll(TextWidget ctx, int n) {
   } else { // n < 0
     n = -n;
     const XawTextPosition old_top = lt->top;
-    // Scan back n lines to find the new top
+    // Scan back n lines to find the new top.  ** This is oblivious to line
+    // wrapping.
     top = SrcScan(ctx->text.source, old_top, XawstEOL,
 		  XawsdLeft, n+1, FALSE);
     _XawTextBuildLineTable(ctx, top, FALSE);
 
     // Since we built the line table starting from n lines back, the
-    // previously existing text would now be on line n of the new table...
-    // unless n exceeded the number of lines remaining
+    // previously existing text would now be on line n of the new table
+    // unless line wrapping intervened or n exceeded the number of lines
+    // remaining.
     const Position y = IsValidLine(ctx, n) ? lt->info[n].y :
       coreheight - ctx->text.margins.bottom;
     const XawTextPosition updateTo = IsValidLine(ctx, n) ?
