@@ -1192,7 +1192,11 @@ void _XawTextSetScrollBars(TextWidget ctx) {
  * positive, move up; otherwise, move down. [note: this is really a private
  * procedure but is used in multiple modules].
  */
-
+/*
+  This function is asymmetrical when wrapping is enabled.  For n > 0 it moves
+  by lines in the line table (as wrapped).  For n < 0 it moves by
+  LF-delimited lines.
+*/
 void _XawTextVScroll(TextWidget ctx, int n) {
   XawTextPosition top;
   XawTextLineTable *lt = &(ctx->text.lt);
@@ -1256,8 +1260,7 @@ void _XawTextVScroll(TextWidget ctx, int n) {
   } else { // n < 0
     n = -n;
     const XawTextPosition old_top = lt->top;
-    // Scan back n lines to find the new top.  ** This is oblivious to line
-    // wrapping.
+    // Scan back n LF-delimited lines to find the new top.
     top = SrcScan(ctx->text.source, old_top, XawstEOL,
 		  XawsdLeft, n+1, FALSE);
     _XawTextBuildLineTable(ctx, top, FALSE);
@@ -2746,88 +2749,138 @@ static void FlushUpdate (TextWidget ctx) {
  */
 
 void _XawTextShowPosition (TextWidget ctx) {
-  int lines, number;
+  int lines;
   XawTextPosition max_pos, top;
+  Widget src = ctx->text.source;
+  XawTextLineTableEntry *lt = ctx->text.lt.info;
 
   if (!XtIsRealized((Widget)ctx) ||
       ctx->text.lt.lines <= 0 ||
       ctx->core.height < VMargins(ctx))
     return;
 
-  #if 0
-    // Old code saved for future reference
-    /*
-     * Find out the bottom the visible window, and make sure that the
-     * cursor does not go past the end of this space.
-     *
-     * This makes sure that the cursor does not go past the end of the
-     * visible window.
-     */
-    int x = ctx->core.width;
-    int y = ctx->core.height - ctx->text.margins.bottom;
-    max_pos = PositionForXY(ctx, x, y);
-    lines = LineForPosition(ctx, max_pos) + 1; /* number of visible lines. */
-  #endif
-
-  // If we are drawing a partial line at the bottom, exclude that from the
-  // "cursor is visible" region.  The cursor won't show if the bottom of the
-  // line is cropped.  This block replaces the old code immediately above.
-  {
-    const Position bottom = ctx->core.height - ctx->text.margins.bottom;
-    for (lines = ctx->text.lt.lines;
-	 lines > 0 && ctx->text.lt.info[lines].y > bottom; --lines);
-    max_pos = ctx->text.lt.info[lines].position;
-    if (max_pos > 0) --max_pos;
-  }
+  // Count the number of fully visible lines.  The cursor won't show if the
+  // bottom of the line is cropped.
+  const Position bottom = ctx->core.height - ctx->text.margins.bottom;
+  for (lines = ctx->text.lt.lines; lines > 0 && lt[lines].y > bottom;
+       --lines);
+  max_pos = SrcScan(src, lt[lines].position, XawstPositions, XawsdLeft, 1,
+    True);
 
   if (ctx->text.insertPos >= ctx->text.lt.top &&
-      ctx->text.insertPos < max_pos)
+      ctx->text.insertPos <= max_pos)
     return;
 
   XawTextPosition first = ctx->text.lt.top;
-  Boolean no_scroll = FALSE;
+  Boolean no_scroll = False;
 
-  if (ctx->text.insertPos < first) { /* We need to scroll down. */
-      top = SrcScan(ctx->text.source, ctx->text.insertPos,
-		    XawstEOL, XawsdLeft, 1, FALSE);
+  if (ctx->text.insertPos < first) {
+    /* We need to move up in the document. */
 
-      /* count the number of lines we have to scroll */
-      number = 0;
-      while (first > top) {
-	  first = SrcScan(ctx->text.source, first,
-			  XawstEOL, XawsdLeft, 1, TRUE);
-	  if ( - number > lines )
-	      break;
-	  number--;
+    /* In this direction, _XawTextVScroll moves by LFs; it is oblivious to
+       wrapping.  This code is not guaranteed to make the insertPos visible
+       if a single wrapped LF-delimited line fills the entire window. */
+
+    // New top = start of LF-delimited line that contains insertPos.
+    top = SrcScan(src, ctx->text.insertPos, XawstEOL, XawsdLeft, 1, False);
+
+    // Count LFs back from the current top of the line table till we get to
+    // the new top.
+    int number = 0;
+    while (first > top && -number < lines) {
+      first = SrcScan(src, first, XawstEOL, XawsdLeft, 1, True);
+      --number;
+    }
+
+    if (first <= top) {
+      // first is positioned to the left of a LF or is at position 0.
+      if (first < top) // insertPos was in the following line.
+	++number;
+      lines = number;
+      // We already established that the cursor is not visible.  An answer of
+      // 0 lines at this point, therefore, is bogus (except in the broken
+      // case where a single wrapped LF-delimited line fills the entire
+      // window).
+      if (lines > -1) lines = -1;
+    } else
+      no_scroll = True;
+
+  } else {
+    /* We need to move down in the document. */
+
+    // LineForPosition returns ctx->text.lt.lines when the position is not
+    // found.
+    const Cardinal lineForInsertPos = LineForPosition(ctx,
+      ctx->text.insertPos);
+    if (lineForInsertPos < ctx->text.lt.lines) {
+      // Best case:  insertPos is in our table (probably in the extra half
+      // line at the bottom).
+      const Cardinal lineForMaxPos = LineForPosition(ctx, max_pos);
+      lines = lineForInsertPos - lineForMaxPos;
+      assert(lines > 0);
+
+    // The following condition is duplicated from _BuildLineTable
+    // (circumstances under which lines are not wrapped).
+    } else if (ctx->text.wrap == XawtextWrapNever ||
+	       ctx->text.resize == XawtextResizeWidth ||
+	       ctx->text.resize == XawtextResizeBoth) {
+      // Normal case:  in the absence of wrapping, we can figure out the
+      // number of lines to scroll by counting newlines backward from
+      // insertPos and making that the new top.
+      top = SrcScan(src, ctx->text.insertPos, XawstEOL, XawsdLeft, lines,
+	False);
+      if (top < max_pos) {
+	lines = LineForPosition(ctx, top);
+	// We already established that the cursor is not visible.  An answer
+	// of 0 lines at this point, therefore, is bogus.
+	if (lines < 1) lines = 1;
+      } else // insertPos is too far down.  Jump to the new top.
+	no_scroll = True;
+
+    } else {
+      // Worst case:  we need to duplicate the line wrapping that
+      // _BuildLineTable will do to figure out how many lines to scroll.
+      if (lines > 0) {
+	// Copying from _BuildLineTable:  seems like 0 width can't end well.
+	const int width = Max(0, (int)ctx->core.width -
+	                         (int)HMarginsOffset(ctx));
+	// Start with the last fully visible line.
+	XawTextPosition linePos = lt[lines - 1].position;
+	Cardinal addLines;
+	for (addLines = 0; addLines < lines; ++addLines) {
+	  int ignored_width;
+	  XawTextSinkFindPosition(ctx->text.sink, linePos,
+	    ctx->text.margins.left, width, ctx->text.wrap == XawtextWrapWord,
+	    &linePos, &ignored_width, NULL);
+	  if (linePos > ctx->text.insertPos)
+	    break;
+	  if (linePos >= ctx->text.lastPos) {
+	    ++addLines;
+	    break;
+	  }
+	}
+	if (addLines < lines)
+	  lines = addLines;
+	else {
+	  // We still don't have an answer.  The following heuristic may fail
+	  // if a single wrapped LF-delimited line fills the entire window.
+	  top = SrcScan(src, ctx->text.insertPos, XawstEOL, XawsdLeft, 1,
+	    False);
+	  if (top == ctx->text.insertPos)
+	    top = SrcScan(src, ctx->text.insertPos, XawstEOL, XawsdLeft, 2,
+	      False);
+	  no_scroll = True;
+	}
+      } else {
+	// There are 0 fully visible lines.
+	top = ctx->text.insertPos;
+	no_scroll = True;
       }
-
-      if (first <= top) {	/* If we found the proper number
-				   of lines. */
-	  /* Back up to just before the last CR. */
-	  first = SrcScan(ctx->text.source, first,
-			  XawstPositions, XawsdRight, 1, TRUE);
-
-	  /* Check to make sure the cursor is visible. */
-	  if (first <= top)
-	      number++;
-
-	  lines = number;
-      }
-      else
-	  no_scroll = TRUE;
-  }
-  else {			/* We need to Scroll up */
-      top = SrcScan(ctx->text.source, ctx->text.insertPos,
-		    XawstEOL, XawsdLeft, lines, FALSE);
-
-      if (top < max_pos)
-	  lines = LineForPosition(ctx, top);
-      else
-	  no_scroll = TRUE;
+    }
   }
 
   if (no_scroll) {
-    _XawTextBuildLineTable(ctx, top, FALSE);
+    _XawTextBuildLineTable(ctx, top, False);
     DisplayTextWindow((Widget)ctx);
   } else
     _XawTextVScroll(ctx, lines);
