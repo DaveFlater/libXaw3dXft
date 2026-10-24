@@ -1116,8 +1116,16 @@ static void CheckVBarScrolling (TextWidget ctx) {
       // Width has changed.  Everything needs redrawing.
       _XawTextNeedsUpdating(ctx, zeroPosition, ctx->text.lastPos);
       // If vbar went away, it all fits on one screen, so warp to the top.
+      // Force rebuild if wrapping is enabled because width changed.
       if (ctx->text.vbar == NULL)
-	_XawTextBuildLineTable(ctx, zeroPosition, False);
+	_XawTextBuildLineTable(ctx, zeroPosition,
+	  ctx->text.wrap != XawtextWrapNever);
+      // Else vbar was added.  If wrapping is on, we don't want to warp
+      // anywhere, but the line breaks may shift.  Note that starting at
+      // lt.top prevents us from seeing the effect of changes that ought to
+      // have happened on preceding lines.
+      else if (ctx->text.wrap != XawtextWrapNever)
+	_XawTextBuildLineTable(ctx, ctx->text.lt.top, True);
     }
   }
   else if (ctx->text.vbar != NULL) {
