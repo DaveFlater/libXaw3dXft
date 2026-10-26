@@ -57,6 +57,11 @@ Next release, v2.0  Dave Flater
   text_sb_right                  | use Text.useRight resource
   tip_background_color           | use Tip.background resource
 
+  - Changed implementation of tips.
+  See README for new usage.  (N.B., the Tip widget in Xaw remains
+  undocumented, and the implementations in Xaw and Xaw3d were already
+  incompatible.)
+
   - Changed signatures of semi-private functions.
   Xaw3dXftGetFont (alias proc->get_font):  replace display with object
 

@@ -32,21 +32,28 @@
  * Rights, permissions, and disclaimer per the above XFree86 license.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-#include <X11/Xaw3dXft/Xaw3dP.h>
-#include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
-#include <X11/Xos.h>
-#include <X11/Xmu/Converters.h>
-#include <X11/Xaw3dXft/CommonP.h>
-#include <X11/Xaw3dXft/TipP.h>
-#include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
+/* Copyright © 2026 David Flater
+ * X11 license (as per the historical licenses that the package inherits)
+ */
 
 #include <stdlib.h>
 
+#include <X11/IntrinsicP.h>
+#include <X11/StringDefs.h>
+#include <X11/Xmu/Converters.h>
+#include <X11/Xos.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include <X11/Xaw3dXft/CommonP.h>
+#include <X11/Xaw3dXft/TipP.h>
+#include <X11/Xaw3dXft/Xaw3dP.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
+#include <X11/Xaw3dXft/XawInit.h>
+
+// TipEventHandler is added to the parent widget with TIP_EVENT_MASK.
+// TipShellEventHandler is added to the shell with KeyPressMask.
 #define	TIP_EVENT_MASK (ButtonPressMask	  |	\
 			ButtonReleaseMask |	\
 			ButtonMotionMask  |	\
@@ -55,28 +62,6 @@
 			KeyReleaseMask	  |	\
 			EnterWindowMask	  |	\
 			LeaveWindowMask)
-
-/*
- * Types
- */
-typedef struct _WidgetInfo {
-    Widget widget;
-    String label;
-    struct _WidgetInfo *next;
-} WidgetInfo;
-
-typedef struct _XawTipInfo {
-    Screen *screen;
-    TipWidget tip;
-    Bool mapped;
-    WidgetInfo *widgets;
-    struct _XawTipInfo *next;
-} XawTipInfo;
-
-typedef struct {
-    XawTipInfo *info;
-    WidgetInfo *winfo;
-} TimeoutInfo;
 
 /*
  * Class Methods
@@ -93,14 +78,8 @@ static Boolean XawTipSetValues(Widget, Widget, Widget, ArgList, Cardinal *);
  */
 static void TipEventHandler(Widget, XtPointer, XEvent *, Boolean *);
 static void TipShellEventHandler(Widget, XtPointer, XEvent *, Boolean *);
-static WidgetInfo *CreateWidgetInfo(Widget);
-static WidgetInfo *FindWidgetInfo(XawTipInfo *, Widget);
-static XawTipInfo *CreateTipInfo(Widget);
-static XawTipInfo *FindTipInfo(Widget);
-static void ResetTip(XawTipInfo *, WidgetInfo *, Bool);
 static void TipTimeoutCallback(XtPointer, XtIntervalId *);
-static void TipLayout(XawTipInfo *);
-static void TipPosition(XawTipInfo *);
+static void ResetTip (TipWidget tip, Bool add_timeout);
 
 /*
  * Initialization
@@ -131,6 +110,8 @@ static XtResource resources[] = {
     (XtPointer)(Always + WhenMapped + NotUseful)},
   {XtNtimeout, XtCTimeout, XtRInt, sizeof(int),
     offset(timeout), XtRImmediate, (XtPointer)1200},
+  {XtNenable, XtCEnable, XtRBoolean, sizeof(Boolean),
+    offset(enable), XtRImmediate, (XtPointer)True}
 };
 #undef offset
 
@@ -180,9 +161,6 @@ WidgetClass tipWidgetClass = (WidgetClass)&tipClassRec;
 
 #define VisualOf(w)    (w->tip.visual)
 #define VisualDepth(w) (w->core.depth)
-
-static XawTipInfo *TipInfoList = NULL;
-static TimeoutInfo TimeoutData;
 
 /*
  * Implementation
@@ -238,519 +216,389 @@ XawCvtBackingStoreToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
   return (True);
 }
 
-static void
-XawTipClassInitialize(void)
-{
-    XawInitializeWidgetSet();
-    XtAddConverter(XtRString, XtRBackingStore, XmuCvtStringToBackingStore,
-		   NULL, 0);
-    XtSetTypeConverter(XtRBackingStore, XtRString, XawCvtBackingStoreToString,
-		       NULL, 0, XtCacheNone, NULL);
+
+static void TipEnable (TipWidget tip) {
+  if (tip->tip.enable)
+    XtAddEventHandler(XtParent(tip), TIP_EVENT_MASK, False, TipEventHandler,
+      (XtPointer)tip);
 }
 
-static void
-XawTipInitialize(Widget req, Widget w, ArgList args, Cardinal *num_args)
-{
-    TipWidget tip = (TipWidget)w;
+static void TipDisable (TipWidget tip) {
+  XtRemoveEventHandler(XtParent(tip), TIP_EVENT_MASK, False, TipEventHandler,
+    (XtPointer)tip);
+  ResetTip(tip, False);
+}
 
-    Xaw3dXftGetVisualInfo(w, &VisualOf(tip), NULL, NULL);
+static void XawTipClassInitialize () {
+  XawInitializeWidgetSet();
+  XtAddConverter(XtRString, XtRBackingStore, XmuCvtStringToBackingStore,
+    NULL, 0);
+  XtSetTypeConverter(XtRBackingStore, XtRString, XawCvtBackingStoreToString,
+    NULL, 0, XtCacheNone, NULL);
+}
 
-    tip->tip.timer = 0;
-    tip->core.border_width = 0; // See Notes 2026-06-19 DWF below
+static void XawTipInitialize (Widget req, Widget w, ArgList args,
+Cardinal *num_args) {
+  TipWidget tip = (TipWidget)w;
 
+  Xaw3dXftGetVisualInfo(w, &VisualOf(tip), NULL, NULL);
+
+  tip->tip.mapped = False;
+  tip->tip.timer = 0;
+  tip->core.border_width = 0; // See Notes 2026-06-19 DWF below
+
+  tip->tip.shell = w;
+  while (XtParent(tip->tip.shell))
+    tip->tip.shell = XtParent(tip->tip.shell);
+
+  XGCValues values;
+  values.foreground = tip->tip.foreground;
+  values.background = tip->core.background_pixel;
+  values.font = tip->tip.font->fid;
+  values.graphics_exposures = False;
+
+  tip->tip.gc = XtAllocateGC(w, 0, GCForeground | GCBackground | GCFont |
+    GCGraphicsExposures, &values, GCFont, 0);
+
+  // FIXME upgrade as per Label.c
+  if (_Xaw3dXft->encoding)
+    tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
+  else {
+    tip->tip.xftfont = NULL;
+    if (tip->tip.international && !tip->tip.fontset)
+      XtError("Tip: no fontset found");
+  }
+  if (!tip->tip.font) XtError("Tip: no font found");
+
+  TipEnable(tip);
+  XtAddEventHandler(tip->tip.shell, KeyPressMask, False, TipShellEventHandler,
+    tip);
+}
+
+static void XawTipDestroy (Widget w) {
+  TipWidget tip = (TipWidget)w;
+  if (tip->tip.timer)
+    XtRemoveTimeOut(tip->tip.timer);
+  XtReleaseGC(w, tip->tip.gc);
+  XtRemoveEventHandler(tip->tip.shell, KeyPressMask, False,
+    TipShellEventHandler, tip);
+}
+
+static void XawTipRealize (Widget w, Mask *mask, XSetWindowAttributes *attr) {
+  TipWidget tip = (TipWidget)w;
+
+  if (tip->tip.backing_store == Always ||
+    tip->tip.backing_store == NotUseful ||
+    tip->tip.backing_store == WhenMapped) {
+    *mask |= CWBackingStore;
+    attr->backing_store = tip->tip.backing_store;
+  }
+  else
+    *mask &= ~CWBackingStore;
+  *mask |= CWOverrideRedirect;
+  attr->override_redirect = True;
+
+  /*
+    Notes 2026-06-19 DWF:
+
+    In sources as incoming, XCreateWindow was called with XtBorderWidth(w)
+    for border_width.  That somehow resulted in blurry text.  It was blurry
+    regardless whether the text rendering was done by Xft or by Xlib.  The
+    problem reproduced with Xaw3d and its default font.  (The same problem
+    with SimpleMenu reproduced even with Xaw, but I did not test Xaw's
+    version of Tip, which isn't comparable.)
+
+    The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
+    window's border width to 0 after the fact and then artificially drew a
+    black border.  In Xaw3dXft v2 I removed that hack and set border width
+    to 0 here.
+
+    The only two widgets with border_hack code were Tip and SimpleMenu.
+    The common factor is they both pop up independent windows instead of
+    fitting within a composite parent.
+  */
+
+  XtWindow(w) = XCreateWindow(DisplayOfScreen(XtScreen(w)),
+    RootWindowOfScreen(XtScreen(w)),
+    XtX(w), XtY(w),
+    XtWidth(w) ? XtWidth(w) : 1,
+    XtHeight(w) ? XtHeight(w) : 1,
+    0U, // unsigned int border_width
+    VisualDepth(tip), InputOutput, VisualOf(tip),
+    *mask, attr);
+}
+
+static void XawTipExpose (Widget w, XEvent *event, Region region) {
+  TipWidget tip = (TipWidget)w;
+  GC gc = tip->tip.gc;
+  char *nl, *label = tip->tip.label;
+  Position y;
+  int len;
+
+  y = tip->tip.internal_height + ((_Xaw3dXft->encoding)?
+    tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing :
+    tip->tip.font->max_bounds.ascent );
+
+  if (tip->tip.international == True && !_Xaw3dXft->encoding) {
+    Position ksy = tip->tip.internal_height;
+    XFontSetExtents *ext = XExtentsOfFontSet(tip->tip.fontset);
+
+    ksy += abs(ext->max_ink_extent.y);
+
+    while ((nl = strchr(label, '\n')) != NULL) {
+      XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset,
+	gc, tip->tip.internal_width, ksy, label,
+	(int)(nl - label));
+      ksy += ext->max_ink_extent.height;
+      label = nl + 1;
+    }
+    len = strlen(label);
+    if (len)
+      XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset, gc,
+	tip->tip.internal_width, ksy, label, len);
+  }
+  else if (_Xaw3dXft->encoding) {
+    while ((nl = strchr(label, '\n')) != NULL) {
+      Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
+	tip->tip.internal_width+3, y,
+	label, (int)(nl - label));
+      y += tip->tip.xftfont->height + 3*_Xaw3dXft->menu_spacing;
+      label = nl + 1;
+    }
+    len = strlen(label);
+    if (len)
+      Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
+	tip->tip.internal_width+3, y,
+	label, len);
+  } else {
+    while ((nl = strchr(label, '\n')) != NULL) {
+      if (tip->tip.encoding)
+	XDrawString16(XtDisplay(w), XtWindow(w), gc,
+	  tip->tip.internal_width, y,
+	  (XChar2b*)label, (int)(nl - label) >> 1);
+      else
+	XDrawString(XtDisplay(w), XtWindow(w), gc,
+	  tip->tip.internal_width, y,
+	  label, (int)(nl - label));
+      y += tip->tip.font->max_bounds.ascent +
+	tip->tip.font->max_bounds.descent;
+      label = nl + 1;
+    }
+    len = strlen(label);
+    if (len) {
+      if (tip->tip.encoding)
+	XDrawString16(XtDisplay(w), XtWindow(w), gc,
+	  tip->tip.internal_width, y,
+	  (XChar2b*)label, len >> 1);
+      else
+	XDrawString(XtDisplay(w), XtWindow(w), gc,
+	  tip->tip.internal_width, y, label, len);
+    }
+  }
+}
+
+static Boolean XawTipSetValues (Widget current, Widget request, Widget cnew,
+ArgList args, Cardinal *num_args) {
+  TipWidget curtip = (TipWidget)current;
+  TipWidget newtip = (TipWidget)cnew;
+  Boolean redisplay = False;
+  newtip->core.border_width = 0; // See Notes 2026-06-19 DWF above
+
+  if (curtip->tip.font->fid != newtip->tip.font->fid ||
+    curtip->tip.foreground != newtip->tip.foreground) {
     XGCValues values;
-    values.foreground = tip->tip.foreground;
-    values.background = tip->core.background_pixel;
-    values.font = tip->tip.font->fid;
+
+    values.foreground = newtip->tip.foreground;
+    values.background = newtip->core.background_pixel;
+    values.font = newtip->tip.font->fid;
     values.graphics_exposures = False;
+    XtReleaseGC(cnew, curtip->tip.gc);
+    newtip->tip.gc = XtAllocateGC(cnew, 0, GCForeground | GCBackground |
+      GCFont | GCGraphicsExposures, &values,
+      GCFont, 0);
+    redisplay = True;
+  }
 
-    tip->tip.gc = XtAllocateGC(w, 0, GCForeground | GCBackground | GCFont |
-			       GCGraphicsExposures, &values, GCFont, 0);
+  if (curtip->tip.enable != newtip->tip.enable) {
+    if (newtip->tip.enable)
+      TipEnable(newtip);
+    else
+      TipDisable(newtip);
+  }
 
-    // FIXME upgrade as per Label.c
-    if (_Xaw3dXft->encoding)
-	tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
-    else {
-	tip->tip.xftfont = NULL;
-	if (tip->tip.international && !tip->tip.fontset)
-	    XtError("Tip: no fontset found");
-    }
-    if (!tip->tip.font) XtError("Tip: no font found");
+  return redisplay;
 }
 
-static void
-XawTipDestroy(Widget w)
-{
-    XawTipInfo *info = FindTipInfo(w);
-    WidgetInfo *winfo;
-    TipWidget tip = (TipWidget)w;
+static void TipLayout (TipWidget tip) {
+  XFontStruct	*font = tip->tip.font;
+  XftFont *xftfont = tip->tip.xftfont;
+  int width = 0, height;
+  char *nl, *label = tip->tip.label;
 
-    if (tip->tip.timer)
-	XtRemoveTimeOut(tip->tip.timer);
-
-    XtReleaseGC(w, tip->tip.gc);
-
-    XtRemoveEventHandler(XtParent(w), KeyPressMask, False,
-			 TipShellEventHandler, (XtPointer)NULL);
-
-    while (info->widgets) {
-	winfo = info->widgets->next;
-	XtFree((char *)info->widgets->label);
-	XtFree((char *)info->widgets);
-	info->widgets = winfo;
-    }
-
-    if (info == TipInfoList)
-	TipInfoList = TipInfoList->next;
-    else {
-	XawTipInfo *p = TipInfoList;
-
-	while (p && p->next != info)
-	    p = p->next;
-	if (p)
-	    p->next = info->next;
-    }
-
-    XtFree((char *)info);
-}
-
-static void
-XawTipRealize(Widget w, Mask *mask, XSetWindowAttributes *attr)
-{
-    TipWidget tip = (TipWidget)w;
-
-    if (tip->tip.backing_store == Always ||
-		tip->tip.backing_store == NotUseful ||
-		tip->tip.backing_store == WhenMapped) {
-	*mask |= CWBackingStore;
-	attr->backing_store = tip->tip.backing_store;
+  if (_Xaw3dXft->encoding) {
+    height = xftfont->height + 4;
+    if ((nl = strchr(label, '\n')) != NULL) {
+      while (True) {
+	int w;
+	w = Xaw3dXftTextWidth((Widget)tip,
+	  xftfont, label, (int)(nl - label));
+	if (w > width)
+	  width = w;
+	if (*nl == '\0')
+	  break;
+	label = nl + 1;
+	if (*label)
+	  height += xftfont->height + 3*_Xaw3dXft->menu_spacing;
+	if ((nl = strchr(label, '\n')) == NULL)
+	  nl = strchr(label, '\0');
+      }
     }
     else
-	*mask &= ~CWBackingStore;
-    *mask |= CWOverrideRedirect;
-    attr->override_redirect = True;
+      width = Xaw3dXftTextWidth((Widget)tip, xftfont, label, strlen(label));
+  } else if (tip->tip.international == True && !_Xaw3dXft->encoding) {
+    XFontSet fset = tip->tip.fontset;
+    XFontSetExtents *ext = XExtentsOfFontSet(fset);
 
-    /*
-      Notes 2026-06-19 DWF:
+    height = ext->max_ink_extent.height;
+    if ((nl = strchr(label, '\n')) != NULL) {
+      while (True) {
+	int w = XmbTextEscapement(fset, label, (int)(nl - label));
 
-      In sources as incoming, XCreateWindow was called with XtBorderWidth(w)
-      for border_width.  That somehow resulted in blurry text.  It was blurry
-      regardless whether the text rendering was done by Xft or by Xlib.  The
-      problem reproduced with Xaw3d and its default font.  (The same problem
-      with SimpleMenu reproduced even with Xaw, but I did not test Xaw's
-      version of Tip, which isn't comparable.)
-
-      The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
-      window's border width to 0 after the fact and then artificially drew a
-      black border.  In Xaw3dXft v2 I removed that hack and set border width
-      to 0 here.
-
-      The only two widgets with border_hack code were Tip and SimpleMenu.
-      The common factor is they both pop up independent windows instead of
-      fitting within a composite parent.
-    */
-
-    XtWindow(w) = XCreateWindow(DisplayOfScreen(XtScreen(w)),
-				RootWindowOfScreen(XtScreen(w)),
-				XtX(w), XtY(w),
-				XtWidth(w) ? XtWidth(w) : 1,
-				XtHeight(w) ? XtHeight(w) : 1,
-				0U, // unsigned int border_width
-				VisualDepth(tip), InputOutput, VisualOf(tip),
-				*mask, attr);
-}
-
-static void
-XawTipExpose(Widget w, XEvent *event, Region region)
-{
-    TipWidget tip = (TipWidget)w;
-    GC gc = tip->tip.gc;
-    char *nl, *label = tip->tip.label;
-    Position y;
-    int len;
-
-    y = tip->tip.internal_height + ((_Xaw3dXft->encoding)?
-	tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing :
-	tip->tip.font->max_bounds.ascent );
-
-    if (tip->tip.international == True && !_Xaw3dXft->encoding) {
-	Position ksy = tip->tip.internal_height;
-	XFontSetExtents *ext = XExtentsOfFontSet(tip->tip.fontset);
-
-	ksy += abs(ext->max_ink_extent.y);
-
-	while ((nl = strchr(label, '\n')) != NULL) {
-	    XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset,
-			  gc, tip->tip.internal_width, ksy, label,
-			  (int)(nl - label));
-	    ksy += ext->max_ink_extent.height;
-	    label = nl + 1;
-	}
-	len = strlen(label);
-	if (len)
-	    XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset, gc,
-			  tip->tip.internal_width, ksy, label, len);
-    }
-    else if (_Xaw3dXft->encoding) {
-	while ((nl = strchr(label, '\n')) != NULL) {
-	    Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
-		tip->tip.internal_width+3, y,
-		label, (int)(nl - label));
-	    y += tip->tip.xftfont->height + 3*_Xaw3dXft->menu_spacing;
-	    label = nl + 1;
-	}
-	len = strlen(label);
-	if (len)
-	    Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
-		tip->tip.internal_width+3, y,
-		label, len);
-    } else {
-	while ((nl = strchr(label, '\n')) != NULL) {
-	    if (tip->tip.encoding)
-		XDrawString16(XtDisplay(w), XtWindow(w), gc,
-			      tip->tip.internal_width, y,
-			      (XChar2b*)label, (int)(nl - label) >> 1);
-	    else
-		XDrawString(XtDisplay(w), XtWindow(w), gc,
-			    tip->tip.internal_width, y,
-			    label, (int)(nl - label));
-	    y += tip->tip.font->max_bounds.ascent +
-		 tip->tip.font->max_bounds.descent;
-	    label = nl + 1;
-	}
-	len = strlen(label);
-	if (len) {
-	    if (tip->tip.encoding)
-		XDrawString16(XtDisplay(w), XtWindow(w), gc,
-			      tip->tip.internal_width, y,
-			      (XChar2b*)label, len >> 1);
-	    else
-		XDrawString(XtDisplay(w), XtWindow(w), gc,
-			    tip->tip.internal_width, y, label, len);
-	}
-    }
-}
-
-static Boolean
-XawTipSetValues(Widget current, Widget request, Widget cnew, ArgList args, Cardinal *num_args)
-{
-    TipWidget curtip = (TipWidget)current;
-    TipWidget newtip = (TipWidget)cnew;
-    Boolean redisplay = False;
-    newtip->core.border_width = 0; // See Notes 2026-06-19 DWF above
-
-    if (curtip->tip.font->fid != newtip->tip.font->fid ||
-		curtip->tip.foreground != newtip->tip.foreground) {
-	XGCValues values;
-
-	values.foreground = newtip->tip.foreground;
-	values.background = newtip->core.background_pixel;
-	values.font = newtip->tip.font->fid;
-	values.graphics_exposures = False;
-	XtReleaseGC(cnew, curtip->tip.gc);
-	newtip->tip.gc = XtAllocateGC(cnew, 0, GCForeground | GCBackground |
-				      GCFont | GCGraphicsExposures, &values,
-				      GCFont, 0);
-	redisplay = True;
-    }
-
-    return (redisplay);
-}
-
-static void
-TipLayout(XawTipInfo *info)
-{
-    XFontStruct	*font = info->tip->tip.font;
-    XftFont *xftfont = info->tip->tip.xftfont;
-    int width = 0, height;
-    char *nl, *label = info->tip->tip.label;
-
-    if (_Xaw3dXft->encoding) {
-	height = xftfont->height + 4;
-	if ((nl = strchr(label, '\n')) != NULL) {
-	    /*CONSTCOND*/
-	    while (True) {
-	        int w;
-		w = Xaw3dXftTextWidth((Widget)info->tip,
-                                  xftfont, label, (int)(nl - label));
-		if (w > width)
-		    width = w;
-		if (*nl == '\0')
-		    break;
-		label = nl + 1;
-		if (*label)
-		    height += xftfont->height + 3*_Xaw3dXft->menu_spacing;
-		if ((nl = strchr(label, '\n')) == NULL)
-		    nl = strchr(label, '\0');
-	    }
-	}
-	else
-	    width = Xaw3dXftTextWidth((Widget)info->tip, xftfont, label, strlen(label));
-    } else if (info->tip->tip.international == True && !_Xaw3dXft->encoding) {
-	XFontSet fset = info->tip->tip.fontset;
-	XFontSetExtents *ext = XExtentsOfFontSet(fset);
-
-	height = ext->max_ink_extent.height;
-	if ((nl = strchr(label, '\n')) != NULL) {
-	    /*CONSTCOND*/
-	    while (True) {
-		int w = XmbTextEscapement(fset, label, (int)(nl - label));
-
-		if (w > width)
-		    width = w;
-		if (*nl == '\0')
-		    break;
-		label = nl + 1;
-		if (*label)
-		    height += ext->max_ink_extent.height;
-		if ((nl = strchr(label, '\n')) == NULL)
-		    nl = strchr(label, '\0');
-	    }
-	}
-	else
-	    width = XmbTextEscapement(fset, label, strlen(label));
+	if (w > width)
+	  width = w;
+	if (*nl == '\0')
+	  break;
+	label = nl + 1;
+	if (*label)
+	  height += ext->max_ink_extent.height;
+	if ((nl = strchr(label, '\n')) == NULL)
+	  nl = strchr(label, '\0');
+      }
     }
     else
+      width = XmbTextEscapement(fset, label, strlen(label));
+  }
+  else
     {
-	height = font->max_bounds.ascent + font->max_bounds.descent;
-	if ((nl = strchr(label, '\n')) != NULL) {
-	    /*CONSTCOND*/
-	    while (True) {
-		int w = info->tip->tip.encoding ?
-			XTextWidth16(font, (XChar2b*)label,
-				     (int)(nl - label) >> 1) :
-			XTextWidth(font, label, (int)(nl - label));
+      height = font->max_bounds.ascent + font->max_bounds.descent;
+      if ((nl = strchr(label, '\n')) != NULL) {
+	while (True) {
+	  int w = tip->tip.encoding ?
+	    XTextWidth16(font, (XChar2b*)label,
+	      (int)(nl - label) >> 1) :
+	    XTextWidth(font, label, (int)(nl - label));
 
-		if (w > width)
-		    width = w;
-		if (*nl == '\0')
-		    break;
-		label = nl + 1;
-		if (*label)
-		    height += font->max_bounds.ascent + font->max_bounds.descent;
-		if ((nl = strchr(label, '\n')) == NULL)
-		    nl = strchr(label, '\0');
-	    }
+	  if (w > width)
+	    width = w;
+	  if (*nl == '\0')
+	    break;
+	  label = nl + 1;
+	  if (*label)
+	    height += font->max_bounds.ascent + font->max_bounds.descent;
+	  if ((nl = strchr(label, '\n')) == NULL)
+	    nl = strchr(label, '\0');
 	}
-	else
-	    width = info->tip->tip.encoding ?
-		    XTextWidth16(font, (XChar2b*)label, strlen(label) >> 1) :
-		    XTextWidth(font, label, strlen(label));
+      }
+      else
+	width = tip->tip.encoding ?
+	  XTextWidth16(font, (XChar2b*)label, strlen(label) >> 1) :
+	  XTextWidth(font, label, strlen(label));
     }
-    XtWidth(info->tip) = width + info->tip->tip.internal_width * 2
-			 + ((_Xaw3dXft->encoding)? 6:0);
-    XtHeight(info->tip) = height + info->tip->tip.internal_height * 2;
+  XtWidth(tip) = width + tip->tip.internal_width * 2
+    + ((_Xaw3dXft->encoding)? 6:0);
+  XtHeight(tip) = height + tip->tip.internal_height * 2;
 }
 
 #define	DEFAULT_TIP_OFFSET	12
 
-static void
-TipPosition(XawTipInfo *info)
-{
-    Window r, c;
-    int rx, ry, wx, wy;
-    unsigned mask;
-    Position x, y;
-    int bw2 = XtBorderWidth(info->tip) * 2;
-    int scr_width = WidthOfScreen(XtScreen(info->tip));
-    int scr_height = HeightOfScreen(XtScreen(info->tip));
-    int win_width = XtWidth(info->tip) + bw2;
-    int win_height = XtHeight(info->tip) + bw2;
+static void TipPosition (TipWidget tip) {
+  Window r, c;
+  int rx, ry, wx, wy;
+  unsigned mask;
+  Position x, y;
+  int bw2 = XtBorderWidth(tip) * 2;
+  int scr_width = WidthOfScreen(XtScreen(tip));
+  int scr_height = HeightOfScreen(XtScreen(tip));
+  int win_width = XtWidth(tip) + bw2;
+  int win_height = XtHeight(tip) + bw2;
 
-    XQueryPointer(XtDisplay((Widget)info->tip), XtWindow((Widget)info->tip),
-		  &r, &c, &rx, &ry, &wx, &wy, &mask);
-    x = rx + DEFAULT_TIP_OFFSET;
-    y = ry + DEFAULT_TIP_OFFSET;
+  XQueryPointer(XtDisplay((Widget)tip), XtWindow((Widget)tip),
+		&r, &c, &rx, &ry, &wx, &wy, &mask);
+  x = rx + DEFAULT_TIP_OFFSET;
+  y = ry + DEFAULT_TIP_OFFSET;
 
-    if (x + win_width > scr_width)
-	x = scr_width - win_width;
-    if (x < 0)
-	x = 0;
+  if (x + win_width > scr_width)
+      x = scr_width - win_width;
+  if (x < 0)
+      x = 0;
 
-    if (y + win_height > scr_height)
-	y -= win_height + (DEFAULT_TIP_OFFSET << 1);
-    if (y < 0)
-	y = 0;
+  if (y + win_height > scr_height)
+      y -= win_height + (DEFAULT_TIP_OFFSET << 1);
+  if (y < 0)
+      y = 0;
 
-    XMoveResizeWindow(XtDisplay(info->tip), XtWindow(info->tip),
-		      (int)(XtX(info->tip) = x), (int)(XtY(info->tip) = y),
-		      (unsigned)XtWidth(info->tip),
-		      (unsigned)XtHeight(info->tip));
+  XMoveResizeWindow(XtDisplay(tip), XtWindow(tip),
+		    (int)(XtX(tip) = x), (int)(XtY(tip) = y),
+		    (unsigned)XtWidth(tip),
+		    (unsigned)XtHeight(tip));
 }
 
-static WidgetInfo *
-CreateWidgetInfo(Widget w)
-{
-    WidgetInfo *winfo = XtNew(WidgetInfo);
-
-    winfo->widget = w;
-    winfo->label = NULL;
-    winfo->next = NULL;
-
-    return (winfo);
+static void ResetTip (TipWidget tip, Bool add_timeout) {
+  if (tip->tip.timer) {
+    XtRemoveTimeOut(tip->tip.timer);
+    tip->tip.timer = 0;
+  }
+  if (tip->tip.mapped) {
+    if (_Xaw3dXft->tip_do_grab)
+      XtRemoveGrab(XtParent((Widget)tip));
+    XUnmapWindow(XtDisplay((Widget)tip), XtWindow((Widget)tip));
+    tip->tip.mapped = False;
+  }
+  if (add_timeout)
+    tip->tip.timer =
+      XtAppAddTimeOut(XtWidgetToApplicationContext((Widget)tip),
+	tip->tip.timeout, TipTimeoutCallback, (XtPointer)tip);
 }
 
-static WidgetInfo *
-FindWidgetInfo(XawTipInfo *info, Widget w)
-{
-    WidgetInfo *winfo, *wlist = info->widgets;
-
-    if (wlist == NULL)
-	return (info->widgets = CreateWidgetInfo(w));
-
-    for (winfo = wlist; wlist; winfo = wlist, wlist = wlist->next)
-	if (wlist->widget == w)
-	    return (wlist);
-
-    return (winfo->next = CreateWidgetInfo(w));
+static void TipTimeoutCallback (XtPointer client_data, XtIntervalId *id) {
+  TipWidget tip = (TipWidget)client_data;
+  assert(tip);
+  tip->tip.timer = 0;
+  TipLayout(tip);
+  XtRealizeWidget((Widget)tip);
+  TipPosition(tip);
+  if (_Xaw3dXft->show_tips) {
+    XMapRaised(XtDisplay((Widget)tip), XtWindow((Widget)tip));
+    if (_Xaw3dXft->tip_do_grab)
+      XtAddGrab(XtParent((Widget)tip), True, True);
+    tip->tip.mapped = True;
+  }
 }
 
-static XawTipInfo *
-CreateTipInfo(Widget w)
-{
-    XawTipInfo *info = XtNew(XawTipInfo);
-    Widget shell = w;
-
-    while (XtParent(shell))
-	shell = XtParent(shell);
-
-    info->tip = (TipWidget)XtCreateWidget("tip", tipWidgetClass,
-					  shell, NULL, 0);
-    XtRealizeWidget((Widget)info->tip);
-    info->screen = XtScreen(w);
-    info->mapped = False;
-    info->widgets = NULL;
-    info->next = NULL;
-    XtAddEventHandler(shell, KeyPressMask, False, TipShellEventHandler,
-		      (XtPointer)NULL);
-
-    return (info);
+static void TipShellEventHandler (Widget w, XtPointer client_data,
+XEvent *event, Boolean *continue_to_dispatch) {
+  TipWidget tip = (TipWidget)client_data;
+  assert(tip);
+  ResetTip(tip, False);
 }
 
-static XawTipInfo *
-FindTipInfo(Widget w)
-{
-    XawTipInfo *info, *list = TipInfoList;
-    Screen *screen;
-
-    if (list == NULL)
-	return (TipInfoList = CreateTipInfo(w));
-
-    screen = XtScreen(w);
-    for (info = list; list; info = list, list = list->next)
-	if (list->screen == screen)
-	    return (list);
-
-    return (info->next = CreateTipInfo(w));
-}
-
-static void
-ResetTip(XawTipInfo *info, WidgetInfo *winfo, Bool add_timeout)
-{
-    if (info->tip->tip.timer) {
-	XtRemoveTimeOut(info->tip->tip.timer);
-	info->tip->tip.timer = 0;
-    }
-    if (info->mapped) {
-	if (_Xaw3dXft->tip_do_grab)
-	    XtRemoveGrab(XtParent((Widget)info->tip));
-	XUnmapWindow(XtDisplay((Widget)info->tip), XtWindow((Widget)info->tip));
-	info->mapped = False;
-    }
-    if (add_timeout) {
-	TimeoutData.info = info;
-	TimeoutData.winfo = winfo;
-	info->tip->tip.timer =
-	    XtAppAddTimeOut(XtWidgetToApplicationContext((Widget)info->tip),
-			    info->tip->tip.timeout, TipTimeoutCallback,
-			    (XtPointer)&TimeoutData);
-    }
-}
-
-static void
-TipTimeoutCallback(XtPointer closure, XtIntervalId *id)
-{
-    TimeoutInfo *cinfo = (TimeoutInfo *)closure;
-    XawTipInfo *info = cinfo->info;
-    WidgetInfo *winfo = cinfo->winfo;
-    Arg args[2];
-
-    info->tip->tip.label = winfo->label;
-    info->tip->tip.encoding = 0;
-    info->tip->tip.timer = 0;
-    XtSetArg(args[0], XtNencoding, &info->tip->tip.encoding);
-    info->tip->tip.international = False;
-    XtSetArg(args[1], XtNinternational, &info->tip->tip.international);
-    XtGetValues(winfo->widget, args, 2);
-
-    TipLayout(info);
-    TipPosition(info);
-    if (_Xaw3dXft->show_tips) {
-        XMapRaised(XtDisplay((Widget)info->tip), XtWindow((Widget)info->tip));
-        if (_Xaw3dXft->tip_do_grab)
-            XtAddGrab(XtParent((Widget)info->tip), True, True);
-        info->mapped = True;
-    }
-}
-
-static void
-TipShellEventHandler(Widget w, XtPointer client_data, XEvent *event, Boolean *continue_to_dispatch)
-{
-    XawTipInfo *info = FindTipInfo(w);
-
-    ResetTip(info, FindWidgetInfo(info, w), False);
-}
-
-static void
-TipEventHandler(Widget w, XtPointer client_data, XEvent *event, Boolean *continue_to_dispatch)
-{
-    XawTipInfo *info = FindTipInfo(w);
-    Boolean add_timeout;
-
-    switch (event->type) {
-	case EnterNotify:
-	    add_timeout = True;
-	    break;
-	case MotionNotify:
-	    /* If any button is pressed, timer is 0 */
-	    if (info->mapped)
-		return;
-	    add_timeout = info->tip->tip.timer != 0;
-	    break;
-	default:
-	    add_timeout = False;
-	    break;
-    }
-    ResetTip(info, FindWidgetInfo(info, w), add_timeout);
-}
-
-/*
- * Public routines
- */
-void
-XawTipEnable(Widget w, String label)
-{
-    if (XtIsWidget(w) && label && *label) {
-	XawTipInfo *info = FindTipInfo(w);
-	WidgetInfo *winfo = FindWidgetInfo(info, w);
-
-	if (winfo->label)
-	    XtFree((char *)winfo->label);
-	winfo->label = XtNewString(label);
-
-	XtAddEventHandler(w, TIP_EVENT_MASK, False, TipEventHandler,
-			  (XtPointer)NULL);
-    }
-}
-
-void
-XawTipDisable(Widget w)
-{
-    if (XtIsWidget(w)) {
-	XawTipInfo *info = FindTipInfo(w);
-
-	XtRemoveEventHandler(w, TIP_EVENT_MASK, False, TipEventHandler,
-			     (XtPointer)NULL);
-	ResetTip(info, FindWidgetInfo(info, w), False);
-    }
+static void TipEventHandler (Widget w, XtPointer client_data, XEvent *event,
+Boolean *continue_to_dispatch) {
+  TipWidget tip = (TipWidget)client_data;
+  assert(tip);
+  Boolean add_timeout;
+  switch (event->type) {
+  case EnterNotify:
+    add_timeout = True;
+    break;
+  case MotionNotify:
+    /* If any button is pressed, timer is 0 */
+    if (tip->tip.mapped)
+      return;
+    add_timeout = tip->tip.timer != 0;
+    break;
+  default:
+    add_timeout = False;
+  }
+  ResetTip(tip, add_timeout);
 }

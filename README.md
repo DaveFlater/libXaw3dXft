@@ -459,56 +459,6 @@ The outer shadow that is always present belongs to the menu.
 Like ThreeD, SmeThreeD has undeclared resources topShadowPixmap and
 bottomShadowPixmap that appear to be intended for internal use only.
 
-### Tip
-
-A Tip widget was added to Xaw in version R6.7.0, but the implementation in
-Xaw3d and Xaw3dXft is not the same.  This XawTipEnable() function requires a
-second parameter, to set the label:
-
-    /* create a menu button */
-    opsbutton = XtCreateManagedWidget("ops", menuButtonWidgetClass,
-                                      parent, NULL, 0);
-
-    /* add a tooltip */
-    XawTipEnable(opsbutton, "Application functions");
-
-    ...
-
-    /* for some reason, disable the tooltip */
-    XawTipDisable(opsbutton);
-
-The labels of Tip widgets are set individually, but the font, colors,
-margins, etc., can be set only globally, for all Tip widget instances.  For
-example, a resource file might contain:
-
-    *Tip.font:         7x13bold
-    *Tip.background:   yellow
-    *Tip.foreground:   blue
-    *Tip.borderColor:  blue
-
-The \*Margin resources of Xaw's Tip widget are not in this Tip widget; they
-have been reduced to internalHeight and internalWidth resources, like those
-of the Label widget.
-
-Tip has the following resources in addition to those that it inherits from
-Core:
-
-Name           | Class        | RepType      | Default value
-:---           | :----        | :---         | :---
-backingStore   | BackingStore | BackingStore | Always + WhenMapped + NotUseful
-encoding       | Encoding     | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
-font           | Font         | XFontStruct* | XtDefaultFont
-fontSet        | FontSet      | XFontSet     | XtDefaultFontSet
-foreground     | Foreground   | Pixel        | XtDefaultForeground
-internalHeight | Height       | Dimension    | 2
-internalWidth  | Width        | Dimension    | 2
-label          | Label        | String       | NULL
-timeout        | Timeout      | Int          | 1200
-xftFont        | XftFont      | String       | NULL
-
-The border width of Tip widgets is permanently fixed at 0 to prevent a blurry
-text glitch from affecting the pop-up window.
-
 ### Layout
 
 The Layout widget class does not exist in Xaw.  It was created out-of-tree
@@ -918,6 +868,72 @@ TextSrc and TextSink are vacuous superclasses. | TextSrc and TextSink contain re
 The nominal character width used for setting tabs is (1) the FIGURE_WIDTH font property, if present, (2) the width of the '$' character, if present, or (3) max_bounds.width. | The nominal character width used for setting tabs is the width of the '$' character, if present, and otherwise whatever the font system returns for a missing character.
 ThreeD resources are inaccessible except through global resource manager settings. | Text is a subclass of ThreeD.  ThreeD resources can be set on the Text widget.
 
+### <a name="Tip"></a>Tip
+
+The Tip widget was added to Xaw in version R6.7.0, after the original Xaw3d
+fork.  Subsequently, Xaw and Xaw3d each had a Tip widget, but their usages
+were incompatible.  Xaw3dXft 1.x inherited the Xaw3d usage, but Xaw3dXft 2.x
+then broke with both precedents.  All three usages are provided below to
+assist with migration.
+
+Xaw usage:
+
+    /*
+      For widgets inheriting from Simple, the tip is enabled automatically when
+      the tip resource is set.  The tip, encoding, and international resources
+      are copied from the widget to the Tip.  Other resources for the Tip can
+      be set only through global defaults.
+    */
+    Widget label = XtVaCreateManagedWidget("Label", labelWidgetClass, formWidget,
+      XtNlabel, "Label text", XtNtip, "Tip text", NULL);
+
+Xaw3d usage:
+
+    /*
+      The tip is not enabled until XawTipEnable is called with the tip text.
+      The encoding and international resources are copied from the widget to
+      the Tip.  Other resources for the Tip can be set only through global
+      defaults.
+    */
+    Widget label = XtVaCreateManagedWidget("Label", labelWidgetClass, formWidget,
+      XtNlabel, "Label text", NULL);
+    XawTipEnable(label, "Tip text");
+
+Xaw3dXft 2.x usage:
+
+    /* Set resources directly on the Tip widget. */
+    Widget label = XtVaCreateManagedWidget("Label", labelWidgetClass, formWidget,
+      XtNlabel, "Label text", NULL);
+    Widget tip = XtVaCreateWidget("Tip", tipWidgetClass, label,
+      XtNlabel, "Tip text", NULL);
+
+Tip has the following resources in addition to those that it inherits from
+Core:
+
+Name           | Class        | RepType      | Default value
+:---           | :----        | :---         | :---
+backingStore   | BackingStore | BackingStore | Always + WhenMapped + NotUseful
+enable         | Enable       | Boolean      | True
+encoding       | Encoding     | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
+font           | Font         | XFontStruct* | XtDefaultFont
+fontSet        | FontSet      | XFontSet     | XtDefaultFontSet
+foreground     | Foreground   | Pixel        | XtDefaultForeground
+internalHeight | Height       | Dimension    | 2
+internalWidth  | Width        | Dimension    | 2
+label          | Label        | String       | NULL
+timeout        | Timeout      | Int          | 1200
+xftFont        | XftFont      | String       | NULL
+
+The enable resource enables or disables the displaying of a particular tip
+when the mouse pointer hovers over its parent widget.
+
+The internalHeight and internalWidth resources control the margins like they
+do for the Label widget.  Note that Xaw's Tip widget has topMargin,
+bottomMargin, leftMargin, and rightMargin resources instead.
+
+The border width of Tip widgets is permanently fixed at 0 to prevent a blurry
+text glitch from affecting the pop-up window.
+
 ### <a name="VendorShell"></a>VendorShell
 
 Xaw overrides the VendorShell class of Xt with its own version to integrate
@@ -1241,6 +1257,12 @@ text_bg_hilight                | use highlightStyle resource
 text_bg_hilight_color          | use highlight resource
 text_sb_right                  | use Text.useRight resource
 tip_background_color           | use Tip.background resource
+
+**Changed implementation of tips**
+
+See [Tip](#Tip) for new usage.  (N.B., the Tip widget in Xaw remains
+undocumented, and the implementations in Xaw and Xaw3d were already
+incompatible.)
 
 **Changed signatures of semi-private functions**
 

@@ -48,6 +48,7 @@
   borderColor	    BorderColor		Pixel		XtDefaultForeground
   borderWidth	    BorderWidth		Dimension	1
   destroyCallback   Callback		XtCallbackList	NULL
+  enable            Enable              Boolean         True
   encoding          Encoding 	        UnsignedChar 	XawTextEncoding8bit
                                       if international, XawTextEncodingMb
   font		    Font		XFontStruct*	XtDefaultFont
@@ -69,43 +70,5 @@ typedef struct _TipClassRec *TipWidgetClass;
 typedef struct _TipRec *TipWidget;
 
 extern WidgetClass tipWidgetClass;
-
-/*
- * Public Functions
- */
-
-_XFUNCPROTOBEGIN
-
-/*
- * Function:
- *	XawTipEnable
- *
- * Parameters:
- *	Widget - widget for tooltip
- *	String - tooltip label
- *
- * Description:
- *	Enables the tip event handler for this widget.
- */
-void XawTipEnable(
- Widget,
- String
-);
-
-/*
- * Function:
- *	XawTipDisable
- *
- * Parameters:
- *	Widget - widget for tooltip
- *
- * Description:
- *	Disables the tip event handler for this widget.
- */
-void XawTipDisable(
- Widget
-);
-
-_XFUNCPROTOEND
 
 #endif /* _XawTip_h */

@@ -56,6 +56,7 @@ typedef struct _TipPart {
     int backing_store;
     int timeout;
     char *xftfontname;
+    Boolean enable;
 
     /* private */
     GC gc;
@@ -64,6 +65,8 @@ typedef struct _TipPart {
     XtEnum encoding;
     XftFont *xftfont;
     Visual *visual;
+    Boolean mapped;
+    Widget shell;
 } TipPart;
 
 typedef struct _TipRec {
