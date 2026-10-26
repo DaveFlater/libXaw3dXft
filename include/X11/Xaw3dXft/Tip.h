@@ -57,6 +57,7 @@
   height	    Height		Dimension	text height
   internalHeight    Height		Dimension	2
   internalWidth     Width		Dimension	2
+  international     International       Boolean         False
   label		    Label		String		NULL
   timeout	    Timeout		Int		1200
   width		    Width		Dimension	text width

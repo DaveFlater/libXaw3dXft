@@ -33,10 +33,27 @@ in this Software without prior written authorization from the X Consortium.
  *          kit@expo.lcs.mit.edu
  */
 
-/*********************************************************************
-Copyright © 2026 David Flater
-X11 license (as per the historical licenses that the package inherits)
-*********************************************************************/
+/* Copyright © 2026 David Flater
+ * X11 license (as per the historical licenses that the package inherits)
+ */
+
+/*
+  Notes 2026-10-26 DWF:
+
+  In sources as incoming, SimpleMenu inherited the default border width of 1.
+  That somehow resulted in blurry text.  It was blurry regardless whether the
+  text rendering was done by Xft or by Xlib.  The problem reproduced with
+  both Xaw and Xaw3d with the default font.
+
+  The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
+  window's border width to 0 after the fact and then artificially drew a
+  black border.  In Xaw3dXft v2 I removed that hack and fixed the border
+  width at 0.
+
+  The only two widgets with border_hack code were Tip and SimpleMenu.
+  The common factor is they both pop up independent windows instead of
+  fitting within a composite parent.
+*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -315,25 +332,7 @@ Initialize(Widget request, Widget new, ArgList args, Cardinal *num_args)
 
   XmuCallInitializers(XtWidgetToApplicationContext(new));
 
-  /*
-    Notes 2026-06-19 DWF:
-
-    In sources as incoming, SimpleMenu inherited the default border width of
-    1.  That somehow resulted in blurry text.  It was blurry regardless
-    whether the text rendering was done by Xft or by Xlib.  The problem
-    reproduced with plain Xaw and its default font.
-
-    The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
-    window's border width to 0 after the fact and then artificially drew a
-    black border.  In Xaw3dXft v2 I removed that hack and set border width to
-    0 here.
-
-    The only two widgets with border_hack code were Tip and SimpleMenu.  The
-    common factor is they both pop up independent windows instead of fitting
-    within a composite parent.
-  */
-  smw->core.border_width = 0;
-
+  smw->core.border_width = 0; // See Notes 2026-10-26 DWF at top
   smw->simple_menu.label = NULL;
   smw->simple_menu.entry_set = NULL;
   smw->simple_menu.recursive_set_values = False;
@@ -499,7 +498,7 @@ SetValues(Widget current, Widget request, Widget new, ArgList args, Cardinal *nu
     SimpleMenuWidget smw_old = (SimpleMenuWidget)current;
     SimpleMenuWidget smw_new = (SimpleMenuWidget)new;
     Boolean ret_val = FALSE, layout = FALSE;
-    smw_new->core.border_width = 0; // See Notes 2026-06-19 DWF above
+    smw_new->core.border_width = 0; // See Notes 2026-10-26 DWF at top
 
     if (!smw_new->simple_menu.recursive_set_values) {
 	if (smw_new->core.width != smw_old->core.width) {

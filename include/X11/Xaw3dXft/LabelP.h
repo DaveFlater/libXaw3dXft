@@ -90,7 +90,7 @@ typedef struct {
     Dimension	internal_height;
     Pixmap	pixmap;         // replaces label text
     Boolean	resize;
-    XtEnum encoding;
+    XtEnum      encoding;
     Pixmap	left_bitmap;    // appears to the left of label text
     char	*xftfontname;
 

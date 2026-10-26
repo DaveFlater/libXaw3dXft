@@ -50,21 +50,22 @@ typedef struct _TipPart {
     Pixel foreground;
     XFontStruct	*font;
     XFontSet fontset;
+    Boolean international;
+    XtEnum encoding;
+    char *xftfontname;
     Dimension internal_width;
     Dimension internal_height;
     String label;
     int backing_store;
     int timeout;
-    char *xftfontname;
     Boolean enable;
 
     /* private */
-    GC gc;
+    GC normal_GC;      // fg, font
     XtIntervalId timer;
-    Boolean international;
-    XtEnum encoding;
     XftFont *xftfont;
     Visual *visual;
+    XftColor xftfg;
     Boolean mapped;
     Widget shell;
 } TipPart;

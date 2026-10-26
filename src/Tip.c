@@ -36,16 +36,33 @@
  * X11 license (as per the historical licenses that the package inherits)
  */
 
+/*
+  Notes 2026-10-26 DWF:
+
+  In sources as incoming, XCreateWindow was called with XtBorderWidth(w)
+  for border_width.  That somehow resulted in blurry text.  It was blurry
+  regardless whether the text rendering was done by Xft or by Xlib.  The
+  problem reproduced with both Xaw and Xaw3d with the default font.
+
+  The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
+  window's border width to 0 after the fact and then artificially drew a
+  black border.  In Xaw3dXft v2 I removed that hack and fixed the border
+  width at 0.
+
+  The only two widgets with border_hack code were Tip and SimpleMenu.
+  The common factor is they both pop up independent windows instead of
+  fitting within a composite parent.
+*/
+
 #include <stdlib.h>
 
-#include <X11/IntrinsicP.h>
-#include <X11/StringDefs.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xos.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <X11/Xaw3dXft/AnyStringP.h>
 #include <X11/Xaw3dXft/CommonP.h>
 #include <X11/Xaw3dXft/TipP.h>
 #include <X11/Xaw3dXft/Xaw3dP.h>
@@ -94,6 +111,8 @@ static XtResource resources[] = {
     offset(xftfontname), XtRString, NULL},
   {XtNfontSet, XtCFontSet, XtRFontSet, sizeof(XFontSet),
     offset(fontset), XtRString, XtDefaultFontSet},
+  {XtNinternational, XtCInternational, XtRBoolean, sizeof(Boolean),
+    offset(international), XtRImmediate, (XtPointer)False},
   {XtNlabel, XtCLabel, XtRString, sizeof(String),
     offset(label), XtRString, NULL},
   {XtNencoding, XtCEncoding, XtREnum, sizeof(XtEnum),
@@ -216,6 +235,21 @@ XawCvtBackingStoreToString(Display *dpy, XrmValuePtr args, Cardinal *num_args,
   return (True);
 }
 
+static void get_or_change_GCs (TipWidget tip) {
+  const Pixel fg = tip->tip.foreground;
+
+  // normal_GC
+  if (tip->tip.normal_GC)
+    XtReleaseGC((Widget)tip, tip->tip.normal_GC);
+  tip->tip.normal_GC = Xaw3dXftGetTextGC((Widget)tip, fg, tip->tip.font,
+					  tip->tip.international);
+
+  // XftColors
+  Display *display = XtDisplay(tip);
+  Visual *visual = VisualOf(tip);
+  Colormap cmap = tip->core.colormap;
+  Xaw3dXftGetXftColor(display, visual, cmap, fg, &tip->tip.xftfg);
+}
 
 static void TipEnable (TipWidget tip) {
   if (tip->tip.enable)
@@ -242,33 +276,35 @@ Cardinal *num_args) {
   TipWidget tip = (TipWidget)w;
 
   Xaw3dXftGetVisualInfo(w, &VisualOf(tip), NULL, NULL);
+  tip->tip.normal_GC = NULL;
+
+  Xaw3dXftFixDefaultEncoding(args, *num_args, tip->tip.international,
+    &tip->tip.encoding);
+  if (tip->tip.xftfontname)
+    tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
+  else
+    tip->tip.xftfont = NULL;
+  if (tip->tip.international && !tip->tip.fontset)
+    XtError("Tip initialized with international true but no fontset");
+  if (!tip->tip.font) XtError("Tip initialized with no font");
+
+  // Avoid surprises:  just always dup the string.
+  if (tip->tip.label == NULL && tip->core.name != NULL)
+    // Unsure what to do about encoding when defaulting to core.name.
+    // It's required to be const char *, but could be UTF8.
+    tip->tip.label = Xaw3dXftAnyStrdup(tip->tip.encoding, tip->core.name);
+  else if (tip->tip.label != NULL)
+    tip->tip.label = Xaw3dXftAnyStrdup(tip->tip.encoding, tip->tip.label);
+
+  get_or_change_GCs(tip);
 
   tip->tip.mapped = False;
   tip->tip.timer = 0;
-  tip->core.border_width = 0; // See Notes 2026-06-19 DWF below
+  tip->core.border_width = 0; // See Notes 2026-10-26 DWF at top
 
   tip->tip.shell = w;
   while (XtParent(tip->tip.shell))
     tip->tip.shell = XtParent(tip->tip.shell);
-
-  XGCValues values;
-  values.foreground = tip->tip.foreground;
-  values.background = tip->core.background_pixel;
-  values.font = tip->tip.font->fid;
-  values.graphics_exposures = False;
-
-  tip->tip.gc = XtAllocateGC(w, 0, GCForeground | GCBackground | GCFont |
-    GCGraphicsExposures, &values, GCFont, 0);
-
-  // FIXME upgrade as per Label.c
-  if (_Xaw3dXft->encoding)
-    tip->tip.xftfont = Xaw3dXftGetFont(w, tip->tip.xftfontname);
-  else {
-    tip->tip.xftfont = NULL;
-    if (tip->tip.international && !tip->tip.fontset)
-      XtError("Tip: no fontset found");
-  }
-  if (!tip->tip.font) XtError("Tip: no font found");
 
   TipEnable(tip);
   XtAddEventHandler(tip->tip.shell, KeyPressMask, False, TipShellEventHandler,
@@ -277,9 +313,13 @@ Cardinal *num_args) {
 
 static void XawTipDestroy (Widget w) {
   TipWidget tip = (TipWidget)w;
+
+  // As per Initialize, we always dup label.
+  free(tip->tip.label);
   if (tip->tip.timer)
     XtRemoveTimeOut(tip->tip.timer);
-  XtReleaseGC(w, tip->tip.gc);
+  if (tip->tip.normal_GC)
+    XtReleaseGC(w, tip->tip.normal_GC);
   XtRemoveEventHandler(tip->tip.shell, KeyPressMask, False,
     TipShellEventHandler, tip);
 }
@@ -298,127 +338,88 @@ static void XawTipRealize (Widget w, Mask *mask, XSetWindowAttributes *attr) {
   *mask |= CWOverrideRedirect;
   attr->override_redirect = True;
 
-  /*
-    Notes 2026-06-19 DWF:
-
-    In sources as incoming, XCreateWindow was called with XtBorderWidth(w)
-    for border_width.  That somehow resulted in blurry text.  It was blurry
-    regardless whether the text rendering was done by Xft or by Xlib.  The
-    problem reproduced with Xaw3d and its default font.  (The same problem
-    with SimpleMenu reproduced even with Xaw, but I did not test Xaw's
-    version of Tip, which isn't comparable.)
-
-    The border_hack workaround that was added in Xaw3dXft 1.6.2h set the
-    window's border width to 0 after the fact and then artificially drew a
-    black border.  In Xaw3dXft v2 I removed that hack and set border width
-    to 0 here.
-
-    The only two widgets with border_hack code were Tip and SimpleMenu.
-    The common factor is they both pop up independent windows instead of
-    fitting within a composite parent.
-  */
-
   XtWindow(w) = XCreateWindow(DisplayOfScreen(XtScreen(w)),
     RootWindowOfScreen(XtScreen(w)),
     XtX(w), XtY(w),
     XtWidth(w) ? XtWidth(w) : 1,
     XtHeight(w) ? XtHeight(w) : 1,
-    0U, // unsigned int border_width
+    0U, // unsigned int border_width; see Notes 2026-10-26 DWF at top
     VisualDepth(tip), InputOutput, VisualOf(tip),
     *mask, attr);
 }
 
 static void XawTipExpose (Widget w, XEvent *event, Region region) {
   TipWidget tip = (TipWidget)w;
-  GC gc = tip->tip.gc;
-  char *nl, *label = tip->tip.label;
-  Position y;
-  int len;
-
-  y = tip->tip.internal_height + ((_Xaw3dXft->encoding)?
-    tip->tip.xftfont->ascent + _Xaw3dXft->menu_spacing :
-    tip->tip.font->max_bounds.ascent );
-
-  if (tip->tip.international == True && !_Xaw3dXft->encoding) {
-    Position ksy = tip->tip.internal_height;
-    XFontSetExtents *ext = XExtentsOfFontSet(tip->tip.fontset);
-
-    ksy += abs(ext->max_ink_extent.y);
-
-    while ((nl = strchr(label, '\n')) != NULL) {
-      XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset,
-	gc, tip->tip.internal_width, ksy, label,
-	(int)(nl - label));
-      ksy += ext->max_ink_extent.height;
-      label = nl + 1;
-    }
-    len = strlen(label);
-    if (len)
-      XmbDrawString(XtDisplay(w), XtWindow(w), tip->tip.fontset, gc,
-	tip->tip.internal_width, ksy, label, len);
-  }
-  else if (_Xaw3dXft->encoding) {
-    while ((nl = strchr(label, '\n')) != NULL) {
-      Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
-	tip->tip.internal_width+3, y,
-	label, (int)(nl - label));
-      y += tip->tip.xftfont->height + 3*_Xaw3dXft->menu_spacing;
-      label = nl + 1;
-    }
-    len = strlen(label);
-    if (len)
-      Xaw3dXftDrawString(VisualOf(tip), w, tip->tip.xftfont,
-	tip->tip.internal_width+3, y,
-	label, len);
-  } else {
-    while ((nl = strchr(label, '\n')) != NULL) {
-      if (tip->tip.encoding)
-	XDrawString16(XtDisplay(w), XtWindow(w), gc,
-	  tip->tip.internal_width, y,
-	  (XChar2b*)label, (int)(nl - label) >> 1);
-      else
-	XDrawString(XtDisplay(w), XtWindow(w), gc,
-	  tip->tip.internal_width, y,
-	  label, (int)(nl - label));
-      y += tip->tip.font->max_bounds.ascent +
-	tip->tip.font->max_bounds.descent;
-      label = nl + 1;
-    }
-    len = strlen(label);
-    if (len) {
-      if (tip->tip.encoding)
-	XDrawString16(XtDisplay(w), XtWindow(w), gc,
-	  tip->tip.internal_width, y,
-	  (XChar2b*)label, len >> 1);
-      else
-	XDrawString(XtDisplay(w), XtWindow(w), gc,
-	  tip->tip.internal_width, y, label, len);
-    }
-  }
+  if (tip->tip.label)
+    Xaw3dXftDrawAnyString(XtDisplay(tip), VisualOf(tip), tip->core.colormap,
+      XtWindow(tip), tip->tip.font, tip->tip.fontset, tip->tip.xftfont,
+      tip->tip.international, tip->tip.normal_GC, &tip->tip.xftfg,
+      tip->tip.internal_width, tip->tip.internal_height, NULL,
+      tip->tip.encoding, tip->tip.label);
 }
 
 static Boolean XawTipSetValues (Widget current, Widget request, Widget cnew,
 ArgList args, Cardinal *num_args) {
   TipWidget curtip = (TipWidget)current;
   TipWidget newtip = (TipWidget)cnew;
-  Boolean redisplay = False;
-  newtip->core.border_width = 0; // See Notes 2026-06-19 DWF above
+  Boolean was_resized = False, redisplay = False;
+  newtip->core.border_width = 0; // See Notes 2026-10-26 DWF at top
 
-  if (curtip->tip.font->fid != newtip->tip.font->fid ||
-    curtip->tip.foreground != newtip->tip.foreground) {
-    XGCValues values;
+  // Notice if the label text changed.
+  if (curtip->tip.label != newtip->tip.label) {
+    // As per Initialize, we always dup label.
+    if (curtip->tip.label)
+      free(curtip->tip.label);
+    if (newtip->tip.label == NULL && newtip->core.name != NULL)
+      newtip->tip.label = Xaw3dXftAnyStrdup(newtip->tip.encoding,
+	newtip->core.name);
+    else if (newtip->tip.label != NULL)
+      newtip->tip.label = Xaw3dXftAnyStrdup(newtip->tip.encoding,
+	newtip->tip.label);
+    was_resized = True;
+  }
+  // If *only* the encoding changed, we gain nothing by repeating the
+  // strdup, but it might display differently.
+  if (curtip->tip.encoding != newtip->tip.encoding)
+    was_resized = True;
 
-    values.foreground = newtip->tip.foreground;
-    values.background = newtip->core.background_pixel;
-    values.font = newtip->tip.font->fid;
-    values.graphics_exposures = False;
-    XtReleaseGC(cnew, curtip->tip.gc);
-    newtip->tip.gc = XtAllocateGC(cnew, 0, GCForeground | GCBackground |
-      GCFont | GCGraphicsExposures, &values,
-      GCFont, 0);
+  // Notice if the font changed.
+  if (curtip->tip.xftfontname != newtip->tip.xftfontname) {
+    if (newtip->tip.xftfontname)
+      newtip->tip.xftfont = Xaw3dXftGetFont(cnew, newtip->tip.xftfontname);
+    else
+      newtip->tip.xftfont = NULL;
+    was_resized = True;
+  }
+  if (curtip->tip.font->fid != newtip->tip.font->fid)
+    was_resized = True;
+  if (curtip->tip.international != newtip->tip.international ||
+      newtip->tip.international &&
+      curtip->tip.fontset != newtip->tip.fontset)
+    was_resized = True;
+
+  // Notice other reasons to recalculate label position.
+  if (curtip->tip.internal_width != newtip->tip.internal_width ||
+      curtip->tip.internal_height != newtip->tip.internal_height)
+    was_resized = True;
+
+  // Notice if the colors or plain old font changed.  We need
+  // get_or_change_GCs when international changes because the GCs need to be
+  // writable if true and they need to have their font set if false.  Xaw
+  // does not allow international to change.
+  if (curtip->core.background_pixel != newtip->core.background_pixel)
+    redisplay = True;
+  if (curtip->tip.foreground != newtip->tip.foreground ||
+      curtip->tip.font->fid != newtip->tip.font->fid ||
+      curtip->tip.international != newtip->tip.international) {
+    get_or_change_GCs(newtip); // Doesn't use bg color
     redisplay = True;
   }
 
+  // Ignore insensitive.
+  // if (XtIsSensitive(current) != XtIsSensitive(new))
+
+  // Enable or disable the tip.
   if (curtip->tip.enable != newtip->tip.enable) {
     if (newtip->tip.enable)
       TipEnable(newtip);
@@ -426,90 +427,30 @@ ArgList args, Cardinal *num_args) {
       TipDisable(newtip);
   }
 
+  // Finally, act on was_resized and redisplay.  We don't have a resize
+  // procedure, but TipGetSize and TipPosition are called every time the tip
+  // is popped up.  So the path of least resistance is just to pop down the
+  // tip and let nature take its course.
+  if (was_resized) {
+    ResetTip(newtip, False);
+    redisplay = False;
+  }
+
   return redisplay;
 }
 
-static void TipLayout (TipWidget tip) {
-  XFontStruct	*font = tip->tip.font;
-  XftFont *xftfont = tip->tip.xftfont;
-  int width = 0, height;
-  char *nl, *label = tip->tip.label;
-
-  if (_Xaw3dXft->encoding) {
-    height = xftfont->height + 4;
-    if ((nl = strchr(label, '\n')) != NULL) {
-      while (True) {
-	int w;
-	w = Xaw3dXftTextWidth((Widget)tip,
-	  xftfont, label, (int)(nl - label));
-	if (w > width)
-	  width = w;
-	if (*nl == '\0')
-	  break;
-	label = nl + 1;
-	if (*label)
-	  height += xftfont->height + 3*_Xaw3dXft->menu_spacing;
-	if ((nl = strchr(label, '\n')) == NULL)
-	  nl = strchr(label, '\0');
-      }
-    }
-    else
-      width = Xaw3dXftTextWidth((Widget)tip, xftfont, label, strlen(label));
-  } else if (tip->tip.international == True && !_Xaw3dXft->encoding) {
-    XFontSet fset = tip->tip.fontset;
-    XFontSetExtents *ext = XExtentsOfFontSet(fset);
-
-    height = ext->max_ink_extent.height;
-    if ((nl = strchr(label, '\n')) != NULL) {
-      while (True) {
-	int w = XmbTextEscapement(fset, label, (int)(nl - label));
-
-	if (w > width)
-	  width = w;
-	if (*nl == '\0')
-	  break;
-	label = nl + 1;
-	if (*label)
-	  height += ext->max_ink_extent.height;
-	if ((nl = strchr(label, '\n')) == NULL)
-	  nl = strchr(label, '\0');
-      }
-    }
-    else
-      width = XmbTextEscapement(fset, label, strlen(label));
-  }
-  else
-    {
-      height = font->max_bounds.ascent + font->max_bounds.descent;
-      if ((nl = strchr(label, '\n')) != NULL) {
-	while (True) {
-	  int w = tip->tip.encoding ?
-	    XTextWidth16(font, (XChar2b*)label,
-	      (int)(nl - label) >> 1) :
-	    XTextWidth(font, label, (int)(nl - label));
-
-	  if (w > width)
-	    width = w;
-	  if (*nl == '\0')
-	    break;
-	  label = nl + 1;
-	  if (*label)
-	    height += font->max_bounds.ascent + font->max_bounds.descent;
-	  if ((nl = strchr(label, '\n')) == NULL)
-	    nl = strchr(label, '\0');
-	}
-      }
-      else
-	width = tip->tip.encoding ?
-	  XTextWidth16(font, (XChar2b*)label, strlen(label) >> 1) :
-	  XTextWidth(font, label, strlen(label));
-    }
-  XtWidth(tip) = width + tip->tip.internal_width * 2
-    + ((_Xaw3dXft->encoding)? 6:0);
+static void TipGetSize (TipWidget tip) {
+  Dimension width=0, height=0;
+  if (tip->tip.label)
+    Xaw3dXftSizeAnyString(XtDisplay(tip), tip->tip.font, tip->tip.fontset,
+      tip->tip.xftfont, tip->tip.international, tip->tip.encoding,
+      tip->tip.label, &width, &height);
+  XtWidth(tip) = width + tip->tip.internal_width * 2;
   XtHeight(tip) = height + tip->tip.internal_height * 2;
 }
 
-#define	DEFAULT_TIP_OFFSET	12
+// There's no resource to change this
+#define	DEFAULT_TIP_OFFSET 12
 
 static void TipPosition (TipWidget tip) {
   Window r, c;
@@ -564,7 +505,7 @@ static void TipTimeoutCallback (XtPointer client_data, XtIntervalId *id) {
   TipWidget tip = (TipWidget)client_data;
   assert(tip);
   tip->tip.timer = 0;
-  TipLayout(tip);
+  TipGetSize(tip);
   XtRealizeWidget((Widget)tip);
   TipPosition(tip);
   if (_Xaw3dXft->show_tips) {

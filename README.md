@@ -730,7 +730,7 @@ SmeBSB widget.
 
 The border width of SimpleMenu widgets is permanently fixed at 0 in Xaw3dXft
 to prevent a blurry text glitch from affecting the pop-up window.  (The
-glitch can be reproduced with Xaw.)
+glitch can be reproduced with Xaw and Xaw3d.)
 
 The label and labelClass resources were inherited from Xaw:
 
@@ -910,19 +910,20 @@ Xaw3dXft 2.x usage:
 Tip has the following resources in addition to those that it inherits from
 Core:
 
-Name           | Class        | RepType      | Default value
-:---           | :----        | :---         | :---
-backingStore   | BackingStore | BackingStore | Always + WhenMapped + NotUseful
-enable         | Enable       | Boolean      | True
-encoding       | Encoding     | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
-font           | Font         | XFontStruct* | XtDefaultFont
-fontSet        | FontSet      | XFontSet     | XtDefaultFontSet
-foreground     | Foreground   | Pixel        | XtDefaultForeground
-internalHeight | Height       | Dimension    | 2
-internalWidth  | Width        | Dimension    | 2
-label          | Label        | String       | NULL
-timeout        | Timeout      | Int          | 1200
-xftFont        | XftFont      | String       | NULL
+Name           | Class         | RepType      | Default value
+:---           | :----         | :---         | :---
+backingStore   | BackingStore  | BackingStore | Always + WhenMapped + NotUseful
+enable         | Enable        | Boolean      | True
+encoding       | Encoding      | XtEnum | XawTextEncoding8bit (XawTextEncodingMb if international)
+font           | Font          | XFontStruct* | XtDefaultFont
+fontSet        | FontSet       | XFontSet     | XtDefaultFontSet
+foreground     | Foreground    | Pixel        | XtDefaultForeground
+internalHeight | Height        | Dimension    | 2
+internalWidth  | Width         | Dimension    | 2
+international  | International | Boolean      | False
+label          | Label         | String       | NULL
+timeout        | Timeout       | Int          | 1200
+xftFont        | XftFont       | String       | NULL
 
 The enable resource enables or disables the displaying of a particular tip
 when the mouse pointer hovers over its parent widget.
@@ -931,8 +932,9 @@ The internalHeight and internalWidth resources control the margins like they
 do for the Label widget.  Note that Xaw's Tip widget has topMargin,
 bottomMargin, leftMargin, and rightMargin resources instead.
 
-The border width of Tip widgets is permanently fixed at 0 to prevent a blurry
-text glitch from affecting the pop-up window.
+The border width of Tip widgets is permanently fixed at 0 in Xaw3dXft to
+prevent a blurry text glitch from affecting the pop-up window.  (The glitch
+can be reproduced with Xaw and Xaw3d.)
 
 ### <a name="VendorShell"></a>VendorShell
 
