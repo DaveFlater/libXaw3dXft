@@ -15,7 +15,6 @@ to use "normal" Xt widget resources.
 - [Classes not present in Athena Widgets](#newclasses)
 - [Alterations to Athena Widgets classes](#alterations)
 - [Notes on known difficulties](#difficulties)
-- [Leftovers](#runtimeopts)
 - [Version 1.x to 2.0 migration](#migration)
 - [Rationale for features removed in 2.0](#rationale)
 - [Oddities](#oddities)
@@ -1136,21 +1135,6 @@ Paned (Composite) creates any number of Grip widgets, all with the name
 "grip".  It only makes sense to configure them with global defaults.
 
 
-## <a name="runtimeopts"></a>Leftovers
-
-🚨 This is what remains of the 1.x global infrastructure that has not yet
-been addressed.
-
-Xaw3dXftProc | Xaw3dXftP.h | Function
-:--- | :--- | :---
-#ifdef XAW_ARROW_SCROLLBARS | |
-get_scrollbar           | Xaw3dXftGetScrollbar         | Return vertical scrollbar of AsciiText/Text widget
-handle_mousewheel       | Xaw3dXftHandleMouseWheel     | Scrollbar handler for mouse wheel events
-set_mousewheel_handler  | Xaw3dXftSetMouseWheelHandler | Add Xaw3dXftHandleMouseWheel as event handler
-set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | scroll_steps = value
-#endif | |
-
-
 ## <a name="migration"></a>Version 1.x to 2.0 migration
 
 Summary of backward-incompatible changes:
@@ -1202,23 +1186,46 @@ insensitive_twist              | deleted (all insensitive widgets are stippled)
 menu_spacing                   | SmeBSB.vertSpace resource
 multi_column_menu              | SimpleMenu.multiColumn resource
 no_hilit_reverse               | highlightStyle resource
+proc                           | See below
 show_tips                      | global Boolean Xaw3dXftShowTips
+string_hilight                 | N/A, internal state variable
 string_use_pixmap              | deleted (workaround not needed anymore)
 text_bg_hilight                | highlightStyle resource
 text_bg_hilight_color          | highlight resource
+text_fg_alternate_color        | N/A, internal state variable
 text_sb_right                  | Text.useRight resource
 tip_background_color           | Tip.background resource
 tip_do_grab                    | Tip.grab resource
+
+The global functions that were available through the Xaw3dXftProc struct in
+the proc field or the private header Xaw3dXftP.h have been moved or
+replaced as follows.
+
+Xaw3dXftProc | Xaw3dXftP.h | 2.x replacement
+:--- | :--- | :---
+set_default_hilit_color | Xaw3dXftSetDefaultHilitColor | highlight resource
+set_hilit_color         | Xaw3dXftSetHilitColor        | highlight resource
+set_default_fontname    | Xaw3dXftSetDefaultFontName   | xftFont resource
+set_insensitive_twist   | Xaw3dXftSetInsensitiveTwist  | deleted (all insensitive widgets are stippled)
+get_font                | Xaw3dXftGetFont              | Xaw3dXftGetFont in CommonP.h
+text_width              | Xaw3dXftTextWidth            | Xaw3dXftSizeAnyString in AnyStringP.h
+draw_string             | Xaw3dXftDrawString           | Xaw3dXftDrawAnyString in AnyStringP.h
+#ifdef XAW_ARROW_SCROLLBARS | |
+get_scrollbar           | Xaw3dXftGetScrollbar         | TBD Return vertical scrollbar of AsciiText/Text widget
+handle_mousewheel       | Xaw3dXftHandleMouseWheel     | TBD Scrollbar handler for mouse wheel events
+set_mousewheel_handler  | Xaw3dXftSetMouseWheelHandler | TBD Add Xaw3dXftHandleMouseWheel as event handler
+set_mousewheel_steps    | Xaw3dXftSetMouseWheelSteps   | TBD scroll_steps = value
+#endif | |
+
+The signature of Xaw3dXftGetFont changed:  replace display with object.  The
+AnyString functions are significantly different than the functions they
+replaced.
 
 **Changed implementation of tips**
 
 See [Tip](#Tip) for new usage.  (N.B., the Tip widget in Xaw remains
 undocumented, and the implementations in Xaw and Xaw3d were already
 incompatible.)
-
-**Changed signatures of semi-private functions**
-
-Xaw3dXftGetFont (alias proc->get_font):  replace display with object  
 
 **Changed default size of Label widgets**
 
