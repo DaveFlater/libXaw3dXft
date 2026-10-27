@@ -130,7 +130,9 @@ static XtResource resources[] = {
   {XtNtimeout, XtCTimeout, XtRInt, sizeof(int),
     offset(timeout), XtRImmediate, (XtPointer)1200},
   {XtNenable, XtCEnable, XtRBoolean, sizeof(Boolean),
-    offset(enable), XtRImmediate, (XtPointer)True}
+    offset(enable), XtRImmediate, (XtPointer)True},
+  {XtNgrab, XtCGrab, XtRBoolean, sizeof(Boolean),
+    offset(grab), XtRImmediate, (XtPointer)True}
 };
 #undef offset
 
@@ -177,6 +179,7 @@ TipClassRec tipClassRec = {
 };
 
 WidgetClass tipWidgetClass = (WidgetClass)&tipClassRec;
+Boolean Xaw3dXftShowTips = True;
 
 #define VisualOf(w)    (w->tip.visual)
 #define VisualDepth(w) (w->core.depth)
@@ -298,7 +301,7 @@ Cardinal *num_args) {
 
   get_or_change_GCs(tip);
 
-  tip->tip.mapped = False;
+  tip->tip.haveGrab = tip->tip.mapped = False;
   tip->tip.timer = 0;
   tip->core.border_width = 0; // See Notes 2026-10-26 DWF at top
 
@@ -490,8 +493,10 @@ static void ResetTip (TipWidget tip, Bool add_timeout) {
     tip->tip.timer = 0;
   }
   if (tip->tip.mapped) {
-    if (_Xaw3dXft->tip_do_grab)
+    if (tip->tip.haveGrab) {
       XtRemoveGrab(XtParent((Widget)tip));
+      tip->tip.haveGrab = False;
+    }
     XUnmapWindow(XtDisplay((Widget)tip), XtWindow((Widget)tip));
     tip->tip.mapped = False;
   }
@@ -508,11 +513,13 @@ static void TipTimeoutCallback (XtPointer client_data, XtIntervalId *id) {
   TipGetSize(tip);
   XtRealizeWidget((Widget)tip);
   TipPosition(tip);
-  if (_Xaw3dXft->show_tips) {
+  if (Xaw3dXftShowTips) {
     XMapRaised(XtDisplay((Widget)tip), XtWindow((Widget)tip));
-    if (_Xaw3dXft->tip_do_grab)
-      XtAddGrab(XtParent((Widget)tip), True, True);
     tip->tip.mapped = True;
+    if (tip->tip.grab) {
+      XtAddGrab(XtParent((Widget)tip), True, True);
+      tip->tip.haveGrab = True;
+    }
   }
 }
 

@@ -918,6 +918,7 @@ encoding       | Encoding      | XtEnum | XawTextEncoding8bit (XawTextEncodingMb
 font           | Font          | XFontStruct* | XtDefaultFont
 fontSet        | FontSet       | XFontSet     | XtDefaultFontSet
 foreground     | Foreground    | Pixel        | XtDefaultForeground
+grab           | Grab          | Boolean      | True
 internalHeight | Height        | Dimension    | 2
 internalWidth  | Width         | Dimension    | 2
 international  | International | Boolean      | False
@@ -926,7 +927,13 @@ timeout        | Timeout       | Int          | 1200
 xftFont        | XftFont       | String       | NULL
 
 The enable resource enables or disables the displaying of a particular tip
-when the mouse pointer hovers over its parent widget.
+when the mouse pointer hovers over its parent widget.  To inhibit the
+displaying of *all* tips, set the global Boolean Xaw3dXftShowTips to False.
+(The latter does not force any currently displayed tips to pop down; it
+merely stops any new ones from popping up.)
+
+The grab resource determines whether a Tip will attempt an exclusive grab
+when it is raised.
 
 The internalHeight and internalWidth resources control the margins like they
 do for the Label widget.  Note that Xaw's Tip widget has topMargin,
@@ -1239,26 +1246,28 @@ They are now permanently enabled.
 **Retired global struct Xaw3dXftData**
 
 Applications no longer do GET_XAW3DXFT_DATA and modify a global struct.
-All features are now accessed through normal Xt widget resources.
+Most features are now accessed through normal Xt widget resources.
 
 1.x struct Xaw3dXftData field  | 2.x replacement
 :----------------------------  | :--------------
 border_hack                    | deleted (necessary workaround always on)
-button_dashed                  | use Command.highlightDashed resource
+button_dashed                  | Command.highlightDashed resource
 button_inverse                 | deleted (button presses always get inverse)
-default_font, default_fontname | use xftFont resource
-edit_delete_alternative        | use Text.editSelect resource
-encoding                       | use encoding resource
-hilit_color                    | use highlight resource
+default_font, default_fontname | xftFont resource
+edit_delete_alternative        | Text.editSelect resource
+encoding                       | encoding resource
+hilit_color                    | highlight resource
 insensitive_twist              | deleted (all insensitive widgets are stippled)
-menu_spacing                   | use SmeBSB.vertSpace resource
-multi_column_menu              | use SimpleMenu.multiColumn resource
-no_hilit_reverse               | use highlightStyle resource
+menu_spacing                   | SmeBSB.vertSpace resource
+multi_column_menu              | SimpleMenu.multiColumn resource
+no_hilit_reverse               | highlightStyle resource
+show_tips                      | global Boolean Xaw3dXftShowTips
 string_use_pixmap              | deleted (workaround not needed anymore)
-text_bg_hilight                | use highlightStyle resource
-text_bg_hilight_color          | use highlight resource
-text_sb_right                  | use Text.useRight resource
-tip_background_color           | use Tip.background resource
+text_bg_hilight                | highlightStyle resource
+text_bg_hilight_color          | highlight resource
+text_sb_right                  | Text.useRight resource
+tip_background_color           | Tip.background resource
+tip_do_grab                    | Tip.grab resource
 
 **Changed implementation of tips**
 

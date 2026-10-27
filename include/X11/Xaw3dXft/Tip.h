@@ -54,6 +54,7 @@
   font		    Font		XFontStruct*	XtDefaultFont
   fontSet           FontSet             XFontSet        XtDefaultFontSet
   foreground	    Foreground		Pixel		XtDefaultForeground
+  grab              Grab                Boolean         True
   height	    Height		Dimension	text height
   internalHeight    Height		Dimension	2
   internalWidth     Width		Dimension	2
@@ -71,5 +72,6 @@ typedef struct _TipClassRec *TipWidgetClass;
 typedef struct _TipRec *TipWidget;
 
 extern WidgetClass tipWidgetClass;
+extern Boolean Xaw3dXftShowTips;
 
 #endif /* _XawTip_h */

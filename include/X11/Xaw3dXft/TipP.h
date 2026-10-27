@@ -53,12 +53,10 @@ typedef struct _TipPart {
     Boolean international;
     XtEnum encoding;
     char *xftfontname;
-    Dimension internal_width;
-    Dimension internal_height;
     String label;
-    int backing_store;
-    int timeout;
-    Boolean enable;
+    Dimension internal_width, internal_height;
+    int backing_store, timeout;
+    Boolean enable, grab;
 
     /* private */
     GC normal_GC;      // fg, font
@@ -66,7 +64,7 @@ typedef struct _TipPart {
     XftFont *xftfont;
     Visual *visual;
     XftColor xftfg;
-    Boolean mapped;
+    Boolean mapped, haveGrab;
     Widget shell;
 } TipPart;
 
