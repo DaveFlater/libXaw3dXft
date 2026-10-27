@@ -510,10 +510,10 @@ static void TipTimeoutCallback (XtPointer client_data, XtIntervalId *id) {
   TipWidget tip = (TipWidget)client_data;
   assert(tip);
   tip->tip.timer = 0;
-  TipGetSize(tip);
-  XtRealizeWidget((Widget)tip);
-  TipPosition(tip);
   if (Xaw3dXftShowTips) {
+    TipGetSize(tip);
+    XtRealizeWidget((Widget)tip);
+    TipPosition(tip);
     XMapRaised(XtDisplay((Widget)tip), XtWindow((Widget)tip));
     tip->tip.mapped = True;
     if (tip->tip.grab) {
