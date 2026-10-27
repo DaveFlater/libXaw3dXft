@@ -925,6 +925,9 @@ label          | Label         | String       | NULL
 timeout        | Timeout       | Int          | 1200
 xftFont        | XftFont       | String       | NULL
 
+Resources related to fonts, encodings, and text rendering are as described
+under [Generalities](#generalities).  Multi-line text is allowed.
+
 The enable resource enables or disables the displaying of a particular tip
 when the mouse pointer hovers over its parent widget.  To inhibit the
 displaying of *all* tips, set the global Boolean Xaw3dXftShowTips to False.
