@@ -1,9 +1,8 @@
 # libXaw3dXft: Athena Widgets + 3D + FreeType font support
 
 🚨 libXaw3dXft is currently in the midst of a major revision.  Features that
-previously worked through a global control structure are being transitioned
-to use "normal" Xt widget resources.  Some widgets are using the new system
-while some have not yet migrated.
+previously worked through a global control structure have been transitioned
+to use "normal" Xt widget resources.
 
 - [Overview](#overview)
 - [Building a release](#building)
@@ -16,7 +15,7 @@ while some have not yet migrated.
 - [Classes not present in Athena Widgets](#newclasses)
 - [Alterations to Athena Widgets classes](#alterations)
 - [Notes on known difficulties](#difficulties)
-- [Run-time options](#runtimeopts)
+- [Leftovers](#runtimeopts)
 - [Version 1.x to 2.0 migration](#migration)
 - [Rationale for features removed in 2.0](#rationale)
 - [Oddities](#oddities)
@@ -1134,74 +1133,13 @@ Paned (Composite) creates any number of Grip widgets, all with the name
 "grip".  It only makes sense to configure them with global defaults.
 
 
-## <a name="runtimeopts"></a>Run-time options
+## <a name="runtimeopts"></a>Leftovers
 
-🚨 This feature is going away.  Functions are being transferred from the
-global struct to Xt resources.
-
-The behaviors that are unique to Xaw3dXft rather than inherited from Xaw3d or
-Xaw must be enabled by the app at run time.  An app gets access to the
-Xaw3dXft control structure by doing
-
-    #include <X11/Xaw3dXft/Xaw3dXft.h>
-    Xaw3dXftData *xaw3dxft_data = NULL;
-    GET_XAW3DXFT_DATA(xaw3dxft_data);
-
-Then, the FreeType features are activated by setting encoding to something
-other than 0:
-
-```
-xaw3dxft_data->encoding = -1; // UTF-8
-```
-
-The Xaw3dXftData struct contains the following fields with the default values
-indicated.
-
-### char encoding = 0
-
-This field serves the dual function of activating FreeType and specifying
-the character encoding.
-
-| Value | Meaning |
-| :---: | --- |
-|    0  | FreeType off; act like Xaw3d |
-|   -1  | UTF-8 |
-|    8  | 8-bit characters (Latin-1) |
-|   16  | 16-bit characters (UCS-2) |
-
-### char * default_fontname = NULL
-
-Applicable when:  default_font == NULL
-
-The name of the font to be used when no font is specified by the app in a
-particular context.  If this field is null, the compiled-in default is
-Liberation-9.
-
-### XftFont * default_font = NULL
-
-The font to be used when no font is specified by the app in a particular
-context.  If this field is null, the font named by default_fontname is loaded
-and stored here for reuse.
-
-### char show_tips = 1
-
-Globally enable/disable showing tips.
-
-### char tip_do_grab = 1
-
-Grab or don't grab while showing a tip.
-
-### Xaw3dXftProc * <a name="proc"></a>proc = ...
-
-The Xaw3dXftProc struct contains pointers to [in]convenience functions.
-These functions are also declared directly in Xaw3dXftP.h.
+🚨 This is what remains of the 1.x global infrastructure that has not yet
+been addressed.
 
 Xaw3dXftProc | Xaw3dXftP.h | Function
 :--- | :--- | :---
-set_default_fontname    | Xaw3dXftSetDefaultFontName   | default_fontname = strdup(value) (after freeing any previous value)
-get_font                | Xaw3dXftGetFont              | Return XftFont *
-text_width              | Xaw3dXftTextWidth            | Return x-extent of string
-draw_string             | Xaw3dXftDrawString           | Draw string on widget
 #ifdef XAW_ARROW_SCROLLBARS | |
 get_scrollbar           | Xaw3dXftGetScrollbar         | Return vertical scrollbar of AsciiText/Text widget
 handle_mousewheel       | Xaw3dXftHandleMouseWheel     | Scrollbar handler for mouse wheel events

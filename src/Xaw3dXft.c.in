@@ -37,16 +37,14 @@ SOFTWARE.
 
 ******************************************************************/
 
+#include <stdlib.h>
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <assert.h>
-#include <sysexits.h>
-#include <X11/Xaw3dXft/Xaw3dXft.h>
+#include <X11/Xaw3dXft/Xaw3dXftP.h>
 #include <X11/Xaw3dXft/AsciiTextP.h>
 #include <X11/Xaw3dXft/ScrollbarP.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
-#include <X11/Xaw3dXft/CommonP.h>
 
 // Make sure we got the right header file.
 static_assert(LIBXAW3DXFT_VERSION_MAJOR == @LIBXAW3DXFT_VERSION_MAJOR@);
@@ -69,145 +67,6 @@ const char libXaw3dXft_version[] = @LIBXAW3DXFT_VERSION_STR@;
 // For strings | grep -F 'libXaw3dXft version'
 const char libXaw3dXft_version_long[] =
   "libXaw3dXft version " @LIBXAW3DXFT_VERSION_STR@;
-
-#ifndef Pixel
-typedef unsigned long Pixel;
-#endif
-
-Xaw3dXftData * _Xaw3dXft;
-
-void Xaw3dXftSetDefaultFontName(char *name)
-{
-    if (_Xaw3dXft->default_fontname)
-        free(_Xaw3dXft->default_fontname);
-    _Xaw3dXft->default_fontname = strdup(name);
-}
-
-static int hexa(char c)
-{
-    if (c>='0' && c<='9') return c-'0'; else
-    if (c>='a' && c<='f') return c-'a'+10; else
-    if (c>='A' && c<='F') return c-'A'+10; else
-    return 0;
-}
-
-int
-Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len)
-{
-    Display *dpy = XtDisplayOfObject(w);
-    XGlyphInfo extents = {};
-    if (_Xaw3dXft->encoding == -1) {
-        XftTextExtentsUtf8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
-    } else
-    if (_Xaw3dXft->encoding == 8)
-        XftTextExtents8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
-    else
-    if (_Xaw3dXft->encoding == 16)
-        XftTextExtents16(dpy, font, (FcChar16*)str, len/2,
-                         (XGlyphInfo*)&extents);
-#ifdef DEBUG
-    str[len] = '\0';
-    printf("%s (%d)\n", str, extents.xOff);
-#endif
-    return extents.xOff;
-}
-
-static void
-AdjustBackground(Display *dpy, Window win, Colormap cmap, Widget widget,
-		 int x, int y, int w, int h)
-{
-  XClearArea(dpy, win, x, y, w, h, False);
-}
-
-void
-Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y,
-		   char *str, int len)
-{
-    if (!visual || !font || !len || !str) return;
-    Display *dpy = XtDisplayOfObject(w);
-    Window win = XtWindowOfObject(w);
-    if (!win) return;
-
-    Colormap cmap = None;
-    // There is no safe sentinel value.  This has a good chance of replacing
-    // white with black on a deep colormap.  But this whole function is going
-    // away.
-    Pixel fg = ULONG_MAX;
-    XtVaGetValues(w, XtNforeground, &fg, XtNcolormap, &cmap, NULL);
-    if (cmap==None) {
-        // Colormap comes from Core.  Non-widget Object SmeBSB has its own
-        // foreground resource, but not colormap.  SmeBSB itself uses
-        // parent->core.colormap, as does SmeThreeD.
-        XtVaGetValues(XtParent(w), XtNcolormap, &cmap, NULL);
-	assert(cmap != None);
-    }
-    XftDraw *draw = XftDrawCreate(dpy, win, visual, cmap);
-
-    XRenderColor xre_color = {0U, 0U, 0U, USHRT_MAX}; // default black
-    if (fg != ULONG_MAX) {
-        XColor xcol;
-        xcol.pixel = fg;
-        xcol.flags = DoRed | DoGreen | DoBlue;
-        XQueryColor(dpy, cmap, &xcol);
-        xre_color.red = xcol.red;
-        xre_color.green = xcol.green;
-        xre_color.blue = xcol.blue;
-    }
-
-    XftColor color;
-    XftColorAllocValue(dpy, visual, cmap, &xre_color, &color);
-
-    XGlyphInfo extents = {};
-    if (_Xaw3dXft->encoding == -1) {
-        XftTextExtentsUtf8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
-        AdjustBackground(dpy, win, cmap, w, x, y-font->ascent, extents.xOff, font->height);
-        XftDrawStringUtf8(draw, &color, font, x, y, (FcChar8*)str, len);
-    } else if (_Xaw3dXft->encoding == 8) {
-        XftTextExtents8(dpy, font, (FcChar8*)str, len, (XGlyphInfo*)&extents);
-        AdjustBackground(dpy, win, cmap, w, x, y-font->ascent, extents.xOff, font->height);
-        XftDrawString8(draw, &color, font, x, y, (FcChar8*)str, len);
-    } else if (_Xaw3dXft->encoding == 16) {
-        XftTextExtents16(dpy, font, (FcChar16*)str, len/2, (XGlyphInfo*)&extents);
-        AdjustBackground(dpy, win, cmap, w, x, y-font->ascent, extents.xOff, font->height);
-        XftDrawString16(draw, &color, font, x, y, (FcChar16*)str, len/2);
-    }
-
-    /*
-      Notes 2026-06-20 DWF on:
-
-      if (DefaultDepth(dpy, DefaultScreen(dpy))>8)
-          XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
-                       cmap, &color);
-
-      Call XftColorFree only if DefaultDepth > 8?
-
-      I assume that Depth > 8 was intended to test for an immutable colormap.
-      The correct test for that would have been visual->class & 1 == 0 for
-      the visual that applies to the object, which is not necessarily the
-      default visual.  Depth > 8 works if you reduce the possibilities to
-      TrueColor depth >8 and PseudoColor depth 8 or less, the only two
-      configurations that were in common use at the time.
-
-      That implies an intent to free the color only if there was no risk of
-      the color mapping being changed for the pixels we just drew.  But that
-      means we are calling XftColorFree specifically only in the cases where
-      it makes no difference.
-
-      Neither XftColorFree nor XFreeColors is called anywhere but here.  For
-      8-bit PseudoColor, we leak a colormap entry every time that
-      insensitive_twist or text_fg_alternate_color changes—with or without
-      this code.  So this code appears to serve no purpose, and it is better
-      to delete it than to get it using the correct depth of the correct
-      visual.
-
-      N.B., libXft itself checks for visual->class == TrueColor and skips
-      XAllocColor and XFreeColors in that case.  StaticGray and StaticColor
-      take the alloc/free path despite having immutable colormaps.
-    */
-
-    XftDrawDestroy(draw);
-    XFlush(dpy);
-}
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS
@@ -272,37 +131,3 @@ Xaw3dXftSetMouseWheelSteps(Widget w, XtPointer ptr, int n)
 }
 
 #endif
-
-void
-Xaw3dXftInitialize(void)
-{
-    Xaw3dXftProc *proc;
-    char *str;
-
-    XftInitFtLibrary();
-
-    str = (char *) XtMalloc(28);
-    _Xaw3dXft = (Xaw3dXftData *) XtMalloc(sizeof(Xaw3dXftData));
-    sprintf(str, "mem:%lu",  (unsigned long) _Xaw3dXft);
-    _Xaw3dXft->encoding  = 0;
-    _Xaw3dXft->menu_spacing  = 1;
-    _Xaw3dXft->show_tips  = 1;
-    _Xaw3dXft->tip_do_grab  = 1;
-    _Xaw3dXft->default_fontname  = NULL;
-    _Xaw3dXft->default_font  = NULL;
-
-    proc = (Xaw3dXftProc *) XtMalloc(sizeof(Xaw3dXftProc));
-    _Xaw3dXft->proc = proc;
-    proc->set_default_fontname = Xaw3dXftSetDefaultFontName;
-    proc->get_font = Xaw3dXftGetFont;
-    proc->text_width = Xaw3dXftTextWidth;
-    proc->draw_string = Xaw3dXftDrawString;
-#ifdef XAW_ARROW_SCROLLBARS
-    proc->get_scrollbar =  Xaw3dXftGetScrollbar;
-    proc->handle_mousewheel = Xaw3dXftHandleMouseWheel;
-    proc->set_mousewheel_handler = Xaw3dXftSetMouseWheelHandler;
-    proc->set_mousewheel_steps = Xaw3dXftSetMouseWheelSteps;
-#endif
-    (void) XrmPermStringToQuark(strdup("Xaw3dXftData"));
-    (void) XrmPermStringToQuark(str);
-}

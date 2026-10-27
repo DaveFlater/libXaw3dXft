@@ -35,7 +35,7 @@ AC_TYPE_INTPTR_T
 
 # PKG_CHECK_MODULES is a pkg-config thing.  Testable modules are just
 # whatever has a .pc file in PKG_CONFIG_PATH.  See man pkg-config.
-PKG_CHECK_MODULES(X11, [xproto x11 xt xext xmu xpm xft fontconfig])
+PKG_CHECK_MODULES(X11, [xproto x11 xt xext xmu xpm xft])
 
 # Short form for headers that include their prerequisites
 AC_CHECK_HEADERS_ONCE([uchar.h])

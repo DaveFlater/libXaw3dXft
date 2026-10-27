@@ -39,21 +39,16 @@ SOFTWARE.
 
 ******************************************************************/
 
-#include <X11/Xaw3dXft/Xaw3dXft.h>
-
 #ifndef _Xaw3dXftP_h
 #define _Xaw3dXftP_h
 
+#include <assert.h>
+#include <X11/Xlib.h>
+#include <X11/Intrinsic.h>
+#include <X11/Xaw3dXft/Xaw3d.h>
+#include <X11/Xaw3dXft/Xaw3dXft.h>
+
 _XFUNCPROTOBEGIN
-
-extern Xaw3dXftData * _Xaw3dXft;
-
-extern void Xaw3dXftSetDefaultFontName(char *name);
-extern void Xaw3dXftSetInsensitiveTwist(char *value);
-
-// Original text functions being phased out
-extern int Xaw3dXftTextWidth(Widget w, XftFont *font, char *str, int len);
-extern void Xaw3dXftDrawString(Visual *visual, Widget w, XftFont *font, int x, int y, char *str, int len);
 
 static_assert(Got_XAW_defines);
 #ifdef XAW_ARROW_SCROLLBARS
@@ -62,8 +57,6 @@ extern void Xaw3dXftHandleMouseWheel (Widget w, XtPointer ptr, XEvent *event, Bo
 extern void Xaw3dXftSetMouseWheelHandler(Widget w, XtPointer ptr);
 extern void Xaw3dXftSetMouseWheelSteps (Widget w, XtPointer ptr, int n);
 #endif
-
-extern void Xaw3dXftInitialize(void);
 
 _XFUNCPROTOEND
 

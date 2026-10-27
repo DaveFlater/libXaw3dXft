@@ -38,15 +38,11 @@ in this Software without prior written authorization from the X Consortium.
 #include <X11/Intrinsic.h>
 #include <X11/Vendor.h>
 #include <X11/Xaw3dXft/XawInit.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
 
-void XawInitializeWidgetSet (void)
-{
-    static int firsttime = 1;
-
-    if (firsttime) {
-	firsttime = 0;
-	XtInitializeWidgetClass (vendorShellWidgetClass);
-        Xaw3dXftInitialize();
-    }
+void XawInitializeWidgetSet () {
+  static Boolean firsttime = True;
+  if (firsttime) {
+    firsttime = False;
+    XtInitializeWidgetClass(vendorShellWidgetClass);
+  }
 }

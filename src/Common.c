@@ -19,11 +19,6 @@ X11 license (as per the historical licenses that the package inherits)
 #include <X11/Xaw3dXft/Encoding.h>
 #include <X11/Xaw3dXft/StringDefs.h>
 
-// FIXME lingering dependency on global struct for default font
-#include <X11/Xaw3dXft/Xaw3dXft.h>
-#include <X11/Xaw3dXft/Xaw3dXftP.h>
-#define XAW3DXFT_DEFAULTFONT "Liberation-9"
-
 /*
   We need the Visual that applies to our Object and the class and depth of
   that visual.
@@ -131,15 +126,10 @@ static XftFont *findOrGetFont (Widget object, const char *name) {
 }
 
 XftFont *Xaw3dXftGetFont (Widget object, char *name) {
-  if (name)
-    return findOrGetFont(object, name);
-  // FIXME lingering dependency on global struct for default font
-  if (!_Xaw3dXft->default_font) {
-    if (!_Xaw3dXft->default_fontname)
-      _Xaw3dXft->default_fontname = XAW3DXFT_DEFAULTFONT;
-    _Xaw3dXft->default_font = findOrGetFont(object, _Xaw3dXft->default_fontname);
-  }
-  return _Xaw3dXft->default_font;
+  // There is no default Xft font anymore.  When a widget's xftFont resource
+  // is null, it falls back to core font or font set.
+  assert(name);
+  return findOrGetFont(object, name);
 }
 
 void Xaw3dXftGetXftColor (Display *display, Visual *visual, Colormap cmap,
